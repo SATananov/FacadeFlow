@@ -1,0 +1,267 @@
+.app-shell {
+  min-height: 100vh;
+  background: #e8eef0;
+}
+
+.app-header {
+  position: relative;
+  min-height: 92px;
+  padding: 11px 24px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background:
+    linear-gradient(90deg, rgba(76, 207, 219, .055) 1px, transparent 1px),
+    linear-gradient(rgba(76, 207, 219, .04) 1px, transparent 1px),
+    linear-gradient(135deg, #0a1b22 0%, #102a33 58%, #0d232b 100%);
+  background-size: 28px 28px, 28px 28px, auto;
+  border-bottom: 1px solid #31515b;
+  box-shadow: 0 8px 30px #06111824;
+}
+
+.app-header::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 3px;
+  background: linear-gradient(90deg, #13a7ba 0 16%, #e87329 16% 22%, #13a7ba 22% 100%);
+}
+
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.nadezhda-header-logo {
+  width: 132px;
+  height: 56px;
+  object-fit: contain;
+  padding: 2px;
+  flex: 0 0 auto;
+  border: 1px solid #3e626d;
+  background: #eef4f5;
+  box-shadow: 0 0 0 2px #0c222a, 0 5px 15px #00000024;
+  opacity: .96;
+}
+
+.brand-copy h1 {
+  margin: 0;
+  color: #f3f8f9;
+  font-size: 21px;
+  line-height: 1.05;
+  letter-spacing: .25px;
+}
+
+.brand-copy p {
+  max-width: 360px;
+  margin: 4px 0 0;
+  color: #a8bbc0;
+  font-size: 10px;
+  letter-spacing: .18px;
+}
+
+.create-offer-action {
+  min-width: 190px;
+  min-height: 54px;
+  padding: 7px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 11px;
+  border: 1px solid #3f9daf;
+  border-radius: 5px;
+  background: linear-gradient(135deg, #113742, #164a57);
+  color: #d7e5e9;
+  box-shadow: inset 0 -2px #19a9bd, inset 0 1px #ffffff0a;
+  transition: border-color .16s ease, background .16s ease, transform .16s ease, box-shadow .16s ease;
+}
+
+.create-offer-action:hover {
+  transform: translateY(-1px);
+  border-color: #68c4d1;
+  background: linear-gradient(135deg, #16424e, #1a5361);
+  box-shadow: inset 0 -2px #26bdd0, 0 7px 18px #07131948;
+}
+
+.action-icon {
+  width: 31px;
+  height: 31px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid #56b5c4;
+  border-radius: 4px;
+  background: #0a2e38;
+  color: #a7f4fb;
+}
+
+.action-icon svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.action-copy {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+}
+
+.action-copy b {
+  color: #f3f8f9;
+  font-size: 12px;
+}
+
+.action-copy small {
+  color: #8fa9b0;
+  font-size: 8px;
+  letter-spacing: .35px;
+}
+
+.home-workspace {
+  min-height: calc(100vh - 95px);
+  padding: 48px 24px;
+}
+
+.empty-home,
+.offer-start {
+  width: min(1040px, 100%);
+  margin: 0 auto;
+}
+
+.empty-home {
+  min-height: 440px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  text-align: center;
+  color: #557079;
+}
+
+.empty-home-mark {
+  width: 68px;
+  height: 68px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #a9bbc0;
+  border-radius: 8px;
+  background: #f4f7f8;
+  color: #2f5661;
+  font-weight: 900;
+  letter-spacing: 2px;
+  box-shadow: 0 10px 28px #14252c12;
+}
+
+.empty-home h2 {
+  margin: 8px 0 0;
+  color: #203b44;
+  font-size: 28px;
+}
+
+.empty-home p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.offer-start {
+  overflow: hidden;
+  border: 1px solid #bdcbd0;
+  border-radius: 8px;
+  background: #f8fafb;
+  box-shadow: 0 14px 36px #102a3314;
+}
+
+.offer-start-heading {
+  padding: 22px 24px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px solid #d2dde0;
+  background: #f1f5f6;
+}
+
+.offer-start-heading span {
+  color: #16899a;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 1.2px;
+}
+
+.offer-start-heading h2 {
+  margin: 5px 0 4px;
+  color: #193740;
+  font-size: 24px;
+}
+
+.offer-start-heading p,
+.next-step-placeholder p {
+  margin: 0;
+  color: #657c83;
+  font-size: 12px;
+}
+
+.secondary-action {
+  padding: 8px 12px;
+  border: 1px solid #9eb2b8;
+  border-radius: 4px;
+  background: #fff;
+  color: #294b55;
+  font-weight: 800;
+  font-size: 11px;
+}
+
+.next-step-placeholder {
+  margin: 24px;
+  padding: 28px;
+  border: 1px dashed #aabcc1;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.next-step-placeholder strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #2c505a;
+  font-size: 12px;
+}
+
+@media (max-width: 700px) {
+  .app-header {
+    min-height: 0;
+    padding: 10px 12px 13px;
+    flex-wrap: wrap;
+  }
+
+  .nadezhda-header-logo {
+    width: 108px;
+    height: 47px;
+  }
+
+  .brand-copy h1 { font-size: 17px; }
+  .brand-copy p { max-width: 220px; font-size: 8.5px; }
+
+  .create-offer-action {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .home-workspace { padding: 34px 12px; }
+
+  .offer-start-heading {
+    padding: 18px;
+    flex-direction: column;
+  }
+
+  .next-step-placeholder { margin: 18px; padding: 20px; }
+}
