@@ -1,6 +1,9 @@
 ﻿import { useState, type FormEvent } from 'react'
 import {
   getProfileSystemById,
+  getProfileSystemFinishOptionById,
+  getProfileSystemFinishOptions,
+  getProfileSystemFoilModeById,
   getSelectableProfileSystems,
 } from './data/profileSystems'
 import './App.css'
@@ -37,8 +40,9 @@ type OfferDraft = {
   objectAddress: string
 
   profileSystemId: string
+  colorId: string
+  foilModeId: string
   productType: string
-  color: string
   glazing: string
   hardware: string
   commonConditions: string
@@ -56,8 +60,9 @@ const EMPTY_OFFER: OfferDraft = {
   objectAddress: '',
 
   profileSystemId: '',
+  colorId: '',
+  foilModeId: '',
   productType: 'Прозорец',
-  color: 'Бяло',
   glazing: 'б + б / 24',
   hardware: 'Siegenia',
   commonConditions: '',
@@ -78,8 +83,30 @@ export default function App() {
     offer.profileSystemId,
   )
 
+  const availableFinishOptions = selectedProfileSystem
+    ? getProfileSystemFinishOptions(selectedProfileSystem.id)
+    : []
+
+  const selectedFinish = selectedProfileSystem
+    ? getProfileSystemFinishOptionById(
+        selectedProfileSystem.id,
+        offer.colorId,
+      )
+    : undefined
+
+  const selectedFoilMode = selectedProfileSystem && selectedFinish
+    ? getProfileSystemFoilModeById(
+        selectedProfileSystem.id,
+        selectedFinish.id,
+        offer.foilModeId,
+      )
+    : undefined
+
   const canContinueToModules =
-    clientObjectReady && Boolean(selectedProfileSystem)
+    clientObjectReady &&
+    Boolean(selectedProfileSystem) &&
+    Boolean(selectedFinish) &&
+    Boolean(selectedFoilMode)
 
   const updateOffer = <K extends keyof OfferDraft>(
     field: K,
@@ -88,6 +115,25 @@ export default function App() {
     setOffer((current) => ({
       ...current,
       [field]: value,
+    }))
+    setSaved(false)
+  }
+
+  const selectProfileSystem = (profileSystemId: string) => {
+    setOffer((current) => ({
+      ...current,
+      profileSystemId,
+      colorId: '',
+      foilModeId: '',
+    }))
+    setSaved(false)
+  }
+
+  const selectFinish = (colorId: string) => {
+    setOffer((current) => ({
+      ...current,
+      colorId,
+      foilModeId: '',
     }))
     setSaved(false)
   }
@@ -165,7 +211,7 @@ export default function App() {
               <p>
                 Работният процес започва със създаване на оферта.
                 Първо задаваме клиента и обекта, след това избираме
-                профилната система и общите параметри преди модулите.
+                профилната система, цвета и фолирането преди модулите.
               </p>
             </div>
           </section>
@@ -174,10 +220,10 @@ export default function App() {
             <div className="offer-start-heading">
               <div>
                 <span>НОВА ОФЕРТА</span>
-                <h2>Изпълнител / Клиент / Обект / Система</h2>
+                <h2>Изпълнител / Клиент / Обект / Система / Цвят</h2>
                 <p>
                   След клиента и обекта избираме профилната система
-                  от централния каталог, а после задаваме общите параметри.
+                  от централния каталог, после избираме цвят и начин на фолиране.
                 </p>
               </div>
 
@@ -448,10 +494,7 @@ export default function App() {
                           disabled={!clientObjectReady}
                           required
                           onChange={(event) =>
-                            updateOffer(
-                              'profileSystemId',
-                              event.target.value,
-                            )
+                            selectProfileSystem(event.target.value)
                           }
                         />
 
@@ -486,15 +529,145 @@ export default function App() {
               </section>
 
               <section
-                className="form-section"
-                aria-labelledby="offer-parameters-title"
+                className="form-section finish-section"
+                aria-labelledby="finish-title"
               >
                 <div className="section-heading">
                   <span className="section-number">05</span>
 
                   <div>
+                    <h3 id="finish-title">Цвят и фолиране</h3>
+                    <p>
+                      След избора на профилна система задаваме цвета
+                      и начина на фолиране за офертата.
+                    </p>
+                  </div>
+                </div>
+
+                {!selectedProfileSystem && (
+                  <div className="finish-lock" role="status">
+                    <b>Първо изберете профилна система.</b>
+                    <span>След това ще се покажат потвърдените цветови опции.</span>
+                  </div>
+                )}
+
+                {selectedProfileSystem && availableFinishOptions.length === 0 && (
+                  <div className="finish-lock" role="status">
+                    <b>Няма въведени цветови опции за тази система.</b>
+                    <span>Не се прави автоматично предположение за цвят.</span>
+                  </div>
+                )}
+
+                {selectedProfileSystem && availableFinishOptions.length > 0 && (
+                  <div className="finish-workflow">
+                    <fieldset className="finish-fieldset">
+                      <legend>Цвят</legend>
+
+                      <div className="finish-color-options">
+                        {availableFinishOptions.map((finish) => {
+                          const selected = offer.colorId === finish.id
+
+                          return (
+                            <label
+                              className={`finish-option${
+                                selected ? ' is-selected' : ''
+                              }`}
+                              key={finish.id}
+                            >
+                              <input
+                                type="radio"
+                                name="colorId"
+                                value={finish.id}
+                                checked={selected}
+                                required
+                                onChange={(event) =>
+                                  selectFinish(event.target.value)
+                                }
+                              />
+
+                              <span>
+                                <b>{finish.labelBg}</b>
+                                <small>Потвърдена оперативна опция</small>
+                              </span>
+                            </label>
+                          )
+                        })}
+                      </div>
+                    </fieldset>
+
+                    <fieldset
+                      className="finish-fieldset foil-fieldset"
+                      disabled={!selectedFinish}
+                    >
+                      <legend>Фолиране</legend>
+
+                      {!selectedFinish && (
+                        <p className="finish-step-note">
+                          Първо изберете цвят.
+                        </p>
+                      )}
+
+                      {selectedFinish && (
+                        <div className="foil-mode-options">
+                          {selectedFinish.foilModes.map((mode) => {
+                            const selected = offer.foilModeId === mode.id
+
+                            return (
+                              <label
+                                className={`foil-mode-option${
+                                  selected ? ' is-selected' : ''
+                                }`}
+                                key={mode.id}
+                              >
+                                <input
+                                  type="radio"
+                                  name="foilModeId"
+                                  value={mode.id}
+                                  checked={selected}
+                                  required
+                                  onChange={(event) =>
+                                    updateOffer(
+                                      'foilModeId',
+                                      event.target.value,
+                                    )
+                                  }
+                                />
+
+                                <span>
+                                  <b>{mode.labelBg}</b>
+                                  <small>
+                                    {mode.coverage === 'both-sides'
+                                      ? 'Фолио отвън и отвътре'
+                                      : 'Фолио само от външната страна'}
+                                  </small>
+                                </span>
+                              </label>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </fieldset>
+
+                    {selectedFoilMode?.interiorColorStatus === 'unspecified' && (
+                      <div className="finish-boundary-note" role="status">
+                        При „Външно фолиран“ вътрешният цвят остава неуточнен.
+                        FacadeFlow не го предполага автоматично.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </section>
+
+              <section
+                className="form-section"
+                aria-labelledby="offer-parameters-title"
+              >
+                <div className="section-heading">
+                  <span className="section-number">06</span>
+
+                  <div>
                     <h3 id="offer-parameters-title">
-                      Основни параметри на офертата
+                      Други общи параметри
                     </h3>
 
                     <p>
@@ -515,19 +688,6 @@ export default function App() {
                       }
                     >
                       <option>Прозорец</option>
-                    </select>
-                  </label>
-
-                  <label className="field">
-                    <span>Цвят</span>
-
-                    <select
-                      value={offer.color}
-                      onChange={(event) =>
-                        updateOffer('color', event.target.value)
-                      }
-                    >
-                      <option>Бяло</option>
                     </select>
                   </label>
 
@@ -648,7 +808,12 @@ export default function App() {
 
                 <div>
                   <span>ЦВЯТ</span>
-                  <b>{offer.color}</b>
+                  <b>{selectedFinish?.labelBg || 'Не е избран'}</b>
+                </div>
+
+                <div>
+                  <span>ФОЛИРАНЕ</span>
+                  <b>{selectedFoilMode?.labelBg || 'Не е избрано'}</b>
                 </div>
 
                 <div>
@@ -686,7 +851,7 @@ export default function App() {
               {saved && (
                 <div className="saved-notice" role="status">
                   <b>
-                    Офертата и профилната система са подготвени.
+                    Офертата, профилната система, цветът и фолирането са подготвени.
                   </b>
 
                   <span>
