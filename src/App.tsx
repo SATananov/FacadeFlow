@@ -14,7 +14,13 @@ import {
 import { buildOfferModuleDefaults } from './domain/offerModuleDefaults'
 import {
   createFirstOfferModule,
+  getOfferModuleMissingFields,
   isOfferModuleBasicsReady,
+  isOfferModuleStructureReady,
+  MODULE_DIMENSION_PRESETS_MM,
+  MODULE_FIELD_COUNT_PRESETS,
+  MODULE_PRODUCT_TYPE_PRESETS,
+  type ModuleInputSource,
   type ModuleProductType,
   type OfferModuleDraft,
 } from './domain/offerModules'
@@ -203,15 +209,89 @@ export default function App() {
   const firstModuleBasicsReady = firstModule
     ? isOfferModuleBasicsReady(firstModule)
     : false
+  const firstModuleStructureReady = firstModule
+    ? isOfferModuleStructureReady(firstModule)
+    : false
+  const firstModuleMissingFields = firstModule
+    ? getOfferModuleMissingFields(firstModule)
+    : []
 
   const updateFirstModule = (
-    patch: Partial<Pick<OfferModuleDraft, 'productType' | 'widthMm' | 'heightMm'>>,
+    patch: Partial<
+      Omit<OfferModuleDraft, 'id' | 'sequence' | 'inheritedDefaults'>
+    >,
   ) => {
     setModules((current) =>
       current.map((module, index) =>
         index === 0 ? { ...module, ...patch } : module,
       ),
     )
+  }
+
+  const selectFirstModuleProductType = (value: string) => {
+    if (value === '') {
+      updateFirstModule({
+        productType: null,
+        customProductTypeLabel: '',
+        productTypeSource: 'unset',
+      })
+      return
+    }
+
+    if (value === 'custom') {
+      updateFirstModule({
+        productType: null,
+        productTypeSource: 'manual',
+      })
+      return
+    }
+
+    updateFirstModule({
+      productType: value as ModuleProductType,
+      customProductTypeLabel: '',
+      productTypeSource: 'preset',
+    })
+  }
+
+  const selectFirstModuleDimensionSource = (
+    dimension: 'width' | 'height',
+    source: ModuleInputSource,
+  ) => {
+    if (dimension === 'width') {
+      updateFirstModule({
+        widthSource: source,
+        widthMm: source === 'unset' ? null : firstModule?.widthMm ?? null,
+      })
+      return
+    }
+
+    updateFirstModule({
+      heightSource: source,
+      heightMm: source === 'unset' ? null : firstModule?.heightMm ?? null,
+    })
+  }
+
+  const selectFirstModuleFieldCount = (value: string) => {
+    if (value === '') {
+      updateFirstModule({
+        fieldCount: null,
+        fieldCountSource: 'unset',
+      })
+      return
+    }
+
+    if (value === 'custom') {
+      updateFirstModule({
+        fieldCount: null,
+        fieldCountSource: 'manual',
+      })
+      return
+    }
+
+    updateFirstModule({
+      fieldCount: Number(value),
+      fieldCountSource: 'preset',
+    })
   }
 
   const startNewOffer = () => {
@@ -1082,7 +1162,8 @@ export default function App() {
                     <h2 id="module-1-title">Модул 1</h2>
                     <p>
                       Първият модул наследява общите настройки на офертата.
-                      Тук задаваме само типа на изделието и основните габарити.
+                      Модулните полета са опционални и поддържат стандартен избор
+                      или ръчно въвеждане за нестандартни стойности.
                     </p>
                   </div>
 
@@ -1124,113 +1205,311 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="module-basics-grid">
-                  <fieldset className="module-type-fieldset">
-                    <legend>Тип изделие</legend>
+                <div className="module-optional-note" role="status">
+                  <b>Модул 1 може да остане чернова.</b>
+                  <span>
+                    Всички модулни стойности на този етап са опционални. Използвайте
+                    падащите менюта за стандартните избори или ръчно въвеждане за
+                    нестандартни стойности.
+                  </span>
+                </div>
 
-                    <div className="module-type-options">
-                      {(
-                        [
-                          ['window', 'Прозорец'],
-                          ['door', 'Врата'],
-                        ] as const
-                      ).map(([value, label]) => (
-                        <label
-                          className={`module-type-option${
-                            firstModule.productType === value
-                              ? ' is-selected'
-                              : ''
-                          }`}
-                          key={value}
+                <div className="module-hybrid-grid">
+                  <section className="module-hybrid-card">
+                    <div className="module-hybrid-heading">
+                      <span>ТИП ИЗДЕЛИЕ</span>
+                      <small>опционално</small>
+                    </div>
+
+                    <label className="field">
+                      <span>Избор</span>
+                      <select
+                        value={
+                          firstModule.productTypeSource === 'manual'
+                            ? 'custom'
+                            : firstModule.productType ?? ''
+                        }
+                        onChange={(event) =>
+                          selectFirstModuleProductType(event.target.value)
+                        }
+                      >
+                        <option value="">Не е избран</option>
+                        {MODULE_PRODUCT_TYPE_PRESETS.map((option) => (
+                          <option key={option.id} value={option.id}>
+                            {option.labelBg}
+                          </option>
+                        ))}
+                        <option value="custom">Друго / ръчно</option>
+                      </select>
+                    </label>
+
+                    {firstModule.productTypeSource === 'manual' && (
+                      <label className="field">
+                        <span>Ръчно описание</span>
+                        <input
+                          value={firstModule.customProductTypeLabel}
+                          onChange={(event) =>
+                            updateFirstModule({
+                              customProductTypeLabel: event.target.value,
+                            })
+                          }
+                          placeholder="Напр. нестандартно изделие"
+                        />
+                      </label>
+                    )}
+                  </section>
+
+                  <section className="module-hybrid-card">
+                    <div className="module-hybrid-heading">
+                      <span>ШИРИНА</span>
+                      <small>опционално</small>
+                    </div>
+
+                    <label className="field">
+                      <span>Начин на въвеждане</span>
+                      <select
+                        value={firstModule.widthSource}
+                        onChange={(event) =>
+                          selectFirstModuleDimensionSource(
+                            'width',
+                            event.target.value as ModuleInputSource,
+                          )
+                        }
+                      >
+                        <option value="unset">Не е зададена</option>
+                        <option value="manual">Ръчно / нестандартно</option>
+                        <option
+                          value="preset"
+                          disabled={MODULE_DIMENSION_PRESETS_MM.length === 0}
                         >
+                          Стандартен размер
+                        </option>
+                      </select>
+                    </label>
+
+                    {firstModule.widthSource === 'manual' && (
+                      <label className="field">
+                        <span>Ширина</span>
+                        <div className="dimension-input-wrap">
                           <input
-                            type="radio"
-                            name="module1ProductType"
-                            value={value}
-                            checked={firstModule.productType === value}
+                            type="number"
+                            min="1"
+                            step="1"
+                            inputMode="numeric"
+                            value={firstModule.widthMm ?? ''}
                             onChange={(event) =>
                               updateFirstModule({
-                                productType: event.target.value as ModuleProductType,
+                                widthMm:
+                                  event.target.value === ''
+                                    ? null
+                                    : Number(event.target.value),
                               })
                             }
+                            placeholder="Въведете размер"
                           />
+                          <em>mm</em>
+                        </div>
+                      </label>
+                    )}
 
-                          <span>{label}</span>
+                    {firstModule.widthSource === 'preset' &&
+                      MODULE_DIMENSION_PRESETS_MM.length > 0 && (
+                        <label className="field">
+                          <span>Стандартна ширина</span>
+                          <select
+                            value={firstModule.widthMm ?? ''}
+                            onChange={(event) =>
+                              updateFirstModule({
+                                widthMm:
+                                  event.target.value === ''
+                                    ? null
+                                    : Number(event.target.value),
+                              })
+                            }
+                          >
+                            <option value="">Изберете</option>
+                            {MODULE_DIMENSION_PRESETS_MM.map((value) => (
+                              <option key={value} value={value}>
+                                {value} mm
+                              </option>
+                            ))}
+                          </select>
                         </label>
-                      ))}
+                      )}
+
+                    {MODULE_DIMENSION_PRESETS_MM.length === 0 && (
+                      <p className="module-preset-boundary">
+                        Няма заредени потвърдени стандартни размери. FacadeFlow не
+                        измисля preset стойности; ръчното въвеждане остава достъпно.
+                      </p>
+                    )}
+                  </section>
+
+                  <section className="module-hybrid-card">
+                    <div className="module-hybrid-heading">
+                      <span>ВИСОЧИНА</span>
+                      <small>опционално</small>
                     </div>
-                  </fieldset>
 
-                  <div className="module-dimensions">
                     <label className="field">
-                      <span>Ширина</span>
-                      <div className="dimension-input-wrap">
+                      <span>Начин на въвеждане</span>
+                      <select
+                        value={firstModule.heightSource}
+                        onChange={(event) =>
+                          selectFirstModuleDimensionSource(
+                            'height',
+                            event.target.value as ModuleInputSource,
+                          )
+                        }
+                      >
+                        <option value="unset">Не е зададена</option>
+                        <option value="manual">Ръчно / нестандартно</option>
+                        <option
+                          value="preset"
+                          disabled={MODULE_DIMENSION_PRESETS_MM.length === 0}
+                        >
+                          Стандартен размер
+                        </option>
+                      </select>
+                    </label>
+
+                    {firstModule.heightSource === 'manual' && (
+                      <label className="field">
+                        <span>Височина</span>
+                        <div className="dimension-input-wrap">
+                          <input
+                            type="number"
+                            min="1"
+                            step="1"
+                            inputMode="numeric"
+                            value={firstModule.heightMm ?? ''}
+                            onChange={(event) =>
+                              updateFirstModule({
+                                heightMm:
+                                  event.target.value === ''
+                                    ? null
+                                    : Number(event.target.value),
+                              })
+                            }
+                            placeholder="Въведете размер"
+                          />
+                          <em>mm</em>
+                        </div>
+                      </label>
+                    )}
+
+                    {firstModule.heightSource === 'preset' &&
+                      MODULE_DIMENSION_PRESETS_MM.length > 0 && (
+                        <label className="field">
+                          <span>Стандартна височина</span>
+                          <select
+                            value={firstModule.heightMm ?? ''}
+                            onChange={(event) =>
+                              updateFirstModule({
+                                heightMm:
+                                  event.target.value === ''
+                                    ? null
+                                    : Number(event.target.value),
+                              })
+                            }
+                          >
+                            <option value="">Изберете</option>
+                            {MODULE_DIMENSION_PRESETS_MM.map((value) => (
+                              <option key={value} value={value}>
+                                {value} mm
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      )}
+
+                    {MODULE_DIMENSION_PRESETS_MM.length === 0 && (
+                      <p className="module-preset-boundary">
+                        Стандартните височини ще се появят тук, когато бъдат
+                        потвърдени. До тогава стойността може да се въведе ръчно.
+                      </p>
+                    )}
+                  </section>
+
+                  <section className="module-hybrid-card">
+                    <div className="module-hybrid-heading">
+                      <span>БРОЙ ПОЛЕТА</span>
+                      <small>опционално</small>
+                    </div>
+
+                    <label className="field">
+                      <span>Конструкция</span>
+                      <select
+                        value={
+                          firstModule.fieldCountSource === 'manual'
+                            ? 'custom'
+                            : firstModule.fieldCount?.toString() ?? ''
+                        }
+                        onChange={(event) =>
+                          selectFirstModuleFieldCount(event.target.value)
+                        }
+                      >
+                        <option value="">Не е зададено</option>
+                        {MODULE_FIELD_COUNT_PRESETS.map((count) => (
+                          <option key={count} value={count}>
+                            {count} {count === 1 ? 'поле' : 'полета'}
+                          </option>
+                        ))}
+                        <option value="custom">Друг брой / ръчно</option>
+                      </select>
+                    </label>
+
+                    {firstModule.fieldCountSource === 'manual' && (
+                      <label className="field">
+                        <span>Ръчен брой полета</span>
                         <input
                           type="number"
                           min="1"
                           step="1"
                           inputMode="numeric"
-                          value={firstModule.widthMm ?? ''}
+                          value={firstModule.fieldCount ?? ''}
                           onChange={(event) =>
                             updateFirstModule({
-                              widthMm:
+                              fieldCount:
                                 event.target.value === ''
                                   ? null
                                   : Number(event.target.value),
                             })
                           }
-                          placeholder="напр. 1200"
+                          placeholder="Напр. 5"
                         />
-                        <em>mm</em>
-                      </div>
-                    </label>
-
-                    <label className="field">
-                      <span>Височина</span>
-                      <div className="dimension-input-wrap">
-                        <input
-                          type="number"
-                          min="1"
-                          step="1"
-                          inputMode="numeric"
-                          value={firstModule.heightMm ?? ''}
-                          onChange={(event) =>
-                            updateFirstModule({
-                              heightMm:
-                                event.target.value === ''
-                                  ? null
-                                  : Number(event.target.value),
-                            })
-                          }
-                          placeholder="напр. 1400"
-                        />
-                        <em>mm</em>
-                      </div>
-                    </label>
-                  </div>
+                      </label>
+                    )}
+                  </section>
                 </div>
 
                 <div
                   className={`module-basics-status${
-                    firstModuleBasicsReady ? ' is-ready' : ''
+                    firstModuleStructureReady ? ' is-ready' : ''
                   }`}
                   role="status"
                 >
                   <b>
-                    {firstModuleBasicsReady
-                      ? 'Основните данни за Модул 1 са въведени.'
-                      : 'Модул 1 очаква тип, ширина и височина.'}
+                    {firstModuleStructureReady
+                      ? 'Основните данни и броят полета са въведени.'
+                      : 'Модул 1 е запазен като опционална чернова.'}
                   </b>
                   <span>
-                    {firstModuleBasicsReady
-                      ? 'Следващият етап ще зададе конструкция, крила и отваряния.'
-                      : 'Тези стойности са модулни и не променят общите настройки на офертата.'}
+                    {firstModuleStructureReady
+                      ? 'Следващият етап може да описва всяко поле поотделно.'
+                      : `Неуточнени: ${firstModuleMissingFields.join(', ') || 'няма'}. Това не блокира черновата.`}
+                  </span>
+                  <span>
+                    Основни данни (тип + ширина + височина):{' '}
+                    {firstModuleBasicsReady ? 'въведени' : 'непълни'}.
                   </span>
                 </div>
 
                 <div className="module-geometry-boundary">
-                  Concept 06A не създава автоматична геометрия, не избира
-                  отваряния и не подготвя машинни данни.
+                  Concept 06B не генерира геометрия и не предполага стандартни
+                  размери. Падащите менюта съдържат само потвърдени избори;
+                  нестандартните стойности се въвеждат ръчно. Машинни данни не се
+                  подготвят.
                 </div>
               </section>
             )}
