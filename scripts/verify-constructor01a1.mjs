@@ -16,7 +16,7 @@ const checks = [
   [shell.includes("export type ConstructorMode = 'offer' | 'free'"), 'ConstructorShell has explicit shared mode type'],
   [shell.includes('Не е избрана'), 'Free mode does not invent a profile system'],
   [shell.includes('Създай оферта от тази скица'), 'Free mode exposes offer conversion entry'],
-  [shell.includes('CONSTRUCTOR 01A.1'), 'Constructor shell identifies 01A.1'],
+  [shell.includes('CONSTRUCTOR 01B'), 'Constructor lineage advanced to 01B'],
   [appCss.includes('.constructor-direct-action'), 'Direct constructor action has FacadeFlow styling'],
   [shellCss.includes('.constructor-free-context'), 'Free sketch context has dedicated styling'],
   [acceptance.includes('No profile system is automatically selected.'), 'Acceptance forbids automatic system selection'],
@@ -38,6 +38,6 @@ console.log('ENGINE: SHARED CONSTRUCTOR SHELL')
 console.log('FREE MODE: NO CLIENT / NO OBJECT / NO OFFER REQUIRED')
 console.log('FREE MODE SYSTEM: UNSELECTED - NOT INVENTED')
 console.log('FREE SKETCH -> OFFER ROUTE: FOUNDATION PRESENT')
-console.log('PARAMETRIC FRAME: NO')
+console.log('PARAMETRIC FRAME: IMPLEMENTED BY LATER CONSTRUCTOR 01B')
 console.log('AUTOMATIC GEOMETRY: NO')
 console.log('MACHINE READY: NO')

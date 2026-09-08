@@ -39,7 +39,9 @@ import {
   type OfferModuleDraft,
   type OfferModuleFieldDraft,
 } from './domain/offerModules'
-import ConstructorShell from './components/ConstructorShell'
+import ConstructorShell, {
+  type ConstructorDraftSnapshot,
+} from './components/ConstructorShell'
 import './App.css'
 
 function OfferIcon() {
@@ -123,6 +125,8 @@ export default function App() {
   const [modules, setModules] = useState<OfferModuleDraft[]>([])
   const [constructorMode, setConstructorMode] = useState<'offer' | 'free' | null>(null)
   const [offerStartedFromFreeSketch, setOfferStartedFromFreeSketch] = useState(false)
+  const [freeSketchDraft, setFreeSketchDraft] = useState<ConstructorDraftSnapshot | null>(null)
+  const [offerSourceSketch, setOfferSourceSketch] = useState<ConstructorDraftSnapshot | null>(null)
 
   const clientObjectReady =
     offer.clientName.trim().length > 0 &&
@@ -491,6 +495,7 @@ export default function App() {
     setModules([])
     setConstructorMode(null)
     setOfferStartedFromFreeSketch(false)
+    setOfferSourceSketch(null)
     setOfferStartOpen(true)
   }
 
@@ -499,7 +504,9 @@ export default function App() {
     setOfferStartOpen(false)
   }
 
-  const startOfferFromFreeSketch = () => {
+  const startOfferFromFreeSketch = (draft: ConstructorDraftSnapshot | null) => {
+    setFreeSketchDraft(draft)
+    setOfferSourceSketch(draft)
     setOffer(EMPTY_OFFER)
     setSaved(false)
     setModules([])
@@ -517,11 +524,26 @@ export default function App() {
     }
 
     setSaved(true)
-    setModules((current) =>
-      current.length > 0
-        ? current
-        : [createFirstOfferModule(moduleDefaults)],
-    )
+    setModules((current) => {
+      if (current.length > 0) {
+        return current
+      }
+
+      const createdModule = createFirstOfferModule(moduleDefaults)
+      const sourceFrame = offerSourceSketch?.frame
+
+      if (!sourceFrame) {
+        return [createdModule]
+      }
+
+      return [{
+        ...createdModule,
+        widthMm: sourceFrame.widthMm,
+        widthSource: 'manual',
+        heightMm: sourceFrame.heightMm,
+        heightSource: 'manual',
+      }]
+    })
   }
 
   return (
@@ -578,6 +600,8 @@ export default function App() {
         {constructorMode === 'free' ? (
           <ConstructorShell
             mode="free"
+            initialDraft={freeSketchDraft}
+            onDraftChange={setFreeSketchDraft}
             onClose={() => setConstructorMode(null)}
             onCreateOfferFromSketch={startOfferFromFreeSketch}
           />
@@ -606,6 +630,14 @@ export default function App() {
               widthMm: firstModule.widthMm,
               heightMm: firstModule.heightMm,
             }}
+            onModuleSizeChange={({ widthMm, heightMm }) =>
+              updateFirstModule({
+                widthMm,
+                widthSource: 'manual',
+                heightMm,
+                heightSource: 'manual',
+              })
+            }
             onClose={() => setConstructorMode(null)}
           />
         ) : !offerStartOpen ? (
@@ -651,7 +683,7 @@ export default function App() {
               <div>
                 {offerStartedFromFreeSketch && (
                   <div className="offer-source-note">
-                    Източник: Свободен конструктор · техническата система се задава сега
+                    Източник: Свободен конструктор · габаритът на касата се запазва, а техническата система се задава сега
                   </div>
                 )}
                 <span>НОВА ОФЕРТА</span>
