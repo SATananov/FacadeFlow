@@ -127,6 +127,7 @@ export default function App() {
   const [offerStartedFromFreeSketch, setOfferStartedFromFreeSketch] = useState(false)
   const [freeSketchDraft, setFreeSketchDraft] = useState<ConstructorDraftSnapshot | null>(null)
   const [offerSourceSketch, setOfferSourceSketch] = useState<ConstructorDraftSnapshot | null>(null)
+  const [offerModuleSketchDraft, setOfferModuleSketchDraft] = useState<ConstructorDraftSnapshot | null>(null)
 
   const clientObjectReady =
     offer.clientName.trim().length > 0 &&
@@ -496,6 +497,7 @@ export default function App() {
     setConstructorMode(null)
     setOfferStartedFromFreeSketch(false)
     setOfferSourceSketch(null)
+    setOfferModuleSketchDraft(null)
     setOfferStartOpen(true)
   }
 
@@ -507,6 +509,7 @@ export default function App() {
   const startOfferFromFreeSketch = (draft: ConstructorDraftSnapshot | null) => {
     setFreeSketchDraft(draft)
     setOfferSourceSketch(draft)
+    setOfferModuleSketchDraft(draft)
     setOffer(EMPTY_OFFER)
     setSaved(false)
     setModules([])
@@ -524,6 +527,9 @@ export default function App() {
     }
 
     setSaved(true)
+    if (offerSourceSketch) {
+      setOfferModuleSketchDraft(offerSourceSketch)
+    }
     setModules((current) => {
       if (current.length > 0) {
         return current
@@ -609,6 +615,8 @@ export default function App() {
           <ConstructorShell
             mode="offer"
             moduleNumber={firstModule.sequence}
+            initialDraft={offerModuleSketchDraft ?? offerSourceSketch}
+            onDraftChange={setOfferModuleSketchDraft}
             offerContext={{
               profileSystemLabel: selectedProfileSystem
                 ? `${selectedProfileSystem.manufacturer} ${selectedProfileSystem.name}`

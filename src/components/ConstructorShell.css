@@ -1,4 +1,4 @@
-.constructor-host {
+﻿.constructor-host {
   min-height: calc(100vh - 95px);
   padding: 18px;
   background:
@@ -873,7 +873,7 @@
   }
 }
 
-/* Constructor 01B.1 — persistent work-context identity */
+/* Constructor 01B.1 вЂ” persistent work-context identity */
 .constructor-context-breadcrumb {
   margin-bottom: 2px;
   color: #c8dadd;
@@ -908,3 +908,232 @@
     min-width: 132px;
   }
 }
+
+/* Constructor 01C вЂ” parametric dividers and profile-style visual language */
+.constructor-canvas.is-divider-tool,
+.constructor-canvas.is-divider-tool .constructor-parametric-frame {
+  cursor: crosshair;
+}
+
+/*
+ * Full-face frame mitres.
+ * Absolute children are positioned from the frame visual's inner/padding edge,
+ * so each line starts one full face-width outside that edge and ends exactly
+ * at the inner corner. This makes all four joints read as true 45В° frame cuts
+ * instead of short decorative ticks inside the glazing area.
+ */
+.constructor-frame-mitre {
+  position: absolute;
+  z-index: 2;
+  width: calc(var(--constructor-frame-face, 18px) * 1.414214);
+  height: 1px;
+  background: rgba(43, 67, 74, .82);
+  pointer-events: none;
+}
+
+.constructor-frame-mitre.mitre-tl {
+  left: calc(0px - var(--constructor-frame-face, 18px));
+  top: calc(0px - var(--constructor-frame-face, 18px));
+  transform: rotate(45deg);
+  transform-origin: left center;
+}
+
+.constructor-frame-mitre.mitre-tr {
+  right: calc(0px - var(--constructor-frame-face, 18px));
+  top: calc(0px - var(--constructor-frame-face, 18px));
+  transform: rotate(-45deg);
+  transform-origin: right center;
+}
+
+.constructor-frame-mitre.mitre-bl {
+  left: calc(0px - var(--constructor-frame-face, 18px));
+  bottom: calc(0px - var(--constructor-frame-face, 18px));
+  transform: rotate(-45deg);
+  transform-origin: left center;
+}
+
+.constructor-frame-mitre.mitre-br {
+  right: calc(0px - var(--constructor-frame-face, 18px));
+  bottom: calc(0px - var(--constructor-frame-face, 18px));
+  transform: rotate(45deg);
+  transform-origin: right center;
+}
+
+.constructor-divider {
+  position: absolute;
+  z-index: 7;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  appearance: none;
+  touch-action: none;
+}
+
+.constructor-divider.vertical {
+  top: var(--constructor-frame-face, 18px);
+  bottom: var(--constructor-frame-face, 18px);
+  width: 22px;
+  transform: translateX(-11px);
+  cursor: ew-resize;
+}
+
+.constructor-divider.horizontal {
+  left: var(--constructor-frame-face, 18px);
+  right: var(--constructor-frame-face, 18px);
+  height: 22px;
+  transform: translateY(-11px);
+  cursor: ns-resize;
+}
+
+.constructor-divider > span {
+  position: absolute;
+  box-sizing: border-box;
+  background: #667f86;
+  box-shadow:
+    inset 0 0 0 2px #eaf4f5,
+    inset 0 0 0 4px #7e989f;
+  pointer-events: none;
+}
+
+.constructor-divider.vertical > span {
+  top: 0;
+  bottom: 0;
+  left: 4px;
+  right: 4px;
+  border-left: 1px solid #49636a;
+  border-right: 1px solid #49636a;
+}
+
+.constructor-divider.horizontal > span {
+  left: 0;
+  right: 0;
+  top: 4px;
+  bottom: 4px;
+  border-top: 1px solid #49636a;
+  border-bottom: 1px solid #49636a;
+}
+
+.constructor-divider.vertical > span::before,
+.constructor-divider.vertical > span::after,
+.constructor-divider.horizontal > span::before,
+.constructor-divider.horizontal > span::after {
+  content: none;
+}
+
+.constructor-divider:hover > span,
+.constructor-divider.is-selected > span {
+  outline: 2px solid #0d9db3;
+  outline-offset: 2px;
+}
+
+.constructor-divider.is-selected::after {
+  content: '';
+  position: absolute;
+  background: #0d9db3;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px #0d9db3;
+}
+
+.constructor-divider.vertical.is-selected::after {
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  transform: translate(-50%, -50%);
+}
+
+.constructor-divider.horizontal.is-selected::after {
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  transform: translate(-50%, -50%);
+}
+
+.constructor-field-chain {
+  position: absolute;
+  z-index: 5;
+  color: #284b54;
+  font-size: 9px;
+  font-weight: 850;
+  pointer-events: none;
+}
+
+.constructor-field-chain.field-chain-width {
+  left: 0;
+  right: 0;
+  bottom: -61px;
+  height: 20px;
+}
+
+.constructor-field-chain.field-chain-width > span {
+  position: absolute;
+  box-sizing: border-box;
+  height: 20px;
+  border-top: 1px solid #6e858c;
+  text-align: center;
+}
+
+.constructor-field-chain.field-chain-width > span::before,
+.constructor-field-chain.field-chain-width > span::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  height: 10px;
+  border-left: 1px solid #6e858c;
+}
+
+.constructor-field-chain.field-chain-width > span::before { left: 0; }
+.constructor-field-chain.field-chain-width > span::after { right: 0; }
+
+.constructor-field-chain.field-chain-width > span {
+  padding-top: 4px;
+}
+
+.constructor-field-chain.field-chain-height {
+  top: 0;
+  bottom: 0;
+  right: -78px;
+  width: 26px;
+}
+
+.constructor-field-chain.field-chain-height > span {
+  position: absolute;
+  box-sizing: border-box;
+  width: 26px;
+  border-left: 1px solid #6e858c;
+  display: grid;
+  place-items: center;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+.constructor-field-chain.field-chain-height > span::before,
+.constructor-field-chain.field-chain-height > span::after {
+  content: '';
+  position: absolute;
+  left: -5px;
+  width: 10px;
+  border-top: 1px solid #6e858c;
+}
+
+.constructor-field-chain.field-chain-height > span::before { top: 0; }
+.constructor-field-chain.field-chain-height > span::after { bottom: 0; }
+
+.constructor-divider-properties .constructor-delete-divider {
+  min-height: 34px;
+  border: 1px solid #c78976;
+  border-radius: 5px;
+  background: #fff4ef;
+  color: #95513e;
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.constructor-divider-properties .constructor-delete-divider:hover {
+  border-color: #a95d47;
+  background: #ffe9df;
+}
+

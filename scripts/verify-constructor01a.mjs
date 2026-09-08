@@ -22,7 +22,7 @@ assert.match(app, /Тези стойности важат за всички мо
 assert.match(app, /<ConstructorShell/)
 assert.match(app, /onClose=\{\(\) => setConstructorMode\(null\)\}/)
 
-assert.match(shell, /FACADEFLOW CONSTRUCTOR · CONSTRUCTOR 01B/)
+assert.match(shell, /FACADEFLOW CONSTRUCTOR · CONSTRUCTOR 01[BC]/)
 assert.match(shell, /Параметрична каса/)
 assert.match(shell, /Grid \{gridVisible \? 'ON' : 'OFF'\}/)
 assert.match(shell, /Snap \{snapEnabled \? 'ON' : 'OFF'\}/)
@@ -33,7 +33,7 @@ assert.match(shell, /Профилна система/)
 assert.match(shell, /Заключени общи настройки/)
 assert.match(shell, /Тези стойности важат за всички модули в тази оферта/)
 assert.match(shell, /не се измисля профилен код или производствена геометрия/)
-assert.match(shell, /CONSTRUCTOR 01B/)
+assert.match(shell, /CONSTRUCTOR 01[BC]/)
 assert.match(shell, /Constructor 01C/)
 assert.match(shell, /Constructor 01D/)
 

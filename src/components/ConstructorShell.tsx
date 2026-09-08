@@ -8,14 +8,24 @@ import './ConstructorShell.css'
 
 export type ConstructorMode = 'offer' | 'free'
 
+export type ConstructorDividerAxis = 'vertical' | 'horizontal'
+
+export type ConstructorDividerSnapshot = {
+  id: string
+  axis: ConstructorDividerAxis
+  positionMm: number
+  span: 'full'
+}
+
 export type ConstructorDraftSnapshot = {
-  version: 'constructor-01b'
+  version: 'constructor-01b' | 'constructor-01c'
   frame: {
     xMm: number
     yMm: number
     widthMm: number
     heightMm: number
   }
+  dividers?: ConstructorDividerSnapshot[]
 }
 
 type ConstructorOfferContext = {
@@ -49,8 +59,10 @@ type ConstructorShellProps = {
   onCreateOfferFromSketch?: (draft: ConstructorDraftSnapshot | null) => void
 }
 
-type ConstructorTool = 'select' | 'pan' | 'frame'
+type ConstructorTool = 'select' | 'pan' | 'frame' | 'vertical-divider' | 'horizontal-divider'
 type FrameEdge = 'left' | 'right' | 'top' | 'bottom'
+
+type DividerModel = ConstructorDividerSnapshot
 
 type FrameModel = {
   xMm: number
@@ -77,6 +89,12 @@ type DragState =
       edge: FrameEdge
       original: FrameModel
     }
+  | {
+      kind: 'divider'
+      pointerId: number
+      dividerId: string
+      axis: ConstructorDividerAxis
+    }
 
 const ZOOM_STEPS = [75, 100, 125, 150] as const
 const SNAP_STEP_MM = 10
@@ -84,6 +102,7 @@ const GRID_STEP_MM = 50
 const MAJOR_GRID_STEP_MM = 500
 const BASE_PX_PER_MM = 0.28
 const MIN_FRAME_MM = 200
+const MIN_FIELD_MM = 120
 const MAX_WORLD_MM = 5000
 
 const FREE_MODULE_SUMMARY: ConstructorModuleSummary = {
@@ -132,10 +151,14 @@ function getInitialFrame(
   return null
 }
 
-function frameToSnapshot(frame: FrameModel): ConstructorDraftSnapshot {
+function frameToSnapshot(
+  frame: FrameModel,
+  dividers: DividerModel[],
+): ConstructorDraftSnapshot {
   return {
-    version: 'constructor-01b',
+    version: 'constructor-01c',
     frame: { ...frame },
+    dividers: dividers.map((divider) => ({ ...divider })),
   }
 }
 
@@ -158,6 +181,12 @@ export default function ConstructorShell({
   const [frame, setFrame] = useState<FrameModel | null>(() =>
     getInitialFrame(initialDraft, moduleSummary),
   )
+  const [dividers, setDividers] = useState<DividerModel[]>(() =>
+    initialDraft?.dividers?.map((divider) => ({ ...divider })) ?? [],
+  )
+  const dividerIdCounter = useRef((initialDraft?.dividers?.length ?? 0) + 1)
+  const [selectedDividerId, setSelectedDividerId] = useState<string | null>(null)
+  const [dividerPositionDraft, setDividerPositionDraft] = useState('')
   const [selectedEdge, setSelectedEdge] = useState<FrameEdge | null>(null)
   const [frameSelected, setFrameSelected] = useState(Boolean(frame))
   const [dragState, setDragState] = useState<DragState | null>(null)
@@ -177,6 +206,16 @@ export default function ConstructorShell({
     : 'Размерите още не са зададени'
 
   const title = isFreeMode ? 'Свободна скица' : `Модул ${moduleNumber}`
+  const selectedDivider = dividers.find((divider) => divider.id === selectedDividerId) ?? null
+  const verticalDividers = dividers
+    .filter((divider) => divider.axis === 'vertical')
+    .sort((a, b) => a.positionMm - b.positionMm)
+  const horizontalDividers = dividers
+    .filter((divider) => divider.axis === 'horizontal')
+    .sort((a, b) => a.positionMm - b.positionMm)
+  const conceptualFieldCount = frame
+    ? (verticalDividers.length + 1) * (horizontalDividers.length + 1)
+    : 0
 
   const snapMm = (value: number) => {
     const safeValue = clamp(value, 0, MAX_WORLD_MM)
@@ -198,20 +237,142 @@ export default function ConstructorShell({
     }
   }
 
+  const emitDraft = (nextFrame: FrameModel, nextDividers: DividerModel[]) => {
+    onDraftChange?.(frameToSnapshot(nextFrame, nextDividers))
+  }
+
   const broadcastFrame = (nextFrame: FrameModel) => {
     setFrame(nextFrame)
     setWidthDraft(String(Math.round(nextFrame.widthMm)))
     setHeightDraft(String(Math.round(nextFrame.heightMm)))
+    emitDraft(nextFrame, dividers)
 
-    if (isFreeMode) {
-      onDraftChange?.(frameToSnapshot(nextFrame))
+    if (!isFreeMode) {
+      onModuleSizeChange?.({
+        widthMm: Math.round(nextFrame.widthMm),
+        heightMm: Math.round(nextFrame.heightMm),
+      })
+    }
+  }
+
+  const broadcastDividers = (nextDividers: DividerModel[]) => {
+    setDividers(nextDividers)
+    if (frame) {
+      emitDraft(frame, nextDividers)
+    }
+  }
+
+  const getMinFrameDimension = (axis: ConstructorDividerAxis) => {
+    const positions = dividers
+      .filter((divider) => divider.axis === axis)
+      .map((divider) => divider.positionMm)
+    const furthest = positions.length ? Math.max(...positions) : 0
+    return Math.max(MIN_FRAME_MM, furthest + MIN_FIELD_MM)
+  }
+
+  const nearestDividerDistance = (
+    axis: ConstructorDividerAxis,
+    positionMm: number,
+    ignoredId?: string,
+  ) => {
+    const distances = dividers
+      .filter((divider) => divider.axis === axis && divider.id !== ignoredId)
+      .map((divider) => Math.abs(divider.positionMm - positionMm))
+    return distances.length ? Math.min(...distances) : Number.POSITIVE_INFINITY
+  }
+
+  const clampDividerPosition = (
+    axis: ConstructorDividerAxis,
+    rawPositionMm: number,
+    ignoredId?: string,
+  ) => {
+    if (!frame) {
+      return rawPositionMm
+    }
+
+    const axisLength = axis === 'vertical' ? frame.widthMm : frame.heightMm
+    let next = clamp(snapMm(rawPositionMm), MIN_FIELD_MM, axisLength - MIN_FIELD_MM)
+    const siblings = dividers
+      .filter((divider) => divider.axis === axis && divider.id !== ignoredId)
+      .sort((a, b) => a.positionMm - b.positionMm)
+
+    for (const sibling of siblings) {
+      if (Math.abs(sibling.positionMm - next) < MIN_FIELD_MM) {
+        next = next < sibling.positionMm
+          ? sibling.positionMm - MIN_FIELD_MM
+          : sibling.positionMm + MIN_FIELD_MM
+      }
+    }
+
+    return clamp(snapMm(next), MIN_FIELD_MM, axisLength - MIN_FIELD_MM)
+  }
+
+  const addDivider = (axis: ConstructorDividerAxis, point: CanvasPoint) => {
+    if (!frame) {
       return
     }
 
-    onModuleSizeChange?.({
-      widthMm: Math.round(nextFrame.widthMm),
-      heightMm: Math.round(nextFrame.heightMm),
-    })
+    const rawPosition = axis === 'vertical'
+      ? point.xMm - frame.xMm
+      : point.yMm - frame.yMm
+    const positionMm = clampDividerPosition(axis, rawPosition)
+
+    if (nearestDividerDistance(axis, positionMm) < MIN_FIELD_MM) {
+      return
+    }
+
+    const divider: DividerModel = {
+      id: `divider-${dividerIdCounter.current++}`,
+      axis,
+      positionMm: Math.round(positionMm),
+      span: 'full',
+    }
+    const nextDividers = [...dividers, divider]
+    broadcastDividers(nextDividers)
+    setSelectedDividerId(divider.id)
+    setDividerPositionDraft(String(Math.round(divider.positionMm)))
+    setFrameSelected(false)
+    setSelectedEdge(null)
+  }
+
+  const updateDividerPosition = (dividerId: string, rawPositionMm: number) => {
+    const divider = dividers.find((item) => item.id === dividerId)
+    if (!divider) {
+      return
+    }
+    const positionMm = clampDividerPosition(divider.axis, rawPositionMm, dividerId)
+    const nextDividers = dividers.map((item) =>
+      item.id === dividerId ? { ...item, positionMm: Math.round(positionMm) } : item,
+    )
+    broadcastDividers(nextDividers)
+    setDividerPositionDraft(String(Math.round(positionMm)))
+  }
+
+  const removeSelectedDivider = () => {
+    if (!selectedDividerId) {
+      return
+    }
+    broadcastDividers(dividers.filter((divider) => divider.id !== selectedDividerId))
+    setSelectedDividerId(null)
+    setDividerPositionDraft('')
+  }
+
+  const commitDividerPosition = () => {
+    if (!selectedDivider) {
+      return
+    }
+    const value = Number(dividerPositionDraft.trim())
+    if (!Number.isFinite(value)) {
+      setDividerPositionDraft(String(Math.round(selectedDivider.positionMm)))
+      return
+    }
+    updateDividerPosition(selectedDivider.id, value)
+  }
+
+  const resetDividerPositionDraft = () => {
+    if (selectedDivider) {
+      setDividerPositionDraft(String(Math.round(selectedDivider.positionMm)))
+    }
   }
 
   const handleCanvasPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -234,12 +395,14 @@ export default function ConstructorShell({
       })
       setFrameSelected(false)
       setSelectedEdge(null)
+      setSelectedDividerId(null)
       return
     }
 
     if (activeTool === 'select' && event.target === event.currentTarget) {
       setFrameSelected(false)
       setSelectedEdge(null)
+      setSelectedDividerId(null)
     }
   }
 
@@ -265,19 +428,30 @@ export default function ConstructorShell({
       return
     }
 
+    if (dragState.kind === 'divider') {
+      if (!frame) {
+        return
+      }
+      const rawPosition = dragState.axis === 'vertical'
+        ? point.xMm - frame.xMm
+        : point.yMm - frame.yMm
+      updateDividerPosition(dragState.dividerId, rawPosition)
+      return
+    }
+
     const { original, edge } = dragState
     let nextFrame = original
 
     if (edge === 'right') {
       nextFrame = {
         ...original,
-        widthMm: clamp(point.xMm - original.xMm, MIN_FRAME_MM, MAX_WORLD_MM),
+        widthMm: clamp(point.xMm - original.xMm, getMinFrameDimension('vertical'), MAX_WORLD_MM),
       }
     }
 
     if (edge === 'left') {
       const rightMm = original.xMm + original.widthMm
-      const nextX = clamp(point.xMm, 0, rightMm - MIN_FRAME_MM)
+      const nextX = clamp(point.xMm, 0, rightMm - getMinFrameDimension('vertical'))
       nextFrame = {
         ...original,
         xMm: nextX,
@@ -288,13 +462,13 @@ export default function ConstructorShell({
     if (edge === 'bottom') {
       nextFrame = {
         ...original,
-        heightMm: clamp(point.yMm - original.yMm, MIN_FRAME_MM, MAX_WORLD_MM),
+        heightMm: clamp(point.yMm - original.yMm, getMinFrameDimension('horizontal'), MAX_WORLD_MM),
       }
     }
 
     if (edge === 'top') {
       const bottomMm = original.yMm + original.heightMm
-      const nextY = clamp(point.yMm, 0, bottomMm - MIN_FRAME_MM)
+      const nextY = clamp(point.yMm, 0, bottomMm - getMinFrameDimension('horizontal'))
       nextFrame = {
         ...original,
         yMm: nextY,
@@ -357,6 +531,29 @@ export default function ConstructorShell({
     })
   }
 
+  const startDividerDrag = (
+    divider: DividerModel,
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ) => {
+    if (!frame) {
+      return
+    }
+    event.preventDefault()
+    event.stopPropagation()
+    canvasRef.current?.setPointerCapture(event.pointerId)
+    setActiveTool('select')
+    setSelectedDividerId(divider.id)
+    setDividerPositionDraft(String(Math.round(divider.positionMm)))
+    setFrameSelected(false)
+    setSelectedEdge(null)
+    setDragState({
+      kind: 'divider',
+      pointerId: event.pointerId,
+      dividerId: divider.id,
+      axis: divider.axis,
+    })
+  }
+
   const commitNumericDimension = (dimension: 'widthMm' | 'heightMm') => {
     if (!frame) {
       return
@@ -365,7 +562,11 @@ export default function ConstructorShell({
     const draft = dimension === 'widthMm' ? widthDraft : heightDraft
     const value = Number(draft.trim())
 
-    if (!Number.isFinite(value) || value < MIN_FRAME_MM) {
+    const minimum = dimension === 'widthMm'
+      ? getMinFrameDimension('vertical')
+      : getMinFrameDimension('horizontal')
+
+    if (!Number.isFinite(value) || value < minimum) {
       if (dimension === 'widthMm') {
         setWidthDraft(String(Math.round(frame.widthMm)))
       } else {
@@ -431,12 +632,12 @@ export default function ConstructorShell({
                 <>Оферта <i>›</i> <strong>Модул {moduleNumber}</strong> <i>›</i> Конструктор</>
               )}
             </div>
-            <span>FACADEFLOW CONSTRUCTOR · CONSTRUCTOR 01B</span>
+            <span>FACADEFLOW CONSTRUCTOR · CONSTRUCTOR 01C</span>
             <h2>{title}</h2>
             <p>
               {isFreeMode
                 ? 'Свободна параметрична скица. Начертай касата с мишката; система може да бъде приложена по-късно.'
-                : 'Параметрична каса с точни размери, селекция на ръбове и mouse resize.'}
+                : 'Параметрична каса с вертикални и хоризонтални делители, live размери и mouse drag.'}
             </p>
           </div>
         </div>
@@ -565,19 +766,39 @@ export default function ConstructorShell({
               </span>
             </button>
 
-            <button type="button" disabled>
+            <button
+              type="button"
+              disabled={!frame}
+              className={activeTool === 'vertical-divider' ? 'is-active' : ''}
+              onClick={() => {
+                setActiveTool('vertical-divider')
+                setFrameSelected(false)
+                setSelectedEdge(null)
+                setSelectedDividerId(null)
+              }}
+            >
               <span className="constructor-tool-glyph">│</span>
               <span>
                 <b>Вертикален делител</b>
-                <small>Constructor 01C</small>
+                <small>{frame ? 'Кликни в полето' : 'Първо създай каса'}</small>
               </span>
             </button>
 
-            <button type="button" disabled>
+            <button
+              type="button"
+              disabled={!frame}
+              className={activeTool === 'horizontal-divider' ? 'is-active' : ''}
+              onClick={() => {
+                setActiveTool('horizontal-divider')
+                setFrameSelected(false)
+                setSelectedEdge(null)
+                setSelectedDividerId(null)
+              }}
+            >
               <span className="constructor-tool-glyph">─</span>
               <span>
                 <b>Хоризонтален делител</b>
-                <small>Constructor 01C</small>
+                <small>{frame ? 'Кликни в полето' : 'Първо създай каса'}</small>
               </span>
             </button>
 
@@ -627,7 +848,7 @@ export default function ConstructorShell({
 
           <div
             ref={canvasRef}
-            className={`constructor-canvas${gridVisible ? ' has-grid' : ''}${activeTool === 'frame' ? ' is-frame-tool' : ''}`}
+            className={`constructor-canvas${gridVisible ? ' has-grid' : ''}${activeTool === 'frame' ? ' is-frame-tool' : ''}${activeTool === 'vertical-divider' || activeTool === 'horizontal-divider' ? ' is-divider-tool' : ''}`}
             style={{
               '--constructor-grid-step': `${GRID_STEP_MM * pxPerMm}px`,
               '--constructor-major-grid-step': `${MAJOR_GRID_STEP_MM * pxPerMm}px`,
@@ -669,13 +890,89 @@ export default function ConstructorShell({
                 } as CSSProperties}
                 onPointerDown={(event) => {
                   event.stopPropagation()
-                  if (activeTool === 'select' && frame) {
+                  if (!frame) {
+                    return
+                  }
+                  if (activeTool === 'vertical-divider' || activeTool === 'horizontal-divider') {
+                    addDivider(
+                      activeTool === 'vertical-divider' ? 'vertical' : 'horizontal',
+                      pointFromPointer(event),
+                    )
+                    return
+                  }
+                  if (activeTool === 'select') {
                     setFrameSelected(true)
                     setSelectedEdge(null)
+                    setSelectedDividerId(null)
                   }
                 }}
               >
-                <div className="constructor-frame-visual" aria-hidden="true" />
+                <div className="constructor-frame-visual" aria-hidden="true">
+                  <i className="constructor-frame-mitre mitre-tl" />
+                  <i className="constructor-frame-mitre mitre-tr" />
+                  <i className="constructor-frame-mitre mitre-bl" />
+                  <i className="constructor-frame-mitre mitre-br" />
+                </div>
+
+                {frame && dragState?.kind !== 'create' && dividers.map((divider) => (
+                  <button
+                    key={divider.id}
+                    type="button"
+                    className={`constructor-divider ${divider.axis} ${selectedDividerId === divider.id ? 'is-selected' : ''}`}
+                    style={divider.axis === 'vertical'
+                      ? { left: `${divider.positionMm * pxPerMm}px` }
+                      : { top: `${divider.positionMm * pxPerMm}px` }}
+                    aria-label={divider.axis === 'vertical' ? 'Вертикален делител' : 'Хоризонтален делител'}
+                    onPointerDown={(event) => startDividerDrag(divider, event)}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      setSelectedDividerId(divider.id)
+                      setDividerPositionDraft(String(Math.round(divider.positionMm)))
+                      setFrameSelected(false)
+                      setSelectedEdge(null)
+                    }}
+                  >
+                    <span aria-hidden="true" />
+                  </button>
+                ))}
+
+                {frame && verticalDividers.length > 0 && (
+                  <div className="constructor-field-chain field-chain-width" aria-hidden="true">
+                    {[0, ...verticalDividers.map((divider) => divider.positionMm), frame.widthMm].slice(0, -1).map((startMm, index) => {
+                      const stops = [...verticalDividers.map((divider) => divider.positionMm), frame.widthMm]
+                      const endMm = stops[index]
+                      const widthMm = endMm - startMm
+                      return (
+                        <span
+                          key={`w-${startMm}-${endMm}`}
+                          style={{
+                            left: `${startMm * pxPerMm}px`,
+                            width: `${widthMm * pxPerMm}px`,
+                          }}
+                        >{Math.round(widthMm)}</span>
+                      )
+                    })}
+                  </div>
+                )}
+
+                {frame && horizontalDividers.length > 0 && (
+                  <div className="constructor-field-chain field-chain-height" aria-hidden="true">
+                    {[0, ...horizontalDividers.map((divider) => divider.positionMm), frame.heightMm].slice(0, -1).map((startMm, index) => {
+                      const stops = [...horizontalDividers.map((divider) => divider.positionMm), frame.heightMm]
+                      const endMm = stops[index]
+                      const heightMm = endMm - startMm
+                      return (
+                        <span
+                          key={`h-${startMm}-${endMm}`}
+                          style={{
+                            top: `${startMm * pxPerMm}px`,
+                            height: `${heightMm * pxPerMm}px`,
+                          }}
+                        >{Math.round(heightMm)}</span>
+                      )
+                    })}
+                  </div>
+                )}
 
                 {frame && dragState?.kind !== 'create' && (
                   <>
@@ -719,7 +1016,15 @@ export default function ConstructorShell({
           <footer className="constructor-statusbar">
             <span>
               ИНСТРУМЕНТ:{' '}
-              {activeTool === 'select' ? 'Селекция' : activeTool === 'pan' ? 'Панорама' : 'Каса / рамка'}
+              {activeTool === 'select'
+                ? 'Селекция'
+                : activeTool === 'pan'
+                  ? 'Панорама'
+                  : activeTool === 'frame'
+                    ? 'Каса / рамка'
+                    : activeTool === 'vertical-divider'
+                      ? 'Вертикален делител'
+                      : 'Хоризонтален делител'}
             </span>
             <span>X: {cursorPoint ? Math.round(cursorPoint.xMm) : '—'} mm</span>
             <span>Y: {cursorPoint ? Math.round(cursorPoint.yMm) : '—'} mm</span>
@@ -754,7 +1059,7 @@ export default function ConstructorShell({
                 <button
                   type="button"
                   className="constructor-create-offer"
-                  onClick={() => onCreateOfferFromSketch(frame ? frameToSnapshot(frame) : null)}
+                  onClick={() => onCreateOfferFromSketch(frame ? frameToSnapshot(frame, dividers) : null)}
                 >
                   Създай оферта от тази скица
                 </button>
@@ -785,10 +1090,59 @@ export default function ConstructorShell({
           <section className="constructor-properties-section">
             <div className="constructor-panel-heading">
               <span>СВОЙСТВА</span>
-              <b>{frameSelected && frame ? 'Каса / рамка' : 'Избран елемент'}</b>
+              <b>{selectedDivider ? (selectedDivider.axis === 'vertical' ? 'Вертикален делител' : 'Хоризонтален делител') : frameSelected && frame ? 'Каса / рамка' : 'Избран елемент'}</b>
             </div>
 
-            {frameSelected && frame ? (
+            {selectedDivider && frame ? (
+              <div className="constructor-frame-properties constructor-divider-properties">
+                <label>
+                  <span>{selectedDivider.axis === 'vertical' ? 'Позиция отляво' : 'Позиция отгоре'}</span>
+                  <div><input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    aria-label="Точна позиция на делителя в милиметри"
+                    value={dividerPositionDraft}
+                    onFocus={(event) => event.currentTarget.select()}
+                    onChange={(event) => setDividerPositionDraft(event.target.value)}
+                    onBlur={commitDividerPosition}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        commitDividerPosition()
+                        event.currentTarget.blur()
+                      }
+                      if (event.key === 'Escape') {
+                        resetDividerPositionDraft()
+                        event.currentTarget.blur()
+                      }
+                    }}
+                  /><em>mm</em></div>
+                </label>
+                <div className="constructor-property-row">
+                  <span>Ориентация</span>
+                  <b>{selectedDivider.axis === 'vertical' ? 'Вертикален' : 'Хоризонтален'}</b>
+                </div>
+                <div className="constructor-property-row">
+                  <span>Обхват</span>
+                  <b>По цялото поле · Constructor 01C</b>
+                </div>
+                <div className="constructor-property-row">
+                  <span>Концептуални полета</span>
+                  <b>{conceptualFieldCount}</b>
+                </div>
+                <button
+                  type="button"
+                  className="constructor-delete-divider"
+                  onClick={removeSelectedDivider}
+                >
+                  Изтрий делителя
+                </button>
+                <p className="constructor-invariant-note">
+                  Drag мести делителя по мрежата. За точна позиция въведи число.
+                  Размерите на полетата са конструктивна схема, не производствен разкрой.
+                </p>
+              </div>
+            ) : frameSelected && frame ? (
               <div className="constructor-frame-properties">
                 <label>
                   <span>Ширина</span>
@@ -863,8 +1217,8 @@ export default function ConstructorShell({
               <div className="constructor-selection-empty">
                 <span>{frame ? 'Маркирай касата или неин ръб' : 'Няма създадена каса'}</span>
                 <p>
-                  Constructor 01B поддържа параметрична каса, live размери и resize
-                  през ляв, десен, горен и долен ръб.
+                  Constructor 01C поддържа параметрична каса, вертикални и хоризонтални делители,
+                  mouse drag и live размери на полетата.
                 </p>
               </div>
             )}
@@ -874,8 +1228,8 @@ export default function ConstructorShell({
             <span>ТЕХНИЧЕСКА ГРАНИЦА</span>
             <b>Конструктивна скица, не машинна геометрия</b>
             <p>
-              Касата и габаритът са параметрични. Делители, крила, профилен избор,
-              срезове и машинни данни още не се генерират.
+              Касата, габаритът и пълнообхватните делители са параметрични. Крилата,
+              отварянията, профилният избор, срезовете и машинните данни още не се генерират.
             </p>
           </section>
         </aside>

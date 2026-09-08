@@ -18,7 +18,7 @@ const packageJson = JSON.parse(
   await readFile(new URL('../package.json', import.meta.url), 'utf8'),
 )
 
-assert.match(shell, /CONSTRUCTOR 01B/)
+assert.match(shell, /CONSTRUCTOR 01[BC]/)
 assert.match(shell, /type FrameEdge = 'left' \| 'right' \| 'top' \| 'bottom'/)
 assert.match(shell, /type FrameModel/)
 assert.match(shell, /SNAP_STEP_MM = 10/)
@@ -76,6 +76,6 @@ console.log('KEYBOARD DIMENSIONS: TYPE -> ENTER/BLUR COMMIT | ESC CANCEL')
 console.log('FREE SKETCH -> OFFER DIMENSION TRANSFER: YES')
 console.log('OFFER MODULE SIZE SYNC: YES')
 console.log('PROFILE-AWARE VISIBLE WIDTH/DEPTH: NOT YET')
-console.log('DIVIDERS: NOT YET - CONSTRUCTOR 01C')
+console.log('DIVIDERS: IMPLEMENTED BY LATER CONSTRUCTOR 01C')
 console.log('AUTOMATIC PRODUCTION GEOMETRY: NO')
 console.log('MACHINE READY: NO')

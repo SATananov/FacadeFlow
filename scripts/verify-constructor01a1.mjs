@@ -16,7 +16,7 @@ const checks = [
   [shell.includes("export type ConstructorMode = 'offer' | 'free'"), 'ConstructorShell has explicit shared mode type'],
   [shell.includes('Не е избрана'), 'Free mode does not invent a profile system'],
   [shell.includes('Създай оферта от тази скица'), 'Free mode exposes offer conversion entry'],
-  [shell.includes('CONSTRUCTOR 01B'), 'Constructor lineage advanced to 01B'],
+  [/CONSTRUCTOR 01[BC]/.test(shell), 'Constructor lineage advanced through 01B/01C'],
   [appCss.includes('.constructor-direct-action'), 'Direct constructor action has FacadeFlow styling'],
   [shellCss.includes('.constructor-free-context'), 'Free sketch context has dedicated styling'],
   [acceptance.includes('No profile system is automatically selected.'), 'Acceptance forbids automatic system selection'],
