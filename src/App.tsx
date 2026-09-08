@@ -17,6 +17,8 @@ import {
   areOfferModuleFieldsDescribed,
   getOfferModuleConfiguredFieldCount,
   getOfferModuleConfiguredOpeningCount,
+  getOfferModuleConfiguredHandingCount,
+  getOfferModuleHandingRelevantFieldCount,
   getOfferModuleMissingFields,
   getOfferModuleOperableFieldCount,
   isOfferModuleBasicsReady,
@@ -26,11 +28,13 @@ import {
   MODULE_FIELD_TYPE_PRESETS,
   MODULE_FIELD_WIDTH_PRESETS_MM,
   MODULE_OPENING_MODE_PRESETS,
+  MODULE_OPENING_HANDING_PRESETS,
   MODULE_PRODUCT_TYPE_PRESETS,
   resizeOfferModuleFields,
   type ModuleFieldType,
   type ModuleInputSource,
   type ModuleOpeningMode,
+  type ModuleOpeningHanding,
   type ModuleProductType,
   type OfferModuleDraft,
   type OfferModuleFieldDraft,
@@ -235,6 +239,12 @@ export default function App() {
   const firstModuleConfiguredOpeningCount = firstModule
     ? getOfferModuleConfiguredOpeningCount(firstModule)
     : 0
+  const firstModuleHandingRelevantFieldCount = firstModule
+    ? getOfferModuleHandingRelevantFieldCount(firstModule)
+    : 0
+  const firstModuleConfiguredHandingCount = firstModule
+    ? getOfferModuleConfiguredHandingCount(firstModule)
+    : 0
   const firstModuleFieldsDescribed = firstModule
     ? areOfferModuleFieldsDescribed(firstModule)
     : false
@@ -354,6 +364,9 @@ export default function App() {
       openingMode: null,
       customOpeningModeLabel: '',
       openingModeSource: 'unset' as ModuleInputSource,
+      openingHanding: null,
+      customOpeningHandingLabel: '',
+      openingHandingSource: 'unset' as ModuleInputSource,
     }
 
     if (value === '') {
@@ -387,11 +400,18 @@ export default function App() {
     fieldIndex: number,
     value: string,
   ) => {
+    const resetHanding = {
+      openingHanding: null,
+      customOpeningHandingLabel: '',
+      openingHandingSource: 'unset' as ModuleInputSource,
+    }
+
     if (value === '') {
       updateFirstModuleField(fieldIndex, {
         openingMode: null,
         customOpeningModeLabel: '',
         openingModeSource: 'unset',
+        ...resetHanding,
       })
       return
     }
@@ -404,10 +424,40 @@ export default function App() {
       return
     }
 
+    const openingMode = value as ModuleOpeningMode
     updateFirstModuleField(fieldIndex, {
-      openingMode: value as ModuleOpeningMode,
+      openingMode,
       customOpeningModeLabel: '',
       openingModeSource: 'preset',
+      ...(openingMode === 'tilt' ? resetHanding : {}),
+    })
+  }
+
+  const selectFirstModuleFieldOpeningHanding = (
+    fieldIndex: number,
+    value: string,
+  ) => {
+    if (value === '') {
+      updateFirstModuleField(fieldIndex, {
+        openingHanding: null,
+        customOpeningHandingLabel: '',
+        openingHandingSource: 'unset',
+      })
+      return
+    }
+
+    if (value === 'custom') {
+      updateFirstModuleField(fieldIndex, {
+        openingHanding: null,
+        openingHandingSource: 'manual',
+      })
+      return
+    }
+
+    updateFirstModuleField(fieldIndex, {
+      openingHanding: value as ModuleOpeningHanding,
+      customOpeningHandingLabel: '',
+      openingHandingSource: 'preset',
     })
   }
 
@@ -1618,13 +1668,13 @@ export default function App() {
                   >
                     <div className="module-fields-heading">
                       <div>
-                        <span>CONCEPT 06C + 06D</span>
+                        <span>CONCEPT 06C + 06D + 06E</span>
                         <h3 id="module-fields-title">Полетата на Модул 1</h3>
                         <p>
                           Всяко поле е отделна опционална чернова. Изберете
                           потвърден тип от менюто или използвайте ръчно описание
                           за нестандартен случай. За отваряемо поле може отделно
-                          да зададете начин на отваряне; всичко може да остане празно.
+                          да зададете начин на отваряне и, когато е приложимо, работна страна ляво / дясно; всичко може да остане празно.
                         </p>
                       </div>
 
@@ -1634,6 +1684,9 @@ export default function App() {
                         </span>
                         <span>
                           {firstModuleConfiguredOpeningCount} / {firstModuleOperableFieldCount} отваряния
+                        </span>
+                        <span>
+                          {firstModuleConfiguredHandingCount} / {firstModuleHandingRelevantFieldCount} страни
                         </span>
                       </div>
                     </div>
@@ -1732,9 +1785,62 @@ export default function App() {
                                   </label>
                                 )}
 
+                                {(field.openingModeSource === 'manual' ||
+                                  (field.openingModeSource === 'preset' &&
+                                    (field.openingMode === 'side-hinged' ||
+                                      field.openingMode === 'tilt-turn'))) && (
+                                  <div className="module-handing-block">
+                                    <label className="field">
+                                      <span>Работна страна на отваряне</span>
+                                      <select
+                                        value={
+                                          field.openingHandingSource === 'manual'
+                                            ? 'custom'
+                                            : field.openingHanding ?? ''
+                                        }
+                                        onChange={(event) =>
+                                          selectFirstModuleFieldOpeningHanding(
+                                            fieldIndex,
+                                            event.target.value,
+                                          )
+                                        }
+                                      >
+                                        <option value="">Не е зададена</option>
+                                        {MODULE_OPENING_HANDING_PRESETS.map((option) => (
+                                          <option key={option.id} value={option.id}>
+                                            {option.labelBg}
+                                          </option>
+                                        ))}
+                                        <option value="custom">Друго / ръчно</option>
+                                      </select>
+                                    </label>
+
+                                    {field.openingHandingSource === 'manual' && (
+                                      <label className="field">
+                                        <span>Ръчно описание на страната</span>
+                                        <input
+                                          value={field.customOpeningHandingLabel}
+                                          onChange={(event) =>
+                                            updateFirstModuleField(fieldIndex, {
+                                              customOpeningHandingLabel: event.target.value,
+                                            })
+                                          }
+                                          placeholder="Напр. по схема / специално условие"
+                                        />
+                                      </label>
+                                    )}
+
+                                    <p className="module-handing-note">
+                                      Ляво / дясно е работна човешка стойност. Референтната
+                                      гледна страна още не е стандартизирана и не се използва
+                                      за автоматична геометрия или машинни данни.
+                                    </p>
+                                  </div>
+                                )}
+
                                 <p className="module-opening-note">
-                                  Начинът на отваряне е опционален. Посоката ляво / дясно
-                                  и страната на пантите още не се определят автоматично.
+                                  Начинът на отваряне и работната страна са опционални.
+                                  При падащо отваряне ляво / дясно не се изисква.
                                 </p>
                               </div>
                             )}
@@ -1826,8 +1932,9 @@ export default function App() {
                       Полетата са концептуално описание. Начините на отваряне също
                       остават концептуални. FacadeFlow не създава автоматично делители,
                       крила или геометрия,
-                      не изравнява ширини и не определя ляво / дясно, страна на панти,
-                      профили, механизми или производствени размери на този етап.
+                      не изравнява ширини и не превръща работното ляво / дясно в геометрична
+                      или производствена посока. Референтната гледна страна, страна на панти,
+                      профили, механизми и производствени размери още не се извеждат автоматично.
                     </div>
                   </section>
                 )}

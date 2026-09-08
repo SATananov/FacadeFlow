@@ -2165,3 +2165,25 @@
 .module-fields-progress span {
   display: block;
 }
+
+
+/* Concept 06E - optional working opening handing */
+.module-handing-block {
+  padding: 10px;
+  display: grid;
+  gap: 9px;
+  border: 1px dashed #b7cfd4;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.module-handing-note {
+  margin: 0;
+  padding: 8px 9px;
+  border-left: 3px solid #d3a55b;
+  background: #fffaf1;
+  color: #77664d;
+  font-size: 8.5px;
+  font-weight: 700;
+  line-height: 1.5;
+}

@@ -4,6 +4,7 @@ export type ModuleProductType = 'window' | 'door'
 export type ModuleInputSource = 'unset' | 'preset' | 'manual'
 export type ModuleFieldType = 'fixed' | 'operable'
 export type ModuleOpeningMode = 'side-hinged' | 'tilt' | 'tilt-turn'
+export type ModuleOpeningHanding = 'left' | 'right'
 
 export const MODULE_PRODUCT_TYPE_PRESETS = [
   { id: 'window', labelBg: 'Прозорец' },
@@ -36,6 +37,20 @@ export const MODULE_OPENING_MODE_PRESETS = [
   labelBg: string
 }[]
 
+
+/**
+ * Optional human-entered working handing for opening modes that use a side.
+ * Left/right is intentionally NOT treated as production geometry yet because
+ * the reference viewing side has not been standardized in Concept 06E.
+ */
+export const MODULE_OPENING_HANDING_PRESETS = [
+  { id: 'left', labelBg: 'Ляво' },
+  { id: 'right', labelBg: 'Дясно' },
+] as const satisfies readonly {
+  id: ModuleOpeningHanding
+  labelBg: string
+}[]
+
 /**
  * No company-confirmed standard field widths have been supplied yet.
  * Field widths are optional and remain manual until real presets are confirmed.
@@ -56,6 +71,10 @@ export interface OfferModuleFieldDraft {
   openingMode: ModuleOpeningMode | null
   customOpeningModeLabel: string
   openingModeSource: ModuleInputSource
+
+  openingHanding: ModuleOpeningHanding | null
+  customOpeningHandingLabel: string
+  openingHandingSource: ModuleInputSource
 }
 
 export function createOfferModuleFieldDraft(sequence: number): OfferModuleFieldDraft {
@@ -71,6 +90,10 @@ export function createOfferModuleFieldDraft(sequence: number): OfferModuleFieldD
     openingMode: null,
     customOpeningModeLabel: '',
     openingModeSource: 'unset',
+
+    openingHanding: null,
+    customOpeningHandingLabel: '',
+    openingHandingSource: 'unset',
   }
 }
 
@@ -123,6 +146,42 @@ export function hasOfferModuleOpeningMode(
 
   if (field.openingModeSource === 'manual') {
     return field.customOpeningModeLabel.trim().length > 0
+  }
+
+  return false
+}
+
+
+export function isOfferModuleOpeningHandingRelevant(
+  field: OfferModuleFieldDraft,
+): boolean {
+  if (!isOfferModuleFieldOperable(field)) {
+    return false
+  }
+
+  if (field.openingModeSource === 'manual') {
+    return true
+  }
+
+  return (
+    field.openingModeSource === 'preset' &&
+    (field.openingMode === 'side-hinged' || field.openingMode === 'tilt-turn')
+  )
+}
+
+export function hasOfferModuleOpeningHanding(
+  field: OfferModuleFieldDraft,
+): boolean {
+  if (!isOfferModuleOpeningHandingRelevant(field)) {
+    return false
+  }
+
+  if (field.openingHandingSource === 'preset') {
+    return field.openingHanding !== null
+  }
+
+  if (field.openingHandingSource === 'manual') {
+    return field.customOpeningHandingLabel.trim().length > 0
   }
 
   return false
@@ -277,6 +336,19 @@ export function getOfferModuleConfiguredOpeningCount(
   module: OfferModuleDraft,
 ): number {
   return module.fields.filter(hasOfferModuleOpeningMode).length
+}
+
+
+export function getOfferModuleHandingRelevantFieldCount(
+  module: OfferModuleDraft,
+): number {
+  return module.fields.filter(isOfferModuleOpeningHandingRelevant).length
+}
+
+export function getOfferModuleConfiguredHandingCount(
+  module: OfferModuleDraft,
+): number {
+  return module.fields.filter(hasOfferModuleOpeningHanding).length
 }
 
 export function areOfferModuleFieldsDescribed(
