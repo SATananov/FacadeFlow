@@ -2135,3 +2135,33 @@
     white-space: normal;
   }
 }
+
+/* Concept 06D - optional opening mode for operable fields */
+.module-opening-block {
+  padding: 11px;
+  display: grid;
+  gap: 10px;
+  border: 1px solid #c7dce0;
+  border-radius: 9px;
+  background: #f7fbfc;
+}
+
+.module-opening-note {
+  margin: 0;
+  padding: 8px 9px;
+  border-left: 3px solid #8cbcc5;
+  background: #ffffff;
+  color: #6c8388;
+  font-size: 8.5px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.module-fields-progress {
+  display: grid;
+  gap: 2px;
+}
+
+.module-fields-progress span {
+  display: block;
+}

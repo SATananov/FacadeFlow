@@ -1,4 +1,4 @@
-﻿import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import {
   getConfirmedGlazingOptions,
   getConfirmedHardwareStandards,
@@ -16,17 +16,21 @@ import {
   createFirstOfferModule,
   areOfferModuleFieldsDescribed,
   getOfferModuleConfiguredFieldCount,
+  getOfferModuleConfiguredOpeningCount,
   getOfferModuleMissingFields,
+  getOfferModuleOperableFieldCount,
   isOfferModuleBasicsReady,
   isOfferModuleStructureReady,
   MODULE_DIMENSION_PRESETS_MM,
   MODULE_FIELD_COUNT_PRESETS,
   MODULE_FIELD_TYPE_PRESETS,
   MODULE_FIELD_WIDTH_PRESETS_MM,
+  MODULE_OPENING_MODE_PRESETS,
   MODULE_PRODUCT_TYPE_PRESETS,
   resizeOfferModuleFields,
   type ModuleFieldType,
   type ModuleInputSource,
+  type ModuleOpeningMode,
   type ModuleProductType,
   type OfferModuleDraft,
   type OfferModuleFieldDraft,
@@ -225,6 +229,12 @@ export default function App() {
   const firstModuleConfiguredFieldCount = firstModule
     ? getOfferModuleConfiguredFieldCount(firstModule)
     : 0
+  const firstModuleOperableFieldCount = firstModule
+    ? getOfferModuleOperableFieldCount(firstModule)
+    : 0
+  const firstModuleConfiguredOpeningCount = firstModule
+    ? getOfferModuleConfiguredOpeningCount(firstModule)
+    : 0
   const firstModuleFieldsDescribed = firstModule
     ? areOfferModuleFieldsDescribed(firstModule)
     : false
@@ -340,11 +350,18 @@ export default function App() {
     fieldIndex: number,
     value: string,
   ) => {
+    const resetOpening = {
+      openingMode: null,
+      customOpeningModeLabel: '',
+      openingModeSource: 'unset' as ModuleInputSource,
+    }
+
     if (value === '') {
       updateFirstModuleField(fieldIndex, {
         fieldType: null,
         customFieldTypeLabel: '',
         fieldTypeSource: 'unset',
+        ...resetOpening,
       })
       return
     }
@@ -353,6 +370,7 @@ export default function App() {
       updateFirstModuleField(fieldIndex, {
         fieldType: null,
         fieldTypeSource: 'manual',
+        ...resetOpening,
       })
       return
     }
@@ -361,6 +379,35 @@ export default function App() {
       fieldType: value as ModuleFieldType,
       customFieldTypeLabel: '',
       fieldTypeSource: 'preset',
+      ...(value === 'operable' ? {} : resetOpening),
+    })
+  }
+
+  const selectFirstModuleFieldOpeningMode = (
+    fieldIndex: number,
+    value: string,
+  ) => {
+    if (value === '') {
+      updateFirstModuleField(fieldIndex, {
+        openingMode: null,
+        customOpeningModeLabel: '',
+        openingModeSource: 'unset',
+      })
+      return
+    }
+
+    if (value === 'custom') {
+      updateFirstModuleField(fieldIndex, {
+        openingMode: null,
+        openingModeSource: 'manual',
+      })
+      return
+    }
+
+    updateFirstModuleField(fieldIndex, {
+      openingMode: value as ModuleOpeningMode,
+      customOpeningModeLabel: '',
+      openingModeSource: 'preset',
     })
   }
 
@@ -1571,18 +1618,23 @@ export default function App() {
                   >
                     <div className="module-fields-heading">
                       <div>
-                        <span>CONCEPT 06C</span>
+                        <span>CONCEPT 06C + 06D</span>
                         <h3 id="module-fields-title">Полетата на Модул 1</h3>
                         <p>
                           Всяко поле е отделна опционална чернова. Изберете
                           потвърден тип от менюто или използвайте ръчно описание
-                          за нестандартен случай. Ширината на полето също може да
-                          остане празна.
+                          за нестандартен случай. За отваряемо поле може отделно
+                          да зададете начин на отваряне; всичко може да остане празно.
                         </p>
                       </div>
 
                       <div className="module-fields-progress">
-                        {firstModuleConfiguredFieldCount} / {firstModule.fields.length} описани
+                        <span>
+                          {firstModuleConfiguredFieldCount} / {firstModule.fields.length} типове
+                        </span>
+                        <span>
+                          {firstModuleConfiguredOpeningCount} / {firstModuleOperableFieldCount} отваряния
+                        </span>
                       </div>
                     </div>
 
@@ -1636,6 +1688,56 @@ export default function App() {
                               />
                             </label>
                           )}
+
+                          {field.fieldTypeSource === 'preset' &&
+                            field.fieldType === 'operable' && (
+                              <div className="module-opening-block">
+                                <label className="field">
+                                  <span>Начин на отваряне</span>
+                                  <select
+                                    value={
+                                      field.openingModeSource === 'manual'
+                                        ? 'custom'
+                                        : field.openingMode ?? ''
+                                    }
+                                    onChange={(event) =>
+                                      selectFirstModuleFieldOpeningMode(
+                                        fieldIndex,
+                                        event.target.value,
+                                      )
+                                    }
+                                  >
+                                    <option value="">Не е зададено</option>
+                                    {MODULE_OPENING_MODE_PRESETS.map((option) => (
+                                      <option key={option.id} value={option.id}>
+                                        {option.labelBg}
+                                      </option>
+                                    ))}
+                                    <option value="custom">Друго / ръчно</option>
+                                  </select>
+                                </label>
+
+                                {field.openingModeSource === 'manual' && (
+                                  <label className="field">
+                                    <span>Ръчно описание на отварянето</span>
+                                    <input
+                                      value={field.customOpeningModeLabel}
+                                      onChange={(event) =>
+                                        updateFirstModuleField(fieldIndex, {
+                                          customOpeningModeLabel: event.target.value,
+                                        })
+                                      }
+                                      placeholder="Напр. специално / нестандартно отваряне"
+                                    />
+                                  </label>
+                                )}
+
+                                <p className="module-opening-note">
+                                  Начинът на отваряне е опционален. Посоката ляво / дясно
+                                  и страната на пантите още не се определят автоматично.
+                                </p>
+                              </div>
+                            )}
 
                           <label className="field">
                             <span>Ширина на поле</span>
@@ -1721,9 +1823,11 @@ export default function App() {
                     </div>
 
                     <div className="module-fields-boundary">
-                      Полетата са концептуално описание. FacadeFlow не създава
-                      автоматично делители, крила или геометрия, не изравнява
-                      ширини и не определя начин на отваряне на този етап.
+                      Полетата са концептуално описание. Начините на отваряне също
+                      остават концептуални. FacadeFlow не създава автоматично делители,
+                      крила или геометрия,
+                      не изравнява ширини и не определя ляво / дясно, страна на панти,
+                      профили, механизми или производствени размери на този етап.
                     </div>
                   </section>
                 )}
@@ -1754,13 +1858,20 @@ export default function App() {
                       описани; {firstModuleFieldsDescribed ? 'всички са описани' : 'описанието може да остане непълно'}.
                     </span>
                   )}
+                  {firstModuleOperableFieldCount > 0 && (
+                    <span>
+                      Отваряеми полета: {firstModuleConfiguredOpeningCount} / {firstModuleOperableFieldCount}{' '}
+                      имат зададен начин на отваряне; останалите могат да останат чернова.
+                    </span>
+                  )}
                 </div>
 
                 <div className="module-geometry-boundary">
                   Concept 06B не генерира геометрия и не предполага стандартни
-                  размери. Concept 06C описва полетата като опционални чернови с
-                  dropdown или ръчно въвеждане. Не се създават автоматично
-                  делители, крила или отваряния. Машинни данни не се подготвят.
+                  размери. Concept 06C описва полетата като опционални чернови,
+                  а Concept 06D добавя опционален начин на отваряне за отваряемите
+                  полета. Не се определят автоматично ляво / дясно, панти,
+                  делители, крила или механизми. Машинни данни не се подготвят.
                 </div>
               </section>
             )}

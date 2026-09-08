@@ -3,6 +3,7 @@ import type { OfferModuleDefaults } from './offerModuleDefaults'
 export type ModuleProductType = 'window' | 'door'
 export type ModuleInputSource = 'unset' | 'preset' | 'manual'
 export type ModuleFieldType = 'fixed' | 'operable'
+export type ModuleOpeningMode = 'side-hinged' | 'tilt' | 'tilt-turn'
 
 export const MODULE_PRODUCT_TYPE_PRESETS = [
   { id: 'window', labelBg: 'Прозорец' },
@@ -22,6 +23,20 @@ export const MODULE_FIELD_TYPE_PRESETS = [
 }[]
 
 /**
+ * Confirmed conceptual opening modes for an operable field.
+ * These describe behavior only. Hinge side / handing remains intentionally
+ * separate and is not inferred in Concept 06D.
+ */
+export const MODULE_OPENING_MODE_PRESETS = [
+  { id: 'side-hinged', labelBg: 'Странично' },
+  { id: 'tilt', labelBg: 'Падащо' },
+  { id: 'tilt-turn', labelBg: 'Странично + падащо' },
+] as const satisfies readonly {
+  id: ModuleOpeningMode
+  labelBg: string
+}[]
+
+/**
  * No company-confirmed standard field widths have been supplied yet.
  * Field widths are optional and remain manual until real presets are confirmed.
  */
@@ -37,6 +52,10 @@ export interface OfferModuleFieldDraft {
 
   widthMm: number | null
   widthSource: ModuleInputSource
+
+  openingMode: ModuleOpeningMode | null
+  customOpeningModeLabel: string
+  openingModeSource: ModuleInputSource
 }
 
 export function createOfferModuleFieldDraft(sequence: number): OfferModuleFieldDraft {
@@ -48,6 +67,10 @@ export function createOfferModuleFieldDraft(sequence: number): OfferModuleFieldD
     fieldTypeSource: 'unset',
     widthMm: null,
     widthSource: 'unset',
+
+    openingMode: null,
+    customOpeningModeLabel: '',
+    openingModeSource: 'unset',
   }
 }
 
@@ -76,6 +99,30 @@ export function hasOfferModuleFieldType(field: OfferModuleFieldDraft): boolean {
 
   if (field.fieldTypeSource === 'manual') {
     return field.customFieldTypeLabel.trim().length > 0
+  }
+
+  return false
+}
+
+export function isOfferModuleFieldOperable(
+  field: OfferModuleFieldDraft,
+): boolean {
+  return field.fieldTypeSource === 'preset' && field.fieldType === 'operable'
+}
+
+export function hasOfferModuleOpeningMode(
+  field: OfferModuleFieldDraft,
+): boolean {
+  if (!isOfferModuleFieldOperable(field)) {
+    return false
+  }
+
+  if (field.openingModeSource === 'preset') {
+    return field.openingMode !== null
+  }
+
+  if (field.openingModeSource === 'manual') {
+    return field.customOpeningModeLabel.trim().length > 0
   }
 
   return false
@@ -218,6 +265,18 @@ export function getOfferModuleConfiguredFieldCount(
   module: OfferModuleDraft,
 ): number {
   return module.fields.filter(hasOfferModuleFieldType).length
+}
+
+export function getOfferModuleOperableFieldCount(
+  module: OfferModuleDraft,
+): number {
+  return module.fields.filter(isOfferModuleFieldOperable).length
+}
+
+export function getOfferModuleConfiguredOpeningCount(
+  module: OfferModuleDraft,
+): number {
+  return module.fields.filter(hasOfferModuleOpeningMode).length
 }
 
 export function areOfferModuleFieldsDescribed(
