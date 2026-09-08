@@ -11,7 +11,7 @@
                     "dev":  "vite",
                     "build":  "tsc -b \u0026\u0026 vite build",
                     "lint":  "oxlint src scripts",
-                    "test:contract":  "node scripts/verify-concept01.mjs \u0026\u0026 node scripts/verify-concept02.mjs \u0026\u0026 node scripts/verify-concept03.mjs",
+                    "test:contract":  "node scripts/verify-concept01.mjs \u0026\u0026 node scripts/verify-concept02.mjs \u0026\u0026 node scripts/verify-concept03.mjs \u0026\u0026 node scripts/verify-concept04a.mjs \u0026\u0026 node scripts/verify-concept04b.mjs",
                     "verify":  "npm run test:contract \u0026\u0026 npm run lint \u0026\u0026 npm run build",
                     "preview":  "vite preview"
                 },

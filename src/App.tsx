@@ -1,4 +1,8 @@
 ﻿import { useState, type FormEvent } from 'react'
+import {
+  getProfileSystemById,
+  getSelectableProfileSystems,
+} from './data/profileSystems'
 import './App.css'
 
 function OfferIcon() {
@@ -32,7 +36,7 @@ type OfferDraft = {
   objectName: string
   objectAddress: string
 
-  system: string
+  profileSystemId: string
   productType: string
   color: string
   glazing: string
@@ -51,7 +55,7 @@ const EMPTY_OFFER: OfferDraft = {
   objectName: '',
   objectAddress: '',
 
-  system: 'Prelude 60',
+  profileSystemId: '',
   productType: 'Прозорец',
   color: 'Бяло',
   glazing: 'б + б / 24',
@@ -59,10 +63,23 @@ const EMPTY_OFFER: OfferDraft = {
   commonConditions: '',
 }
 
+const SELECTABLE_PROFILE_SYSTEMS = getSelectableProfileSystems()
+
 export default function App() {
   const [offerStartOpen, setOfferStartOpen] = useState(false)
   const [offer, setOffer] = useState<OfferDraft>(EMPTY_OFFER)
   const [saved, setSaved] = useState(false)
+
+  const clientObjectReady =
+    offer.clientName.trim().length > 0 &&
+    offer.objectName.trim().length > 0
+
+  const selectedProfileSystem = getProfileSystemById(
+    offer.profileSystemId,
+  )
+
+  const canContinueToModules =
+    clientObjectReady && Boolean(selectedProfileSystem)
 
   const updateOffer = <K extends keyof OfferDraft>(
     field: K,
@@ -83,6 +100,12 @@ export default function App() {
 
   const submitOffer = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+
+    if (!canContinueToModules) {
+      setSaved(false)
+      return
+    }
+
     setSaved(true)
   }
 
@@ -141,8 +164,8 @@ export default function App() {
 
               <p>
                 Работният процес започва със създаване на оферта.
-                Първо задаваме клиента, обекта и общите параметри,
-                след което започваме отделните модули.
+                Първо задаваме клиента и обекта, след това избираме
+                профилната система и общите параметри преди модулите.
               </p>
             </div>
           </section>
@@ -151,10 +174,10 @@ export default function App() {
             <div className="offer-start-heading">
               <div>
                 <span>НОВА ОФЕРТА</span>
-                <h2>Изпълнител / Клиент / Обект</h2>
+                <h2>Изпълнител / Клиент / Обект / Система</h2>
                 <p>
-                  Изпълнителят е Надежда. За всяка оферта попълваме
-                  възложителя, обекта и общите технически параметри.
+                  След клиента и обекта избираме профилната система
+                  от централния каталог, а после задаваме общите параметри.
                 </p>
               </div>
 
@@ -377,11 +400,97 @@ export default function App() {
               </section>
 
               <section
+                className="form-section profile-system-section"
+                aria-labelledby="profile-system-title"
+              >
+                <div className="section-heading">
+                  <span className="section-number">04</span>
+
+                  <div>
+                    <h3 id="profile-system-title">
+                      Профилна система
+                    </h3>
+
+                    <p>
+                      Изборът идва от централния каталог и се записва
+                      в офертата само като идентификатор на системата.
+                    </p>
+                  </div>
+                </div>
+
+                {!clientObjectReady && (
+                  <div className="profile-system-lock" role="status">
+                    <b>Първо попълнете Клиент и Обект.</b>
+                    <span>След това ще можете да изберете профилна система.</span>
+                  </div>
+                )}
+
+                <div
+                  className={`profile-system-options${
+                    clientObjectReady ? '' : ' is-locked'
+                  }`}
+                >
+                  {SELECTABLE_PROFILE_SYSTEMS.map((system) => {
+                    const selected = offer.profileSystemId === system.id
+
+                    return (
+                      <label
+                        className={`profile-system-option${
+                          selected ? ' is-selected' : ''
+                        }`}
+                        key={system.id}
+                      >
+                        <input
+                          type="radio"
+                          name="profileSystemId"
+                          value={system.id}
+                          checked={selected}
+                          disabled={!clientObjectReady}
+                          required
+                          onChange={(event) =>
+                            updateOffer(
+                              'profileSystemId',
+                              event.target.value,
+                            )
+                          }
+                        />
+
+                        <span className="profile-system-card-copy">
+                          <small>{system.manufacturer}</small>
+                          <b>{system.name}</b>
+                          <em>
+                            {system.material} · {system.nominalDepthMm} mm
+                          </em>
+                        </span>
+
+                        <span className="profile-system-meta">
+                          {system.mainProfiles.length} основни профила
+                        </span>
+                      </label>
+                    )
+                  })}
+                </div>
+
+                {selectedProfileSystem && (
+                  <div className="selected-system-note" role="status">
+                    <span>ИЗБРАНА СИСТЕМА</span>
+                    <b>
+                      {selectedProfileSystem.manufacturer}{' '}
+                      {selectedProfileSystem.name}
+                    </b>
+                    <small>
+                      ID: {selectedProfileSystem.id}
+                    </small>
+                  </div>
+                )}
+              </section>
+
+              <section
                 className="form-section"
                 aria-labelledby="offer-parameters-title"
               >
                 <div className="section-heading">
-                  <span className="section-number">04</span>
+                  <span className="section-number">05</span>
 
                   <div>
                     <h3 id="offer-parameters-title">
@@ -396,19 +505,6 @@ export default function App() {
                 </div>
 
                 <div className="form-grid parameter-grid">
-                  <label className="field">
-                    <span>Система</span>
-
-                    <select
-                      value={offer.system}
-                      onChange={(event) =>
-                        updateOffer('system', event.target.value)
-                      }
-                    >
-                      <option>Prelude 60</option>
-                    </select>
-                  </label>
-
                   <label className="field">
                     <span>Тип</span>
 
@@ -538,7 +634,11 @@ export default function App() {
               >
                 <div>
                   <span>СИСТЕМА</span>
-                  <b>{offer.system}</b>
+                  <b>
+                    {selectedProfileSystem
+                      ? `${selectedProfileSystem.manufacturer} ${selectedProfileSystem.name}`
+                      : 'Не е избрана'}
+                  </b>
                 </div>
 
                 <div>
@@ -577,6 +677,7 @@ export default function App() {
                 <button
                   type="submit"
                   className="save-offer-action"
+                  disabled={!canContinueToModules}
                 >
                   Запази и продължи към модули
                 </button>
@@ -585,7 +686,7 @@ export default function App() {
               {saved && (
                 <div className="saved-notice" role="status">
                   <b>
-                    Основните параметри на офертата са подготвени.
+                    Офертата и профилната система са подготвени.
                   </b>
 
                   <span>
