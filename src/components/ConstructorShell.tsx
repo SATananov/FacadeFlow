@@ -1,6 +1,8 @@
 import { useState, type CSSProperties } from 'react'
 import './ConstructorShell.css'
 
+export type ConstructorMode = 'offer' | 'free'
+
 type ConstructorOfferContext = {
   profileSystemLabel: string
   colorLabel: string
@@ -16,15 +18,23 @@ type ConstructorModuleSummary = {
 }
 
 type ConstructorShellProps = {
-  moduleNumber: number
-  offerContext: ConstructorOfferContext
-  moduleSummary: ConstructorModuleSummary
+  mode: ConstructorMode
+  moduleNumber?: number
+  offerContext?: ConstructorOfferContext
+  moduleSummary?: ConstructorModuleSummary
   onClose: () => void
+  onCreateOfferFromSketch?: () => void
 }
 
 type ConstructorTool = 'select' | 'pan'
 
 const ZOOM_STEPS = [75, 100, 125, 150] as const
+
+const FREE_MODULE_SUMMARY: ConstructorModuleSummary = {
+  productTypeLabel: 'Свободна скица',
+  widthMm: null,
+  heightMm: null,
+}
 
 function clampZoom(current: number, direction: -1 | 1) {
   const currentIndex = ZOOM_STEPS.findIndex((value) => value === current)
@@ -38,42 +48,52 @@ function clampZoom(current: number, direction: -1 | 1) {
 }
 
 export default function ConstructorShell({
-  moduleNumber,
+  mode,
+  moduleNumber = 1,
   offerContext,
-  moduleSummary,
+  moduleSummary = FREE_MODULE_SUMMARY,
   onClose,
+  onCreateOfferFromSketch,
 }: ConstructorShellProps) {
   const [activeTool, setActiveTool] = useState<ConstructorTool>('select')
   const [gridVisible, setGridVisible] = useState(true)
   const [snapEnabled, setSnapEnabled] = useState(true)
   const [zoom, setZoom] = useState<number>(100)
 
+  const isFreeMode = mode === 'free'
   const moduleSizeLabel =
     moduleSummary.widthMm && moduleSummary.heightMm
       ? `${moduleSummary.widthMm} × ${moduleSummary.heightMm} mm`
       : 'Размерите още не са зададени'
 
+  const title = isFreeMode ? 'Свободна скица' : `Модул ${moduleNumber}`
+  const stageLabel = isFreeMode
+    ? 'СВОБОДНА СКИЦА'
+    : `МОДУЛ ${String(moduleNumber).padStart(2, '0')}`
+
   return (
-    <section className="constructor-shell" aria-label={`Конструктор за Модул ${moduleNumber}`}>
+    <section className="constructor-shell" aria-label={`FacadeFlow Constructor · ${title}`}>
       <header className="constructor-topbar">
         <div className="constructor-title-block">
           <button type="button" className="constructor-back" onClick={onClose}>
-            ← Към офертата
+            {isFreeMode ? '← Към началото' : '← Към офертата'}
           </button>
 
           <div>
-            <span>FACADEFLOW CONSTRUCTOR · CONSTRUCTOR 01A</span>
-            <h2>Модул {moduleNumber}</h2>
+            <span>FACADEFLOW CONSTRUCTOR · CONSTRUCTOR 01A.1</span>
+            <h2>{title}</h2>
             <p>
-              CAD-подобно работно пространство за визуално конструиране на изделието.
+              {isFreeMode
+                ? 'Чертане без клиент и оферта. Системата може да бъде избрана по-късно.'
+                : 'CAD-подобно работно пространство за визуално конструиране на изделието.'}
             </p>
           </div>
         </div>
 
-        <div className="constructor-topbar-meta" aria-label="Контекст на модула">
+        <div className="constructor-topbar-meta" aria-label="Контекст на конструктора">
           <div>
-            <span>ТИП</span>
-            <b>{moduleSummary.productTypeLabel}</b>
+            <span>{isFreeMode ? 'РЕЖИМ' : 'ТИП'}</span>
+            <b>{isFreeMode ? 'Свободен конструктор' : moduleSummary.productTypeLabel}</b>
           </div>
           <div>
             <span>ГАБАРИТ</span>
@@ -254,11 +274,12 @@ export default function ConstructorShell({
               style={{ transform: `scale(${zoom / 100})` }}
             >
               <div className="constructor-empty-stage-frame" aria-hidden="true" />
-              <span>МОДУЛ {String(moduleNumber).padStart(2, '0')}</span>
+              <span>{stageLabel}</span>
               <b>{moduleSizeLabel}</b>
               <p>
-                Работното поле е готово. Параметричната каса, селекцията на линии,
-                drag/resize и live размерите започват в Constructor 01B.
+                {isFreeMode
+                  ? 'Работното поле е отворено без оферта. Параметричната каса, mouse resize и live размерите започват в Constructor 01B.'
+                  : 'Работното поле е готово. Параметричната каса, селекцията на линии, drag/resize и live размерите започват в Constructor 01B.'}
               </p>
             </div>
           </div>
@@ -274,25 +295,57 @@ export default function ConstructorShell({
         </section>
 
         <aside className="constructor-properties-panel" aria-label="Свойства и настройки">
-          <section className="constructor-properties-section">
-            <div className="constructor-panel-heading">
-              <span>ОФЕРТА</span>
-              <b>Заключени общи настройки</b>
-            </div>
+          {isFreeMode ? (
+            <section className="constructor-properties-section constructor-free-context">
+              <div className="constructor-panel-heading">
+                <span>СВОБОДНА СКИЦА</span>
+                <b>Без оферта и без заключена система</b>
+              </div>
 
-            <div className="constructor-offer-locks">
-              <div><span>Профилна система</span><b>{offerContext.profileSystemLabel}</b><em>🔒</em></div>
-              <div><span>Цвят</span><b>{offerContext.colorLabel}</b><em>🔒</em></div>
-              <div><span>Фолиране</span><b>{offerContext.foilModeLabel}</b><em>🔒</em></div>
-              <div><span>Стъклопакет</span><b>{offerContext.glazingLabel}</b><em>🔒</em></div>
-              <div><span>Обков</span><b>{offerContext.hardwareLabel}</b><em>🔒</em></div>
-            </div>
+              <div className="constructor-free-settings">
+                <div><span>Профилна система</span><b>Не е избрана</b><em>◇</em></div>
+                <div><span>Цвят</span><b>Не е избран</b><em>◇</em></div>
+                <div><span>Фолиране</span><b>Не е избрано</b><em>◇</em></div>
+                <div><span>Стъклопакет</span><b>Не е избран</b><em>◇</em></div>
+                <div><span>Обков</span><b>Не е избран</b><em>◇</em></div>
+              </div>
 
-            <p className="constructor-invariant-note">
-              Тези стойности важат за всички модули в тази оферта и не се променят
-              от Конструктора.
-            </p>
-          </section>
+              <p className="constructor-invariant-note">
+                В свободен режим чертаем конструктивния замисъл. Система и офертни
+                параметри могат да бъдат зададени по-късно.
+              </p>
+
+              {onCreateOfferFromSketch && (
+                <button
+                  type="button"
+                  className="constructor-create-offer"
+                  onClick={onCreateOfferFromSketch}
+                >
+                  Създай оферта от тази скица
+                </button>
+              )}
+            </section>
+          ) : (
+            <section className="constructor-properties-section">
+              <div className="constructor-panel-heading">
+                <span>ОФЕРТА</span>
+                <b>Заключени общи настройки</b>
+              </div>
+
+              <div className="constructor-offer-locks">
+                <div><span>Профилна система</span><b>{offerContext?.profileSystemLabel}</b><em>🔒</em></div>
+                <div><span>Цвят</span><b>{offerContext?.colorLabel}</b><em>🔒</em></div>
+                <div><span>Фолиране</span><b>{offerContext?.foilModeLabel}</b><em>🔒</em></div>
+                <div><span>Стъклопакет</span><b>{offerContext?.glazingLabel}</b><em>🔒</em></div>
+                <div><span>Обков</span><b>{offerContext?.hardwareLabel}</b><em>🔒</em></div>
+              </div>
+
+              <p className="constructor-invariant-note">
+                Тези стойности важат за всички модули в тази оферта и не се променят
+                от Конструктора.
+              </p>
+            </section>
+          )}
 
           <section className="constructor-properties-section">
             <div className="constructor-panel-heading">
@@ -310,8 +363,8 @@ export default function ConstructorShell({
           </section>
 
           <section className="constructor-properties-section constructor-boundary-card">
-            <span>CONSTRUCTOR 01A</span>
-            <b>Shell only</b>
+            <span>CONSTRUCTOR 01A.1</span>
+            <b>{isFreeMode ? 'Direct entry foundation' : 'Offer context'}</b>
             <p>
               Grid, панели и workspace са активни. Автоматична геометрия, профилен
               избор и машинни данни не се генерират.

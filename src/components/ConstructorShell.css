@@ -565,3 +565,63 @@
     margin-left: 0;
   }
 }
+
+/* CONSTRUCTOR 01A.1 — free sketch context */
+.constructor-free-context {
+  border-color: #93bdc5;
+  background: linear-gradient(180deg, #f7fcfd, #eef7f8);
+}
+
+.constructor-free-settings {
+  display: grid;
+  gap: 6px;
+}
+
+.constructor-free-settings > div {
+  min-width: 0;
+  padding: 7px 8px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 18px;
+  align-items: center;
+  gap: 7px;
+  border: 1px dashed #b4cbd0;
+  border-radius: 5px;
+  background: #fbfdfd;
+}
+
+.constructor-free-settings span {
+  color: #688086;
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.constructor-free-settings b {
+  color: #34555d;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.constructor-free-settings em {
+  color: #1791a4;
+  font-size: 13px;
+  font-style: normal;
+  text-align: center;
+}
+
+.constructor-create-offer {
+  width: 100%;
+  min-height: 38px;
+  margin-top: 10px;
+  border: 1px solid #1494a8;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #1aa1b5, #12869a);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 850;
+  box-shadow: inset 0 -2px rgba(0, 0, 0, .12);
+}
+
+.constructor-create-offer:hover {
+  background: linear-gradient(180deg, #24adbf, #1691a5);
+}

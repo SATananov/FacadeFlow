@@ -15,12 +15,12 @@ const packageJson = JSON.parse(
 )
 
 assert.match(app, /import ConstructorShell from '\.\/components\/ConstructorShell'/)
-assert.match(app, /constructorOpen/)
+assert.match(app, /constructorMode/)
 assert.match(app, /Отвори Конструктор/)
 assert.match(app, /Общата офертна конфигурация важи за модула/)
 assert.match(app, /Тези стойности важат за всички модули в офертата/)
 assert.match(app, /<ConstructorShell/)
-assert.match(app, /onClose=\{\(\) => setConstructorOpen\(false\)\}/)
+assert.match(app, /onClose=\{\(\) => setConstructorMode\(null\)\}/)
 
 assert.match(shell, /FACADEFLOW CONSTRUCTOR · CONSTRUCTOR 01A/)
 assert.match(shell, /CAD-подобно работно пространство/)

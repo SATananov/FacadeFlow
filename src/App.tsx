@@ -53,6 +53,16 @@ function OfferIcon() {
   )
 }
 
+function ConstructorIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M4 5h16v14H4z" />
+      <path d="M8 5v14M16 5v14M4 10h16" />
+      <path d="M2.5 3v4M1 5h3M21.5 17v4M20 19h3" />
+    </svg>
+  )
+}
+
 const CONTRACTOR_DATA = {
   name: 'НАДЕЖДА',
   activity: 'Al и PVC дограма',
@@ -111,7 +121,8 @@ export default function App() {
   const [offer, setOffer] = useState<OfferDraft>(EMPTY_OFFER)
   const [saved, setSaved] = useState(false)
   const [modules, setModules] = useState<OfferModuleDraft[]>([])
-  const [constructorOpen, setConstructorOpen] = useState(false)
+  const [constructorMode, setConstructorMode] = useState<'offer' | 'free' | null>(null)
+  const [offerStartedFromFreeSketch, setOfferStartedFromFreeSketch] = useState(false)
 
   const clientObjectReady =
     offer.clientName.trim().length > 0 &&
@@ -478,7 +489,22 @@ export default function App() {
     setOffer(EMPTY_OFFER)
     setSaved(false)
     setModules([])
-    setConstructorOpen(false)
+    setConstructorMode(null)
+    setOfferStartedFromFreeSketch(false)
+    setOfferStartOpen(true)
+  }
+
+  const startFreeConstructor = () => {
+    setConstructorMode('free')
+    setOfferStartOpen(false)
+  }
+
+  const startOfferFromFreeSketch = () => {
+    setOffer(EMPTY_OFFER)
+    setSaved(false)
+    setModules([])
+    setConstructorMode(null)
+    setOfferStartedFromFreeSketch(true)
     setOfferStartOpen(true)
   }
 
@@ -514,26 +540,50 @@ export default function App() {
           </div>
         </div>
 
-        <button
-          type="button"
-          className="create-offer-action"
-          onClick={startNewOffer}
-          aria-expanded={offerStartOpen}
-        >
-          <span className="action-icon">
-            <OfferIcon />
-          </span>
+        <div className="header-actions">
+          <button
+            type="button"
+            className="create-offer-action constructor-direct-action"
+            onClick={startFreeConstructor}
+          >
+            <span className="action-icon">
+              <ConstructorIcon />
+            </span>
 
-          <span className="action-copy">
-            <b>Създай оферта</b>
-            <small>Нов клиент / обект</small>
-          </span>
-        </button>
+            <span className="action-copy">
+              <b>Конструктор</b>
+              <small>Свободна скица · без оферта</small>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className="create-offer-action"
+            onClick={startNewOffer}
+            aria-expanded={offerStartOpen}
+          >
+            <span className="action-icon">
+              <OfferIcon />
+            </span>
+
+            <span className="action-copy">
+              <b>Създай оферта</b>
+              <small>Нов клиент / обект</small>
+            </span>
+          </button>
+        </div>
       </header>
 
-      <main className={constructorOpen ? 'constructor-host' : 'home-workspace'}>
-        {constructorOpen && firstModule ? (
+      <main className={constructorMode ? 'constructor-host' : 'home-workspace'}>
+        {constructorMode === 'free' ? (
           <ConstructorShell
+            mode="free"
+            onClose={() => setConstructorMode(null)}
+            onCreateOfferFromSketch={startOfferFromFreeSketch}
+          />
+        ) : constructorMode === 'offer' && firstModule ? (
+          <ConstructorShell
+            mode="offer"
             moduleNumber={firstModule.sequence}
             offerContext={{
               profileSystemLabel: selectedProfileSystem
@@ -556,7 +606,7 @@ export default function App() {
               widthMm: firstModule.widthMm,
               heightMm: firstModule.heightMm,
             }}
-            onClose={() => setConstructorOpen(false)}
+            onClose={() => setConstructorMode(null)}
           />
         ) : !offerStartOpen ? (
           <section className="empty-home" aria-label="Начален екран">
@@ -578,16 +628,32 @@ export default function App() {
               <h2>FacadeFlow</h2>
 
               <p>
-                Работният процес започва със създаване на оферта.
-                Първо задаваме клиента и обекта, след това избираме
-                профилната система, цвета и фолирането преди модулите.
+                Започнете по начина, който е удобен за задачата: директно в
+                Конструктора за свободна скица или със създаване на оферта,
+                клиент, обект и техническа конфигурация.
               </p>
+
+              <div className="empty-home-actions">
+                <button type="button" onClick={startFreeConstructor}>
+                  <b>Отвори Конструктор</b>
+                  <small>Чертане без оферта</small>
+                </button>
+                <button type="button" onClick={startNewOffer}>
+                  <b>Създай оферта</b>
+                  <small>Клиент → система → модули</small>
+                </button>
+              </div>
             </div>
           </section>
         ) : (
           <section className="offer-start" aria-label="Нова оферта">
             <div className="offer-start-heading">
               <div>
+                {offerStartedFromFreeSketch && (
+                  <div className="offer-source-note">
+                    Източник: Свободен конструктор · техническата система се задава сега
+                  </div>
+                )}
                 <span>НОВА ОФЕРТА</span>
                 <h2>Изпълнител / Клиент / Обект / Система / Цвят / Стъклопакет / Обков</h2>
                 <p>
@@ -599,9 +665,14 @@ export default function App() {
               <button
                 type="button"
                 className="secondary-action"
-                onClick={() => setOfferStartOpen(false)}
+                onClick={() => {
+                  setOfferStartOpen(false)
+                  if (offerStartedFromFreeSketch) {
+                    setConstructorMode('free')
+                  }
+                }}
               >
-                Назад към началото
+                {offerStartedFromFreeSketch ? 'Назад към скицата' : 'Назад към началото'}
               </button>
             </div>
 
@@ -1382,7 +1453,7 @@ export default function App() {
                     <button
                       type="button"
                       className="open-constructor-action"
-                      onClick={() => setConstructorOpen(true)}
+                      onClick={() => setConstructorMode('offer')}
                     >
                       Отвори Конструктор
                     </button>
