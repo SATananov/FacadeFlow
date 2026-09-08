@@ -9,13 +9,18 @@ const glazing = await readFile(
   'utf8',
 )
 
+const hardware = await readFile(
+  new URL('../src/data/profileSystems/hardwareOptions.ts', import.meta.url),
+  'utf8',
+)
+
 assert.match(app, /Клиент \/ Възложител/)
 assert.match(app, /Обект/)
 assert.match(app, /Други общи параметри/)
 assert.match(app, /Цвят и фолиране/)
 assert.match(app, /getSelectableProfileSystems/)
 assert.match(app, /profileSystemId/)
-assert.match(app, /Прозорец/)
+assert.match(app, /Тип изделие = параметър на модула/)
 assert.match(app, /colorId/)
 assert.match(app, /foilModeId/)
 assert.match(app, /glazingId/)
@@ -26,8 +31,8 @@ assert.match(glazing, /б \+ 4S \/ 24/)
 assert.match(glazing, /к \+ б \/ 32/)
 assert.match(glazing, /к \+ б \+ 4S \/ 44/)
 assert.match(glazing, /Four Seasons/)
-assert.match(app, /Siegenia/)
-assert.match(app, /Maco/)
+assert.match(hardware, /Стандартен европейски обков/)
+assert.match(app, /hardwareStandardId/)
 assert.match(app, /Общи условия/)
 assert.match(app, /Запази и продължи към модули/)
 assert.match(app, /Следваща стъпка: Модули/)
@@ -42,6 +47,7 @@ assert.match(css, /\.hardware-options/)
 
 console.log('CONCEPT 02 OFFER BASICS CONTRACT PASS')
 console.log('CLIENT + OBJECT = YES')
-console.log('SYSTEM = CATALOG-DRIVEN | TYPE + FINISH + GLAZING + HARDWARE = YES')
+console.log('SYSTEM = CATALOG-DRIVEN | FINISH + GLAZING + HARDWARE = OFFER DEFAULTS')
+console.log('PRODUCT TYPE = MODULE-LEVEL')
 console.log('COMMON CONDITIONS = YES')
 console.log('NEXT STEP MODULES = DECLARED ONLY')

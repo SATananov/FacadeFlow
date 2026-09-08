@@ -1,13 +1,17 @@
 ﻿import { useState, type FormEvent } from 'react'
 import {
   getConfirmedGlazingOptions,
+  getConfirmedHardwareStandards,
   getGlazingOptionById,
+  getHardwareStandardById,
   getProfileSystemById,
   getProfileSystemFinishOptionById,
   getProfileSystemFinishOptions,
   getProfileSystemFoilModeById,
+  getProfileSystemHardwareCompatibility,
   getSelectableProfileSystems,
 } from './data/profileSystems'
+import { buildOfferModuleDefaults } from './domain/offerModuleDefaults'
 import './App.css'
 
 function OfferIcon() {
@@ -44,9 +48,9 @@ type OfferDraft = {
   profileSystemId: string
   colorId: string
   foilModeId: string
-  productType: string
   glazingId: string
-  hardware: string
+  hardwareStandardId: string
+  hardwareManufacturerId: 'unspecified'
   commonConditions: string
 }
 
@@ -64,14 +68,15 @@ const EMPTY_OFFER: OfferDraft = {
   profileSystemId: '',
   colorId: '',
   foilModeId: '',
-  productType: 'Прозорец',
   glazingId: '',
-  hardware: 'Siegenia',
+  hardwareStandardId: '',
+  hardwareManufacturerId: 'unspecified',
   commonConditions: '',
 }
 
 const SELECTABLE_PROFILE_SYSTEMS = getSelectableProfileSystems()
 const CONFIRMED_GLAZING_OPTIONS = getConfirmedGlazingOptions()
+const CONFIRMED_HARDWARE_STANDARDS = getConfirmedHardwareStandards()
 
 export default function App() {
   const [offerStartOpen, setOfferStartOpen] = useState(false)
@@ -107,12 +112,25 @@ export default function App() {
 
   const selectedGlazing = getGlazingOptionById(offer.glazingId)
 
+  const selectedHardwareStandard = getHardwareStandardById(
+    offer.hardwareStandardId,
+  )
+
+  const selectedHardwareCompatibility =
+    selectedProfileSystem && selectedHardwareStandard
+      ? getProfileSystemHardwareCompatibility(
+          selectedProfileSystem.id,
+          selectedHardwareStandard.id,
+        )
+      : undefined
+
   const canContinueToModules =
     clientObjectReady &&
     Boolean(selectedProfileSystem) &&
     Boolean(selectedFinish) &&
     Boolean(selectedFoilMode) &&
-    Boolean(selectedGlazing)
+    Boolean(selectedGlazing) &&
+    Boolean(selectedHardwareStandard)
 
   const updateOffer = <K extends keyof OfferDraft>(
     field: K,
@@ -132,6 +150,8 @@ export default function App() {
       colorId: '',
       foilModeId: '',
       glazingId: '',
+      hardwareStandardId: '',
+      hardwareManufacturerId: 'unspecified',
     }))
     setSaved(false)
   }
@@ -144,6 +164,26 @@ export default function App() {
     }))
     setSaved(false)
   }
+
+  const selectHardwareStandard = (hardwareStandardId: string) => {
+    setOffer((current) => ({
+      ...current,
+      hardwareStandardId,
+      hardwareManufacturerId: 'unspecified',
+    }))
+    setSaved(false)
+  }
+
+  const moduleDefaults = canContinueToModules
+    ? buildOfferModuleDefaults({
+        profileSystemId: offer.profileSystemId,
+        colorId: offer.colorId,
+        foilModeId: offer.foilModeId,
+        glazingId: offer.glazingId,
+        hardwareStandardId: offer.hardwareStandardId,
+        hardwareManufacturerId: offer.hardwareManufacturerId,
+      })
+    : undefined
 
   const startNewOffer = () => {
     setOffer(EMPTY_OFFER)
@@ -227,10 +267,10 @@ export default function App() {
             <div className="offer-start-heading">
               <div>
                 <span>НОВА ОФЕРТА</span>
-                <h2>Изпълнител / Клиент / Обект / Система / Цвят / Стъклопакет</h2>
+                <h2>Изпълнител / Клиент / Обект / Система / Цвят / Стъклопакет / Обков</h2>
                 <p>
                   След клиента и обекта избираме профилната система
-                  от централния каталог, после избираме цвят, фолиране и стъклопакет.
+                  от централния каталог, после избираме цвят, фолиране, стъклопакет и общ обков.
                 </p>
               </div>
 
@@ -745,11 +785,109 @@ export default function App() {
               </section>
 
               <section
+                className="form-section hardware-section"
+                aria-labelledby="hardware-title"
+              >
+                <div className="section-heading">
+                  <span className="section-number">07</span>
+
+                  <div>
+                    <h3 id="hardware-title">Обков</h3>
+                    <p>
+                      Общият стандарт на обкова се задава на ниво оферта
+                      и после се наследява от модулите.
+                    </p>
+                  </div>
+                </div>
+
+                {!selectedGlazing && (
+                  <div className="hardware-lock" role="status">
+                    <b>Първо изберете стъклопакет.</b>
+                    <span>След това ще можете да зададете общия стандарт на обкова.</span>
+                  </div>
+                )}
+
+                {selectedGlazing && (
+                  <div className="hardware-workflow">
+                    <fieldset className="hardware-fieldset">
+                      <legend>Стандарт</legend>
+
+                      <div className="hardware-options">
+                        {CONFIRMED_HARDWARE_STANDARDS.map((hardware) => {
+                          const selected =
+                            offer.hardwareStandardId === hardware.id
+
+                          return (
+                            <label
+                              className={`hardware-option${
+                                selected ? ' is-selected' : ''
+                              }`}
+                              key={hardware.id}
+                            >
+                              <input
+                                type="radio"
+                                name="hardwareStandardId"
+                                value={hardware.id}
+                                checked={selected}
+                                required
+                                onChange={(event) =>
+                                  selectHardwareStandard(event.target.value)
+                                }
+                              />
+
+                              <span>
+                                <b>{hardware.labelBg}</b>
+                                <small>{hardware.descriptionBg}</small>
+                              </span>
+                            </label>
+                          )
+                        })}
+                      </div>
+                    </fieldset>
+
+                    <div className="hardware-manufacturer-card">
+                      <span>ПРОИЗВОДИТЕЛ / МАРКА</span>
+                      <b>Не е уточнен</b>
+                      <small>
+                        На този етап конкретна европейска марка не се фиксира.
+                      </small>
+                    </div>
+
+                    {selectedHardwareStandard &&
+                      selectedHardwareCompatibility && (
+                        <div
+                          className="hardware-compatibility-note is-confirmed"
+                          role="status"
+                        >
+                          <b>Потвърдено за PRELUDE 60</b>
+                          <span>{selectedHardwareCompatibility.noteBg}</span>
+                        </div>
+                      )}
+
+                    {selectedHardwareStandard &&
+                      selectedProfileSystem &&
+                      !selectedHardwareCompatibility && (
+                        <div
+                          className="hardware-compatibility-note"
+                          role="status"
+                        >
+                          <b>Съвместимостта още не е валидирана за тази система.</b>
+                          <span>
+                            FacadeFlow не пренася автоматично правилото на PRELUDE 60
+                            към друга профилна система.
+                          </span>
+                        </div>
+                      )}
+                  </div>
+                )}
+              </section>
+
+              <section
                 className="form-section"
                 aria-labelledby="offer-parameters-title"
               >
                 <div className="section-heading">
-                  <span className="section-number">07</span>
+                  <span className="section-number">08</span>
 
                   <div>
                     <h3 id="offer-parameters-title">
@@ -757,60 +895,19 @@ export default function App() {
                     </h3>
 
                     <p>
-                      Тези настройки важат за офертата и после могат
-                      да се наследяват от модулите.
+                      Тук остават общите условия към офертата. Типът на изделието
+                      ще се задава поотделно във всеки модул.
                     </p>
                   </div>
                 </div>
 
-                <div className="form-grid parameter-grid">
-                  <label className="field">
-                    <span>Тип</span>
-
-                    <select
-                      value={offer.productType}
-                      onChange={(event) =>
-                        updateOffer('productType', event.target.value)
-                      }
-                    >
-                      <option>Прозорец</option>
-                    </select>
-                  </label>
-
+                <div className="module-scope-note">
+                  <b>Тип изделие = параметър на модула</b>
+                  <span>
+                    Прозорец, врата и конкретната функция няма да се заключват
+                    като една обща стойност за цялата оферта.
+                  </span>
                 </div>
-
-                <fieldset className="hardware-fieldset">
-                  <legend>Обков</legend>
-
-                  <div className="hardware-options">
-                    {['Siegenia', 'Maco'].map((hardware) => (
-                      <label
-                        className="hardware-option"
-                        key={hardware}
-                      >
-                        <input
-                          type="radio"
-                          name="hardware"
-                          value={hardware}
-                          checked={offer.hardware === hardware}
-                          onChange={(event) =>
-                            updateOffer(
-                              'hardware',
-                              event.target.value,
-                            )
-                          }
-                        />
-
-                        <span>
-                          <b>{hardware}</b>
-                          <small>
-                            Основен обков за офертата
-                          </small>
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
 
                 <label className="field full-width-field">
                   <span>Общи условия</span>
@@ -867,11 +964,6 @@ export default function App() {
                 </div>
 
                 <div>
-                  <span>ТИП</span>
-                  <b>{offer.productType}</b>
-                </div>
-
-                <div>
                   <span>ЦВЯТ</span>
                   <b>{selectedFinish?.labelBg || 'Не е избран'}</b>
                 </div>
@@ -888,9 +980,27 @@ export default function App() {
 
                 <div>
                   <span>ОБКОВ</span>
-                  <b>{offer.hardware}</b>
+                  <b>{selectedHardwareStandard?.labelBg || 'Не е избран'}</b>
+                </div>
+
+                <div>
+                  <span>МАРКА ОБКОВ</span>
+                  <b>Не е уточнена</b>
                 </div>
               </aside>
+
+              <div className="module-defaults-note" role="status">
+                <div>
+                  <span>ОБЩИ НАСТРОЙКИ ЗА МОДУЛИТЕ</span>
+                  <b>Система · Цвят · Фолиране · Стъклопакет · Обков</b>
+                </div>
+
+                <p>
+                  Всеки нов модул ще започва с тези стойности, наследени
+                  от офертата. Конкретният тип, размери, отваряния и
+                  модулен обков ще се задават в следващия етап.
+                </p>
+              </div>
 
               <div className="offer-form-footer">
                 <div>
@@ -900,7 +1010,7 @@ export default function App() {
 
                   <p>
                     След записване започваме Модул 1,
-                    Модул 2, Модул 3…
+                    Модул 2, Модул 3… с наследени общи настройки.
                   </p>
                 </div>
 
@@ -913,14 +1023,14 @@ export default function App() {
                 </button>
               </div>
 
-              {saved && (
+              {saved && moduleDefaults && (
                 <div className="saved-notice" role="status">
                   <b>
-                    Офертата, системата, цветът, фолирането и стъклопакетът са подготвени.
+                    Офертата и общите технически настройки за модулите са подготвени.
                   </b>
 
                   <span>
-                    Следващият етап ще бъде създаването на модулите.
+                    Следващият етап ще бъде създаването на модулите с наследяване от офертата.
                   </span>
                 </div>
               )}

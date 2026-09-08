@@ -1481,3 +1481,185 @@
     flex-direction: column;
   }
 }
+
+/* ==========================================================
+   CONCEPT 05C · OFFER HARDWARE DEFAULTS + MODULE INHERITANCE
+   ========================================================== */
+
+.hardware-section {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(246, 251, 252, 0.92),
+      rgba(255, 255, 255, 0.98)
+    );
+}
+
+.hardware-lock {
+  margin-left: 54px;
+  padding: 13px 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px dashed #b8cbd0;
+  border-radius: 10px;
+  background: #f7fafb;
+  color: #71878d;
+  font-size: 10px;
+}
+
+.hardware-lock b {
+  color: #355962;
+}
+
+.hardware-workflow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(240px, .75fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.hardware-workflow .hardware-fieldset {
+  margin: 0;
+  min-width: 0;
+}
+
+.hardware-workflow .hardware-options {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.hardware-option.is-selected {
+  border-color: #35a8ba;
+  background: linear-gradient(180deg, #eff9fb, #e7f5f7);
+  box-shadow: inset 4px 0 #1597aa, 0 6px 16px rgba(21, 97, 113, 0.08);
+}
+
+.hardware-manufacturer-card {
+  padding: 14px 16px;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  border: 1px solid #c2d2d6;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #fbfdfd, #f3f7f8);
+}
+
+.hardware-manufacturer-card span {
+  color: #6b858c;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .55px;
+}
+
+.hardware-manufacturer-card b {
+  color: #264c55;
+  font-size: 13px;
+}
+
+.hardware-manufacturer-card small {
+  color: #758a90;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.hardware-compatibility-note {
+  grid-column: 1 / -1;
+  padding: 12px 14px;
+  display: grid;
+  gap: 4px;
+  border: 1px solid #d4c29d;
+  border-radius: 9px;
+  background: #fffaf0;
+  color: #735f3c;
+  font-size: 10px;
+}
+
+.hardware-compatibility-note.is-confirmed {
+  border-color: #a8cbbd;
+  background: #f1faf6;
+  color: #315f50;
+}
+
+.hardware-compatibility-note b {
+  font-size: 10px;
+}
+
+.hardware-compatibility-note span {
+  line-height: 1.45;
+}
+
+.module-scope-note {
+  padding: 13px 15px;
+  display: grid;
+  gap: 4px;
+  border: 1px solid #c5d6da;
+  border-radius: 10px;
+  background: #f6fafb;
+}
+
+.module-scope-note b {
+  color: #28505a;
+  font-size: 11px;
+}
+
+.module-scope-note span {
+  color: #71878d;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.module-defaults-note {
+  padding: 16px 28px;
+  display: grid;
+  grid-template-columns: minmax(250px, .9fr) minmax(0, 1.5fr);
+  gap: 24px;
+  align-items: center;
+  border-bottom: 1px solid #c8d8dc;
+  background: linear-gradient(90deg, #e9f7f8, #f7fbfc);
+}
+
+.module-defaults-note > div {
+  display: grid;
+  gap: 4px;
+}
+
+.module-defaults-note span {
+  color: #17889a;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .65px;
+}
+
+.module-defaults-note b {
+  color: #234d57;
+  font-size: 12px;
+}
+
+.module-defaults-note p {
+  margin: 0;
+  color: #617b82;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+@media (max-width: 900px) {
+  .hardware-workflow,
+  .module-defaults-note {
+    grid-template-columns: 1fr;
+  }
+
+  .hardware-lock {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 700px) {
+  .hardware-lock {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .module-defaults-note {
+    padding: 14px 18px;
+  }
+}

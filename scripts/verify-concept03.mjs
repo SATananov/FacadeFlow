@@ -16,6 +16,11 @@ const glazing = await readFile(
   'utf8',
 )
 
+const hardware = await readFile(
+  new URL('../src/data/profileSystems/hardwareOptions.ts', import.meta.url),
+  'utf8',
+)
+
 assert.match(app, /CONTRACTOR_DATA/)
 assert.match(app, /НАДЕЖДА/)
 assert.match(app, /Al и PVC дограма/)
@@ -39,8 +44,8 @@ assert.match(app, /Други общи параметри/)
 assert.match(app, /Цвят и фолиране/)
 assert.match(app, /getSelectableProfileSystems/)
 assert.match(app, /profileSystemId/)
-assert.match(app, /Siegenia/)
-assert.match(app, /Maco/)
+assert.match(hardware, /Стандартен европейски обков/)
+assert.match(app, /hardwareStandardId/)
 assert.match(glazing, /Four Seasons/)
 
 assert.match(css, /\.contractor-card/)
