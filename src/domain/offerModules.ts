@@ -2,6 +2,7 @@ import type { OfferModuleDefaults } from './offerModuleDefaults'
 
 export type ModuleProductType = 'window' | 'door'
 export type ModuleInputSource = 'unset' | 'preset' | 'manual'
+export type ModuleFieldType = 'fixed' | 'operable'
 
 export const MODULE_PRODUCT_TYPE_PRESETS = [
   { id: 'window', labelBg: 'Прозорец' },
@@ -10,6 +11,75 @@ export const MODULE_PRODUCT_TYPE_PRESETS = [
   id: ModuleProductType
   labelBg: string
 }[]
+
+
+export const MODULE_FIELD_TYPE_PRESETS = [
+  { id: 'fixed', labelBg: 'Фиксирано' },
+  { id: 'operable', labelBg: 'Отваряемо' },
+] as const satisfies readonly {
+  id: ModuleFieldType
+  labelBg: string
+}[]
+
+/**
+ * No company-confirmed standard field widths have been supplied yet.
+ * Field widths are optional and remain manual until real presets are confirmed.
+ */
+export const MODULE_FIELD_WIDTH_PRESETS_MM: readonly number[] = []
+
+export interface OfferModuleFieldDraft {
+  id: string
+  sequence: number
+
+  fieldType: ModuleFieldType | null
+  customFieldTypeLabel: string
+  fieldTypeSource: ModuleInputSource
+
+  widthMm: number | null
+  widthSource: ModuleInputSource
+}
+
+export function createOfferModuleFieldDraft(sequence: number): OfferModuleFieldDraft {
+  return {
+    id: `field-${sequence}`,
+    sequence,
+    fieldType: null,
+    customFieldTypeLabel: '',
+    fieldTypeSource: 'unset',
+    widthMm: null,
+    widthSource: 'unset',
+  }
+}
+
+export function resizeOfferModuleFields(
+  current: readonly OfferModuleFieldDraft[],
+  fieldCount: number | null,
+): OfferModuleFieldDraft[] {
+  if (fieldCount === null || !Number.isFinite(fieldCount) || fieldCount <= 0) {
+    return []
+  }
+
+  const normalizedCount = Math.floor(fieldCount)
+  return Array.from({ length: normalizedCount }, (_, index) => {
+    const sequence = index + 1
+    const existing = current[index]
+    return existing
+      ? { ...existing, id: `field-${sequence}`, sequence }
+      : createOfferModuleFieldDraft(sequence)
+  })
+}
+
+export function hasOfferModuleFieldType(field: OfferModuleFieldDraft): boolean {
+  if (field.fieldTypeSource === 'preset') {
+    return field.fieldType !== null
+  }
+
+  if (field.fieldTypeSource === 'manual') {
+    return field.customFieldTypeLabel.trim().length > 0
+  }
+
+  return false
+}
 
 /**
  * Human-confirmed structural shortcuts. They describe only the number of
@@ -40,6 +110,7 @@ export interface OfferModuleDraft {
 
   fieldCount: number | null
   fieldCountSource: ModuleInputSource
+  fields: OfferModuleFieldDraft[]
 }
 
 /**
@@ -73,6 +144,7 @@ export function createFirstOfferModule(
 
     fieldCount: null,
     fieldCountSource: 'unset',
+    fields: [],
   }
 }
 
@@ -139,4 +211,22 @@ export function getOfferModuleMissingFields(
   }
 
   return missing
+}
+
+
+export function getOfferModuleConfiguredFieldCount(
+  module: OfferModuleDraft,
+): number {
+  return module.fields.filter(hasOfferModuleFieldType).length
+}
+
+export function areOfferModuleFieldsDescribed(
+  module: OfferModuleDraft,
+): boolean {
+  return (
+    module.fieldCount !== null &&
+    module.fieldCount > 0 &&
+    module.fields.length === Math.floor(module.fieldCount) &&
+    module.fields.every(hasOfferModuleFieldType)
+  )
 }

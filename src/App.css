@@ -1995,3 +1995,143 @@
     margin-right: 16px;
   }
 }
+
+/* Concept 06C - optional field-by-field module description */
+.module-fields-section {
+  margin: 0 26px 18px;
+  overflow: hidden;
+  border: 1px solid #bfd2d6;
+  border-radius: 12px;
+  background: #fbfdfd;
+}
+
+.module-fields-heading {
+  padding: 15px 17px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  border-bottom: 1px solid #dbe6e8;
+  background: linear-gradient(135deg, #eef8fa, #fbfdfd);
+}
+
+.module-fields-heading > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.module-fields-heading span {
+  color: #1595a8;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .7px;
+}
+
+.module-fields-heading h3 {
+  margin: 0;
+  color: #285761;
+  font-size: 16px;
+}
+
+.module-fields-heading p {
+  margin: 0;
+  max-width: 690px;
+  color: #6e858a;
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+.module-fields-progress {
+  padding: 7px 10px;
+  border: 1px solid #b8ced3;
+  border-radius: 999px;
+  background: #fff;
+  color: #45666e;
+  font-size: 8.5px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.module-fields-grid {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.module-field-card {
+  min-width: 0;
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  border: 1px solid #d0dee1;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.module-field-card-heading {
+  padding-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid #e2eaec;
+}
+
+.module-field-card-heading > div {
+  display: grid;
+  gap: 2px;
+}
+
+.module-field-card-heading span {
+  color: #1595a8;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .6px;
+}
+
+.module-field-card-heading b {
+  color: #315b64;
+  font-size: 11px;
+}
+
+.module-field-card-heading small {
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #eef5f6;
+  color: #71878c;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.module-fields-boundary {
+  padding: 11px 16px;
+  border-top: 1px solid #dbe6e8;
+  background: #f6f9fa;
+  color: #71868b;
+  font-size: 8.5px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .module-fields-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .module-fields-section {
+    margin-left: 16px;
+    margin-right: 16px;
+  }
+
+  .module-fields-heading {
+    flex-direction: column;
+  }
+
+  .module-fields-progress {
+    white-space: normal;
+  }
+}

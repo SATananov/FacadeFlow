@@ -14,15 +14,22 @@ import {
 import { buildOfferModuleDefaults } from './domain/offerModuleDefaults'
 import {
   createFirstOfferModule,
+  areOfferModuleFieldsDescribed,
+  getOfferModuleConfiguredFieldCount,
   getOfferModuleMissingFields,
   isOfferModuleBasicsReady,
   isOfferModuleStructureReady,
   MODULE_DIMENSION_PRESETS_MM,
   MODULE_FIELD_COUNT_PRESETS,
+  MODULE_FIELD_TYPE_PRESETS,
+  MODULE_FIELD_WIDTH_PRESETS_MM,
   MODULE_PRODUCT_TYPE_PRESETS,
+  resizeOfferModuleFields,
+  type ModuleFieldType,
   type ModuleInputSource,
   type ModuleProductType,
   type OfferModuleDraft,
+  type OfferModuleFieldDraft,
 } from './domain/offerModules'
 import './App.css'
 
@@ -215,6 +222,12 @@ export default function App() {
   const firstModuleMissingFields = firstModule
     ? getOfferModuleMissingFields(firstModule)
     : []
+  const firstModuleConfiguredFieldCount = firstModule
+    ? getOfferModuleConfiguredFieldCount(firstModule)
+    : 0
+  const firstModuleFieldsDescribed = firstModule
+    ? areOfferModuleFieldsDescribed(firstModule)
+    : false
 
   const updateFirstModule = (
     patch: Partial<
@@ -224,6 +237,44 @@ export default function App() {
     setModules((current) =>
       current.map((module, index) =>
         index === 0 ? { ...module, ...patch } : module,
+      ),
+    )
+  }
+
+  const updateFirstModuleField = (
+    fieldIndex: number,
+    patch: Partial<OfferModuleFieldDraft>,
+  ) => {
+    setModules((current) =>
+      current.map((module, moduleIndex) => {
+        if (moduleIndex !== 0) {
+          return module
+        }
+
+        return {
+          ...module,
+          fields: module.fields.map((field, index) =>
+            index === fieldIndex ? { ...field, ...patch } : field,
+          ),
+        }
+      }),
+    )
+  }
+
+  const setFirstModuleFieldCount = (
+    fieldCount: number | null,
+    source: ModuleInputSource,
+  ) => {
+    setModules((current) =>
+      current.map((module, index) =>
+        index === 0
+          ? {
+              ...module,
+              fieldCount,
+              fieldCountSource: source,
+              fields: resizeOfferModuleFields(module.fields, fieldCount),
+            }
+          : module,
       ),
     )
   }
@@ -273,24 +324,54 @@ export default function App() {
 
   const selectFirstModuleFieldCount = (value: string) => {
     if (value === '') {
-      updateFirstModule({
-        fieldCount: null,
-        fieldCountSource: 'unset',
+      setFirstModuleFieldCount(null, 'unset')
+      return
+    }
+
+    if (value === 'custom') {
+      setFirstModuleFieldCount(null, 'manual')
+      return
+    }
+
+    setFirstModuleFieldCount(Number(value), 'preset')
+  }
+
+  const selectFirstModuleFieldType = (
+    fieldIndex: number,
+    value: string,
+  ) => {
+    if (value === '') {
+      updateFirstModuleField(fieldIndex, {
+        fieldType: null,
+        customFieldTypeLabel: '',
+        fieldTypeSource: 'unset',
       })
       return
     }
 
     if (value === 'custom') {
-      updateFirstModule({
-        fieldCount: null,
-        fieldCountSource: 'manual',
+      updateFirstModuleField(fieldIndex, {
+        fieldType: null,
+        fieldTypeSource: 'manual',
       })
       return
     }
 
-    updateFirstModule({
-      fieldCount: Number(value),
-      fieldCountSource: 'preset',
+    updateFirstModuleField(fieldIndex, {
+      fieldType: value as ModuleFieldType,
+      customFieldTypeLabel: '',
+      fieldTypeSource: 'preset',
+    })
+  }
+
+  const selectFirstModuleFieldWidthSource = (
+    fieldIndex: number,
+    source: ModuleInputSource,
+  ) => {
+    const field = firstModule?.fields[fieldIndex]
+    updateFirstModuleField(fieldIndex, {
+      widthSource: source,
+      widthMm: source === 'unset' ? null : field?.widthMm ?? null,
     })
   }
 
@@ -1469,12 +1550,12 @@ export default function App() {
                           inputMode="numeric"
                           value={firstModule.fieldCount ?? ''}
                           onChange={(event) =>
-                            updateFirstModule({
-                              fieldCount:
-                                event.target.value === ''
-                                  ? null
-                                  : Number(event.target.value),
-                            })
+                            setFirstModuleFieldCount(
+                              event.target.value === ''
+                                ? null
+                                : Number(event.target.value),
+                              'manual',
+                            )
                           }
                           placeholder="Напр. 5"
                         />
@@ -1482,6 +1563,170 @@ export default function App() {
                     )}
                   </section>
                 </div>
+
+                {firstModule.fields.length > 0 && (
+                  <section
+                    className="module-fields-section"
+                    aria-labelledby="module-fields-title"
+                  >
+                    <div className="module-fields-heading">
+                      <div>
+                        <span>CONCEPT 06C</span>
+                        <h3 id="module-fields-title">Полетата на Модул 1</h3>
+                        <p>
+                          Всяко поле е отделна опционална чернова. Изберете
+                          потвърден тип от менюто или използвайте ръчно описание
+                          за нестандартен случай. Ширината на полето също може да
+                          остане празна.
+                        </p>
+                      </div>
+
+                      <div className="module-fields-progress">
+                        {firstModuleConfiguredFieldCount} / {firstModule.fields.length} описани
+                      </div>
+                    </div>
+
+                    <div className="module-fields-grid">
+                      {firstModule.fields.map((field, fieldIndex) => (
+                        <article className="module-field-card" key={field.id}>
+                          <div className="module-field-card-heading">
+                            <div>
+                              <span>ПОЛЕ {String(field.sequence).padStart(2, '0')}</span>
+                              <b>Поле {field.sequence}</b>
+                            </div>
+                            <small>опционално</small>
+                          </div>
+
+                          <label className="field">
+                            <span>Тип поле</span>
+                            <select
+                              value={
+                                field.fieldTypeSource === 'manual'
+                                  ? 'custom'
+                                  : field.fieldType ?? ''
+                              }
+                              onChange={(event) =>
+                                selectFirstModuleFieldType(
+                                  fieldIndex,
+                                  event.target.value,
+                                )
+                              }
+                            >
+                              <option value="">Не е зададено</option>
+                              {MODULE_FIELD_TYPE_PRESETS.map((option) => (
+                                <option key={option.id} value={option.id}>
+                                  {option.labelBg}
+                                </option>
+                              ))}
+                              <option value="custom">Друго / ръчно</option>
+                            </select>
+                          </label>
+
+                          {field.fieldTypeSource === 'manual' && (
+                            <label className="field">
+                              <span>Ръчно описание на полето</span>
+                              <input
+                                value={field.customFieldTypeLabel}
+                                onChange={(event) =>
+                                  updateFirstModuleField(fieldIndex, {
+                                    customFieldTypeLabel: event.target.value,
+                                  })
+                                }
+                                placeholder="Напр. нестандартно поле"
+                              />
+                            </label>
+                          )}
+
+                          <label className="field">
+                            <span>Ширина на поле</span>
+                            <select
+                              value={field.widthSource}
+                              onChange={(event) =>
+                                selectFirstModuleFieldWidthSource(
+                                  fieldIndex,
+                                  event.target.value as ModuleInputSource,
+                                )
+                              }
+                            >
+                              <option value="unset">Не е зададена</option>
+                              <option value="manual">Ръчно / нестандартно</option>
+                              <option
+                                value="preset"
+                                disabled={MODULE_FIELD_WIDTH_PRESETS_MM.length === 0}
+                              >
+                                Стандартна ширина
+                              </option>
+                            </select>
+                          </label>
+
+                          {field.widthSource === 'manual' && (
+                            <label className="field">
+                              <span>Ширина</span>
+                              <div className="dimension-input-wrap">
+                                <input
+                                  type="number"
+                                  min="1"
+                                  step="1"
+                                  inputMode="numeric"
+                                  value={field.widthMm ?? ''}
+                                  onChange={(event) =>
+                                    updateFirstModuleField(fieldIndex, {
+                                      widthMm:
+                                        event.target.value === ''
+                                          ? null
+                                          : Number(event.target.value),
+                                    })
+                                  }
+                                  placeholder="Въведете размер"
+                                />
+                                <em>mm</em>
+                              </div>
+                            </label>
+                          )}
+
+                          {field.widthSource === 'preset' &&
+                            MODULE_FIELD_WIDTH_PRESETS_MM.length > 0 && (
+                              <label className="field">
+                                <span>Стандартна ширина</span>
+                                <select
+                                  value={field.widthMm ?? ''}
+                                  onChange={(event) =>
+                                    updateFirstModuleField(fieldIndex, {
+                                      widthMm:
+                                        event.target.value === ''
+                                          ? null
+                                          : Number(event.target.value),
+                                    })
+                                  }
+                                >
+                                  <option value="">Изберете</option>
+                                  {MODULE_FIELD_WIDTH_PRESETS_MM.map((value) => (
+                                    <option key={value} value={value}>
+                                      {value} mm
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                            )}
+
+                          {MODULE_FIELD_WIDTH_PRESETS_MM.length === 0 && (
+                            <p className="module-preset-boundary">
+                              Няма потвърдени стандартни ширини за отделните
+                              полета. Ръчното въвеждане е достъпно, а полето може
+                              да остане празно.
+                            </p>
+                          )}
+                        </article>
+                      ))}
+                    </div>
+
+                    <div className="module-fields-boundary">
+                      Полетата са концептуално описание. FacadeFlow не създава
+                      автоматично делители, крила или геометрия, не изравнява
+                      ширини и не определя начин на отваряне на този етап.
+                    </div>
+                  </section>
+                )}
 
                 <div
                   className={`module-basics-status${
@@ -1503,13 +1748,19 @@ export default function App() {
                     Основни данни (тип + ширина + височина):{' '}
                     {firstModuleBasicsReady ? 'въведени' : 'непълни'}.
                   </span>
+                  {firstModule.fields.length > 0 && (
+                    <span>
+                      Полета: {firstModuleConfiguredFieldCount} / {firstModule.fields.length}{' '}
+                      описани; {firstModuleFieldsDescribed ? 'всички са описани' : 'описанието може да остане непълно'}.
+                    </span>
+                  )}
                 </div>
 
                 <div className="module-geometry-boundary">
                   Concept 06B не генерира геометрия и не предполага стандартни
-                  размери. Падащите менюта съдържат само потвърдени избори;
-                  нестандартните стойности се въвеждат ръчно. Машинни данни не се
-                  подготвят.
+                  размери. Concept 06C описва полетата като опционални чернови с
+                  dropdown или ръчно въвеждане. Не се създават автоматично
+                  делители, крила или отваряния. Машинни данни не се подготвят.
                 </div>
               </section>
             )}
