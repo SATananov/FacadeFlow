@@ -9,7 +9,7 @@ assert.match(app, /Създай оферта/)
 assert.match(app, /Нов клиент \/ обект/)
 assert.match(app, /Клиент \/ Обект/)
 assert.doesNotMatch(app, /AI Workspace|Конструктор|Каталог|Импорт|Проекти|Помощ/)
-assert.match(css, /linear-gradient\(135deg, #0a1b22/)
+assert.match(css, /linear-gradient\(135deg, #08161d/)
 assert.match(css, /#13a7ba/)
 assert.match(css, /#e87329/)
 
