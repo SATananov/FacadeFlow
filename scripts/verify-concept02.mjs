@@ -4,6 +4,11 @@ import { readFile } from 'node:fs/promises'
 const app = await readFile(new URL('../src/App.tsx', import.meta.url), 'utf8')
 const css = await readFile(new URL('../src/App.css', import.meta.url), 'utf8')
 
+const glazing = await readFile(
+  new URL('../src/data/profileSystems/glazingOptions.ts', import.meta.url),
+  'utf8',
+)
+
 assert.match(app, /Клиент \/ Възложител/)
 assert.match(app, /Обект/)
 assert.match(app, /Други общи параметри/)
@@ -13,12 +18,14 @@ assert.match(app, /profileSystemId/)
 assert.match(app, /Прозорец/)
 assert.match(app, /colorId/)
 assert.match(app, /foilModeId/)
-assert.match(app, /б \+ б \/ 24/)
-assert.match(app, /б \+ б \/ 32/)
-assert.match(app, /б \+ 4S \/ 24/)
-assert.match(app, /к \+ б \/ 32/)
-assert.match(app, /к \+ б \+ 4S \/ 44/)
-assert.match(app, /Four Seasons/)
+assert.match(app, /glazingId/)
+assert.match(app, /getConfirmedGlazingOptions/)
+assert.match(glazing, /б \+ б \/ 24/)
+assert.match(glazing, /б \+ б \/ 32/)
+assert.match(glazing, /б \+ 4S \/ 24/)
+assert.match(glazing, /к \+ б \/ 32/)
+assert.match(glazing, /к \+ б \+ 4S \/ 44/)
+assert.match(glazing, /Four Seasons/)
 assert.match(app, /Siegenia/)
 assert.match(app, /Maco/)
 assert.match(app, /Общи условия/)

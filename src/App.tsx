@@ -1,5 +1,7 @@
 ﻿import { useState, type FormEvent } from 'react'
 import {
+  getConfirmedGlazingOptions,
+  getGlazingOptionById,
   getProfileSystemById,
   getProfileSystemFinishOptionById,
   getProfileSystemFinishOptions,
@@ -43,7 +45,7 @@ type OfferDraft = {
   colorId: string
   foilModeId: string
   productType: string
-  glazing: string
+  glazingId: string
   hardware: string
   commonConditions: string
 }
@@ -63,12 +65,13 @@ const EMPTY_OFFER: OfferDraft = {
   colorId: '',
   foilModeId: '',
   productType: 'Прозорец',
-  glazing: 'б + б / 24',
+  glazingId: '',
   hardware: 'Siegenia',
   commonConditions: '',
 }
 
 const SELECTABLE_PROFILE_SYSTEMS = getSelectableProfileSystems()
+const CONFIRMED_GLAZING_OPTIONS = getConfirmedGlazingOptions()
 
 export default function App() {
   const [offerStartOpen, setOfferStartOpen] = useState(false)
@@ -102,11 +105,14 @@ export default function App() {
       )
     : undefined
 
+  const selectedGlazing = getGlazingOptionById(offer.glazingId)
+
   const canContinueToModules =
     clientObjectReady &&
     Boolean(selectedProfileSystem) &&
     Boolean(selectedFinish) &&
-    Boolean(selectedFoilMode)
+    Boolean(selectedFoilMode) &&
+    Boolean(selectedGlazing)
 
   const updateOffer = <K extends keyof OfferDraft>(
     field: K,
@@ -125,6 +131,7 @@ export default function App() {
       profileSystemId,
       colorId: '',
       foilModeId: '',
+      glazingId: '',
     }))
     setSaved(false)
   }
@@ -220,10 +227,10 @@ export default function App() {
             <div className="offer-start-heading">
               <div>
                 <span>НОВА ОФЕРТА</span>
-                <h2>Изпълнител / Клиент / Обект / Система / Цвят</h2>
+                <h2>Изпълнител / Клиент / Обект / Система / Цвят / Стъклопакет</h2>
                 <p>
                   След клиента и обекта избираме профилната система
-                  от централния каталог, после избираме цвят и начин на фолиране.
+                  от централния каталог, после избираме цвят, фолиране и стъклопакет.
                 </p>
               </div>
 
@@ -659,11 +666,90 @@ export default function App() {
               </section>
 
               <section
+                className="form-section glazing-section"
+                aria-labelledby="glazing-title"
+              >
+                <div className="section-heading">
+                  <span className="section-number">06</span>
+
+                  <div>
+                    <h3 id="glazing-title">Стъклопакет</h3>
+                    <p>
+                      След цвета и фолирането избираме потвърдената
+                      конфигурация на стъклопакета за офертата.
+                    </p>
+                  </div>
+                </div>
+
+                {!selectedFoilMode && (
+                  <div className="glazing-lock" role="status">
+                    <b>Първо изберете цвят и фолиране.</b>
+                    <span>След това ще се покажат потвърдените стъклопакети.</span>
+                  </div>
+                )}
+
+                {selectedFoilMode && (
+                  <div className="glazing-workflow">
+                    <fieldset className="glazing-fieldset">
+                      <legend>Изберете стъклопакет</legend>
+
+                      <div className="glazing-options">
+                        {CONFIRMED_GLAZING_OPTIONS.map((glazing) => {
+                          const selected = offer.glazingId === glazing.id
+
+                          return (
+                            <label
+                              className={`glazing-option${
+                                selected ? ' is-selected' : ''
+                              }`}
+                              key={glazing.id}
+                            >
+                              <input
+                                type="radio"
+                                name="glazingId"
+                                value={glazing.id}
+                                checked={selected}
+                                required
+                                onChange={(event) =>
+                                  updateOffer('glazingId', event.target.value)
+                                }
+                              />
+
+                              <span>
+                                <b>{glazing.labelBg}</b>
+                                <small>{glazing.descriptionBg}</small>
+                              </span>
+
+                              <em>{glazing.totalThicknessMm} mm</em>
+                            </label>
+                          )
+                        })}
+                      </div>
+                    </fieldset>
+
+                    <div className="glazing-legend" aria-label="Легенда за стъклата">
+                      <b>Легенда</b>
+                      <span><strong>б</strong> = бяло / обикновено стъкло</span>
+                      <span><strong>к</strong> = стъкло за зимна топлозащита</span>
+                      <span><strong>4S</strong> = Four Seasons</span>
+                    </div>
+
+                    <div className="glazing-boundary-note" role="status">
+                      Дебелината е записана точно както е потвърдена.
+                      FacadeFlow не предполага дебелини на отделните стъкла
+                      или дистанционери и все още не извежда автоматично
+                      съвместимост от каталожните стъклодържатели.
+                    </div>
+                  </div>
+                )}
+              </section>
+
+              <section
                 className="form-section"
                 aria-labelledby="offer-parameters-title"
               >
                 <div className="section-heading">
-                  <span className="section-number">06</span>
+                  <span className="section-number">07</span>
 
                   <div>
                     <h3 id="offer-parameters-title">
@@ -691,27 +777,6 @@ export default function App() {
                     </select>
                   </label>
 
-                  <label className="field">
-                    <span>Стъклопакет</span>
-
-                    <select
-                      value={offer.glazing}
-                      onChange={(event) =>
-                        updateOffer('glazing', event.target.value)
-                      }
-                    >
-                      <option>б + б / 24</option>
-                      <option>б + б / 32</option>
-                      <option>б + 4S / 24</option>
-                      <option>к + б / 32</option>
-                      <option>к + б + 4S / 44</option>
-                    </select>
-                  </label>
-
-                  <p className="glazing-note">
-                    б = обикновено · к = зимна топлозащита ·
-                    4S = Four Seasons
-                  </p>
                 </div>
 
                 <fieldset className="hardware-fieldset">
@@ -818,7 +883,7 @@ export default function App() {
 
                 <div>
                   <span>СТЪКЛОПАКЕТ</span>
-                  <b>{offer.glazing}</b>
+                  <b>{selectedGlazing?.labelBg || 'Не е избран'}</b>
                 </div>
 
                 <div>
@@ -851,7 +916,7 @@ export default function App() {
               {saved && (
                 <div className="saved-notice" role="status">
                   <b>
-                    Офертата, профилната система, цветът и фолирането са подготвени.
+                    Офертата, системата, цветът, фолирането и стъклопакетът са подготвени.
                   </b>
 
                   <span>

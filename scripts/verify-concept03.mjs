@@ -11,6 +11,11 @@ const css = await readFile(
   'utf8',
 )
 
+const glazing = await readFile(
+  new URL('../src/data/profileSystems/glazingOptions.ts', import.meta.url),
+  'utf8',
+)
+
 assert.match(app, /CONTRACTOR_DATA/)
 assert.match(app, /НАДЕЖДА/)
 assert.match(app, /Al и PVC дограма/)
@@ -36,7 +41,7 @@ assert.match(app, /getSelectableProfileSystems/)
 assert.match(app, /profileSystemId/)
 assert.match(app, /Siegenia/)
 assert.match(app, /Maco/)
-assert.match(app, /Four Seasons/)
+assert.match(glazing, /Four Seasons/)
 
 assert.match(css, /\.contractor-card/)
 assert.match(css, /\.contractor-details/)

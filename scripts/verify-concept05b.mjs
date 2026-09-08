@@ -1,0 +1,72 @@
+import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+
+const app = await readFile(new URL('../src/App.tsx', import.meta.url), 'utf8')
+const css = await readFile(new URL('../src/App.css', import.meta.url), 'utf8')
+const glazing = await readFile(
+  new URL('../src/data/profileSystems/glazingOptions.ts', import.meta.url),
+  'utf8',
+)
+const index = await readFile(
+  new URL('../src/data/profileSystems/index.ts', import.meta.url),
+  'utf8',
+)
+
+assert.match(glazing, /sourceStatus: 'human-confirmed'/)
+assert.match(glazing, /id: 'b-b-24'/)
+assert.match(glazing, /labelBg: 'б \+ б \/ 24'/)
+assert.match(glazing, /обикновено \+ обикновено, 24 mm/)
+assert.match(glazing, /id: 'b-b-32'/)
+assert.match(glazing, /labelBg: 'б \+ б \/ 32'/)
+assert.match(glazing, /обикновено \+ обикновено, 32 mm/)
+assert.match(glazing, /id: 'b-4s-24'/)
+assert.match(glazing, /labelBg: 'б \+ 4S \/ 24'/)
+assert.match(glazing, /обикновено \+ Four Seasons, 24 mm/)
+assert.match(glazing, /id: 'k-b-32'/)
+assert.match(glazing, /labelBg: 'к \+ б \/ 32'/)
+assert.match(glazing, /зимно защитно \+ обикновено, 32 mm/)
+assert.match(glazing, /id: 'k-b-4s-44'/)
+assert.match(glazing, /labelBg: 'к \+ б \+ 4S \/ 44'/)
+assert.match(glazing, /зимно защитно \+ обикновено \+ Four Seasons, 44 mm/)
+assert.match(glazing, /code: 'b'/)
+assert.match(glazing, /бяло \/ обикновено стъкло/)
+assert.match(glazing, /code: 'k'/)
+assert.match(glazing, /стъкло за зимна топлозащита/)
+assert.match(glazing, /code: '4s'/)
+assert.match(glazing, /Four Seasons/)
+assert.match(glazing, /Pane\/spacer sub-thicknesses are intentionally NOT inferred/)
+assert.match(glazing, /Compatibility with a selected profile system is also NOT inferred/)
+assert.match(index, /glazingOptions/)
+
+assert.match(app, /glazingId: string/)
+assert.match(app, /glazingId: ''/)
+assert.match(app, /getConfirmedGlazingOptions/)
+assert.match(app, /getGlazingOptionById/)
+assert.match(app, /Стъклопакет/)
+assert.match(app, /Първо изберете цвят и фолиране/)
+assert.match(app, /CONFIRMED_GLAZING_OPTIONS\.map/)
+assert.match(app, /name="glazingId"/)
+assert.match(app, /Boolean\(selectedGlazing\)/)
+assert.match(app, /бяло \/ обикновено стъкло/)
+assert.match(app, /стъкло за зимна топлозащита/)
+assert.match(app, /Four Seasons/)
+assert.match(app, /не предполага дебелини на отделните стъкла/)
+assert.match(app, /не извежда автоматично/)
+assert.doesNotMatch(app, /glazing: 'б \+ б \/ 24'/)
+assert.doesNotMatch(app, /value=\{offer\.glazing\}/)
+
+assert.match(css, /\.glazing-section/)
+assert.match(css, /\.glazing-options/)
+assert.match(css, /\.glazing-option/)
+assert.match(css, /\.glazing-legend/)
+assert.match(css, /\.glazing-boundary-note/)
+
+console.log('CONCEPT 05B GLAZING SELECTION VERIFY PASS')
+console.log('FLOW: COLOR + FOIL MODE -> GLAZING')
+console.log('OPTIONS: 5 HUMAN-CONFIRMED GLAZING CONFIGURATIONS')
+console.log('OFFER PERSISTS: glazingId')
+console.log('GLASS LEGEND: b | k | 4S')
+console.log('PANE/SPACER SUB-THICKNESSES: NOT INFERRED')
+console.log('PROFILE-SYSTEM COMPATIBILITY: NOT YET VALIDATED')
+console.log('AUTOMATIC GEOMETRY: NO')
+console.log('MACHINE READY: NO')
