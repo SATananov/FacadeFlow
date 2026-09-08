@@ -2272,3 +2272,42 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Constructor-derived module values: topology is the source of truth. */
+.module-constructor-derived-value {
+  min-height: 52px;
+  padding: 9px 10px;
+  display: grid;
+  gap: 3px;
+  align-content: center;
+  border: 1px solid #b8d1d6;
+  border-radius: 7px;
+  background: linear-gradient(180deg, #f4fbfc, #eaf5f6);
+}
+
+.module-constructor-derived-value.compact {
+  min-height: 44px;
+}
+
+.module-constructor-derived-value span {
+  color: #6b8288;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.module-constructor-derived-value b {
+  color: #1f5964;
+  font-size: 13px;
+}
+
+.module-constructor-boundary {
+  margin: 8px 0 0;
+  padding: 8px 9px;
+  border: 1px solid #bdd5d9;
+  border-radius: 6px;
+  background: #eff8f9;
+  color: #4f7077;
+  font-size: 10px;
+  line-height: 1.45;
+}

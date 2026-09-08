@@ -1,7 +1,7 @@
 import type { OfferModuleDefaults } from './offerModuleDefaults'
 
 export type ModuleProductType = 'window' | 'door'
-export type ModuleInputSource = 'unset' | 'preset' | 'manual'
+export type ModuleInputSource = 'unset' | 'preset' | 'manual' | 'constructor'
 export type ModuleFieldType = 'fixed' | 'operable'
 export type ModuleOpeningMode = 'side-hinged' | 'tilt' | 'tilt-turn'
 export type ModuleOpeningHanding = 'left' | 'right'
@@ -60,6 +60,8 @@ export const MODULE_FIELD_WIDTH_PRESETS_MM: readonly number[] = []
 export interface OfferModuleFieldDraft {
   id: string
   sequence: number
+  /** Stable identity of the canonical Constructor FIELD when topology is authoritative. */
+  constructionFieldId: string | null
 
   fieldType: ModuleFieldType | null
   customFieldTypeLabel: string
@@ -81,6 +83,7 @@ export function createOfferModuleFieldDraft(sequence: number): OfferModuleFieldD
   return {
     id: `field-${sequence}`,
     sequence,
+    constructionFieldId: null,
     fieldType: null,
     customFieldTypeLabel: '',
     fieldTypeSource: 'unset',
@@ -360,4 +363,45 @@ export function areOfferModuleFieldsDescribed(
     module.fields.length === Math.floor(module.fieldCount) &&
     module.fields.every(hasOfferModuleFieldType)
   )
+}
+
+
+export interface OfferModuleTopologyFieldInput {
+  id: string
+  sequence: number
+  widthMm: number
+}
+
+/**
+ * Synchronizes the offer-side FIELD drafts with the canonical Constructor
+ * topology. Constructor geometry owns field count/order/width from this point.
+ * Existing semantic values are preserved only when the same construction FIELD
+ * identity still exists; newly created child fields intentionally start without
+ * inherited FIX/opening assumptions.
+ */
+export function syncOfferModuleFieldsFromTopology(
+  current: readonly OfferModuleFieldDraft[],
+  topologyFields: readonly OfferModuleTopologyFieldInput[],
+): OfferModuleFieldDraft[] {
+  const byConstructionId = new Map(
+    current
+      .filter((field) => field.constructionFieldId !== null)
+      .map((field) => [field.constructionFieldId as string, field] as const),
+  )
+
+  return topologyFields.map((topologyField) => {
+    const existing = byConstructionId.get(topologyField.id)
+    const base = existing
+      ? { ...existing }
+      : createOfferModuleFieldDraft(topologyField.sequence)
+
+    return {
+      ...base,
+      id: `field-${topologyField.sequence}`,
+      sequence: topologyField.sequence,
+      constructionFieldId: topologyField.id,
+      widthMm: Math.round(topologyField.widthMm),
+      widthSource: 'constructor',
+    }
+  })
 }

@@ -1,0 +1,46 @@
+import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+
+const model = await readFile(new URL('../src/domain/construction/constructionModel.ts', import.meta.url), 'utf8')
+const topology = await readFile(new URL('../src/domain/construction/fieldTopology.ts', import.meta.url), 'utf8')
+const shell = await readFile(new URL('../src/components/ConstructorShell.tsx', import.meta.url), 'utf8')
+const css = await readFile(new URL('../src/components/ConstructorShell.css', import.meta.url), 'utf8')
+const acceptance = await readFile(new URL('../docs/CONSTRUCTOR_01C_3_1_DIVIDER_ADJACENT_DIMENSIONS_UI_ACCEPTANCE.md', import.meta.url), 'utf8')
+const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'))
+
+assert.match(model, /firstClearMm: number/)
+assert.match(model, /secondClearMm: number/)
+assert.match(topology, /firstClearMm: geometry\.offsetMm/)
+assert.match(topology, /secondClearMm: node\.divider\.axis === 'vertical'/)
+assert.match(topology, /geometry\.secondBounds\.widthMm/)
+assert.match(topology, /geometry\.secondBounds\.heightMm/)
+
+assert.match(shell, /constructor-divider-balance/)
+assert.match(shell, /ЛЯВО ПОЛЕ/)
+assert.match(shell, /ДЯСНО ПОЛЕ/)
+assert.match(shell, /ГОРНО ПОЛЕ/)
+assert.match(shell, /ДОЛНО ПОЛЕ/)
+assert.match(shell, /selectedDivider\.firstClearMm/)
+assert.match(shell, /selectedDivider\.secondClearMm/)
+assert.match(shell, /selectedDivider\.thicknessMm/)
+assert.match(shell, /Схемно разпределение около делителя/)
+
+assert.match(css, /constructor-divider-balance/)
+assert.match(css, /grid-template-columns:/)
+assert.match(css, /is-divider/)
+
+assert.match(acceptance, /left of the divider/i)
+assert.match(acceptance, /right of the divider/i)
+assert.match(acceptance, /above the divider/i)
+assert.match(acceptance, /below the divider/i)
+assert.match(acceptance, /not a second source of geometry/i)
+assert.match(acceptance, /PROFILE RESOLUTION: NO/)
+assert.match(acceptance, /MACHINE READY: NO/)
+assert.match(packageJson.scripts['test:contract'], /verify-constructor01c3_1\.mjs/)
+
+console.log('CONSTRUCTOR 01C.3.1 DIVIDER ADJACENT DIMENSIONS UI VERIFY PASS')
+console.log('VERTICAL: LEFT + DIVIDER + RIGHT')
+console.log('HORIZONTAL: TOP + DIVIDER + BOTTOM')
+console.log('GEOMETRY SOURCE: CANONICAL FIELD TOPOLOGY')
+console.log('PROFILE RESOLUTION: NO')
+console.log('MACHINE READY: NO')
