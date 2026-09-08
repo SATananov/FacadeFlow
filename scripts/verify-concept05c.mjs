@@ -58,7 +58,8 @@ assert.match(app, /ОБЩИ НАСТРОЙКИ ЗА МОДУЛИТЕ/)
 assert.match(app, /Система · Цвят · Фолиране · Стъклопакет · Обков/)
 assert.match(app, /наследени общи настройки/)
 assert.match(app, /Тип изделие = параметър на модула/)
-assert.doesNotMatch(app, /productType/)
+const offerDraftBlock = app.match(/type OfferDraft = \{[\s\S]*?\n\}/)?.[0] ?? ''
+assert.doesNotMatch(offerDraftBlock, /productType/)
 assert.doesNotMatch(app, /name="hardware"/)
 assert.doesNotMatch(app, /\['Siegenia', 'Maco'\]/)
 

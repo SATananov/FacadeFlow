@@ -12,6 +12,12 @@ import {
   getSelectableProfileSystems,
 } from './data/profileSystems'
 import { buildOfferModuleDefaults } from './domain/offerModuleDefaults'
+import {
+  createFirstOfferModule,
+  isOfferModuleBasicsReady,
+  type ModuleProductType,
+  type OfferModuleDraft,
+} from './domain/offerModules'
 import './App.css'
 
 function OfferIcon() {
@@ -82,6 +88,7 @@ export default function App() {
   const [offerStartOpen, setOfferStartOpen] = useState(false)
   const [offer, setOffer] = useState<OfferDraft>(EMPTY_OFFER)
   const [saved, setSaved] = useState(false)
+  const [modules, setModules] = useState<OfferModuleDraft[]>([])
 
   const clientObjectReady =
     offer.clientName.trim().length > 0 &&
@@ -141,6 +148,10 @@ export default function App() {
       [field]: value,
     }))
     setSaved(false)
+
+    if (field === 'foilModeId' || field === 'glazingId') {
+      setModules([])
+    }
   }
 
   const selectProfileSystem = (profileSystemId: string) => {
@@ -154,6 +165,7 @@ export default function App() {
       hardwareManufacturerId: 'unspecified',
     }))
     setSaved(false)
+    setModules([])
   }
 
   const selectFinish = (colorId: string) => {
@@ -163,6 +175,7 @@ export default function App() {
       foilModeId: '',
     }))
     setSaved(false)
+    setModules([])
   }
 
   const selectHardwareStandard = (hardwareStandardId: string) => {
@@ -172,6 +185,7 @@ export default function App() {
       hardwareManufacturerId: 'unspecified',
     }))
     setSaved(false)
+    setModules([])
   }
 
   const moduleDefaults = canContinueToModules
@@ -185,21 +199,42 @@ export default function App() {
       })
     : undefined
 
+  const firstModule = modules[0]
+  const firstModuleBasicsReady = firstModule
+    ? isOfferModuleBasicsReady(firstModule)
+    : false
+
+  const updateFirstModule = (
+    patch: Partial<Pick<OfferModuleDraft, 'productType' | 'widthMm' | 'heightMm'>>,
+  ) => {
+    setModules((current) =>
+      current.map((module, index) =>
+        index === 0 ? { ...module, ...patch } : module,
+      ),
+    )
+  }
+
   const startNewOffer = () => {
     setOffer(EMPTY_OFFER)
     setSaved(false)
+    setModules([])
     setOfferStartOpen(true)
   }
 
   const submitOffer = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    if (!canContinueToModules) {
+    if (!canContinueToModules || !moduleDefaults) {
       setSaved(false)
       return
     }
 
     setSaved(true)
+    setModules((current) =>
+      current.length > 0
+        ? current
+        : [createFirstOfferModule(moduleDefaults)],
+    )
   }
 
   return (
@@ -1030,11 +1065,175 @@ export default function App() {
                   </b>
 
                   <span>
-                    Следващият етап ще бъде създаването на модулите с наследяване от офертата.
+                    Модул 1 е създаден с наследени общи настройки от офертата.
                   </span>
                 </div>
               )}
             </form>
+
+            {saved && firstModule && (
+              <section
+                className="module-workspace"
+                aria-labelledby="module-1-title"
+              >
+                <div className="module-workspace-heading">
+                  <div>
+                    <span>МОДУЛ 01</span>
+                    <h2 id="module-1-title">Модул 1</h2>
+                    <p>
+                      Първият модул наследява общите настройки на офертата.
+                      Тук задаваме само типа на изделието и основните габарити.
+                    </p>
+                  </div>
+
+                  <div className="module-inheritance-badge">
+                    Наследява общите настройки
+                  </div>
+                </div>
+
+                <div className="module-inherited-defaults">
+                  <div>
+                    <span>СИСТЕМА</span>
+                    <b>
+                      {selectedProfileSystem
+                        ? `${selectedProfileSystem.manufacturer} ${selectedProfileSystem.name}`
+                        : firstModule.inheritedDefaults.profileSystemId}
+                    </b>
+                  </div>
+
+                  <div>
+                    <span>ЦВЯТ / ФОЛИРАНЕ</span>
+                    <b>
+                      {selectedFinish?.labelBg || firstModule.inheritedDefaults.colorId}
+                      {' · '}
+                      {selectedFoilMode?.labelBg || firstModule.inheritedDefaults.foilModeId}
+                    </b>
+                  </div>
+
+                  <div>
+                    <span>СТЪКЛОПАКЕТ</span>
+                    <b>{selectedGlazing?.labelBg || firstModule.inheritedDefaults.glazingId}</b>
+                  </div>
+
+                  <div>
+                    <span>ОБКОВ</span>
+                    <b>
+                      {selectedHardwareStandard?.labelBg ||
+                        firstModule.inheritedDefaults.hardwareStandardId}
+                    </b>
+                  </div>
+                </div>
+
+                <div className="module-basics-grid">
+                  <fieldset className="module-type-fieldset">
+                    <legend>Тип изделие</legend>
+
+                    <div className="module-type-options">
+                      {(
+                        [
+                          ['window', 'Прозорец'],
+                          ['door', 'Врата'],
+                        ] as const
+                      ).map(([value, label]) => (
+                        <label
+                          className={`module-type-option${
+                            firstModule.productType === value
+                              ? ' is-selected'
+                              : ''
+                          }`}
+                          key={value}
+                        >
+                          <input
+                            type="radio"
+                            name="module1ProductType"
+                            value={value}
+                            checked={firstModule.productType === value}
+                            onChange={(event) =>
+                              updateFirstModule({
+                                productType: event.target.value as ModuleProductType,
+                              })
+                            }
+                          />
+
+                          <span>{label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+
+                  <div className="module-dimensions">
+                    <label className="field">
+                      <span>Ширина</span>
+                      <div className="dimension-input-wrap">
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          inputMode="numeric"
+                          value={firstModule.widthMm ?? ''}
+                          onChange={(event) =>
+                            updateFirstModule({
+                              widthMm:
+                                event.target.value === ''
+                                  ? null
+                                  : Number(event.target.value),
+                            })
+                          }
+                          placeholder="напр. 1200"
+                        />
+                        <em>mm</em>
+                      </div>
+                    </label>
+
+                    <label className="field">
+                      <span>Височина</span>
+                      <div className="dimension-input-wrap">
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          inputMode="numeric"
+                          value={firstModule.heightMm ?? ''}
+                          onChange={(event) =>
+                            updateFirstModule({
+                              heightMm:
+                                event.target.value === ''
+                                  ? null
+                                  : Number(event.target.value),
+                            })
+                          }
+                          placeholder="напр. 1400"
+                        />
+                        <em>mm</em>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <div
+                  className={`module-basics-status${
+                    firstModuleBasicsReady ? ' is-ready' : ''
+                  }`}
+                  role="status"
+                >
+                  <b>
+                    {firstModuleBasicsReady
+                      ? 'Основните данни за Модул 1 са въведени.'
+                      : 'Модул 1 очаква тип, ширина и височина.'}
+                  </b>
+                  <span>
+                    {firstModuleBasicsReady
+                      ? 'Следващият етап ще зададе конструкция, крила и отваряния.'
+                      : 'Тези стойности са модулни и не променят общите настройки на офертата.'}
+                  </span>
+                </div>
+
+                <div className="module-geometry-boundary">
+                  Concept 06A не създава автоматична геометрия, не избира
+                  отваряния и не подготвя машинни данни.
+                </div>
+              </section>
+            )}
           </section>
         )}
       </main>
