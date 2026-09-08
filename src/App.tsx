@@ -12,6 +12,7 @@ import {
   getSelectableProfileSystems,
 } from './data/profileSystems'
 import { buildOfferModuleDefaults } from './domain/offerModuleDefaults'
+import { resolveConstructionTopology } from './domain/construction'
 import {
   createFirstOfferModule,
   areOfferModuleFieldsDescribed,
@@ -31,6 +32,7 @@ import {
   MODULE_OPENING_HANDING_PRESETS,
   MODULE_PRODUCT_TYPE_PRESETS,
   resizeOfferModuleFields,
+  syncOfferModuleFieldsFromTopology,
   type ModuleFieldType,
   type ModuleInputSource,
   type ModuleOpeningMode,
@@ -41,6 +43,7 @@ import {
 } from './domain/offerModules'
 import ConstructorShell, {
   type ConstructorDraftSnapshot,
+  type ConstructorFieldTopologySummary,
 } from './components/ConstructorShell'
 import './App.css'
 
@@ -239,6 +242,9 @@ export default function App() {
     : undefined
 
   const firstModule = modules[0]
+  const constructorTopologyAuthoritative = Boolean(
+    offerModuleSketchDraft?.topology ?? offerSourceSketch?.topology,
+  )
   const firstModuleBasicsReady = firstModule
     ? isOfferModuleBasicsReady(firstModule)
     : false
@@ -296,6 +302,30 @@ export default function App() {
           ),
         }
       }),
+    )
+  }
+
+  const syncFirstModuleFieldTopology = (
+    topologyFields: readonly ConstructorFieldTopologySummary[],
+  ) => {
+    setModules((current) =>
+      current.map((module, index) =>
+        index === 0
+          ? {
+              ...module,
+              fieldCount: topologyFields.length,
+              fieldCountSource: 'constructor',
+              fields: syncOfferModuleFieldsFromTopology(
+                module.fields,
+                topologyFields.map((field) => ({
+                  id: field.id,
+                  sequence: field.sequence,
+                  widthMm: field.widthMm,
+                })),
+              ),
+            }
+          : module,
+      ),
     )
   }
 
@@ -542,12 +572,29 @@ export default function App() {
         return [createdModule]
       }
 
+      const sourceTopology = offerSourceSketch?.topology
+      const topologyFields = sourceTopology
+        ? resolveConstructionTopology(sourceTopology).fields
+        : []
+
       return [{
         ...createdModule,
         widthMm: sourceFrame.widthMm,
-        widthSource: 'manual',
+        widthSource: sourceTopology ? 'constructor' : 'manual',
         heightMm: sourceFrame.heightMm,
-        heightSource: 'manual',
+        heightSource: sourceTopology ? 'constructor' : 'manual',
+        fieldCount: sourceTopology ? topologyFields.length : null,
+        fieldCountSource: sourceTopology ? 'constructor' : 'unset',
+        fields: sourceTopology
+          ? syncOfferModuleFieldsFromTopology(
+              [],
+              topologyFields.map((field) => ({
+                id: field.id,
+                sequence: field.sequence,
+                widthMm: field.bounds.widthMm,
+              })),
+            )
+          : [],
       }]
     })
   }
@@ -641,11 +688,12 @@ export default function App() {
             onModuleSizeChange={({ widthMm, heightMm }) =>
               updateFirstModule({
                 widthMm,
-                widthSource: 'manual',
+                widthSource: 'constructor',
                 heightMm,
-                heightSource: 'manual',
+                heightSource: 'constructor',
               })
             }
+            onFieldTopologyChange={syncFirstModuleFieldTopology}
             onClose={() => setConstructorMode(null)}
           />
         ) : !offerStartOpen ? (
@@ -1597,6 +1645,7 @@ export default function App() {
                       <span>Начин на въвеждане</span>
                       <select
                         value={firstModule.widthSource}
+                        disabled={constructorTopologyAuthoritative}
                         onChange={(event) =>
                           selectFirstModuleDimensionSource(
                             'width',
@@ -1606,6 +1655,7 @@ export default function App() {
                       >
                         <option value="unset">Не е зададена</option>
                         <option value="manual">Ръчно / нестандартно</option>
+                        <option value="constructor" disabled>От Конструктора</option>
                         <option
                           value="preset"
                           disabled={MODULE_DIMENSION_PRESETS_MM.length === 0}
@@ -1638,6 +1688,13 @@ export default function App() {
                           <em>mm</em>
                         </div>
                       </label>
+                    )}
+
+                    {firstModule.widthSource === 'constructor' && (
+                      <div className="module-constructor-derived-value">
+                        <span>Ширина от Конструктора</span>
+                        <b>{firstModule.widthMm ?? '—'} mm</b>
+                      </div>
                     )}
 
                     {firstModule.widthSource === 'preset' &&
@@ -1683,6 +1740,7 @@ export default function App() {
                       <span>Начин на въвеждане</span>
                       <select
                         value={firstModule.heightSource}
+                        disabled={constructorTopologyAuthoritative}
                         onChange={(event) =>
                           selectFirstModuleDimensionSource(
                             'height',
@@ -1692,6 +1750,7 @@ export default function App() {
                       >
                         <option value="unset">Не е зададена</option>
                         <option value="manual">Ръчно / нестандартно</option>
+                        <option value="constructor" disabled>От Конструктора</option>
                         <option
                           value="preset"
                           disabled={MODULE_DIMENSION_PRESETS_MM.length === 0}
@@ -1724,6 +1783,13 @@ export default function App() {
                           <em>mm</em>
                         </div>
                       </label>
+                    )}
+
+                    {firstModule.heightSource === 'constructor' && (
+                      <div className="module-constructor-derived-value">
+                        <span>Височина от Конструктора</span>
+                        <b>{firstModule.heightMm ?? '—'} mm</b>
+                      </div>
                     )}
 
                     {firstModule.heightSource === 'preset' &&
@@ -1768,6 +1834,7 @@ export default function App() {
                     <label className="field">
                       <span>Конструкция</span>
                       <select
+                        disabled={constructorTopologyAuthoritative}
                         value={
                           firstModule.fieldCountSource === 'manual'
                             ? 'custom'
@@ -1778,6 +1845,13 @@ export default function App() {
                         }
                       >
                         <option value="">Не е зададено</option>
+                        {firstModule.fieldCountSource === 'constructor' &&
+                          firstModule.fieldCount !== null &&
+                          !MODULE_FIELD_COUNT_PRESETS.includes(firstModule.fieldCount as 1 | 2 | 3 | 4) && (
+                            <option value={firstModule.fieldCount}>
+                              {firstModule.fieldCount} полета · Конструктор
+                            </option>
+                          )}
                         {MODULE_FIELD_COUNT_PRESETS.map((count) => (
                           <option key={count} value={count}>
                             {count} {count === 1 ? 'поле' : 'полета'}
@@ -1807,6 +1881,11 @@ export default function App() {
                           placeholder="Напр. 5"
                         />
                       </label>
+                    )}
+                    {constructorTopologyAuthoritative && (
+                      <p className="module-constructor-boundary">
+                        Броят полета се управлява от Конструктора. За промяна отвори Модул 1 в Конструктора и раздели/обедини ПОЛЕ.
+                      </p>
                     )}
                   </section>
                 </div>
@@ -1999,6 +2078,7 @@ export default function App() {
                             <span>Ширина на поле</span>
                             <select
                               value={field.widthSource}
+                              disabled={constructorTopologyAuthoritative}
                               onChange={(event) =>
                                 selectFirstModuleFieldWidthSource(
                                   fieldIndex,
@@ -2008,6 +2088,7 @@ export default function App() {
                             >
                               <option value="unset">Не е зададена</option>
                               <option value="manual">Ръчно / нестандартно</option>
+                              <option value="constructor" disabled>От Конструктора</option>
                               <option
                                 value="preset"
                                 disabled={MODULE_FIELD_WIDTH_PRESETS_MM.length === 0}
@@ -2040,6 +2121,13 @@ export default function App() {
                                 <em>mm</em>
                               </div>
                             </label>
+                          )}
+
+                          {field.widthSource === 'constructor' && (
+                            <div className="module-constructor-derived-value compact">
+                              <span>Ширина от топологията</span>
+                              <b>{field.widthMm ?? '—'} mm</b>
+                            </div>
                           )}
 
                           {field.widthSource === 'preset' &&

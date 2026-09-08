@@ -1,31 +1,43 @@
 import {
+  useEffect,
+  useMemo,
   useRef,
   useState,
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from 'react'
+import {
+  CONSTRUCTION_DEFAULT_FRAME_FACE_MM,
+  cloneConstructionModel,
+  createConstructionModel,
+  findFieldAtPoint,
+  getConstructionFrameFaceMm,
+  getConstructionMinimumFrameSize,
+  migrateLegacyDividersToTopology,
+  moveDivider,
+  removeDivider,
+  resizeConstructionFrame,
+  resolveConstructionTopology,
+  splitField,
+  upgradeConstructionModelPhysicalDividers,
+  type ConstructionAxis,
+  type ConstructionFrame,
+  type ConstructionModel,
+  type ResolvedConstructionDivider,
+  type ResolvedConstructionField,
+} from '../domain/construction'
+export type { ConstructorDividerSnapshot, ConstructorDraftSnapshot } from '../domain/construction'
+import type { ConstructorDraftSnapshot } from '../domain/construction'
 import './ConstructorShell.css'
 
 export type ConstructorMode = 'offer' | 'free'
+export type ConstructorDividerAxis = ConstructionAxis
 
-export type ConstructorDividerAxis = 'vertical' | 'horizontal'
-
-export type ConstructorDividerSnapshot = {
+export type ConstructorFieldTopologySummary = {
   id: string
-  axis: ConstructorDividerAxis
-  positionMm: number
-  span: 'full'
-}
-
-export type ConstructorDraftSnapshot = {
-  version: 'constructor-01b' | 'constructor-01c'
-  frame: {
-    xMm: number
-    yMm: number
-    widthMm: number
-    heightMm: number
-  }
-  dividers?: ConstructorDividerSnapshot[]
+  sequence: number
+  widthMm: number
+  heightMm: number
 }
 
 type ConstructorOfferContext = {
@@ -55,6 +67,7 @@ type ConstructorShellProps = {
   initialDraft?: ConstructorDraftSnapshot | null
   onDraftChange?: (draft: ConstructorDraftSnapshot | null) => void
   onModuleSizeChange?: (size: ConstructorModuleSize) => void
+  onFieldTopologyChange?: (fields: readonly ConstructorFieldTopologySummary[]) => void
   onClose: () => void
   onCreateOfferFromSketch?: (draft: ConstructorDraftSnapshot | null) => void
 }
@@ -62,14 +75,9 @@ type ConstructorShellProps = {
 type ConstructorTool = 'select' | 'pan' | 'frame' | 'vertical-divider' | 'horizontal-divider'
 type FrameEdge = 'left' | 'right' | 'top' | 'bottom'
 
-type DividerModel = ConstructorDividerSnapshot
-
-type FrameModel = {
-  xMm: number
-  yMm: number
-  widthMm: number
-  heightMm: number
-}
+type DividerModel = ResolvedConstructionDivider
+type FieldModel = ResolvedConstructionField
+type FrameModel = ConstructionFrame
 
 type CanvasPoint = {
   xMm: number
@@ -88,12 +96,15 @@ type DragState =
       pointerId: number
       edge: FrameEdge
       original: FrameModel
+      originalConstruction: ConstructionModel
     }
   | {
       kind: 'divider'
       pointerId: number
       dividerId: string
       axis: ConstructorDividerAxis
+      grabOffsetMm: number
+      originalConstruction: ConstructionModel
     }
 
 const ZOOM_STEPS = [75, 100, 125, 150] as const
@@ -102,7 +113,6 @@ const GRID_STEP_MM = 50
 const MAJOR_GRID_STEP_MM = 500
 const BASE_PX_PER_MM = 0.28
 const MIN_FRAME_MM = 200
-const MIN_FIELD_MM = 120
 const MAX_WORLD_MM = 5000
 
 const FREE_MODULE_SUMMARY: ConstructorModuleSummary = {
@@ -151,15 +161,30 @@ function getInitialFrame(
   return null
 }
 
-function frameToSnapshot(
-  frame: FrameModel,
-  dividers: DividerModel[],
-): ConstructorDraftSnapshot {
+function constructionToSnapshot(model: ConstructionModel): ConstructorDraftSnapshot {
   return {
-    version: 'constructor-01c',
-    frame: { ...frame },
-    dividers: dividers.map((divider) => ({ ...divider })),
+    version: 'constructor-01c.3.2',
+    frame: { ...model.frame },
+    topology: cloneConstructionModel(model),
   }
+}
+
+function getInitialConstruction(
+  initialDraft: ConstructorDraftSnapshot | null | undefined,
+  moduleSummary: ConstructorModuleSummary,
+): ConstructionModel | null {
+  if (initialDraft?.topology) {
+    return upgradeConstructionModelPhysicalDividers(initialDraft.topology)
+  }
+
+  const frame = getInitialFrame(initialDraft, moduleSummary)
+  if (!frame) return null
+
+  if (initialDraft?.dividers?.length) {
+    return migrateLegacyDividersToTopology(frame, initialDraft.dividers)
+  }
+
+  return createConstructionModel(frame)
 }
 
 export default function ConstructorShell({
@@ -170,6 +195,7 @@ export default function ConstructorShell({
   initialDraft,
   onDraftChange,
   onModuleSizeChange,
+  onFieldTopologyChange,
   onClose,
   onCreateOfferFromSketch,
 }: ConstructorShellProps) {
@@ -178,17 +204,28 @@ export default function ConstructorShell({
   const [gridVisible, setGridVisible] = useState(true)
   const [snapEnabled, setSnapEnabled] = useState(true)
   const [zoom, setZoom] = useState<number>(100)
-  const [frame, setFrame] = useState<FrameModel | null>(() =>
-    getInitialFrame(initialDraft, moduleSummary),
+  const [construction, setConstruction] = useState<ConstructionModel | null>(() =>
+    getInitialConstruction(initialDraft, moduleSummary),
   )
-  const [dividers, setDividers] = useState<DividerModel[]>(() =>
-    initialDraft?.dividers?.map((divider) => ({ ...divider })) ?? [],
+  const [undoStack, setUndoStack] = useState<Array<ConstructionModel | null>>([])
+  const [redoStack, setRedoStack] = useState<Array<ConstructionModel | null>>([])
+  const constructionRef = useRef<ConstructionModel | null>(construction)
+  const frame = construction?.frame ?? null
+  const resolvedTopology = useMemo(
+    () => construction
+      ? resolveConstructionTopology(construction)
+      : { fields: [] as FieldModel[], dividers: [] as DividerModel[] },
+    [construction],
   )
-  const dividerIdCounter = useRef((initialDraft?.dividers?.length ?? 0) + 1)
+  const fields = resolvedTopology.fields
+  const dividers = resolvedTopology.dividers
+  const [selectedFieldId, setSelectedFieldId] = useState<string | null>(
+    fields[0]?.id ?? null,
+  )
   const [selectedDividerId, setSelectedDividerId] = useState<string | null>(null)
   const [dividerPositionDraft, setDividerPositionDraft] = useState('')
   const [selectedEdge, setSelectedEdge] = useState<FrameEdge | null>(null)
-  const [frameSelected, setFrameSelected] = useState(Boolean(frame))
+  const [frameSelected, setFrameSelected] = useState(false)
   const [dragState, setDragState] = useState<DragState | null>(null)
   const [cursorPoint, setCursorPoint] = useState<CanvasPoint | null>(null)
   const [widthDraft, setWidthDraft] = useState(() =>
@@ -200,22 +237,19 @@ export default function ConstructorShell({
 
   const isFreeMode = mode === 'free'
   const pxPerMm = BASE_PX_PER_MM * (zoom / 100)
+  const frameFaceMm = construction
+    ? getConstructionFrameFaceMm(construction)
+    : CONSTRUCTION_DEFAULT_FRAME_FACE_MM
+  const frameFacePx = Math.max(12, frameFaceMm * pxPerMm)
   const displayedFrame = dragState?.kind === 'create' ? dragState.preview : frame
   const moduleSizeLabel = displayedFrame
     ? `${Math.round(displayedFrame.widthMm)} × ${Math.round(displayedFrame.heightMm)} mm`
     : 'Размерите още не са зададени'
 
   const title = isFreeMode ? 'Свободна скица' : `Модул ${moduleNumber}`
+  const selectedField = fields.find((field) => field.id === selectedFieldId) ?? null
   const selectedDivider = dividers.find((divider) => divider.id === selectedDividerId) ?? null
-  const verticalDividers = dividers
-    .filter((divider) => divider.axis === 'vertical')
-    .sort((a, b) => a.positionMm - b.positionMm)
-  const horizontalDividers = dividers
-    .filter((divider) => divider.axis === 'horizontal')
-    .sort((a, b) => a.positionMm - b.positionMm)
-  const conceptualFieldCount = frame
-    ? (verticalDividers.length + 1) * (horizontalDividers.length + 1)
-    : 0
+  const conceptualFieldCount = fields.length
 
   const snapMm = (value: number) => {
     const safeValue = clamp(value, 0, MAX_WORLD_MM)
@@ -237,143 +271,256 @@ export default function ConstructorShell({
     }
   }
 
-  const emitDraft = (nextFrame: FrameModel, nextDividers: DividerModel[]) => {
-    onDraftChange?.(frameToSnapshot(nextFrame, nextDividers))
+  const cloneHistoryEntry = (entry: ConstructionModel | null) =>
+    entry ? cloneConstructionModel(entry) : null
+
+  const constructionEquals = (
+    first: ConstructionModel | null,
+    second: ConstructionModel | null,
+  ) => JSON.stringify(first) === JSON.stringify(second)
+
+  const pushUndoEntry = (entry: ConstructionModel | null) => {
+    setUndoStack((current) => [
+      ...current.slice(-59),
+      cloneHistoryEntry(entry),
+    ])
   }
 
-  const broadcastFrame = (nextFrame: FrameModel) => {
-    setFrame(nextFrame)
-    setWidthDraft(String(Math.round(nextFrame.widthMm)))
-    setHeightDraft(String(Math.round(nextFrame.heightMm)))
-    emitDraft(nextFrame, dividers)
+  const broadcastConstruction = (nextConstruction: ConstructionModel | null) => {
+    constructionRef.current = nextConstruction
+    setConstruction(nextConstruction)
+
+    if (!nextConstruction) {
+      onDraftChange?.(null)
+      return
+    }
+
+    onDraftChange?.(constructionToSnapshot(nextConstruction))
 
     if (!isFreeMode) {
       onModuleSizeChange?.({
-        widthMm: Math.round(nextFrame.widthMm),
-        heightMm: Math.round(nextFrame.heightMm),
+        widthMm: Math.round(nextConstruction.frame.widthMm),
+        heightMm: Math.round(nextConstruction.frame.heightMm),
       })
+      onFieldTopologyChange?.(
+        resolveConstructionTopology(nextConstruction).fields.map((field) => ({
+          id: field.id,
+          sequence: field.sequence,
+          widthMm: Math.round(field.bounds.widthMm),
+          heightMm: Math.round(field.bounds.heightMm),
+        })),
+      )
     }
   }
 
-  const broadcastDividers = (nextDividers: DividerModel[]) => {
-    setDividers(nextDividers)
-    if (frame) {
-      emitDraft(frame, nextDividers)
+  const commitConstruction = (nextConstruction: ConstructionModel | null) => {
+    const currentConstruction = constructionRef.current
+    if (constructionEquals(currentConstruction, nextConstruction)) return
+    pushUndoEntry(currentConstruction)
+    setRedoStack([])
+    broadcastConstruction(nextConstruction)
+  }
+
+  const recordDragHistory = (originalConstruction: ConstructionModel) => {
+    if (constructionEquals(originalConstruction, constructionRef.current)) return
+    pushUndoEntry(originalConstruction)
+    setRedoStack([])
+  }
+
+  const broadcastFrame = (nextFrame: FrameModel, recordHistory = false) => {
+    setWidthDraft(String(Math.round(nextFrame.widthMm)))
+    setHeightDraft(String(Math.round(nextFrame.heightMm)))
+
+    const currentConstruction = constructionRef.current
+    const nextConstruction = currentConstruction
+      ? resizeConstructionFrame(currentConstruction, nextFrame)
+      : createConstructionModel(nextFrame)
+
+    if (recordHistory) {
+      commitConstruction(nextConstruction)
+    } else {
+      broadcastConstruction(nextConstruction)
     }
   }
 
   const getMinFrameDimension = (axis: ConstructorDividerAxis) => {
-    const positions = dividers
-      .filter((divider) => divider.axis === axis)
-      .map((divider) => divider.positionMm)
-    const furthest = positions.length ? Math.max(...positions) : 0
-    return Math.max(MIN_FRAME_MM, furthest + MIN_FIELD_MM)
-  }
-
-  const nearestDividerDistance = (
-    axis: ConstructorDividerAxis,
-    positionMm: number,
-    ignoredId?: string,
-  ) => {
-    const distances = dividers
-      .filter((divider) => divider.axis === axis && divider.id !== ignoredId)
-      .map((divider) => Math.abs(divider.positionMm - positionMm))
-    return distances.length ? Math.min(...distances) : Number.POSITIVE_INFINITY
-  }
-
-  const clampDividerPosition = (
-    axis: ConstructorDividerAxis,
-    rawPositionMm: number,
-    ignoredId?: string,
-  ) => {
-    if (!frame) {
-      return rawPositionMm
-    }
-
-    const axisLength = axis === 'vertical' ? frame.widthMm : frame.heightMm
-    let next = clamp(snapMm(rawPositionMm), MIN_FIELD_MM, axisLength - MIN_FIELD_MM)
-    const siblings = dividers
-      .filter((divider) => divider.axis === axis && divider.id !== ignoredId)
-      .sort((a, b) => a.positionMm - b.positionMm)
-
-    for (const sibling of siblings) {
-      if (Math.abs(sibling.positionMm - next) < MIN_FIELD_MM) {
-        next = next < sibling.positionMm
-          ? sibling.positionMm - MIN_FIELD_MM
-          : sibling.positionMm + MIN_FIELD_MM
-      }
-    }
-
-    return clamp(snapMm(next), MIN_FIELD_MM, axisLength - MIN_FIELD_MM)
+    if (!construction) return MIN_FRAME_MM
+    const minimum = getConstructionMinimumFrameSize(construction)
+    return Math.max(
+      MIN_FRAME_MM,
+      axis === 'vertical' ? minimum.widthMm : minimum.heightMm,
+    )
   }
 
   const addDivider = (axis: ConstructorDividerAxis, point: CanvasPoint) => {
-    if (!frame) {
-      return
-    }
+    const currentConstruction = constructionRef.current
+    if (!frame || !currentConstruction) return
 
-    const rawPosition = axis === 'vertical'
-      ? point.xMm - frame.xMm
-      : point.yMm - frame.yMm
-    const positionMm = clampDividerPosition(axis, rawPosition)
+    const xInFrame = point.xMm - frame.xMm
+    const yInFrame = point.yMm - frame.yMm
+    const targetField = findFieldAtPoint(currentConstruction, xInFrame, yInFrame)
+    if (!targetField) return
 
-    if (nearestDividerDistance(axis, positionMm) < MIN_FIELD_MM) {
-      return
-    }
-
-    const divider: DividerModel = {
-      id: `divider-${dividerIdCounter.current++}`,
+    const offsetMm = axis === 'vertical'
+      ? xInFrame - targetField.bounds.xMm
+      : yInFrame - targetField.bounds.yMm
+    const nextDividerId = `divider-${currentConstruction.nextDividerId}`
+    const nextConstruction = splitField(
+      currentConstruction,
+      targetField.id,
       axis,
-      positionMm: Math.round(positionMm),
-      span: 'full',
-    }
-    const nextDividers = [...dividers, divider]
-    broadcastDividers(nextDividers)
-    setSelectedDividerId(divider.id)
-    setDividerPositionDraft(String(Math.round(divider.positionMm)))
+      snapMm(offsetMm),
+    )
+    if (!nextConstruction) return
+
+    commitConstruction(nextConstruction)
+    const nextField = findFieldAtPoint(nextConstruction, xInFrame, yInFrame)
+    setSelectedFieldId(nextField?.id ?? null)
+    setSelectedDividerId(nextDividerId)
+    const addedDivider = resolveConstructionTopology(nextConstruction).dividers
+      .find((divider) => divider.id === nextDividerId)
+    setDividerPositionDraft(addedDivider ? String(Math.round(addedDivider.offsetMm)) : '')
     setFrameSelected(false)
     setSelectedEdge(null)
   }
 
-  const updateDividerPosition = (dividerId: string, rawPositionMm: number) => {
-    const divider = dividers.find((item) => item.id === dividerId)
-    if (!divider) {
-      return
+  const updateDividerOffset = (
+    dividerId: string,
+    rawOffsetMm: number,
+    recordHistory = false,
+  ) => {
+    const currentConstruction = constructionRef.current
+    if (!currentConstruction) return
+    const nextConstruction = moveDivider(currentConstruction, dividerId, snapMm(rawOffsetMm))
+    if (recordHistory) {
+      commitConstruction(nextConstruction)
+    } else {
+      broadcastConstruction(nextConstruction)
     }
-    const positionMm = clampDividerPosition(divider.axis, rawPositionMm, dividerId)
-    const nextDividers = dividers.map((item) =>
-      item.id === dividerId ? { ...item, positionMm: Math.round(positionMm) } : item,
-    )
-    broadcastDividers(nextDividers)
-    setDividerPositionDraft(String(Math.round(positionMm)))
+    const moved = resolveConstructionTopology(nextConstruction).dividers
+      .find((divider) => divider.id === dividerId)
+    if (moved) {
+      setDividerPositionDraft(String(Math.round(moved.offsetMm)))
+    }
   }
 
   const removeSelectedDivider = () => {
-    if (!selectedDividerId) {
-      return
-    }
-    broadcastDividers(dividers.filter((divider) => divider.id !== selectedDividerId))
+    const currentConstruction = constructionRef.current
+    if (!selectedDividerId || !currentConstruction) return
+    const nextConstruction = removeDivider(currentConstruction, selectedDividerId)
+    commitConstruction(nextConstruction)
+    const nextFields = resolveConstructionTopology(nextConstruction).fields
+    setSelectedFieldId(nextFields[0]?.id ?? null)
     setSelectedDividerId(null)
     setDividerPositionDraft('')
   }
 
   const commitDividerPosition = () => {
-    if (!selectedDivider) {
-      return
-    }
+    if (!selectedDivider) return
     const value = Number(dividerPositionDraft.trim())
     if (!Number.isFinite(value)) {
-      setDividerPositionDraft(String(Math.round(selectedDivider.positionMm)))
+      setDividerPositionDraft(String(Math.round(selectedDivider.offsetMm)))
       return
     }
-    updateDividerPosition(selectedDivider.id, value)
+    updateDividerOffset(selectedDivider.id, value, true)
   }
 
   const resetDividerPositionDraft = () => {
     if (selectedDivider) {
-      setDividerPositionDraft(String(Math.round(selectedDivider.positionMm)))
+      setDividerPositionDraft(String(Math.round(selectedDivider.offsetMm)))
     }
   }
+
+  const restoreHistorySelection = (nextConstruction: ConstructionModel | null) => {
+    setSelectedDividerId(null)
+    setDividerPositionDraft('')
+    setFrameSelected(false)
+    setSelectedEdge(null)
+
+    if (!nextConstruction) {
+      setSelectedFieldId(null)
+      setWidthDraft('')
+      setHeightDraft('')
+      return
+    }
+
+    const nextFields = resolveConstructionTopology(nextConstruction).fields
+    setSelectedFieldId(nextFields[0]?.id ?? null)
+    setWidthDraft(String(Math.round(nextConstruction.frame.widthMm)))
+    setHeightDraft(String(Math.round(nextConstruction.frame.heightMm)))
+  }
+
+  const undoConstruction = () => {
+    const previous = undoStack.at(-1)
+    if (previous === undefined) return
+
+    setUndoStack((current) => current.slice(0, -1))
+    setRedoStack((current) => [
+      ...current.slice(-59),
+      cloneHistoryEntry(constructionRef.current),
+    ])
+    const restored = cloneHistoryEntry(previous)
+    broadcastConstruction(restored)
+    restoreHistorySelection(restored)
+  }
+
+  const redoConstruction = () => {
+    const next = redoStack.at(-1)
+    if (next === undefined) return
+
+    setRedoStack((current) => current.slice(0, -1))
+    setUndoStack((current) => [
+      ...current.slice(-59),
+      cloneHistoryEntry(constructionRef.current),
+    ])
+    const restored = cloneHistoryEntry(next)
+    broadcastConstruction(restored)
+    restoreHistorySelection(restored)
+  }
+
+  const canUndo = undoStack.length > 0
+  const canRedo = redoStack.length > 0
+
+  useEffect(() => {
+    const handleHistoryKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      const isEditable = Boolean(
+        target && (
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable
+        ),
+      )
+      if (isEditable) return
+
+      const key = event.key.toLowerCase()
+      const modifier = event.ctrlKey || event.metaKey
+
+      if (modifier && key === 'z') {
+        event.preventDefault()
+        if (event.shiftKey) {
+          redoConstruction()
+        } else {
+          undoConstruction()
+        }
+        return
+      }
+
+      if (modifier && key === 'y') {
+        event.preventDefault()
+        redoConstruction()
+        return
+      }
+
+      if ((event.key === 'Delete' || event.key === 'Backspace') && selectedDividerId) {
+        event.preventDefault()
+        removeSelectedDivider()
+      }
+    }
+
+    window.addEventListener('keydown', handleHistoryKeyDown)
+    return () => window.removeEventListener('keydown', handleHistoryKeyDown)
+  })
 
   const handleCanvasPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     const point = pointFromPointer(event)
@@ -394,6 +541,7 @@ export default function ConstructorShell({
         preview,
       })
       setFrameSelected(false)
+      setSelectedFieldId(null)
       setSelectedEdge(null)
       setSelectedDividerId(null)
       return
@@ -401,6 +549,7 @@ export default function ConstructorShell({
 
     if (activeTool === 'select' && event.target === event.currentTarget) {
       setFrameSelected(false)
+      setSelectedFieldId(null)
       setSelectedEdge(null)
       setSelectedDividerId(null)
     }
@@ -429,15 +578,19 @@ export default function ConstructorShell({
     }
 
     if (dragState.kind === 'divider') {
-      if (!frame) {
-        return
-      }
-      const rawPosition = dragState.axis === 'vertical'
+      if (!frame || !construction) return
+      const currentDivider = resolveConstructionTopology(construction).dividers
+        .find((divider) => divider.id === dragState.dividerId)
+      if (!currentDivider) return
+      const rawPointerPosition = dragState.axis === 'vertical'
         ? point.xMm - frame.xMm
         : point.yMm - frame.yMm
-      updateDividerPosition(dragState.dividerId, rawPosition)
+      const rawLeadingFace = rawPointerPosition - dragState.grabOffsetMm
+      const parentStartMm = currentDivider.positionMm - currentDivider.offsetMm
+      updateDividerOffset(dragState.dividerId, rawLeadingFace - parentStartMm)
       return
     }
+
 
     const { original, edge } = dragState
     let nextFrame = original
@@ -498,10 +651,15 @@ export default function ConstructorShell({
           ...preview,
           widthMm: Math.round(preview.widthMm),
           heightMm: Math.round(preview.heightMm),
-        })
-        setFrameSelected(true)
+        }, true)
+        setFrameSelected(false)
+        setSelectedFieldId('field-1')
         setActiveTool('select')
       }
+    }
+
+    if (dragState.kind === 'resize' || dragState.kind === 'divider') {
+      recordDragHistory(dragState.originalConstruction)
     }
 
     setDragState(null)
@@ -514,7 +672,7 @@ export default function ConstructorShell({
     edge: FrameEdge,
     event: ReactPointerEvent<HTMLButtonElement>,
   ) => {
-    if (!frame || activeTool !== 'select') {
+    if (!frame || !construction || activeTool !== 'select') {
       return
     }
 
@@ -522,12 +680,15 @@ export default function ConstructorShell({
     event.stopPropagation()
     canvasRef.current?.setPointerCapture(event.pointerId)
     setFrameSelected(true)
+    setSelectedFieldId(null)
+    setSelectedDividerId(null)
     setSelectedEdge(edge)
     setDragState({
       kind: 'resize',
       pointerId: event.pointerId,
       edge,
       original: { ...frame },
+      originalConstruction: cloneConstructionModel(construction),
     })
   }
 
@@ -535,7 +696,7 @@ export default function ConstructorShell({
     divider: DividerModel,
     event: ReactPointerEvent<HTMLButtonElement>,
   ) => {
-    if (!frame) {
+    if (!frame || !construction) {
       return
     }
     event.preventDefault()
@@ -543,14 +704,22 @@ export default function ConstructorShell({
     canvasRef.current?.setPointerCapture(event.pointerId)
     setActiveTool('select')
     setSelectedDividerId(divider.id)
-    setDividerPositionDraft(String(Math.round(divider.positionMm)))
+    setSelectedFieldId(null)
+    setDividerPositionDraft(String(Math.round(divider.offsetMm)))
     setFrameSelected(false)
     setSelectedEdge(null)
+    const point = pointFromPointer(event)
+    const pointerPositionMm = divider.axis === 'vertical'
+      ? point.xMm - frame.xMm
+      : point.yMm - frame.yMm
+
     setDragState({
       kind: 'divider',
       pointerId: event.pointerId,
       dividerId: divider.id,
       axis: divider.axis,
+      grabOffsetMm: pointerPositionMm - divider.positionMm,
+      originalConstruction: cloneConstructionModel(construction),
     })
   }
 
@@ -578,7 +747,7 @@ export default function ConstructorShell({
     broadcastFrame({
       ...frame,
       [dimension]: Math.round(value),
-    })
+    }, true)
     setFrameSelected(true)
   }
 
@@ -598,6 +767,8 @@ export default function ConstructorShell({
     if (frame) {
       setActiveTool('select')
       setFrameSelected(true)
+      setSelectedFieldId(null)
+      setSelectedDividerId(null)
       setSelectedEdge(null)
       return
     }
@@ -632,12 +803,12 @@ export default function ConstructorShell({
                 <>Оферта <i>›</i> <strong>Модул {moduleNumber}</strong> <i>›</i> Конструктор</>
               )}
             </div>
-            <span>FACADEFLOW CONSTRUCTOR · CONSTRUCTOR 01C</span>
+            <span>FACADEFLOW CONSTRUCTOR · FIELD TOPOLOGY 01C.3.2</span>
             <h2>{title}</h2>
             <p>
               {isFreeMode
                 ? 'Свободна параметрична скица. Начертай касата с мишката; система може да бъде приложена по-късно.'
-                : 'Параметрична каса с вертикални и хоризонтални делители, live размери и mouse drag.'}
+                : 'Параметрична каса с истински вътрешни ПОЛЕТА. Делителят е локален, мести се и променя дебелината си с мишката.'}
             </p>
           </div>
         </div>
@@ -780,7 +951,7 @@ export default function ConstructorShell({
               <span className="constructor-tool-glyph">│</span>
               <span>
                 <b>Вертикален делител</b>
-                <small>{frame ? 'Кликни в полето' : 'Първо създай каса'}</small>
+                <small>{frame ? 'Кликни къде да разделиш ПОЛЕТО' : 'Първо създай каса'}</small>
               </span>
             </button>
 
@@ -798,7 +969,7 @@ export default function ConstructorShell({
               <span className="constructor-tool-glyph">─</span>
               <span>
                 <b>Хоризонтален делител</b>
-                <small>{frame ? 'Кликни в полето' : 'Първо създай каса'}</small>
+                <small>{frame ? 'Кликни къде да разделиш ПОЛЕТО' : 'Първо създай каса'}</small>
               </span>
             </button>
 
@@ -828,8 +999,22 @@ export default function ConstructorShell({
           </div>
 
           <div className="constructor-history-actions">
-            <button type="button" disabled>↶ Undo</button>
-            <button type="button" disabled>↷ Redo</button>
+            <button
+              type="button"
+              disabled={!canUndo}
+              onClick={undoConstruction}
+              title="Undo · Ctrl+Z"
+            >
+              ↶ Undo
+            </button>
+            <button
+              type="button"
+              disabled={!canRedo}
+              onClick={redoConstruction}
+              title="Redo · Ctrl+Y / Ctrl+Shift+Z"
+            >
+              ↷ Redo
+            </button>
           </div>
         </aside>
 
@@ -886,7 +1071,7 @@ export default function ConstructorShell({
                   top: `${displayedFrame.yMm * pxPerMm}px`,
                   width: `${Math.max(1, displayedFrame.widthMm * pxPerMm)}px`,
                   height: `${Math.max(1, displayedFrame.heightMm * pxPerMm)}px`,
-                  '--constructor-frame-face': `${Math.max(12, 18 * (zoom / 100))}px`,
+                  '--constructor-frame-face': `${frameFacePx}px`,
                 } as CSSProperties}
                 onPointerDown={(event) => {
                   event.stopPropagation()
@@ -902,6 +1087,7 @@ export default function ConstructorShell({
                   }
                   if (activeTool === 'select') {
                     setFrameSelected(true)
+                    setSelectedFieldId(null)
                     setSelectedEdge(null)
                     setSelectedDividerId(null)
                   }
@@ -914,65 +1100,78 @@ export default function ConstructorShell({
                   <i className="constructor-frame-mitre mitre-br" />
                 </div>
 
+                {frame && dragState?.kind !== 'create' && fields.map((field) => (
+                  <button
+                    key={field.id}
+                    type="button"
+                    className={`constructor-field-surface ${selectedFieldId === field.id ? 'is-selected' : ''}`}
+                    style={{
+                      left: `${field.bounds.xMm * pxPerMm}px`,
+                      top: `${field.bounds.yMm * pxPerMm}px`,
+                      width: `${field.bounds.widthMm * pxPerMm}px`,
+                      height: `${field.bounds.heightMm * pxPerMm}px`,
+                    }}
+                    aria-label={`Поле ${field.sequence}`}
+                    onPointerDown={(event) => {
+                      event.stopPropagation()
+                      if (activeTool === 'vertical-divider' || activeTool === 'horizontal-divider') {
+                        addDivider(
+                          activeTool === 'vertical-divider' ? 'vertical' : 'horizontal',
+                          pointFromPointer(event),
+                        )
+                        return
+                      }
+                      if (activeTool === 'select') {
+                        setSelectedFieldId(field.id)
+                        setSelectedDividerId(null)
+                        setFrameSelected(false)
+                        setSelectedEdge(null)
+                      }
+                    }}
+                  >
+                    <span className="constructor-field-name">ПОЛЕ {field.sequence}</span>
+                    <span className="constructor-field-chain constructor-field-size-chip">
+                      {Math.round(field.bounds.widthMm)} × {Math.round(field.bounds.heightMm)} mm
+                    </span>
+                  </button>
+                ))}
+
                 {frame && dragState?.kind !== 'create' && dividers.map((divider) => (
                   <button
                     key={divider.id}
                     type="button"
-                    className={`constructor-divider ${divider.axis} ${selectedDividerId === divider.id ? 'is-selected' : ''}`}
-                    style={divider.axis === 'vertical'
-                      ? { left: `${divider.positionMm * pxPerMm}px` }
-                      : { top: `${divider.positionMm * pxPerMm}px` }}
-                    aria-label={divider.axis === 'vertical' ? 'Вертикален делител' : 'Хоризонтален делител'}
+                    className={`constructor-divider is-local ${divider.axis} ${selectedDividerId === divider.id ? 'is-selected' : ''}`}
+                    style={(divider.axis === 'vertical'
+                      ? {
+                          left: `${(divider.positionMm + divider.thicknessMm / 2) * pxPerMm}px`,
+                          top: `${divider.startMm * pxPerMm}px`,
+                          height: `${(divider.endMm - divider.startMm) * pxPerMm}px`,
+                          '--constructor-divider-face': `${Math.max(6, divider.thicknessMm * pxPerMm)}px`,
+                          '--constructor-divider-start-inset': '0px',
+                          '--constructor-divider-end-inset': '0px',
+                        }
+                      : {
+                          left: `${divider.startMm * pxPerMm}px`,
+                          top: `${(divider.positionMm + divider.thicknessMm / 2) * pxPerMm}px`,
+                          width: `${(divider.endMm - divider.startMm) * pxPerMm}px`,
+                          '--constructor-divider-face': `${Math.max(6, divider.thicknessMm * pxPerMm)}px`,
+                          '--constructor-divider-start-inset': '0px',
+                          '--constructor-divider-end-inset': '0px',
+                        }) as CSSProperties & Record<string, string | number>}
+                    aria-label={divider.axis === 'vertical' ? 'Вертикален делител на поле' : 'Хоризонтален делител на поле'}
                     onPointerDown={(event) => startDividerDrag(divider, event)}
                     onClick={(event) => {
                       event.stopPropagation()
                       setSelectedDividerId(divider.id)
-                      setDividerPositionDraft(String(Math.round(divider.positionMm)))
-                      setFrameSelected(false)
+                      setSelectedFieldId(null)
+                      setDividerPositionDraft(String(Math.round(divider.offsetMm)))
+                                        setFrameSelected(false)
                       setSelectedEdge(null)
                     }}
                   >
-                    <span aria-hidden="true" />
+                    <span className="constructor-divider-face" aria-hidden="true" />
                   </button>
                 ))}
-
-                {frame && verticalDividers.length > 0 && (
-                  <div className="constructor-field-chain field-chain-width" aria-hidden="true">
-                    {[0, ...verticalDividers.map((divider) => divider.positionMm), frame.widthMm].slice(0, -1).map((startMm, index) => {
-                      const stops = [...verticalDividers.map((divider) => divider.positionMm), frame.widthMm]
-                      const endMm = stops[index]
-                      const widthMm = endMm - startMm
-                      return (
-                        <span
-                          key={`w-${startMm}-${endMm}`}
-                          style={{
-                            left: `${startMm * pxPerMm}px`,
-                            width: `${widthMm * pxPerMm}px`,
-                          }}
-                        >{Math.round(widthMm)}</span>
-                      )
-                    })}
-                  </div>
-                )}
-
-                {frame && horizontalDividers.length > 0 && (
-                  <div className="constructor-field-chain field-chain-height" aria-hidden="true">
-                    {[0, ...horizontalDividers.map((divider) => divider.positionMm), frame.heightMm].slice(0, -1).map((startMm, index) => {
-                      const stops = [...horizontalDividers.map((divider) => divider.positionMm), frame.heightMm]
-                      const endMm = stops[index]
-                      const heightMm = endMm - startMm
-                      return (
-                        <span
-                          key={`h-${startMm}-${endMm}`}
-                          style={{
-                            top: `${startMm * pxPerMm}px`,
-                            height: `${heightMm * pxPerMm}px`,
-                          }}
-                        >{Math.round(heightMm)}</span>
-                      )
-                    })}
-                  </div>
-                )}
 
                 {frame && dragState?.kind !== 'create' && (
                   <>
@@ -1031,6 +1230,7 @@ export default function ConstructorShell({
             <span>GRID: {gridVisible ? `${GRID_STEP_MM} mm` : 'OFF'}</span>
             <span>SNAP: {snapEnabled ? `${SNAP_STEP_MM} mm` : 'OFF'}</span>
             <span>ZOOM: {zoom}%</span>
+            <span>ПОЛЕТА: {conceptualFieldCount}</span>
           </footer>
         </section>
 
@@ -1059,7 +1259,7 @@ export default function ConstructorShell({
                 <button
                   type="button"
                   className="constructor-create-offer"
-                  onClick={() => onCreateOfferFromSketch(frame ? frameToSnapshot(frame, dividers) : null)}
+                  onClick={() => onCreateOfferFromSketch(construction ? constructionToSnapshot(construction) : null)}
                 >
                   Създай оферта от тази скица
                 </button>
@@ -1090,13 +1290,19 @@ export default function ConstructorShell({
           <section className="constructor-properties-section">
             <div className="constructor-panel-heading">
               <span>СВОЙСТВА</span>
-              <b>{selectedDivider ? (selectedDivider.axis === 'vertical' ? 'Вертикален делител' : 'Хоризонтален делител') : frameSelected && frame ? 'Каса / рамка' : 'Избран елемент'}</b>
+              <b>{selectedDivider
+                ? (selectedDivider.axis === 'vertical' ? 'Вертикален делител' : 'Хоризонтален делител')
+                : selectedField
+                  ? `Поле ${selectedField.sequence}`
+                  : frameSelected && frame
+                    ? 'Каса / рамка'
+                    : 'Избран елемент'}</b>
             </div>
 
             {selectedDivider && frame ? (
               <div className="constructor-frame-properties constructor-divider-properties">
                 <label>
-                  <span>{selectedDivider.axis === 'vertical' ? 'Позиция отляво' : 'Позиция отгоре'}</span>
+                  <span>{selectedDivider.axis === 'vertical' ? 'Схемен размер ляво поле' : 'Схемен размер горно поле'}</span>
                   <div><input
                     type="text"
                     inputMode="numeric"
@@ -1118,16 +1324,55 @@ export default function ConstructorShell({
                     }}
                   /><em>mm</em></div>
                 </label>
+                <div
+                  className="constructor-divider-balance"
+                  aria-label="Схемно разпределение около делителя"
+                >
+                  <div>
+                    <span>{selectedDivider.axis === 'vertical' ? 'ЛЯВО ПОЛЕ' : 'ГОРНО ПОЛЕ'}</span>
+                    <b>{Math.round(selectedDivider.firstClearMm)} mm</b>
+                  </div>
+                  <i aria-hidden="true">+</i>
+                  <div className="is-divider">
+                    <span>ДЕЛИТЕЛ</span>
+                    <b>{Math.round(selectedDivider.thicknessMm)} mm</b>
+                  </div>
+                  <i aria-hidden="true">+</i>
+                  <div>
+                    <span>{selectedDivider.axis === 'vertical' ? 'ДЯСНО ПОЛЕ' : 'ДОЛНО ПОЛЕ'}</span>
+                    <b>{Math.round(selectedDivider.secondClearMm)} mm</b>
+                  </div>
+                </div>
                 <div className="constructor-property-row">
                   <span>Ориентация</span>
                   <b>{selectedDivider.axis === 'vertical' ? 'Вертикален' : 'Хоризонтален'}</b>
                 </div>
                 <div className="constructor-property-row">
-                  <span>Обхват</span>
-                  <b>По цялото поле · Constructor 01C</b>
+                  <span>Дължина на делителя</span>
+                  <b>{Math.round(selectedDivider.endMm - selectedDivider.startMm)} mm · автоматично от родителското ПОЛЕ</b>
                 </div>
                 <div className="constructor-property-row">
-                  <span>Концептуални полета</span>
+                  <span>Схемна видима ширина</span>
+                  <b>{Math.round(selectedDivider.thicknessMm)} mm · автоматична до Profile Resolution</b>
+                </div>
+                <div className="constructor-property-row">
+                  <span>Управление с мишка</span>
+                  <b>Променя се само положението на делителя</b>
+                </div>
+                <div className="constructor-property-row">
+                  <span>Профил</span>
+                  <b>Не е определен · ширината по-късно идва от Profile Data</b>
+                </div>
+                <div className="constructor-property-row">
+                  <span>Геометрична логика</span>
+                  <b>ПОЛЕ + {Math.round(selectedDivider.thicknessMm)} mm делител + ПОЛЕ</b>
+                </div>
+                <div className="constructor-property-row">
+                  <span>Обхват</span>
+                  <b>Само в родителското поле · FIELD topology</b>
+                </div>
+                <div className="constructor-property-row">
+                  <span>ПОЛЕТА в модула</span>
                   <b>{conceptualFieldCount}</b>
                 </div>
                 <button
@@ -1138,8 +1383,34 @@ export default function ConstructorShell({
                   Изтрий делителя
                 </button>
                 <p className="constructor-invariant-note">
-                  Drag мести делителя по мрежата. За точна позиция въведи число.
-                  Размерите на полетата са конструктивна схема, не производствен разкрой.
+                  Drag върху делителя променя само положението му. Дължината следва автоматично родителското ПОЛЕ. Ширината е read-only схемна стойност до Profile Resolution и по-късно ще идва от реалния профил.
+                </p>
+              </div>
+            ) : selectedField && frame ? (
+              <div className="constructor-frame-properties constructor-field-properties">
+                <div className="constructor-property-row">
+                  <span>Идентификатор</span>
+                  <b>{selectedField.id}</b>
+                </div>
+                <div className="constructor-property-row">
+                  <span>Вътрешен схемен размер на полето</span>
+                  <b>{Math.round(selectedField.bounds.widthMm)} × {Math.round(selectedField.bounds.heightMm)} mm</b>
+                </div>
+                <div className="constructor-property-row">
+                  <span>Позиция във вътрешния контур</span>
+                  <b>X {Math.round(selectedField.bounds.xMm - frameFaceMm)} · Y {Math.round(selectedField.bounds.yMm - frameFaceMm)} mm</b>
+                </div>
+                <div className="constructor-property-row">
+                  <span>Тип поле</span>
+                  <b>Не е зададен · следващ семантичен етап</b>
+                </div>
+                <div className="constructor-field-action-hint">
+                  <span>РАЗДЕЛЯНЕ НА ПОЛЕ</span>
+                  <p>Избери вертикален или хоризонтален делител и кликни в това поле. Делителят няма да преминава автоматично през съседните полета.</p>
+                </div>
+                <p className="constructor-invariant-note">
+                  Това е каноничен FIELD обект. Върху него по-късно ще се прилагат FIX, крило,
+                  отваряемост, стъкло и обков без промяна на основната топология.
                 </p>
               </div>
             ) : frameSelected && frame ? (
@@ -1200,8 +1471,8 @@ export default function ConstructorShell({
                   <b>{selectedEdge ? ({ left: 'Ляв', right: 'Десен', top: 'Горен', bottom: 'Долен' } as const)[selectedEdge] : 'Цялата каса'}</b>
                 </div>
                 <div className="constructor-property-row">
-                  <span>Видима ширина</span>
-                  <b>Концептуална визуализация</b>
+                  <span>Схемна видима ширина</span>
+                  <b>{Math.round(frameFaceMm)} mm · преди Profile Resolution</b>
                 </div>
                 <div className="constructor-property-row">
                   <span>Профилна дълбочина</span>
@@ -1217,8 +1488,8 @@ export default function ConstructorShell({
               <div className="constructor-selection-empty">
                 <span>{frame ? 'Маркирай касата или неин ръб' : 'Няма създадена каса'}</span>
                 <p>
-                  Constructor 01C поддържа параметрична каса, вертикални и хоризонтални делители,
-                  mouse drag и live размери на полетата.
+                  Frame Interior 01C.3.2 поддържа параметрична каса, реални вътрешни ПОЛЕТА и локални физически делители.
+                  Делителят се мести по позиция; дължината следва ПОЛЕТО, а ширината се определя схемно/от Profile Data.
                 </p>
               </div>
             )}
@@ -1228,8 +1499,8 @@ export default function ConstructorShell({
             <span>ТЕХНИЧЕСКА ГРАНИЦА</span>
             <b>Конструктивна скица, не машинна геометрия</b>
             <p>
-              Касата, габаритът и пълнообхватните делители са параметрични. Крилата,
-              отварянията, профилният избор, срезовете и машинните данни още не се генерират.
+              Касата, ПОЛЕТАТА и локалните делители са параметрични. Крилата, FIX семантиката,
+              отварянията, профилният resolver, срезовете и машинните данни още не се генерират.
             </p>
           </section>
         </aside>

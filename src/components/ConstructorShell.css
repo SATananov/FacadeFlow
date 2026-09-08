@@ -971,60 +971,55 @@
 }
 
 .constructor-divider.vertical {
-  top: var(--constructor-frame-face, 18px);
-  bottom: var(--constructor-frame-face, 18px);
-  width: 22px;
-  transform: translateX(-11px);
+  width: max(22px, var(--constructor-divider-face, 10px));
+  transform: translateX(-50%);
   cursor: ew-resize;
 }
 
 .constructor-divider.horizontal {
-  left: var(--constructor-frame-face, 18px);
-  right: var(--constructor-frame-face, 18px);
-  height: 22px;
-  transform: translateY(-11px);
+  height: max(22px, var(--constructor-divider-face, 10px));
+  transform: translateY(-50%);
   cursor: ns-resize;
 }
 
-.constructor-divider > span {
+.constructor-divider > .constructor-divider-face {
   position: absolute;
   box-sizing: border-box;
-  background: #667f86;
+  background: #657c83;
   box-shadow:
-    inset 0 0 0 2px #eaf4f5,
-    inset 0 0 0 4px #7e989f;
+    inset 0 0 0 1px #425d64,
+    inset 0 0 0 3px #eaf4f5,
+    inset 0 0 0 5px #7e989f;
   pointer-events: none;
 }
 
-.constructor-divider.vertical > span {
-  top: 0;
-  bottom: 0;
-  left: 4px;
-  right: 4px;
-  border-left: 1px solid #49636a;
-  border-right: 1px solid #49636a;
+.constructor-divider.vertical > .constructor-divider-face {
+  top: var(--constructor-divider-start-inset, 0px);
+  bottom: var(--constructor-divider-end-inset, 0px);
+  left: 50%;
+  width: var(--constructor-divider-face, 10px);
+  transform: translateX(-50%);
 }
 
-.constructor-divider.horizontal > span {
-  left: 0;
-  right: 0;
-  top: 4px;
-  bottom: 4px;
-  border-top: 1px solid #49636a;
-  border-bottom: 1px solid #49636a;
+.constructor-divider.horizontal > .constructor-divider-face {
+  left: var(--constructor-divider-start-inset, 0px);
+  right: var(--constructor-divider-end-inset, 0px);
+  top: 50%;
+  height: var(--constructor-divider-face, 10px);
+  transform: translateY(-50%);
 }
 
-.constructor-divider.vertical > span::before,
-.constructor-divider.vertical > span::after,
-.constructor-divider.horizontal > span::before,
-.constructor-divider.horizontal > span::after {
+.constructor-divider.vertical > .constructor-divider-face::before,
+.constructor-divider.vertical > .constructor-divider-face::after,
+.constructor-divider.horizontal > .constructor-divider-face::before,
+.constructor-divider.horizontal > .constructor-divider-face::after {
   content: none;
 }
 
-.constructor-divider:hover > span,
-.constructor-divider.is-selected > span {
+.constructor-divider:hover > .constructor-divider-face,
+.constructor-divider.is-selected > .constructor-divider-face {
   outline: 2px solid #0d9db3;
-  outline-offset: 2px;
+  outline-offset: 1px;
 }
 
 .constructor-divider.is-selected::after {
@@ -1122,6 +1117,54 @@
 .constructor-field-chain.field-chain-height > span::before { top: 0; }
 .constructor-field-chain.field-chain-height > span::after { bottom: 0; }
 
+.constructor-divider-balance {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, .82fr) auto minmax(0, 1fr);
+  gap: 4px;
+  align-items: stretch;
+}
+
+.constructor-divider-balance > div {
+  min-width: 0;
+  padding: 7px 5px;
+  display: grid;
+  gap: 3px;
+  border: 1px solid #c9dadd;
+  border-radius: 5px;
+  background: #f4f8f9;
+  text-align: center;
+}
+
+.constructor-divider-balance > div.is-divider {
+  border-color: #78c7d2;
+  background: #e9f8fa;
+}
+
+.constructor-divider-balance span {
+  overflow: hidden;
+  color: #70858b;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .25px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.constructor-divider-balance b {
+  color: #294b53;
+  font-size: 9px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.constructor-divider-balance > i {
+  align-self: center;
+  color: #7b9095;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 900;
+}
+
 .constructor-divider-properties .constructor-delete-divider {
   min-height: 34px;
   border: 1px solid #c78976;
@@ -1137,3 +1180,101 @@
   background: #ffe9df;
 }
 
+
+/* Constructor 01C.1 — canonical FIELD topology */
+.constructor-field-surface {
+  position: absolute;
+  z-index: 2;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: rgba(224, 247, 249, .10);
+  color: #31545c;
+  appearance: none;
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(56, 102, 111, .18);
+}
+
+.constructor-field-surface:hover {
+  background: rgba(205, 244, 248, .18);
+  box-shadow: inset 0 0 0 2px rgba(13, 157, 179, .42);
+}
+
+.constructor-field-surface.is-selected {
+  z-index: 3;
+  background: rgba(195, 240, 245, .22);
+  box-shadow:
+    inset 0 0 0 2px rgba(13, 157, 179, .88),
+    inset 0 0 0 5px rgba(255, 255, 255, .54);
+}
+
+.constructor-field-name {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -60%);
+  padding: 3px 7px;
+  border-radius: 4px;
+  background: rgba(247, 252, 252, .86);
+  color: #3e626a;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .45px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.constructor-field-size-chip.constructor-field-chain {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 16px);
+  z-index: 1;
+  transform: translateX(-50%);
+  padding: 2px 5px;
+  border: 1px solid rgba(139, 170, 176, .72);
+  border-radius: 3px;
+  background: rgba(249, 252, 252, .88);
+  color: #698087;
+  font-size: 7px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.constructor-divider.vertical.is-local {
+  top: auto;
+  bottom: auto;
+}
+
+.constructor-divider.horizontal.is-local {
+  left: auto;
+  right: auto;
+}
+
+.constructor-field-properties .constructor-property-row:first-child b {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.constructor-field-action-hint {
+  padding: 9px;
+  border: 1px solid #b9d3d7;
+  border-radius: 5px;
+  background: linear-gradient(180deg, #f5fbfc, #edf7f8);
+}
+
+.constructor-field-action-hint > span {
+  color: #13889b;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .55px;
+}
+
+.constructor-field-action-hint p {
+  margin: 4px 0 0;
+  color: #5d767c;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+/* Constructor 01C.3.2 — divider face is read-only schematic/profile-driven; body drag changes position only */
