@@ -1,0 +1,58 @@
+import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+
+const app = await readFile(new URL('../src/App.tsx', import.meta.url), 'utf8')
+const shell = await readFile(
+  new URL('../src/components/ConstructorShell.tsx', import.meta.url),
+  'utf8',
+)
+const css = await readFile(
+  new URL('../src/components/ConstructorShell.css', import.meta.url),
+  'utf8',
+)
+const packageJson = JSON.parse(
+  await readFile(new URL('../package.json', import.meta.url), 'utf8'),
+)
+
+assert.match(app, /import ConstructorShell from '\.\/components\/ConstructorShell'/)
+assert.match(app, /constructorOpen/)
+assert.match(app, /Отвори Конструктор/)
+assert.match(app, /Общата офертна конфигурация важи за модула/)
+assert.match(app, /Тези стойности важат за всички модули в офертата/)
+assert.match(app, /<ConstructorShell/)
+assert.match(app, /onClose=\{\(\) => setConstructorOpen\(false\)\}/)
+
+assert.match(shell, /FACADEFLOW CONSTRUCTOR · CONSTRUCTOR 01A/)
+assert.match(shell, /CAD-подобно работно пространство/)
+assert.match(shell, /Grid \{gridVisible \? 'ON' : 'OFF'\}/)
+assert.match(shell, /Snap \{snapEnabled \? 'ON' : 'OFF'\}/)
+assert.match(shell, /constructor-ruler-top/)
+assert.match(shell, /constructor-ruler-left/)
+assert.match(shell, /constructor-canvas/)
+assert.match(shell, /Профилна система/)
+assert.match(shell, /Заключени общи настройки/)
+assert.match(shell, /Тези стойности важат за всички модули в тази оферта/)
+assert.match(shell, /Автоматична геометрия, профилен\s+избор и машинни данни не се генерират/)
+assert.match(shell, /Constructor 01B/)
+assert.match(shell, /Constructor 01C/)
+assert.match(shell, /Constructor 01D/)
+
+assert.match(css, /\.constructor-shell/)
+assert.match(css, /\.constructor-layout/)
+assert.match(css, /\.constructor-canvas\.has-grid/)
+assert.match(css, /\.constructor-statusbar/)
+assert.match(css, /\.constructor-offer-locks/)
+assert.match(css, /grid-template-columns: 210px minmax\(460px, 1fr\) 280px/)
+
+assert.match(packageJson.scripts['test:contract'], /verify-constructor01a\.mjs/)
+
+console.log('CONSTRUCTOR 01A SHELL VERIFY PASS')
+console.log('FLOW: MODULE 1 -> FACADEFLOW CONSTRUCTOR')
+console.log('LAYOUT: TOOLS | CAD WORKSPACE | PROPERTIES')
+console.log('GRID: TOGGLEABLE')
+console.log('SNAP: UI STATE ONLY')
+console.log('OFFER INVARIANTS: LOCKED IN CONSTRUCTOR')
+console.log('PARAMETRIC FRAME: NOT YET IMPLEMENTED')
+console.log('DIVIDER DRAG/RESIZE: NOT YET IMPLEMENTED')
+console.log('AUTOMATIC GEOMETRY: NO')
+console.log('MACHINE READY: NO')

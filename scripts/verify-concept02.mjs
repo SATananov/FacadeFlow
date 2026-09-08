@@ -36,7 +36,7 @@ assert.match(app, /hardwareStandardId/)
 assert.match(app, /Общи условия/)
 assert.match(app, /Запази и продължи към модули/)
 assert.match(app, /Следваща стъпка: Модули/)
-assert.doesNotMatch(app, /AI Workspace|PROFILE DATA|Конструктор|Каталог|Импорт|Проекти|Помощ/)
+assert.doesNotMatch(app, /AI Workspace|PROFILE DATA|Каталог|Импорт|Проекти|Помощ/)
 
 const headerPrimaryActions = [...app.matchAll(/className="create-offer-action"/g)].length
 assert.equal(headerPrimaryActions, 1, 'Concept 02 must preserve exactly one primary header action.')

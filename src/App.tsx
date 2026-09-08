@@ -39,6 +39,7 @@ import {
   type OfferModuleDraft,
   type OfferModuleFieldDraft,
 } from './domain/offerModules'
+import ConstructorShell from './components/ConstructorShell'
 import './App.css'
 
 function OfferIcon() {
@@ -110,6 +111,7 @@ export default function App() {
   const [offer, setOffer] = useState<OfferDraft>(EMPTY_OFFER)
   const [saved, setSaved] = useState(false)
   const [modules, setModules] = useState<OfferModuleDraft[]>([])
+  const [constructorOpen, setConstructorOpen] = useState(false)
 
   const clientObjectReady =
     offer.clientName.trim().length > 0 &&
@@ -476,6 +478,7 @@ export default function App() {
     setOffer(EMPTY_OFFER)
     setSaved(false)
     setModules([])
+    setConstructorOpen(false)
     setOfferStartOpen(true)
   }
 
@@ -528,8 +531,34 @@ export default function App() {
         </button>
       </header>
 
-      <main className="home-workspace">
-        {!offerStartOpen ? (
+      <main className={constructorOpen ? 'constructor-host' : 'home-workspace'}>
+        {constructorOpen && firstModule ? (
+          <ConstructorShell
+            moduleNumber={firstModule.sequence}
+            offerContext={{
+              profileSystemLabel: selectedProfileSystem
+                ? `${selectedProfileSystem.manufacturer} ${selectedProfileSystem.name}`
+                : firstModule.inheritedDefaults.profileSystemId,
+              colorLabel: selectedFinish?.labelBg || firstModule.inheritedDefaults.colorId,
+              foilModeLabel: selectedFoilMode?.labelBg || firstModule.inheritedDefaults.foilModeId,
+              glazingLabel: selectedGlazing?.labelBg || firstModule.inheritedDefaults.glazingId,
+              hardwareLabel:
+                selectedHardwareStandard?.labelBg ||
+                firstModule.inheritedDefaults.hardwareStandardId,
+            }}
+            moduleSummary={{
+              productTypeLabel:
+                MODULE_PRODUCT_TYPE_PRESETS.find(
+                  (option) => option.id === firstModule.productType,
+                )?.labelBg ||
+                firstModule.customProductTypeLabel ||
+                'Не е зададен',
+              widthMm: firstModule.widthMm,
+              heightMm: firstModule.heightMm,
+            }}
+            onClose={() => setConstructorOpen(false)}
+          />
+        ) : !offerStartOpen ? (
           <section className="empty-home" aria-label="Начален екран">
             <div className="empty-home-watermark" aria-hidden="true">
               <img src="/branding/nadezhda-header.png" alt="" />
@@ -1289,9 +1318,9 @@ export default function App() {
                 </div>
 
                 <p>
-                  Всеки нов модул ще започва с тези стойности, наследени
-                  от офертата. Конкретният тип, размери, отваряния и
-                  модулен обков ще се задават в следващия етап.
+                  Тези стойности важат за всички модули в офертата.
+                  Конкретният тип, размери, полета и отваряния се задават
+                  в Конструктора, без промяна на общата офертна конфигурация.
                 </p>
               </div>
 
@@ -1303,7 +1332,7 @@ export default function App() {
 
                   <p>
                     След записване започваме Модул 1,
-                    Модул 2, Модул 3… с наследени общи настройки.
+                    Модул 2, Модул 3… в общия технически контекст на офертата.
                   </p>
                 </div>
 
@@ -1323,7 +1352,7 @@ export default function App() {
                   </b>
 
                   <span>
-                    Модул 1 е създаден с наследени общи настройки от офертата.
+                    Модул 1 е създаден в заключения технически контекст на офертата.
                   </span>
                 </div>
               )}
@@ -1339,14 +1368,24 @@ export default function App() {
                     <span>МОДУЛ 01</span>
                     <h2 id="module-1-title">Модул 1</h2>
                     <p>
-                      Първият модул наследява общите настройки на офертата.
-                      Модулните полета са опционални и поддържат стандартен избор
-                      или ръчно въвеждане за нестандартни стойности.
+                      Модулът работи в общата техническа конфигурация на офертата.
+                      Отворете Конструктора за CAD-подобното работно поле; текущите
+                      опционални полета остават като чернова и контекст.
                     </p>
                   </div>
 
-                  <div className="module-inheritance-badge">
-                    Наследява общите настройки
+                  <div className="module-heading-actions">
+                    <div className="module-inheritance-badge">
+                      Общата офертна конфигурация важи за модула
+                    </div>
+
+                    <button
+                      type="button"
+                      className="open-constructor-action"
+                      onClick={() => setConstructorOpen(true)}
+                    >
+                      Отвори Конструктор
+                    </button>
                   </div>
                 </div>
 
