@@ -2571,3 +2571,118 @@
 .constructor-safety-details > summary {
   position: relative;
 }
+
+/* Profile Resolution 01C — reviewed profile-face 2D overlay.
+ * Construction topology remains authoritative. The darker reviewed layer may
+ * only use human-confirmed visible-face semantics; unresolved junction/sash
+ * geometry stays visibly schematic and is never inferred from raw callouts.
+ */
+.constructor-parametric-frame.has-profile-view .constructor-frame-visual {
+  border-color: rgba(101, 124, 131, .24);
+  box-shadow:
+    inset 0 0 0 1px rgba(126, 150, 157, .22),
+    0 8px 18px rgba(60, 86, 92, .08);
+}
+
+.constructor-profile-frame-face-overlay {
+  position: absolute;
+  z-index: 3;
+  box-sizing: border-box;
+  inset: calc(0px - var(--constructor-frame-face, 18px));
+  border: var(--constructor-profile-frame-face, 12px) solid #5f777e;
+  background: transparent;
+  box-shadow:
+    inset 0 0 0 1px rgba(239, 247, 248, .98),
+    inset 0 0 0 3px rgba(126, 150, 157, .88);
+  pointer-events: none;
+}
+
+.constructor-parametric-frame.has-reviewed-frame-face .constructor-frame-mitre {
+  width: calc(var(--constructor-profile-frame-face, 12px) * 1.414214);
+}
+
+.constructor-parametric-frame.has-reviewed-frame-face .constructor-frame-mitre.mitre-tl {
+  left: calc(0px - var(--constructor-frame-face, 18px));
+  top: calc(0px - var(--constructor-frame-face, 18px));
+}
+
+.constructor-parametric-frame.has-reviewed-frame-face .constructor-frame-mitre.mitre-tr {
+  right: calc(0px - var(--constructor-frame-face, 18px));
+  top: calc(0px - var(--constructor-frame-face, 18px));
+}
+
+.constructor-parametric-frame.has-reviewed-frame-face .constructor-frame-mitre.mitre-bl {
+  left: calc(0px - var(--constructor-frame-face, 18px));
+  bottom: calc(0px - var(--constructor-frame-face, 18px));
+}
+
+.constructor-parametric-frame.has-reviewed-frame-face .constructor-frame-mitre.mitre-br {
+  right: calc(0px - var(--constructor-frame-face, 18px));
+  bottom: calc(0px - var(--constructor-frame-face, 18px));
+}
+
+.constructor-divider.has-profile-view > .constructor-divider-face {
+  opacity: .28;
+}
+
+.constructor-divider > .constructor-profile-divider-face-overlay {
+  position: absolute;
+  z-index: 2;
+  box-sizing: border-box;
+  background: #5f777e;
+  box-shadow:
+    inset 0 0 0 1px #425d64,
+    inset 0 0 0 3px #eaf4f5;
+  pointer-events: none;
+}
+
+.constructor-divider.vertical > .constructor-profile-divider-face-overlay {
+  top: var(--constructor-divider-start-inset, 0px);
+  bottom: var(--constructor-divider-end-inset, 0px);
+  left: 50%;
+  width: var(--constructor-profile-divider-face, 10px);
+  transform: translateX(-50%);
+}
+
+.constructor-divider.horizontal > .constructor-profile-divider-face-overlay {
+  left: var(--constructor-divider-start-inset, 0px);
+  right: var(--constructor-divider-end-inset, 0px);
+  top: 50%;
+  height: var(--constructor-profile-divider-face, 10px);
+  transform: translateY(-50%);
+}
+
+.constructor-field-surface.has-unresolved-sash-geometry .constructor-operable-visual rect {
+  stroke-dasharray: 5 4;
+}
+
+.constructor-field-surface.has-unresolved-sash-geometry.is-selected::after {
+  content: 'SASH GEOMETRY · UNKNOWN';
+  position: absolute;
+  right: 7px;
+  bottom: 7px;
+  z-index: 3;
+  padding: 2px 5px;
+  border: 1px dashed rgba(132, 112, 88, .58);
+  border-radius: 3px;
+  background: rgba(255, 250, 244, .9);
+  color: #80684f;
+  font-size: 6px;
+  font-weight: 900;
+  letter-spacing: .3px;
+  pointer-events: none;
+}
+
+.constructor-field-surface.has-reviewed-sash-geometry .constructor-operable-visual rect {
+  stroke-dasharray: none;
+  stroke-width: 2;
+}
+
+.constructor-inspector-resolution-badge.is-incomplete em {
+  display: block;
+  margin-top: 2px;
+  font-size: 9px;
+  font-style: normal;
+  letter-spacing: 0.06em;
+  opacity: 0.72;
+}

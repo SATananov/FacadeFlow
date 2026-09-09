@@ -215,6 +215,40 @@ export function reconcileModuleProfileResolution(
   }
 }
 
+export type ProfileResolutionMissingTarget =
+  | { kind: 'frame'; id: 'frame' }
+  | { kind: 'divider'; id: string }
+  | { kind: 'field-sash'; id: string }
+
+export function getProfileResolutionMissingTargets(
+  resolution: ModuleProfileResolution | null | undefined,
+  hasFrame: boolean,
+  productType: 'window' | 'door' | null,
+  dividerIds: readonly string[],
+  fields: readonly ProfileResolvableField[],
+): ProfileResolutionMissingTarget[] {
+  const missing: ProfileResolutionMissingTarget[] = []
+
+  if (hasFrame && !resolution?.frame) {
+    missing.push({ kind: 'frame', id: 'frame' })
+  }
+
+  for (const dividerId of dividerIds) {
+    if (!resolution?.dividers[dividerId]) {
+      missing.push({ kind: 'divider', id: dividerId })
+    }
+  }
+
+  for (const field of fields) {
+    if (getFieldSashRole(productType, field.fieldType) === null) continue
+    if (!resolution?.fieldSashes[field.id]) {
+      missing.push({ kind: 'field-sash', id: field.id })
+    }
+  }
+
+  return missing
+}
+
 export function getProfileResolutionProgress(
   resolution: ModuleProfileResolution | null | undefined,
   hasFrame: boolean,

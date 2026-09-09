@@ -42,6 +42,7 @@ import {
   getDividerProfileCandidates,
   getFieldSashProfileCandidates,
   getFrameProfileCandidates,
+  getProfileResolutionMissingTargets,
   getProfileResolutionProgress,
   reconcileModuleProfileResolution,
   setDividerProfileAssignment,
@@ -57,6 +58,9 @@ import {
   type AssignedProfileDimensionalReadModel,
   type ResolvedDimension,
 } from '../domain/profileDimensionalSemantics'
+import {
+  buildProfileAwareGeometryReadModel,
+} from '../domain/profileAwareGeometry'
 import './ConstructorShell.css'
 
 export type ConstructorMode = 'offer' | 'free'
@@ -285,6 +289,7 @@ export default function ConstructorShell({
   const [gridVisible, setGridVisible] = useState(true)
   const [snapEnabled, setSnapEnabled] = useState(true)
   const [zoom, setZoom] = useState<number>(100)
+  const [profileViewEnabled, setProfileViewEnabled] = useState(true)
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>('properties')
   const [construction, setConstruction] = useState<ConstructionModel | null>(() =>
     getInitialConstruction(initialDraft, moduleSummary),
@@ -380,6 +385,25 @@ export default function ConstructorShell({
     ),
     [effectiveProfileResolution, frame, moduleSummary.productType, profileResolvableDividerIds, fields],
   )
+  const profileResolutionMissingTargets = useMemo(
+    () => getProfileResolutionMissingTargets(
+      effectiveProfileResolution,
+      Boolean(frame),
+      moduleSummary.productType,
+      profileResolvableDividerIds,
+      fields,
+    ),
+    [effectiveProfileResolution, frame, moduleSummary.productType, profileResolvableDividerIds, fields],
+  )
+  const profileResolutionMissingLabel = useMemo(() => {
+    if (profileResolutionMissingTargets.length === 0) return 'Всички задължителни профили са присвоени.'
+    return profileResolutionMissingTargets.map((target) => {
+      if (target.kind === 'frame') return 'каса'
+      if (target.kind === 'divider') return `делител ${target.id}`
+      const field = fields.find((item) => item.id === target.id)
+      return field ? `крило Поле ${field.sequence}` : `крило ${target.id}`
+    }).join(', ')
+  }, [profileResolutionMissingTargets, fields])
   const dimensionalChain = useMemo(
     () => frame && selectedProfileSystem && effectiveProfileResolution
       ? buildModuleDimensionalChain({
@@ -393,6 +417,22 @@ export default function ConstructorShell({
       : null,
     [frame, frameFaceMm, fields, dividers, selectedProfileSystem, effectiveProfileResolution],
   )
+  const profileAwareGeometry = useMemo(
+    () => selectedProfileSystem && effectiveProfileResolution
+      ? buildProfileAwareGeometryReadModel({
+          system: selectedProfileSystem,
+          resolution: effectiveProfileResolution,
+          dividers,
+          fields,
+          angledDividerCount: angledDividers.length,
+        })
+      : null,
+    [selectedProfileSystem, effectiveProfileResolution, dividers, angledDividers.length, fields],
+  )
+  const reviewedFrameFacePx = profileAwareGeometry?.frame.reviewed && profileAwareGeometry.frame.visibleFaceMm !== null
+    ? Math.max(4, profileAwareGeometry.frame.visibleFaceMm * pxPerMm)
+    : null
+  const profileViewActive = Boolean(profileViewEnabled && profileAwareGeometry && frame)
   const selectedFieldDimensionalChain = selectedField
     ? dimensionalChain?.fields.find((field) => field.fieldId === selectedField.id) ?? null
     : null
@@ -1146,6 +1186,8 @@ export default function ConstructorShell({
     selectedEdge ? `has-selected-${selectedEdge}` : '',
     dragState?.kind === 'create' ? 'is-preview' : '',
     simpleBayDimensions.length > 0 ? 'has-bay-dimensions' : '',
+    profileViewActive ? 'has-profile-view' : '',
+    profileViewActive && profileAwareGeometry?.frame.reviewed ? 'has-reviewed-frame-face' : '',
   ]
     .filter(Boolean)
     .join(' ')
@@ -1586,6 +1628,15 @@ export default function ConstructorShell({
           <button type="button" disabled title="Ще бъде активирано в Constructor 01F">
             Референтна схема
           </button>
+          <button
+            type="button"
+            className={profileViewActive ? 'is-active' : ''}
+            disabled={!profileAwareGeometry || !frame}
+            title={profileAwareGeometry ? 'Reviewed profile face overlay; topology остава авторитетно' : 'Изисква оферта, профилна система и Profile Resolution'}
+            onClick={() => setProfileViewEnabled((current) => !current)}
+          >
+            Profile View {profileViewEnabled ? 'ON' : 'OFF'}
+          </button>
         </div>
 
         <div className="constructor-toolbar-group constructor-toolbar-view">
@@ -1879,6 +1930,7 @@ export default function ConstructorShell({
                   width: `${Math.max(1, displayedFrame.widthMm * pxPerMm)}px`,
                   height: `${Math.max(1, displayedFrame.heightMm * pxPerMm)}px`,
                   '--constructor-frame-face': `${frameFacePx}px`,
+                  '--constructor-profile-frame-face': `${reviewedFrameFacePx ?? frameFacePx}px`,
                 } as CSSProperties}
                 onPointerDown={(event) => {
                   event.stopPropagation()
@@ -1906,6 +1958,9 @@ export default function ConstructorShell({
                 }}
               >
                 <div className="constructor-frame-visual" aria-hidden="true">
+                  {profileViewActive && profileAwareGeometry?.frame.reviewed && (
+                    <i className="constructor-profile-frame-face-overlay" />
+                  )}
                   <i className="constructor-frame-mitre mitre-tl" />
                   <i className="constructor-frame-mitre mitre-tr" />
                   <i className="constructor-frame-mitre mitre-bl" />
@@ -1916,7 +1971,7 @@ export default function ConstructorShell({
                   <button
                     key={field.id}
                     type="button"
-                    className={`constructor-field-surface ${selectedFieldId === field.id ? 'is-selected' : ''} ${field.fieldType === 'fixed' ? 'is-fixed' : field.fieldType === 'operable' ? 'is-operable' : 'is-unset'}`}
+                    className={`constructor-field-surface ${selectedFieldId === field.id ? 'is-selected' : ''} ${field.fieldType === 'fixed' ? 'is-fixed' : field.fieldType === 'operable' ? 'is-operable' : 'is-unset'} ${profileViewActive && field.fieldType === 'operable' ? (profileAwareGeometry?.sashes[field.id]?.reviewed ? 'has-reviewed-sash-geometry' : 'has-unresolved-sash-geometry') : ''}`}
                     style={{
                       left: `${field.bounds.xMm * pxPerMm}px`,
                       top: `${field.bounds.yMm * pxPerMm}px`,
@@ -2030,17 +2085,22 @@ export default function ConstructorShell({
                         return `polygon(${divider.facePolygon.map((point) => `${((point.xMm - faceLeft) / Math.max(1, faceWidth)) * 100}% ${((point.yMm - faceTop) / Math.max(1, faceHeight)) * 100}%`).join(', ')})`
                       })()
                     : undefined
+                  const reviewedDividerGeometry = profileAwareGeometry?.dividers[divider.id] ?? null
+                  const reviewedDividerFacePx = reviewedDividerGeometry?.reviewed && reviewedDividerGeometry.visibleFaceMm !== null
+                    ? Math.max(4, reviewedDividerGeometry.visibleFaceMm * pxPerMm)
+                    : null
                   return (
                     <button
                       key={divider.id}
                       type="button"
-                      className={`constructor-divider is-local ${divider.axis} ${selectedDividerId === divider.id ? 'is-selected' : ''}`}
+                      className={`constructor-divider is-local ${divider.axis} ${selectedDividerId === divider.id ? 'is-selected' : ''} ${profileViewActive ? 'has-profile-view' : ''} ${profileViewActive && reviewedDividerGeometry?.reviewed ? 'has-reviewed-profile-face' : ''}`}
                       style={(divider.axis === 'vertical'
                         ? {
                             left: `${(divider.positionMm + divider.thicknessMm / 2) * pxPerMm}px`,
                             top: `${divider.startMm * pxPerMm}px`,
                             height: `${(divider.endMm - divider.startMm) * pxPerMm}px`,
                             '--constructor-divider-face': `${Math.max(6, divider.thicknessMm * pxPerMm)}px`,
+                            '--constructor-profile-divider-face': `${reviewedDividerFacePx ?? Math.max(6, divider.thicknessMm * pxPerMm)}px`,
                             '--constructor-divider-start-inset': '0px',
                             '--constructor-divider-end-inset': '0px',
                           }
@@ -2049,6 +2109,7 @@ export default function ConstructorShell({
                             top: `${(divider.positionMm + divider.thicknessMm / 2) * pxPerMm}px`,
                             width: `${(divider.endMm - divider.startMm) * pxPerMm}px`,
                             '--constructor-divider-face': `${Math.max(6, divider.thicknessMm * pxPerMm)}px`,
+                            '--constructor-profile-divider-face': `${reviewedDividerFacePx ?? Math.max(6, divider.thicknessMm * pxPerMm)}px`,
                             '--constructor-divider-start-inset': '0px',
                             '--constructor-divider-end-inset': '0px',
                           }) as CSSProperties & Record<string, string | number>}
@@ -2069,6 +2130,9 @@ export default function ConstructorShell({
                         style={faceClipPath ? { clipPath: faceClipPath } : undefined}
                         aria-hidden="true"
                       />
+                      {profileViewActive && reviewedDividerGeometry?.reviewed && (
+                        <span className="constructor-profile-divider-face-overlay" aria-hidden="true" />
+                      )}
                     </button>
                   )
                 })}
@@ -2314,9 +2378,13 @@ export default function ConstructorShell({
                 <small>{selectedElementMeta}</small>
               </div>
               {!isFreeMode && selectedProfileSystem && effectiveProfileResolution ? (
-                <div className="constructor-inspector-resolution-badge" title="Profile Resolution · human assignments">
+                <div
+                  className={`constructor-inspector-resolution-badge ${profileResolutionProgress.assigned === profileResolutionProgress.required ? 'is-complete' : 'is-incomplete'}`}
+                  title={`Profile Resolution · ${profileResolutionProgress.assigned}/${profileResolutionProgress.required}. ${profileResolutionMissingTargets.length > 0 ? `Липсва: ${profileResolutionMissingLabel}` : profileResolutionMissingLabel}`}
+                >
                   <span>PROFILE</span>
                   <b>{profileResolutionProgress.assigned}/{profileResolutionProgress.required}</b>
+                  {profileResolutionMissingTargets.length > 0 && <em>ЛИПСВА {profileResolutionMissingTargets.length}</em>}
                 </div>
               ) : (
                 <div className="constructor-inspector-resolution-badge is-neutral">
