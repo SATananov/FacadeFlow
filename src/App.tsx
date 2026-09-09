@@ -862,7 +862,9 @@ export default function App() {
                 : firstModule.inheritedDefaults.profileSystemId,
               colorLabel: selectedFinish?.labelBg || firstModule.inheritedDefaults.colorId,
               foilModeLabel: selectedFoilMode?.labelBg || firstModule.inheritedDefaults.foilModeId,
+              glazingId: firstModule.inheritedDefaults.glazingId,
               glazingLabel: selectedGlazing?.labelBg || firstModule.inheritedDefaults.glazingId,
+              hardwareStandardId: firstModule.inheritedDefaults.hardwareStandardId,
               hardwareLabel:
                 selectedHardwareStandard?.labelBg ||
                 firstModule.inheritedDefaults.hardwareStandardId,
@@ -884,6 +886,13 @@ export default function App() {
                 widthSource: 'constructor',
                 heightMm,
                 heightSource: 'constructor',
+              })
+            }
+            onModuleProductTypeChange={(productType) =>
+              updateFirstModule({
+                productType,
+                customProductTypeLabel: '',
+                productTypeSource: productType === null ? 'unset' : 'constructor',
               })
             }
             onFieldTopologyChange={syncFirstModuleFieldTopology}

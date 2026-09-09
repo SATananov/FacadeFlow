@@ -1,3 +1,12 @@
+export type ProfileManufacturerId = string
+
+export type ProfileMaterial =
+  | 'PVC'
+  | 'ALUMINIUM'
+  | 'STEEL'
+  | 'COMPOSITE'
+  | 'OTHER'
+
 export type ProfileRole =
   | 'frame'
   | 'sash'
@@ -63,10 +72,10 @@ export interface AccessoryDefinition {
 
 export interface ProfileSystemCatalogEntry {
   id: string
-  manufacturer: 'KMG'
+  manufacturer: ProfileManufacturerId
   name: string
   family: string
-  material: 'PVC'
+  material: ProfileMaterial
   nominalDepthMm: number
   parentSystemId?: string
   selectable: boolean

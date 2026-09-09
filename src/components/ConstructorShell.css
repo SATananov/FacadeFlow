@@ -2686,3 +2686,101 @@
   letter-spacing: 0.06em;
   opacity: 0.72;
 }
+
+
+/* PROFILE RESOLUTION 02A — component compatibility foundation */
+.constructor-component-resolution-stack {
+  display: grid;
+  gap: 7px;
+}
+
+.constructor-compatibility-status,
+.constructor-component-placeholder,
+.constructor-hardware-requirements {
+  display: grid;
+  gap: 3px;
+  padding: 8px 9px;
+  border: 1px solid #c5d5d8;
+  border-radius: 5px;
+  background: #f7fafb;
+}
+
+.constructor-compatibility-status span,
+.constructor-component-placeholder span,
+.constructor-hardware-requirements span {
+  color: #66838a;
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: .5px;
+}
+
+.constructor-compatibility-status b,
+.constructor-component-placeholder b,
+.constructor-hardware-requirements b {
+  color: #31545d;
+  font-size: 9px;
+  font-weight: 950;
+}
+
+.constructor-compatibility-status small,
+.constructor-component-placeholder small,
+.constructor-hardware-requirements small {
+  color: #73868b;
+  font-size: 8px;
+  line-height: 1.35;
+}
+
+.constructor-compatibility-status.status-valid {
+  border-color: #9acdb8;
+  background: #f3fbf7;
+}
+
+.constructor-compatibility-status.status-valid > span {
+  color: #28775a;
+}
+
+.constructor-compatibility-status.status-invalid {
+  border-color: #ddb2b2;
+  background: #fff7f7;
+}
+
+.constructor-compatibility-status.status-invalid > span {
+  color: #9a4747;
+}
+
+.constructor-compatibility-status.status-unconfirmed,
+.constructor-component-placeholder {
+  border-style: dashed;
+}
+
+.constructor-hardware-requirements > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.constructor-hardware-requirements em {
+  color: #946629;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 850;
+}
+
+.constructor-inspector-component-progress {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.constructor-inspector-component-progress span {
+  padding: 3px 5px;
+  border: 1px solid #c3d4d8;
+  border-radius: 999px;
+  background: #f4f9fa;
+  color: #54767e;
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: .25px;
+}

@@ -40,17 +40,31 @@ export type { ConstructorDividerSnapshot, ConstructorDraftSnapshot } from '../do
 import type { ConstructorDraftSnapshot } from '../domain/construction'
 import {
   getDividerProfileCandidates,
+  getFieldGlazingBeadCandidates,
+  getFieldGlazingBeadResolutionContext,
   getFieldSashProfileCandidates,
   getFrameProfileCandidates,
+  getProfileReinforcementCandidates,
   getProfileResolutionMissingTargets,
   getProfileResolutionProgress,
+  getReinforcementTargetKey,
+  getSupplementalComponentResolutionProgress,
   reconcileModuleProfileResolution,
   setDividerProfileAssignment,
+  setFieldGlazingBeadAssignment,
   setFieldSashProfileAssignment,
   setFrameProfileAssignment,
+  setReinforcementAssignment,
   type ModuleProfileResolution,
+  type ReinforcementTarget,
 } from '../domain/profileResolution'
-import { getProfileSystemById, type ProfileDefinition } from '../data/profileSystems'
+import {
+  getGlazingOptionById,
+  getProfileSystemById,
+  type GlazingBeadDefinition,
+  type ProfileDefinition,
+  type ReinforcementDefinition,
+} from '../data/profileSystems'
 import {
   buildModuleDimensionalChain,
   formatResolvedDimension,
@@ -61,6 +75,12 @@ import {
 import {
   buildProfileAwareGeometryReadModel,
 } from '../domain/profileAwareGeometry'
+import {
+  evaluateGlazingBeadCompatibility,
+  evaluateReinforcementCompatibility,
+  type ComponentCompatibilityResult,
+} from '../domain/componentCompatibility'
+import { buildFieldHardwareRequirements } from '../domain/hardwareResolution'
 import './ConstructorShell.css'
 
 export type ConstructorMode = 'offer' | 'free'
@@ -81,7 +101,9 @@ type ConstructorOfferContext = {
   profileSystemLabel: string
   colorLabel: string
   foilModeLabel: string
+  glazingId: string
   glazingLabel: string
+  hardwareStandardId: string
   hardwareLabel: string
 }
 
@@ -114,6 +136,7 @@ type ConstructorShellProps = {
   onDraftChange?: (draft: ConstructorDraftSnapshot | null) => void
   onProfileResolutionChange?: (resolution: ModuleProfileResolution) => void
   onModuleSizeChange?: (size: ConstructorModuleSize) => void
+  onModuleProductTypeChange?: (productType: 'window' | 'door' | null) => void
   onFieldTopologyChange?: (fields: readonly ConstructorFieldTopologySummary[]) => void
   onSelectModule?: (moduleId: string) => void
   onCreateModule?: () => void
@@ -277,6 +300,7 @@ export default function ConstructorShell({
   onDraftChange,
   onProfileResolutionChange,
   onModuleSizeChange,
+  onModuleProductTypeChange,
   onFieldTopologyChange,
   onSelectModule,
   onCreateModule,
@@ -350,6 +374,9 @@ export default function ConstructorShell({
   const selectedProfileSystem = !isFreeMode && offerContext
     ? getProfileSystemById(offerContext.profileSystemId)
     : undefined
+  const selectedGlazing = !isFreeMode && offerContext
+    ? getGlazingOptionById(offerContext.glazingId)
+    : undefined
   const profileResolvableDividerIds = useMemo(
     () => [
       ...dividers.map((divider) => divider.id),
@@ -365,6 +392,7 @@ export default function ConstructorShell({
           moduleSummary.productType,
           profileResolvableDividerIds,
           fields,
+          selectedGlazing?.totalThicknessMm ?? null,
         )
       : null,
     [
@@ -373,6 +401,7 @@ export default function ConstructorShell({
       moduleSummary.productType,
       profileResolvableDividerIds,
       fields,
+      selectedGlazing?.totalThicknessMm,
     ],
   )
   const profileResolutionProgress = useMemo(
@@ -404,6 +433,28 @@ export default function ConstructorShell({
       return field ? `крило Поле ${field.sequence}` : `крило ${target.id}`
     }).join(', ')
   }, [profileResolutionMissingTargets, fields])
+  const supplementalResolutionProgress = useMemo(
+    () => selectedProfileSystem
+      ? getSupplementalComponentResolutionProgress({
+          resolution: effectiveProfileResolution,
+          system: selectedProfileSystem,
+          fields,
+          dividerIds: profileResolvableDividerIds,
+          glazingThicknessMm: selectedGlazing?.totalThicknessMm ?? null,
+        })
+      : null,
+    [effectiveProfileResolution, selectedProfileSystem, fields, profileResolvableDividerIds, selectedGlazing?.totalThicknessMm],
+  )
+  const selectedFieldHardwareRequirements = useMemo(
+    () => selectedField
+      ? buildFieldHardwareRequirements({
+          field: selectedField,
+          profileSystemId: selectedProfileSystem?.id,
+          hardwareStandardId: offerContext?.hardwareStandardId,
+        })
+      : null,
+    [selectedField, selectedProfileSystem?.id, offerContext?.hardwareStandardId],
+  )
   const dimensionalChain = useMemo(
     () => frame && selectedProfileSystem && effectiveProfileResolution
       ? buildModuleDimensionalChain({
@@ -1219,6 +1270,44 @@ export default function ConstructorShell({
     )
   }
 
+  const applyModuleProductTypeFromConstructor = (productType: 'window' | 'door' | null) => {
+    if (isFreeMode) return
+    onModuleProductTypeChange?.(productType)
+  }
+
+  const renderModuleProductTypeResolution = () => (
+    <div className="constructor-field-semantic-controls">
+      <span>КОНСТРУКТИВЕН ТИП НА МОДУЛА</span>
+      <div className="constructor-field-semantic-buttons">
+        <button
+          type="button"
+          className={moduleSummary.productType === 'window' ? 'is-selected' : ''}
+          onClick={() => applyModuleProductTypeFromConstructor('window')}
+          disabled={!onModuleProductTypeChange}
+        >
+          Прозорец
+        </button>
+        <button
+          type="button"
+          className={moduleSummary.productType === 'door' ? 'is-selected' : ''}
+          onClick={() => applyModuleProductTypeFromConstructor('door')}
+          disabled={!onModuleProductTypeChange}
+        >
+          Врата
+        </button>
+        <button
+          type="button"
+          className="is-clear"
+          onClick={() => applyModuleProductTypeFromConstructor(null)}
+          disabled={!onModuleProductTypeChange || moduleSummary.productType === null}
+        >
+          Изчисти
+        </button>
+      </div>
+      <p>Това не е стандартен шаблон. Типът само определя дали OPERABLE полето изисква роля sash или door-sash.</p>
+    </div>
+  )
+
   const applySelectedFieldSashProfile = (profileCode: string | null) => {
     if (!selectedProfileSystem || !selectedField) return
     publishProfileResolution(
@@ -1229,6 +1318,185 @@ export default function ConstructorShell({
         selectedField,
         profileCode,
       ),
+    )
+  }
+
+  const applySelectedFieldGlazingBead = (profileCode: string | null) => {
+    if (!selectedProfileSystem || !selectedField) return
+    publishProfileResolution(
+      setFieldGlazingBeadAssignment(
+        effectiveProfileResolution,
+        selectedProfileSystem,
+        selectedField,
+        selectedGlazing?.totalThicknessMm ?? null,
+        profileCode,
+      ),
+    )
+  }
+
+  const applyReinforcement = (
+    target: ReinforcementTarget,
+    baseProfileCode: string | null | undefined,
+    encodedValue: string,
+  ) => {
+    if (!selectedProfileSystem) return
+    if (!encodedValue) {
+      publishProfileResolution(
+        setReinforcementAssignment(
+          effectiveProfileResolution,
+          selectedProfileSystem,
+          target,
+          baseProfileCode,
+          null,
+          null,
+        ),
+      )
+      return
+    }
+
+    const separator = encodedValue.lastIndexOf('::')
+    if (separator <= 0) return
+    const reinforcementCode = encodedValue.slice(0, separator)
+    const thicknessMm = Number(encodedValue.slice(separator + 2))
+    if (!Number.isFinite(thicknessMm)) return
+
+    publishProfileResolution(
+      setReinforcementAssignment(
+        effectiveProfileResolution,
+        selectedProfileSystem,
+        target,
+        baseProfileCode,
+        reinforcementCode,
+        thicknessMm,
+      ),
+    )
+  }
+
+  const renderCompatibilityStatus = (
+    result: ComponentCompatibilityResult,
+  ) => (
+    <div className={`constructor-compatibility-status status-${result.status}`}>
+      <span>{result.labelBg}</span>
+      <b>{result.code}</b>
+      <small>{result.noteBg}</small>
+    </div>
+  )
+
+  const renderReinforcementAssignment = (
+    label: string,
+    target: ReinforcementTarget,
+    baseProfileCode: string | null | undefined,
+  ) => {
+    if (!selectedProfileSystem) return null
+    if (!baseProfileCode) {
+      return <div className="constructor-component-placeholder"><span>{label}</span><b>MISSING DATA</b><small>Първо избери основния профил. Армировка не се предполага.</small></div>
+    }
+
+    const candidates = getProfileReinforcementCandidates(selectedProfileSystem, baseProfileCode)
+    if (candidates.length === 0) {
+      return <div className="constructor-component-placeholder"><span>{label}</span><b>UNCONFIRMED</b><small>В текущите каталожни данни няма reinforcement→{baseProfileCode} връзка.</small></div>
+    }
+
+    const assignment = effectiveProfileResolution?.reinforcements[getReinforcementTargetKey(target)]
+    const value = assignment
+      ? `${assignment.reinforcementCode}::${assignment.thicknessMm}`
+      : ''
+    const compatibility = evaluateReinforcementCompatibility(
+      selectedProfileSystem,
+      baseProfileCode,
+      assignment?.reinforcementCode,
+      assignment?.thicknessMm,
+    )
+
+    const flattened = candidates.flatMap((candidate: ReinforcementDefinition) =>
+      candidate.thicknessOptionsMm.map((thicknessMm) => ({ candidate, thicknessMm })),
+    )
+
+    return (
+      <div className="constructor-component-resolution-stack">
+        <div className="constructor-profile-resolution-control">
+          <span>{label}</span>
+          <select
+            aria-label={label}
+            value={value}
+            onChange={(event) => applyReinforcement(target, baseProfileCode, event.target.value)}
+          >
+            <option value="">Не е избрана армировка</option>
+            {flattened.map(({ candidate, thicknessMm }, index) => (
+              <option key={`${candidate.code}-${thicknessMm}-${index}`} value={`${candidate.code}::${thicknessMm}`}>
+                {candidate.code} · {thicknessMm} mm
+              </option>
+            ))}
+          </select>
+          <small>Human-controlled · кандидатите идват само от explicit appliesToProfileCodes в каталога.</small>
+        </div>
+        {renderCompatibilityStatus(compatibility)}
+      </div>
+    )
+  }
+
+  const renderSelectedFieldGlazingBead = () => {
+    if (!selectedProfileSystem || !selectedField) return null
+    if (!selectedGlazing) {
+      return <div className="constructor-component-placeholder"><span>СТЪКЛОДЪРЖАТЕЛ</span><b>MISSING DATA</b><small>Офертата няма разпознат стъклопакет.</small></div>
+    }
+
+    const candidates = getFieldGlazingBeadCandidates(
+      selectedProfileSystem,
+      selectedGlazing.totalThicknessMm,
+    )
+    const context = getFieldGlazingBeadResolutionContext(
+      effectiveProfileResolution,
+      selectedField,
+    )
+
+    if (!context.targetRequired) {
+      return <div className="constructor-component-placeholder"><span>СТЪКЛОДЪРЖАТЕЛ</span><b>MISSING CONTEXT</b><small>Първо задай FIX или Отваряемо. Каталогът има {candidates.length} кандидат(а) по дебелина, но FIELD без тип не е bead target.</small></div>
+    }
+
+    if (!context.baseProfileCode) {
+      return <div className="constructor-component-placeholder"><span>СТЪКЛОДЪРЖАТЕЛ</span><b>MISSING CONTEXT</b><small>{selectedField.fieldType === 'fixed' ? 'Първо избери human-confirmed профил на касата.' : 'Първо избери human-confirmed профил на крилото.'} Каталогът има {candidates.length} кандидат(а) по дебелина, но изборът остава заключен.</small></div>
+    }
+
+    if (candidates.length === 0) {
+      return <div className="constructor-component-placeholder"><span>СТЪКЛОДЪРЖАТЕЛ</span><b>UNCONFIRMED</b><small>Няма каталожен bead за {selectedGlazing.totalThicknessMm} mm. FacadeFlow не измисля заместител.</small></div>
+    }
+
+    const assignment = effectiveProfileResolution?.fieldGlazingBeads[selectedField.id]
+    const compatibility = evaluateGlazingBeadCompatibility(
+      selectedProfileSystem,
+      selectedGlazing.totalThicknessMm,
+      assignment?.profileCode,
+      context,
+    )
+
+    return (
+      <div className="constructor-component-resolution-stack">
+        {renderProfileAssignment(
+          `СТЪКЛОДЪРЖАТЕЛ · ${selectedGlazing.totalThicknessMm} mm`,
+          candidates as readonly GlazingBeadDefinition[],
+          assignment?.profileCode ?? '',
+          applySelectedFieldGlazingBead,
+        )}
+        <div className="constructor-invariant-note">BASE CONTEXT: {context.baseProfileRole?.toUpperCase()} {context.baseProfileCode} · catalog match ≠ resolved compatibility.</div>
+        {renderCompatibilityStatus(compatibility)}
+      </div>
+    )
+  }
+
+  const renderSelectedFieldHardwareRequirements = () => {
+    if (!selectedFieldHardwareRequirements) return null
+    const statusLabel = selectedFieldHardwareRequirements.status
+      .replaceAll('-', ' ')
+      .toUpperCase()
+    return (
+      <div className={`constructor-hardware-requirements status-${selectedFieldHardwareRequirements.status}`}>
+        <div><span>HARDWARE REQUIREMENTS</span><b>{statusLabel}</b></div>
+        <small>{selectedFieldHardwareRequirements.noteBg}</small>
+        {selectedFieldHardwareRequirements.missing.length > 0 && (
+          <em>Липсва: {selectedFieldHardwareRequirements.missing.join(', ')}</em>
+        )}
+      </div>
     )
   }
 
@@ -1451,23 +1719,61 @@ export default function ConstructorShell({
       return <div className="constructor-selection-empty"><span>Няма активен Profile Resolution</span><p>Избери профилна система в офертата.</p></div>
     }
     if (selectedAngledDivider) {
-      return renderProfileAssignment('ПРОФИЛ НА ДЕЛИТЕЛЯ', getDividerProfileCandidates(selectedProfileSystem), effectiveProfileResolution.dividers[selectedAngledDivider.id]?.profileCode ?? '', (profileCode) => applyDividerProfile(selectedAngledDivider.id, profileCode))
+      const assignment = effectiveProfileResolution.dividers[selectedAngledDivider.id]
+      return <div className="constructor-component-resolution-stack">
+        {renderProfileAssignment('ПРОФИЛ НА ДЕЛИТЕЛЯ', getDividerProfileCandidates(selectedProfileSystem), assignment?.profileCode ?? '', (profileCode) => applyDividerProfile(selectedAngledDivider.id, profileCode))}
+        {renderReinforcementAssignment('АРМИРОВКА НА ДЕЛИТЕЛЯ', { kind: 'divider', id: selectedAngledDivider.id }, assignment?.profileCode)}
+      </div>
     }
     if (selectedDivider) {
-      return renderProfileAssignment('ПРОФИЛ НА ДЕЛИТЕЛЯ', getDividerProfileCandidates(selectedProfileSystem), effectiveProfileResolution.dividers[selectedDivider.id]?.profileCode ?? '', (profileCode) => applyDividerProfile(selectedDivider.id, profileCode))
+      const assignment = effectiveProfileResolution.dividers[selectedDivider.id]
+      return <div className="constructor-component-resolution-stack">
+        {renderProfileAssignment('ПРОФИЛ НА ДЕЛИТЕЛЯ', getDividerProfileCandidates(selectedProfileSystem), assignment?.profileCode ?? '', (profileCode) => applyDividerProfile(selectedDivider.id, profileCode))}
+        {renderReinforcementAssignment('АРМИРОВКА НА ДЕЛИТЕЛЯ', { kind: 'divider', id: selectedDivider.id }, assignment?.profileCode)}
+      </div>
     }
     if (selectedField) {
-      if (selectedField.fieldType === 'fixed') return <div className="constructor-property-row"><span>ПРОФИЛ НА КРИЛОТО</span><b>Не се изисква · FIX полето няма логическо крило.</b></div>
-      if (selectedField.fieldType === null) return <div className="constructor-property-row"><span>ПРОФИЛ НА КРИЛОТО</span><b>Първо задай FIX или Отваряемо. FacadeFlow не предполага профил.</b></div>
+      if (selectedField.fieldType === 'fixed') {
+        return <div className="constructor-component-resolution-stack">
+          <div className="constructor-property-row"><span>ПРОФИЛ НА КРИЛОТО</span><b>Не се изисква · FIX полето няма логическо крило.</b></div>
+          {renderSelectedFieldGlazingBead()}
+          {renderSelectedFieldHardwareRequirements()}
+        </div>
+      }
+      if (selectedField.fieldType === null) {
+        return <div className="constructor-component-resolution-stack">
+          <div className="constructor-property-row"><span>ПРОФИЛ НА КРИЛОТО</span><b>Първо задай FIX или Отваряемо. FacadeFlow не предполага профил.</b></div>
+          {renderSelectedFieldGlazingBead()}
+          {renderSelectedFieldHardwareRequirements()}
+        </div>
+      }
       const candidates = getFieldSashProfileCandidates(selectedProfileSystem, moduleSummary.productType, selectedField.fieldType)
-      return candidates.length > 0
-        ? renderProfileAssignment('ПРОФИЛ НА КРИЛОТО', candidates, effectiveProfileResolution.fieldSashes[selectedField.id]?.profileCode ?? '', applySelectedFieldSashProfile)
-        : <div className="constructor-property-row"><span>ПРОФИЛ НА КРИЛОТО</span><b>Избери стандартен тип изделие Прозорец / Врата, за да се определи ролята sash / door-sash.</b></div>
+      const sashAssignment = effectiveProfileResolution.fieldSashes[selectedField.id]
+      if (moduleSummary.productType === null) {
+        return <div className="constructor-component-resolution-stack">
+          {renderModuleProductTypeResolution()}
+          <div className="constructor-property-row"><span>ПРОФИЛ НА КРИЛОТО</span><b>MISSING CONTEXT · избери Прозорец или Врата тук. OPERABLE полето вече се брои като задължителен PROFILE target.</b></div>
+          {renderSelectedFieldGlazingBead()}
+          {renderSelectedFieldHardwareRequirements()}
+        </div>
+      }
+      return <div className="constructor-component-resolution-stack">
+        {renderModuleProductTypeResolution()}
+        {candidates.length > 0
+          ? renderProfileAssignment('ПРОФИЛ НА КРИЛОТО', candidates, sashAssignment?.profileCode ?? '', applySelectedFieldSashProfile)
+          : <div className="constructor-property-row"><span>ПРОФИЛ НА КРИЛОТО</span><b>MISSING DATA · избраната система няма каталогов профил за ролята {moduleSummary.productType === 'door' ? 'door-sash' : 'sash'}.</b></div>}
+        {renderReinforcementAssignment('АРМИРОВКА НА КРИЛОТО', { kind: 'field-sash', id: selectedField.id }, sashAssignment?.profileCode)}
+        {renderSelectedFieldGlazingBead()}
+        {renderSelectedFieldHardwareRequirements()}
+      </div>
     }
     if (frameSelected && frame) {
-      return renderProfileAssignment('ПРОФИЛ НА КАСАТА', getFrameProfileCandidates(selectedProfileSystem), effectiveProfileResolution.frame?.profileCode ?? '', applyFrameProfile)
+      return <div className="constructor-component-resolution-stack">
+        {renderProfileAssignment('ПРОФИЛ НА КАСАТА', getFrameProfileCandidates(selectedProfileSystem), effectiveProfileResolution.frame?.profileCode ?? '', applyFrameProfile)}
+        {renderReinforcementAssignment('АРМИРОВКА НА КАСАТА', { kind: 'frame', id: 'frame' }, effectiveProfileResolution.frame?.profileCode)}
+      </div>
     }
-    return <div className="constructor-selection-empty"><span>Избери конструктивен елемент</span><p>Профилът се присвоява само към каса, делител или OPERABLE поле.</p></div>
+    return <div className="constructor-selection-empty"><span>Избери конструктивен елемент</span><p>Профилът се присвоява към каса, делител или OPERABLE поле; 02A.3 добавя free-constructor sash role context + context-gated glazing bead и human-controlled reinforcement resolution.</p></div>
   }
 
   const renderSelectedDimensionsPane = () => {
@@ -2392,6 +2698,12 @@ export default function ConstructorShell({
                   <b>—</b>
                 </div>
               )}
+              {!isFreeMode && supplementalResolutionProgress ? (
+                <div className="constructor-inspector-component-progress" title={`02A.2 supplemental resolution · BEAD = RESOLVED/targets; human assignments: ${supplementalResolutionProgress.glazingBeads.assigned}`}>
+                  <span>BEAD {supplementalResolutionProgress.glazingBeads.resolved}/{supplementalResolutionProgress.glazingBeads.targetsRequired}</span>
+                  <span>REINF {supplementalResolutionProgress.reinforcements.assigned}/{supplementalResolutionProgress.reinforcements.eligibleTargets}</span>
+                </div>
+              ) : null}
             </div>
 
             <div className="constructor-inspector-tabs" role="tablist" aria-label="Контекст на избрания елемент">
@@ -2415,7 +2727,7 @@ export default function ConstructorShell({
               <b>Конструктивна скица · не машинна геометрия</b>
             </summary>
             <p>
-              Profile Resolution 01A пази human-confirmed кодове, а 01B отделя потвърдените размерни семантики от raw catalog callouts. Реалната profile-aware геометрия, застъпванията на крило, glazing deductions, армировките, срезовете и машинните данни още не се генерират.
+              Profile Resolution 01A пази human-confirmed structural кодове; 02A.2 заключва glazing-bead resolution зад explicit FIELD + base-profile context, отделя catalog assignment от RESOLVED compatibility и пази reinforcement/hardware requirements без автоматичен kit. 01B отделя потвърдените размерни семантики от raw catalog callouts. Реалните glazing deductions, cut list, BOM и машинните данни още не се генерират.
             </p>
           </details>
         </aside>

@@ -7,3 +7,5 @@ export * from './glazingOptions'
 export * from './hardwareOptions'
 
 export * from './dimensionalSemantics'
+
+export * from './componentInventory'

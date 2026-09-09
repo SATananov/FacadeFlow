@@ -276,7 +276,7 @@ function hasPositiveValue(value: number | null): boolean {
 export function hasOfferModuleProductType(
   module: OfferModuleDraft,
 ): boolean {
-  if (module.productTypeSource === 'preset') {
+  if (module.productTypeSource === 'preset' || module.productTypeSource === 'constructor') {
     return module.productType !== null
   }
 
