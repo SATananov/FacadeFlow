@@ -26,7 +26,7 @@ assert.match(modules, /getOfferModuleMissingFields/)
 assert.match(modules, /isOfferModuleStructureReady/)
 assert.match(modules, /not a save gate/)
 
-assert.match(app, /Модул 1 може да остане чернова/)
+assert.match(app, /Модул \{firstModule\.sequence\} може да остане чернова/)
 assert.match(app, /Всички модулни стойности на този етап са опционални/)
 assert.match(app, /Не е избран/)
 assert.match(app, /Друго \/ ръчно/)

@@ -18,7 +18,7 @@ const packageJson = JSON.parse(
 )
 
 assert.match(shell, /constructor-context-breadcrumb/)
-assert.match(shell, /Свободна скица · Модул —/)
+assert.match(shell, /Свободна скица · без модул/)
 assert.match(shell, /Оферта · Модул \$\{moduleNumber\}/)
 assert.match(shell, /СВОБОДНА СКИЦА · БЕЗ МОДУЛ/)
 assert.match(shell, /ОФЕРТА · МОДУЛ \$\{String\(moduleNumber\)\.padStart\(2, '0'\)\}/)
@@ -37,7 +37,7 @@ assert.match(acceptance, /MACHINE READY: NO/)
 assert.match(packageJson.scripts['test:contract'], /verify-constructor01b1\.mjs/)
 
 console.log('CONSTRUCTOR 01B.1 WORK CONTEXT IDENTITY VERIFY PASS')
-console.log('FREE MODE: FREE SKETCH | MODULE —')
+console.log('FREE MODE: FREE SKETCH | NO MODULE UNTIL EXPLICIT CREATE')
 console.log('OFFER MODE: OFFER | MODULE N')
 console.log('WORKSPACE BADGE: PERSISTENT CONTEXT')
 console.log('BREADCRUMB: PERSISTENT CONTEXT')

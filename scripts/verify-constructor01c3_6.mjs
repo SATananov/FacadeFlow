@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+
+const model = await readFile(new URL('../src/domain/construction/constructionModel.ts', import.meta.url), 'utf8')
+const topology = await readFile(new URL('../src/domain/construction/fieldTopology.ts', import.meta.url), 'utf8')
+const shell = await readFile(new URL('../src/components/ConstructorShell.tsx', import.meta.url), 'utf8')
+const acceptance = await readFile(new URL('../docs/CONSTRUCTOR_01C_3_6_ANGLED_CORNER_ANCHORING_TRIANGLE_FIELDS_ACCEPTANCE.md', import.meta.url), 'utf8')
+const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'))
+
+assert.match(model, /field-topology-05/)
+assert.match(model, /constructor-01c\.3\.6/)
+assert.match(topology, /CONSTRUCTION_ANGLED_CORNER_SNAP_MM = 30/)
+assert.match(topology, /snapAngledEndpointToCorner/)
+assert.match(topology, /normalizePolygon/)
+assert.match(topology, /const minimumOffset = 0/)
+assert.match(topology, /resolved\.parentBounds\.widthMm/)
+assert.doesNotMatch(topology, /const minimumOffset = CONSTRUCTION_MIN_FIELD_MM \+ CONSTRUCTION_DEFAULT_DIVIDER_FACE_MM[\s\S]{0,300}moveAngledDividerEndpoint/)
+assert.match(shell, /(?:FIELD TOPOLOGY 01C\.3\.[67]|FIELD SEMANTICS 01D)/)
+assert.match(shell, /Закотвяне в ъгъл/)
+assert.match(shell, /polygon \/ triangle \/ trapezoid ПОЛЕТА/)
+assert.match(acceptance, /exact inner corner/i)
+assert.match(acceptance, /triangles/i)
+assert.match(acceptance, /PROFILE RESOLUTION: NO/)
+assert.match(acceptance, /MACHINE READY: NO/)
+assert.match(packageJson.scripts['test:contract'], /verify-constructor01c3_6\.mjs/)
+
+console.log('CONSTRUCTOR 01C.3.6 ANGLED CORNER ANCHORING + TRIANGLE FIELD VERIFY PASS')
+console.log('ANGLED ENDPOINT RANGE: 0..PARENT FIELD WIDTH')
+console.log('CORNER SNAP: 30 MM -> EXACT CORNER')
+console.log('FIELDS: TRIANGLE / TRAPEZOID / POLYGON')
+console.log('PROFILE RESOLUTION: NO')
+console.log('MACHINE READY: NO')

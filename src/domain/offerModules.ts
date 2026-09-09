@@ -119,7 +119,7 @@ export function resizeOfferModuleFields(
 }
 
 export function hasOfferModuleFieldType(field: OfferModuleFieldDraft): boolean {
-  if (field.fieldTypeSource === 'preset') {
+  if (field.fieldTypeSource === 'preset' || field.fieldTypeSource === 'constructor') {
     return field.fieldType !== null
   }
 
@@ -133,7 +133,10 @@ export function hasOfferModuleFieldType(field: OfferModuleFieldDraft): boolean {
 export function isOfferModuleFieldOperable(
   field: OfferModuleFieldDraft,
 ): boolean {
-  return field.fieldTypeSource === 'preset' && field.fieldType === 'operable'
+  return (
+    (field.fieldTypeSource === 'preset' || field.fieldTypeSource === 'constructor') &&
+    field.fieldType === 'operable'
+  )
 }
 
 export function hasOfferModuleOpeningMode(
@@ -143,7 +146,7 @@ export function hasOfferModuleOpeningMode(
     return false
   }
 
-  if (field.openingModeSource === 'preset') {
+  if (field.openingModeSource === 'preset' || field.openingModeSource === 'constructor') {
     return field.openingMode !== null
   }
 
@@ -167,7 +170,7 @@ export function isOfferModuleOpeningHandingRelevant(
   }
 
   return (
-    field.openingModeSource === 'preset' &&
+    (field.openingModeSource === 'preset' || field.openingModeSource === 'constructor') &&
     (field.openingMode === 'side-hinged' || field.openingMode === 'tilt-turn')
   )
 }
@@ -179,7 +182,7 @@ export function hasOfferModuleOpeningHanding(
     return false
   }
 
-  if (field.openingHandingSource === 'preset') {
+  if (field.openingHandingSource === 'preset' || field.openingHandingSource === 'constructor') {
     return field.openingHanding !== null
   }
 
@@ -233,12 +236,15 @@ export interface OfferModuleDraft {
  * This is intentionally not a geometry generator: no sash layout, opening
  * direction, hardware kit, profile cutting, or machine output is inferred.
  */
-export function createFirstOfferModule(
+export function createOfferModule(
   defaults: OfferModuleDefaults,
+  sequence: number,
 ): OfferModuleDraft {
+  const safeSequence = Math.max(1, Math.floor(sequence))
+
   return {
-    id: 'module-1',
-    sequence: 1,
+    id: `module-${safeSequence}`,
+    sequence: safeSequence,
     inheritedDefaults: { ...defaults },
 
     productType: null,
@@ -255,6 +261,12 @@ export function createFirstOfferModule(
     fieldCountSource: 'unset',
     fields: [],
   }
+}
+
+export function createFirstOfferModule(
+  defaults: OfferModuleDefaults,
+): OfferModuleDraft {
+  return createOfferModule(defaults, 1)
 }
 
 function hasPositiveValue(value: number | null): boolean {
@@ -370,6 +382,9 @@ export interface OfferModuleTopologyFieldInput {
   id: string
   sequence: number
   widthMm: number
+  fieldType?: ModuleFieldType | null
+  openingMode?: ModuleOpeningMode | null
+  openingHanding?: ModuleOpeningHanding | null
 }
 
 /**
@@ -395,6 +410,15 @@ export function syncOfferModuleFieldsFromTopology(
       ? { ...existing }
       : createOfferModuleFieldDraft(topologyField.sequence)
 
+    const constructorFieldType = topologyField.fieldType ?? null
+    const constructorOpeningMode =
+      constructorFieldType === 'operable' ? topologyField.openingMode ?? null : null
+    const constructorOpeningHanding =
+      constructorFieldType === 'operable' &&
+      (constructorOpeningMode === 'side-hinged' || constructorOpeningMode === 'tilt-turn')
+        ? topologyField.openingHanding ?? null
+        : null
+
     return {
       ...base,
       id: `field-${topologyField.sequence}`,
@@ -402,6 +426,15 @@ export function syncOfferModuleFieldsFromTopology(
       constructionFieldId: topologyField.id,
       widthMm: Math.round(topologyField.widthMm),
       widthSource: 'constructor',
+      fieldType: constructorFieldType,
+      customFieldTypeLabel: '',
+      fieldTypeSource: constructorFieldType ? 'constructor' : 'unset',
+      openingMode: constructorOpeningMode,
+      customOpeningModeLabel: '',
+      openingModeSource: constructorOpeningMode ? 'constructor' : 'unset',
+      openingHanding: constructorOpeningHanding,
+      customOpeningHandingLabel: '',
+      openingHandingSource: constructorOpeningHanding ? 'constructor' : 'unset',
     }
   })
 }

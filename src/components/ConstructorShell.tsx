@@ -15,15 +15,25 @@ import {
   getConstructionMinimumFrameSize,
   migrateLegacyDividersToTopology,
   moveDivider,
+  moveAngledDivider,
+  moveAngledDividerEndpoint,
   removeDivider,
   resizeConstructionFrame,
   resolveConstructionTopology,
+  setConstructionFieldOpeningHanding,
+  setConstructionFieldOpeningMode,
+  setConstructionFieldType,
   splitField,
+  splitFieldAngled,
   upgradeConstructionModelPhysicalDividers,
   type ConstructionAxis,
   type ConstructionFrame,
   type ConstructionModel,
+  type ConstructionFieldType,
+  type ConstructionOpeningMode,
+  type ConstructionOpeningHanding,
   type ResolvedConstructionDivider,
+  type ResolvedConstructionAngledDivider,
   type ResolvedConstructionField,
 } from '../domain/construction'
 export type { ConstructorDividerSnapshot, ConstructorDraftSnapshot } from '../domain/construction'
@@ -38,6 +48,9 @@ export type ConstructorFieldTopologySummary = {
   sequence: number
   widthMm: number
   heightMm: number
+  fieldType: ConstructionFieldType | null
+  openingMode: ConstructionOpeningMode | null
+  openingHanding: ConstructionOpeningHanding | null
 }
 
 type ConstructorOfferContext = {
@@ -59,23 +72,42 @@ type ConstructorModuleSize = {
   heightMm: number
 }
 
+type ConstructorModuleNavItem = {
+  id: string
+  sequence: number
+}
+
 type ConstructorShellProps = {
   mode: ConstructorMode
   moduleNumber?: number
+  moduleItems?: readonly ConstructorModuleNavItem[]
+  activeModuleId?: string
   offerContext?: ConstructorOfferContext
   moduleSummary?: ConstructorModuleSummary
   initialDraft?: ConstructorDraftSnapshot | null
   onDraftChange?: (draft: ConstructorDraftSnapshot | null) => void
   onModuleSizeChange?: (size: ConstructorModuleSize) => void
   onFieldTopologyChange?: (fields: readonly ConstructorFieldTopologySummary[]) => void
+  onSelectModule?: (moduleId: string) => void
+  onCreateModule?: () => void
+  onResetModule?: () => void
   onClose: () => void
   onCreateOfferFromSketch?: (draft: ConstructorDraftSnapshot | null) => void
 }
 
-type ConstructorTool = 'select' | 'pan' | 'frame' | 'vertical-divider' | 'horizontal-divider'
+type ConstructorTool =
+  | 'select'
+  | 'pan'
+  | 'frame'
+  | 'vertical-divider'
+  | 'horizontal-divider'
+  | 'angled-divider'
+  | 'fixed-field'
+  | 'operable-field'
 type FrameEdge = 'left' | 'right' | 'top' | 'bottom'
 
 type DividerModel = ResolvedConstructionDivider
+type AngledDividerModel = ResolvedConstructionAngledDivider
 type FieldModel = ResolvedConstructionField
 type FrameModel = ConstructionFrame
 
@@ -104,6 +136,23 @@ type DragState =
       dividerId: string
       axis: ConstructorDividerAxis
       grabOffsetMm: number
+      originalConstruction: ConstructionModel
+    }
+  | {
+      kind: 'angled-divider'
+      pointerId: number
+      dividerId: string
+      startPointerXMm: number
+      originalTopOffsetMm: number
+      originalBottomOffsetMm: number
+      originalConstruction: ConstructionModel
+    }
+  | {
+      kind: 'angled-endpoint'
+      pointerId: number
+      dividerId: string
+      endpoint: 'top' | 'bottom'
+      parentStartXMm: number
       originalConstruction: ConstructionModel
     }
 
@@ -163,7 +212,7 @@ function getInitialFrame(
 
 function constructionToSnapshot(model: ConstructionModel): ConstructorDraftSnapshot {
   return {
-    version: 'constructor-01c.3.2',
+    version: 'constructor-01d',
     frame: { ...model.frame },
     topology: cloneConstructionModel(model),
   }
@@ -190,12 +239,17 @@ function getInitialConstruction(
 export default function ConstructorShell({
   mode,
   moduleNumber = 1,
+  moduleItems = [],
+  activeModuleId,
   offerContext,
   moduleSummary = FREE_MODULE_SUMMARY,
   initialDraft,
   onDraftChange,
   onModuleSizeChange,
   onFieldTopologyChange,
+  onSelectModule,
+  onCreateModule,
+  onResetModule,
   onClose,
   onCreateOfferFromSketch,
 }: ConstructorShellProps) {
@@ -214,15 +268,17 @@ export default function ConstructorShell({
   const resolvedTopology = useMemo(
     () => construction
       ? resolveConstructionTopology(construction)
-      : { fields: [] as FieldModel[], dividers: [] as DividerModel[] },
+      : { fields: [] as FieldModel[], dividers: [] as DividerModel[], angledDividers: [] as AngledDividerModel[] },
     [construction],
   )
   const fields = resolvedTopology.fields
   const dividers = resolvedTopology.dividers
+  const angledDividers = resolvedTopology.angledDividers
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(
     fields[0]?.id ?? null,
   )
   const [selectedDividerId, setSelectedDividerId] = useState<string | null>(null)
+  const [selectedAngledDividerId, setSelectedAngledDividerId] = useState<string | null>(null)
   const [dividerPositionDraft, setDividerPositionDraft] = useState('')
   const [selectedEdge, setSelectedEdge] = useState<FrameEdge | null>(null)
   const [frameSelected, setFrameSelected] = useState(false)
@@ -236,6 +292,9 @@ export default function ConstructorShell({
   )
 
   const isFreeMode = mode === 'free'
+  const hasActiveModule = Boolean(activeModuleId && moduleItems.some((item) => item.id === activeModuleId))
+  const canEditConstruction = !isFreeMode || hasActiveModule
+  const showModuleStrip = isFreeMode || moduleItems.length > 0
   const pxPerMm = BASE_PX_PER_MM * (zoom / 100)
   const frameFaceMm = construction
     ? getConstructionFrameFaceMm(construction)
@@ -246,9 +305,14 @@ export default function ConstructorShell({
     ? `${Math.round(displayedFrame.widthMm)} × ${Math.round(displayedFrame.heightMm)} mm`
     : 'Размерите още не са зададени'
 
-  const title = isFreeMode ? 'Свободна скица' : `Модул ${moduleNumber}`
+  const title = isFreeMode
+    ? hasActiveModule
+      ? `Свободна скица · Модул ${moduleNumber}`
+      : 'Свободна скица'
+    : `Модул ${moduleNumber}`
   const selectedField = fields.find((field) => field.id === selectedFieldId) ?? null
   const selectedDivider = dividers.find((divider) => divider.id === selectedDividerId) ?? null
+  const selectedAngledDivider = angledDividers.find((divider) => divider.id === selectedAngledDividerId) ?? null
   const conceptualFieldCount = fields.length
 
   const snapMm = (value: number) => {
@@ -292,6 +356,9 @@ export default function ConstructorShell({
 
     if (!nextConstruction) {
       onDraftChange?.(null)
+      if (!isFreeMode) {
+        onFieldTopologyChange?.([])
+      }
       return
     }
 
@@ -308,6 +375,9 @@ export default function ConstructorShell({
           sequence: field.sequence,
           widthMm: Math.round(field.bounds.widthMm),
           heightMm: Math.round(field.bounds.heightMm),
+          fieldType: field.fieldType,
+          openingMode: field.openingMode,
+          openingHanding: field.openingHanding,
         })),
       )
     }
@@ -377,11 +447,36 @@ export default function ConstructorShell({
     const nextField = findFieldAtPoint(nextConstruction, xInFrame, yInFrame)
     setSelectedFieldId(nextField?.id ?? null)
     setSelectedDividerId(nextDividerId)
+    setSelectedAngledDividerId(null)
     const addedDivider = resolveConstructionTopology(nextConstruction).dividers
       .find((divider) => divider.id === nextDividerId)
     setDividerPositionDraft(addedDivider ? String(Math.round(addedDivider.offsetMm)) : '')
     setFrameSelected(false)
     setSelectedEdge(null)
+  }
+
+  const addAngledDivider = (point: CanvasPoint) => {
+    const currentConstruction = constructionRef.current
+    if (!frame || !currentConstruction) return
+    const xInFrame = point.xMm - frame.xMm
+    const yInFrame = point.yMm - frame.yMm
+    const targetField = findFieldAtPoint(currentConstruction, xInFrame, yInFrame)
+    if (!targetField || targetField.polygon) return
+    const nextDividerId = `divider-${currentConstruction.nextDividerId}`
+    const nextConstruction = splitFieldAngled(
+      currentConstruction,
+      targetField.id,
+      snapMm(xInFrame - targetField.bounds.xMm),
+    )
+    if (!nextConstruction) return
+    commitConstruction(nextConstruction)
+    const resolved = resolveConstructionTopology(nextConstruction)
+    setSelectedAngledDividerId(nextDividerId)
+    setSelectedDividerId(null)
+    setSelectedFieldId(resolved.fields.find((field) => field.id !== targetField.id)?.id ?? null)
+    setFrameSelected(false)
+    setSelectedEdge(null)
+    setActiveTool('select')
   }
 
   const updateDividerOffset = (
@@ -412,7 +507,74 @@ export default function ConstructorShell({
     const nextFields = resolveConstructionTopology(nextConstruction).fields
     setSelectedFieldId(nextFields[0]?.id ?? null)
     setSelectedDividerId(null)
+    setSelectedAngledDividerId(null)
     setDividerPositionDraft('')
+  }
+
+  const removeSelectedAngledDivider = () => {
+    const currentConstruction = constructionRef.current
+    if (!selectedAngledDividerId || !currentConstruction) return
+    const nextConstruction = removeDivider(currentConstruction, selectedAngledDividerId)
+    commitConstruction(nextConstruction)
+    const nextFields = resolveConstructionTopology(nextConstruction).fields
+    setSelectedFieldId(nextFields[0]?.id ?? null)
+    setSelectedAngledDividerId(null)
+  }
+
+
+  const applyFieldType = (
+    fieldId: string,
+    fieldType: ConstructionFieldType | null,
+  ) => {
+    const currentConstruction = constructionRef.current
+    if (!currentConstruction) return
+    const nextConstruction = setConstructionFieldType(
+      currentConstruction,
+      fieldId,
+      fieldType,
+    )
+    commitConstruction(nextConstruction)
+    setSelectedFieldId(fieldId)
+    setSelectedDividerId(null)
+    setSelectedAngledDividerId(null)
+    setFrameSelected(false)
+    setSelectedEdge(null)
+  }
+
+  const applySelectedFieldOpeningMode = (
+    openingMode: ConstructionOpeningMode | null,
+  ) => {
+    const currentConstruction = constructionRef.current
+    if (!currentConstruction || !selectedFieldId) return
+    commitConstruction(
+      setConstructionFieldOpeningMode(
+        currentConstruction,
+        selectedFieldId,
+        openingMode,
+      ),
+    )
+  }
+
+  const applySelectedFieldOpeningHanding = (
+    openingHanding: ConstructionOpeningHanding | null,
+  ) => {
+    const currentConstruction = constructionRef.current
+    if (!currentConstruction || !selectedFieldId) return
+    commitConstruction(
+      setConstructionFieldOpeningHanding(
+        currentConstruction,
+        selectedFieldId,
+        openingHanding,
+      ),
+    )
+  }
+
+  const resetConstructionFromScratch = () => {
+    if (!constructionRef.current) return
+    commitConstruction(null)
+    restoreHistorySelection(null)
+    setActiveTool('frame')
+    onResetModule?.()
   }
 
   const commitDividerPosition = () => {
@@ -433,6 +595,7 @@ export default function ConstructorShell({
 
   const restoreHistorySelection = (nextConstruction: ConstructionModel | null) => {
     setSelectedDividerId(null)
+                setSelectedAngledDividerId(null)
     setDividerPositionDraft('')
     setFrameSelected(false)
     setSelectedEdge(null)
@@ -512,9 +675,10 @@ export default function ConstructorShell({
         return
       }
 
-      if ((event.key === 'Delete' || event.key === 'Backspace') && selectedDividerId) {
+      if ((event.key === 'Delete' || event.key === 'Backspace') && (selectedDividerId || selectedAngledDividerId)) {
         event.preventDefault()
-        removeSelectedDivider()
+        if (selectedAngledDividerId) removeSelectedAngledDivider()
+        else removeSelectedDivider()
       }
     }
 
@@ -544,6 +708,7 @@ export default function ConstructorShell({
       setSelectedFieldId(null)
       setSelectedEdge(null)
       setSelectedDividerId(null)
+      setSelectedAngledDividerId(null)
       return
     }
 
@@ -552,6 +717,7 @@ export default function ConstructorShell({
       setSelectedFieldId(null)
       setSelectedEdge(null)
       setSelectedDividerId(null)
+      setSelectedAngledDividerId(null)
     }
   }
 
@@ -588,6 +754,28 @@ export default function ConstructorShell({
       const rawLeadingFace = rawPointerPosition - dragState.grabOffsetMm
       const parentStartMm = currentDivider.positionMm - currentDivider.offsetMm
       updateDividerOffset(dragState.dividerId, rawLeadingFace - parentStartMm)
+      return
+    }
+
+    if (dragState.kind === 'angled-divider') {
+      if (!frame || !construction) return
+      const rawDeltaMm = point.xMm - dragState.startPointerXMm
+      const deltaMm = snapEnabled ? Math.round(rawDeltaMm / SNAP_STEP_MM) * SNAP_STEP_MM : Math.round(rawDeltaMm)
+      const current = constructionRef.current
+      if (!current) return
+      const base = dragState.originalConstruction
+      const next = moveAngledDivider(base, dragState.dividerId, deltaMm)
+      broadcastConstruction(next)
+      return
+    }
+
+    if (dragState.kind === 'angled-endpoint') {
+      if (!frame || !construction) return
+      const localOffsetMm = snapMm(point.xMm - frame.xMm - dragState.parentStartXMm)
+      const current = constructionRef.current
+      if (!current) return
+      const next = moveAngledDividerEndpoint(current, dragState.dividerId, dragState.endpoint, localOffsetMm)
+      broadcastConstruction(next)
       return
     }
 
@@ -658,7 +846,12 @@ export default function ConstructorShell({
       }
     }
 
-    if (dragState.kind === 'resize' || dragState.kind === 'divider') {
+    if (
+      dragState.kind === 'resize' ||
+      dragState.kind === 'divider' ||
+      dragState.kind === 'angled-divider' ||
+      dragState.kind === 'angled-endpoint'
+    ) {
       recordDragHistory(dragState.originalConstruction)
     }
 
@@ -704,6 +897,7 @@ export default function ConstructorShell({
     canvasRef.current?.setPointerCapture(event.pointerId)
     setActiveTool('select')
     setSelectedDividerId(divider.id)
+    setSelectedAngledDividerId(null)
     setSelectedFieldId(null)
     setDividerPositionDraft(String(Math.round(divider.offsetMm)))
     setFrameSelected(false)
@@ -719,6 +913,57 @@ export default function ConstructorShell({
       dividerId: divider.id,
       axis: divider.axis,
       grabOffsetMm: pointerPositionMm - divider.positionMm,
+      originalConstruction: cloneConstructionModel(construction),
+    })
+  }
+
+  const startAngledDividerDrag = (
+    divider: AngledDividerModel,
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ) => {
+    if (!frame || !construction) return
+    event.preventDefault()
+    event.stopPropagation()
+    canvasRef.current?.setPointerCapture(event.pointerId)
+    setActiveTool('select')
+    setSelectedAngledDividerId(divider.id)
+    setSelectedDividerId(null)
+    setSelectedFieldId(null)
+    setFrameSelected(false)
+    setSelectedEdge(null)
+    const point = pointFromPointer(event)
+    setDragState({
+      kind: 'angled-divider',
+      pointerId: event.pointerId,
+      dividerId: divider.id,
+      startPointerXMm: point.xMm,
+      originalTopOffsetMm: divider.topOffsetMm,
+      originalBottomOffsetMm: divider.bottomOffsetMm,
+      originalConstruction: cloneConstructionModel(construction),
+    })
+  }
+
+  const startAngledEndpointDrag = (
+    divider: AngledDividerModel,
+    endpoint: 'top' | 'bottom',
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ) => {
+    if (!frame || !construction) return
+    event.preventDefault()
+    event.stopPropagation()
+    canvasRef.current?.setPointerCapture(event.pointerId)
+    setActiveTool('select')
+    setSelectedAngledDividerId(divider.id)
+    setSelectedDividerId(null)
+    setSelectedFieldId(null)
+    setFrameSelected(false)
+    setSelectedEdge(null)
+    setDragState({
+      kind: 'angled-endpoint',
+      pointerId: event.pointerId,
+      dividerId: divider.id,
+      endpoint,
+      parentStartXMm: divider.topPoint.xMm - divider.topOffsetMm,
       originalConstruction: cloneConstructionModel(construction),
     })
   }
@@ -764,6 +1009,8 @@ export default function ConstructorShell({
   }
 
   const activateFrameTool = () => {
+    if (!canEditConstruction) return
+
     if (frame) {
       setActiveTool('select')
       setFrameSelected(true)
@@ -788,7 +1035,7 @@ export default function ConstructorShell({
     .join(' ')
 
   return (
-    <section className="constructor-shell" aria-label={`FacadeFlow Constructor · ${title}`}>
+    <section className={`constructor-shell${showModuleStrip ? ' has-module-navigation' : ''}`} aria-label={`FacadeFlow Constructor · ${title}`}>
       <header className="constructor-topbar">
         <div className="constructor-title-block">
           <button type="button" className="constructor-back" onClick={onClose}>
@@ -798,17 +1045,22 @@ export default function ConstructorShell({
           <div>
             <div className="constructor-context-breadcrumb" aria-label="Работен контекст">
               {isFreeMode ? (
-                <>Начало <i>›</i> Конструктор <i>›</i> <strong>Свободна скица</strong></>
+                <>
+                  Начало <i>›</i> Конструктор
+                  {hasActiveModule && <><i>›</i> <strong>Модул {moduleNumber}</strong></>}
+                </>
               ) : (
                 <>Оферта <i>›</i> <strong>Модул {moduleNumber}</strong> <i>›</i> Конструктор</>
               )}
             </div>
-            <span>FACADEFLOW CONSTRUCTOR · FIELD TOPOLOGY 01C.3.2</span>
+            <span>FACADEFLOW CONSTRUCTOR · FIELD SEMANTICS 01D · OPENING SYMBOLS 01D.1 · MINIMAL LABELS 01D.3 · BOTTOM POLISH 01D.3.1</span>
             <h2>{title}</h2>
             <p>
               {isFreeMode
-                ? 'Свободна параметрична скица. Начертай касата с мишката; система може да бъде приложена по-късно.'
-                : 'Параметрична каса с истински вътрешни ПОЛЕТА. Делителят е локален, мести се и променя дебелината си с мишката.'}
+                ? hasActiveModule
+                  ? `Работиш по Модул ${moduleNumber}. Всеки модул пази собствена параметрична скица; система може да бъде приложена по-късно.`
+                  : 'Създай Модул 1, за да започнеш. Всеки следващ модул ще пази собствена независима скица.'
+                : 'Параметрична каса с истински вътрешни ПОЛЕТА. Всеки делител пази собствената си позиция; мести се само избраният елемент.'}
             </p>
           </div>
         </div>
@@ -818,7 +1070,9 @@ export default function ConstructorShell({
             <span>КОНТЕКСТ</span>
             <b>
               {isFreeMode
-                ? 'Свободна скица · Модул —'
+                ? hasActiveModule
+                  ? `Свободна скица · Модул ${moduleNumber}`
+                  : 'Свободна скица · без модул'
                 : `Оферта · Модул ${moduleNumber}`}
             </b>
           </div>
@@ -833,6 +1087,46 @@ export default function ConstructorShell({
           <div className="constructor-draft-chip">ЧЕРНОВА</div>
         </div>
       </header>
+
+      {showModuleStrip && (
+        <div className="constructor-module-strip" aria-label="Навигация по модули">
+          <span className="constructor-module-strip-label">МОДУЛИ</span>
+          {moduleItems.length > 0 ? (
+            <>
+              <div className="constructor-module-tabs">
+                {moduleItems.map((item) => (
+                  <button
+                    type="button"
+                    key={item.id}
+                    className={item.id === activeModuleId ? 'is-active' : ''}
+                    onClick={() => onSelectModule?.(item.id)}
+                  >
+                    Модул {item.sequence}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                className="constructor-new-module"
+                onClick={onCreateModule}
+              >
+                + Нов модул
+              </button>
+            </>
+          ) : (
+            <div className="constructor-module-empty">
+              <span>Няма създаден модул.</span>
+              <button
+                type="button"
+                className="constructor-create-first-module"
+                onClick={onCreateModule}
+              >
+                + Създай Модул 1
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="constructor-toolbar" aria-label="Лента с инструменти">
         <div className="constructor-toolbar-group">
@@ -927,13 +1221,20 @@ export default function ConstructorShell({
 
             <button
               type="button"
+              disabled={!canEditConstruction}
               className={activeTool === 'frame' ? 'is-active' : ''}
               onClick={activateFrameTool}
             >
               <span className="constructor-tool-glyph">▣</span>
               <span>
                 <b>Каса / рамка</b>
-                <small>{frame ? 'Касата е създадена' : 'Изтегли с мишката'}</small>
+                <small>
+                  {!canEditConstruction
+                    ? 'Първо създай модул'
+                    : frame
+                      ? 'Касата е създадена'
+                      : 'Изтегли с мишката'}
+                </small>
               </span>
             </button>
 
@@ -973,19 +1274,61 @@ export default function ConstructorShell({
               </span>
             </button>
 
-            <button type="button" disabled>
-              <span className="constructor-tool-glyph">□</span>
+            <button
+              type="button"
+              disabled={!frame}
+              className={activeTool === 'angled-divider' ? 'is-active' : ''}
+              title="Polygon FIELD topology · независим горен и долен край"
+              onClick={() => {
+                setActiveTool('angled-divider')
+                setFrameSelected(false)
+                setSelectedFieldId(null)
+                setSelectedDividerId(null)
+      setSelectedAngledDividerId(null)
+              }}
+            >
+              <span className="constructor-tool-glyph">╱</span>
               <span>
-                <b>Фиксирано поле</b>
-                <small>Constructor 01D</small>
+                <b>Ъглов делител</b>
+                <small>{frame ? 'Кликни в ПОЛЕ · после мести двата края' : 'Първо създай каса'}</small>
               </span>
             </button>
 
-            <button type="button" disabled>
+            <button
+              type="button"
+              disabled={!frame}
+              className={activeTool === 'fixed-field' ? 'is-active' : ''}
+              onClick={() => {
+                setActiveTool('fixed-field')
+                setFrameSelected(false)
+                setSelectedEdge(null)
+                setSelectedDividerId(null)
+                setSelectedAngledDividerId(null)
+              }}
+            >
+              <span className="constructor-tool-glyph">□</span>
+              <span>
+                <b>Фиксирано поле</b>
+                <small>{frame ? 'Кликни върху ПОЛЕ' : 'Първо създай каса'}</small>
+              </span>
+            </button>
+
+            <button
+              type="button"
+              disabled={!frame}
+              className={activeTool === 'operable-field' ? 'is-active' : ''}
+              onClick={() => {
+                setActiveTool('operable-field')
+                setFrameSelected(false)
+                setSelectedEdge(null)
+                setSelectedDividerId(null)
+                setSelectedAngledDividerId(null)
+              }}
+            >
               <span className="constructor-tool-glyph">◩</span>
               <span>
                 <b>Отваряемо поле</b>
-                <small>Constructor 01D</small>
+                <small>{frame ? 'Кликни върху ПОЛЕ · създава логическо крило' : 'Първо създай каса'}</small>
               </span>
             </button>
 
@@ -1016,6 +1359,18 @@ export default function ConstructorShell({
               ↷ Redo
             </button>
           </div>
+
+
+          <button
+            type="button"
+            className="constructor-reset-sketch"
+            disabled={!construction || !canEditConstruction}
+            onClick={resetConstructionFromScratch}
+            title="Изчисти текущия модул; Undo може да възстанови скицата"
+          >
+            <span>{hasActiveModule ? `Изчисти Модул ${moduleNumber}` : 'Изтрий скицата'}</span>
+            <small>Започни текущия модул отначало</small>
+          </button>
         </aside>
 
         <section className="constructor-workarea" aria-label="CAD работно поле">
@@ -1033,7 +1388,7 @@ export default function ConstructorShell({
 
           <div
             ref={canvasRef}
-            className={`constructor-canvas${gridVisible ? ' has-grid' : ''}${activeTool === 'frame' ? ' is-frame-tool' : ''}${activeTool === 'vertical-divider' || activeTool === 'horizontal-divider' ? ' is-divider-tool' : ''}`}
+            className={`constructor-canvas${gridVisible ? ' has-grid' : ''}${activeTool === 'frame' ? ' is-frame-tool' : ''}${activeTool === 'vertical-divider' || activeTool === 'horizontal-divider' || activeTool === 'angled-divider' ? ' is-divider-tool' : ''}`}
             style={{
               '--constructor-grid-step': `${GRID_STEP_MM * pxPerMm}px`,
               '--constructor-major-grid-step': `${MAJOR_GRID_STEP_MM * pxPerMm}px`,
@@ -1045,11 +1400,27 @@ export default function ConstructorShell({
           >
             <div className="constructor-stage-badge">
               {isFreeMode
-                ? 'СВОБОДНА СКИЦА · БЕЗ МОДУЛ'
+                ? hasActiveModule
+                  ? `СВОБОДНА СКИЦА · МОДУЛ ${String(moduleNumber).padStart(2, '0')}`
+                  : 'СВОБОДНА СКИЦА · БЕЗ МОДУЛ'
                 : `ОФЕРТА · МОДУЛ ${String(moduleNumber).padStart(2, '0')}`}
             </div>
 
-            {!displayedFrame && (
+            {!canEditConstruction && (
+              <div className="constructor-module-start-hint">
+                <span>МОДУЛЕН КОНСТРУКТОР</span>
+                <b>Създай Модул 1</b>
+                <p>
+                  Чертането започва в модул. След това можеш да добавяш Модул 2,
+                  Модул 3 и да се връщаш към всеки от тях за корекции.
+                </p>
+                <button type="button" onClick={onCreateModule}>
+                  Създай Модул 1
+                </button>
+              </div>
+            )}
+
+            {canEditConstruction && !displayedFrame && (
               <div className="constructor-frame-start-hint">
                 <span>CONSTRUCTOR 01B</span>
                 <b>Създай първата каса</b>
@@ -1085,11 +1456,16 @@ export default function ConstructorShell({
                     )
                     return
                   }
+                  if (activeTool === 'angled-divider') {
+                    addAngledDivider(pointFromPointer(event))
+                    return
+                  }
                   if (activeTool === 'select') {
                     setFrameSelected(true)
                     setSelectedFieldId(null)
                     setSelectedEdge(null)
                     setSelectedDividerId(null)
+                    setSelectedAngledDividerId(null)
                   }
                 }}
               >
@@ -1104,12 +1480,15 @@ export default function ConstructorShell({
                   <button
                     key={field.id}
                     type="button"
-                    className={`constructor-field-surface ${selectedFieldId === field.id ? 'is-selected' : ''}`}
+                    className={`constructor-field-surface ${selectedFieldId === field.id ? 'is-selected' : ''} ${field.fieldType === 'fixed' ? 'is-fixed' : field.fieldType === 'operable' ? 'is-operable' : 'is-unset'}`}
                     style={{
                       left: `${field.bounds.xMm * pxPerMm}px`,
                       top: `${field.bounds.yMm * pxPerMm}px`,
                       width: `${field.bounds.widthMm * pxPerMm}px`,
                       height: `${field.bounds.heightMm * pxPerMm}px`,
+                      clipPath: field.polygon
+                        ? `polygon(${field.polygon.map((point) => `${((point.xMm - field.bounds.xMm) / Math.max(1, field.bounds.widthMm)) * 100}% ${((point.yMm - field.bounds.yMm) / Math.max(1, field.bounds.heightMm)) * 100}%`).join(', ')})`
+                        : undefined,
                     }}
                     aria-label={`Поле ${field.sequence}`}
                     onPointerDown={(event) => {
@@ -1121,57 +1500,185 @@ export default function ConstructorShell({
                         )
                         return
                       }
+                      if (activeTool === 'angled-divider') {
+                        addAngledDivider(pointFromPointer(event))
+                        return
+                      }
+                      if (activeTool === 'fixed-field' || activeTool === 'operable-field') {
+                        applyFieldType(
+                          field.id,
+                          activeTool === 'fixed-field' ? 'fixed' : 'operable',
+                        )
+                        return
+                      }
                       if (activeTool === 'select') {
                         setSelectedFieldId(field.id)
                         setSelectedDividerId(null)
+                        setSelectedAngledDividerId(null)
                         setFrameSelected(false)
                         setSelectedEdge(null)
                       }
                     }}
                   >
-                    <span className="constructor-field-name">ПОЛЕ {field.sequence}</span>
-                    <span className="constructor-field-chain constructor-field-size-chip">
-                      {Math.round(field.bounds.widthMm)} × {Math.round(field.bounds.heightMm)} mm
+                    {field.fieldType === 'operable' && (
+                      <svg
+                        className={`constructor-operable-visual mode-${field.openingMode ?? 'unset'} handing-${field.openingHanding ?? 'none'}`}
+                        viewBox="0 0 100 100"
+                        preserveAspectRatio="none"
+                        aria-hidden="true"
+                      >
+                        <rect x="3" y="3" width="94" height="94" rx="1.5" />
+                        {field.openingMode === 'side-hinged' && field.openingHanding === 'left' && (
+                          <>
+                            <line className="opening-primary" x1="7" y1="7" x2="93" y2="50" />
+                            <line className="opening-primary" x1="7" y1="93" x2="93" y2="50" />
+                          </>
+                        )}
+                        {field.openingMode === 'side-hinged' && field.openingHanding === 'right' && (
+                          <>
+                            <line className="opening-primary" x1="93" y1="7" x2="7" y2="50" />
+                            <line className="opening-primary" x1="93" y1="93" x2="7" y2="50" />
+                          </>
+                        )}
+                        {field.openingMode === 'tilt' && (
+                          <>
+                            <line className="opening-tilt" x1="7" y1="93" x2="50" y2="7" />
+                            <line className="opening-tilt" x1="93" y1="93" x2="50" y2="7" />
+                          </>
+                        )}
+                        {field.openingMode === 'tilt-turn' && field.openingHanding === 'left' && (
+                          <>
+                            <line className="opening-primary" x1="7" y1="7" x2="93" y2="50" />
+                            <line className="opening-primary" x1="7" y1="93" x2="93" y2="50" />
+                            <line className="opening-tilt" x1="7" y1="93" x2="50" y2="7" />
+                            <line className="opening-tilt" x1="93" y1="93" x2="50" y2="7" />
+                          </>
+                        )}
+                        {field.openingMode === 'tilt-turn' && field.openingHanding === 'right' && (
+                          <>
+                            <line className="opening-primary" x1="93" y1="7" x2="7" y2="50" />
+                            <line className="opening-primary" x1="93" y1="93" x2="7" y2="50" />
+                            <line className="opening-tilt" x1="7" y1="93" x2="50" y2="7" />
+                            <line className="opening-tilt" x1="93" y1="93" x2="50" y2="7" />
+                          </>
+                        )}
+                        {(field.openingMode === 'side-hinged' || field.openingMode === 'tilt-turn') &&
+                          field.openingHanding === 'left' && (
+                            <g className="constructor-opening-handle" aria-hidden="true">
+                              <circle cx="93" cy="50" r="2.2" />
+                              <line x1="91" y1="50" x2="84" y2="50" />
+                            </g>
+                          )}
+                        {(field.openingMode === 'side-hinged' || field.openingMode === 'tilt-turn') &&
+                          field.openingHanding === 'right' && (
+                            <g className="constructor-opening-handle" aria-hidden="true">
+                              <circle cx="7" cy="50" r="2.2" />
+                              <line x1="9" y1="50" x2="16" y2="50" />
+                            </g>
+                          )}
+                      </svg>
+                    )}
+                    <span className="constructor-field-number-badge" aria-hidden="true">
+                      {field.sequence}
                     </span>
                   </button>
                 ))}
 
-                {frame && dragState?.kind !== 'create' && dividers.map((divider) => (
-                  <button
-                    key={divider.id}
-                    type="button"
-                    className={`constructor-divider is-local ${divider.axis} ${selectedDividerId === divider.id ? 'is-selected' : ''}`}
-                    style={(divider.axis === 'vertical'
-                      ? {
-                          left: `${(divider.positionMm + divider.thicknessMm / 2) * pxPerMm}px`,
-                          top: `${divider.startMm * pxPerMm}px`,
-                          height: `${(divider.endMm - divider.startMm) * pxPerMm}px`,
-                          '--constructor-divider-face': `${Math.max(6, divider.thicknessMm * pxPerMm)}px`,
-                          '--constructor-divider-start-inset': '0px',
-                          '--constructor-divider-end-inset': '0px',
-                        }
-                      : {
-                          left: `${divider.startMm * pxPerMm}px`,
-                          top: `${(divider.positionMm + divider.thicknessMm / 2) * pxPerMm}px`,
-                          width: `${(divider.endMm - divider.startMm) * pxPerMm}px`,
-                          '--constructor-divider-face': `${Math.max(6, divider.thicknessMm * pxPerMm)}px`,
-                          '--constructor-divider-start-inset': '0px',
-                          '--constructor-divider-end-inset': '0px',
-                        }) as CSSProperties & Record<string, string | number>}
-                    aria-label={divider.axis === 'vertical' ? 'Вертикален делител на поле' : 'Хоризонтален делител на поле'}
-                    onPointerDown={(event) => startDividerDrag(divider, event)}
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      setSelectedDividerId(divider.id)
-                      setSelectedFieldId(null)
-                      setDividerPositionDraft(String(Math.round(divider.offsetMm)))
-                                        setFrameSelected(false)
-                      setSelectedEdge(null)
-                    }}
-                  >
-                    <span className="constructor-divider-face" aria-hidden="true" />
-                  </button>
-                ))}
+                {frame && dragState?.kind !== 'create' && dividers.map((divider) => {
+                  const faceClipPath = divider.facePolygon
+                    ? (() => {
+                        const faceLeft = divider.axis === 'vertical' ? divider.positionMm : divider.startMm
+                        const faceTop = divider.axis === 'vertical' ? divider.startMm : divider.positionMm
+                        const faceWidth = divider.axis === 'vertical' ? divider.thicknessMm : Math.max(1, divider.endMm - divider.startMm)
+                        const faceHeight = divider.axis === 'vertical' ? Math.max(1, divider.endMm - divider.startMm) : divider.thicknessMm
+                        return `polygon(${divider.facePolygon.map((point) => `${((point.xMm - faceLeft) / Math.max(1, faceWidth)) * 100}% ${((point.yMm - faceTop) / Math.max(1, faceHeight)) * 100}%`).join(', ')})`
+                      })()
+                    : undefined
+                  return (
+                    <button
+                      key={divider.id}
+                      type="button"
+                      className={`constructor-divider is-local ${divider.axis} ${selectedDividerId === divider.id ? 'is-selected' : ''}`}
+                      style={(divider.axis === 'vertical'
+                        ? {
+                            left: `${(divider.positionMm + divider.thicknessMm / 2) * pxPerMm}px`,
+                            top: `${divider.startMm * pxPerMm}px`,
+                            height: `${(divider.endMm - divider.startMm) * pxPerMm}px`,
+                            '--constructor-divider-face': `${Math.max(6, divider.thicknessMm * pxPerMm)}px`,
+                            '--constructor-divider-start-inset': '0px',
+                            '--constructor-divider-end-inset': '0px',
+                          }
+                        : {
+                            left: `${divider.startMm * pxPerMm}px`,
+                            top: `${(divider.positionMm + divider.thicknessMm / 2) * pxPerMm}px`,
+                            width: `${(divider.endMm - divider.startMm) * pxPerMm}px`,
+                            '--constructor-divider-face': `${Math.max(6, divider.thicknessMm * pxPerMm)}px`,
+                            '--constructor-divider-start-inset': '0px',
+                            '--constructor-divider-end-inset': '0px',
+                          }) as CSSProperties & Record<string, string | number>}
+                      aria-label={divider.axis === 'vertical' ? 'Вертикален делител на поле' : 'Хоризонтален делител на поле'}
+                      onPointerDown={(event) => startDividerDrag(divider, event)}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        setSelectedDividerId(divider.id)
+                        setSelectedAngledDividerId(null)
+                        setSelectedFieldId(null)
+                        setDividerPositionDraft(String(Math.round(divider.offsetMm)))
+                        setFrameSelected(false)
+                        setSelectedEdge(null)
+                      }}
+                    >
+                      <span
+                        className="constructor-divider-face"
+                        style={faceClipPath ? { clipPath: faceClipPath } : undefined}
+                        aria-hidden="true"
+                      />
+                    </button>
+                  )
+                })}
+
+                {frame && dragState?.kind !== 'create' && angledDividers.map((divider) => {
+                  const xs = divider.facePolygon.map((point) => point.xMm)
+                  const ys = divider.facePolygon.map((point) => point.yMm)
+                  const minX = Math.min(...xs)
+                  const maxX = Math.max(...xs)
+                  const minY = Math.min(...ys)
+                  const maxY = Math.max(...ys)
+                  const width = Math.max(1, maxX - minX)
+                  const height = Math.max(1, maxY - minY)
+                  const clipPath = `polygon(${divider.facePolygon.map((point) => `${((point.xMm - minX) / width) * 100}% ${((point.yMm - minY) / height) * 100}%`).join(', ')})`
+                  return (
+                    <div key={divider.id} className={`constructor-angled-wrap ${selectedAngledDividerId === divider.id ? 'is-selected' : ''}`}>
+                      <button
+                        type="button"
+                        className="constructor-angled-divider"
+                        style={{
+                          left: `${minX * pxPerMm}px`,
+                          top: `${minY * pxPerMm}px`,
+                          width: `${width * pxPerMm}px`,
+                          height: `${height * pxPerMm}px`,
+                          clipPath,
+                        }}
+                        aria-label="Ъглов делител на поле"
+                        onPointerDown={(event) => startAngledDividerDrag(divider, event)}
+                      />
+                      <button
+                        type="button"
+                        className="constructor-angled-grip grip-top"
+                        style={{ left: `${divider.topPoint.xMm * pxPerMm}px`, top: `${divider.topPoint.yMm * pxPerMm}px` }}
+                        aria-label="Горен край на ъглов делител"
+                        onPointerDown={(event) => startAngledEndpointDrag(divider, 'top', event)}
+                      />
+                      <button
+                        type="button"
+                        className="constructor-angled-grip grip-bottom"
+                        style={{ left: `${divider.bottomPoint.xMm * pxPerMm}px`, top: `${divider.bottomPoint.yMm * pxPerMm}px` }}
+                        aria-label="Долен край на ъглов делител"
+                        onPointerDown={(event) => startAngledEndpointDrag(divider, 'bottom', event)}
+                      />
+                    </div>
+                  )
+                })}
 
                 {frame && dragState?.kind !== 'create' && (
                   <>
@@ -1212,6 +1719,65 @@ export default function ConstructorShell({
             )}
           </div>
 
+          {frame && dragState?.kind !== 'create' && fields.length > 0 && (
+            <section className="constructor-field-details-panel" aria-label="Данни за полетата в модула">
+              <div className="constructor-field-details-heading">
+                <span>ПОЛЕТА В МОДУЛА</span>
+                <b>{fields.length}</b>
+              </div>
+              <div className="constructor-field-details-list">
+                {fields.map((field) => {
+                  const openingLabel = field.openingMode === 'side-hinged'
+                    ? 'Странично'
+                    : field.openingMode === 'tilt'
+                      ? 'Падащо'
+                      : field.openingMode === 'tilt-turn'
+                        ? 'Странично + падащо'
+                        : null
+                  const handingLabel = field.openingHanding === 'left'
+                    ? 'ЛЯВО'
+                    : field.openingHanding === 'right'
+                      ? 'ДЯСНО'
+                      : null
+                  return (
+                    <button
+                      key={`details-${field.id}`}
+                      type="button"
+                      className={`constructor-field-detail-card ${selectedFieldId === field.id ? 'is-selected' : ''}`}
+                      aria-pressed={selectedFieldId === field.id}
+                      title={`Поле ${field.sequence} · ${Math.round(field.bounds.widthMm)} × ${Math.round(field.bounds.heightMm)} mm`}
+                      onClick={() => {
+                        setSelectedFieldId(field.id)
+                        setSelectedDividerId(null)
+                        setSelectedAngledDividerId(null)
+                        setFrameSelected(false)
+                        setSelectedEdge(null)
+                        setActiveTool('select')
+                      }}
+                    >
+                      <span className="constructor-field-detail-number">{field.sequence}</span>
+                      <span className="constructor-field-detail-main">
+                        <b>{Math.round(field.bounds.widthMm)} × {Math.round(field.bounds.heightMm)} mm</b>
+                        <small>
+                          {field.fieldType === 'fixed'
+                            ? 'FIX'
+                            : field.fieldType === 'operable'
+                              ? 'КРИЛО'
+                              : 'НЕ Е ЗАДАДЕНО'}
+                        </small>
+                      </span>
+                      <span className="constructor-field-detail-opening">
+                        {field.fieldType === 'operable' && openingLabel
+                          ? `${openingLabel}${handingLabel ? ` · ${handingLabel}` : ''}`
+                          : '—'}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </section>
+          )}
+
           <footer className="constructor-statusbar">
             <span>
               ИНСТРУМЕНТ:{' '}
@@ -1223,7 +1789,13 @@ export default function ConstructorShell({
                     ? 'Каса / рамка'
                     : activeTool === 'vertical-divider'
                       ? 'Вертикален делител'
-                      : 'Хоризонтален делител'}
+                      : activeTool === 'horizontal-divider'
+                        ? 'Хоризонтален делител'
+                        : activeTool === 'angled-divider'
+                          ? 'Ъглов делител'
+                          : activeTool === 'fixed-field'
+                            ? 'Фиксирано поле'
+                            : 'Отваряемо поле'}
             </span>
             <span>X: {cursorPoint ? Math.round(cursorPoint.xMm) : '—'} mm</span>
             <span>Y: {cursorPoint ? Math.round(cursorPoint.yMm) : '—'} mm</span>
@@ -1238,8 +1810,16 @@ export default function ConstructorShell({
           {isFreeMode ? (
             <section className="constructor-properties-section constructor-free-context">
               <div className="constructor-panel-heading">
-                <span>СВОБОДНА СКИЦА</span>
-                <b>Без оферта и без заключена система</b>
+                <span>
+                  {hasActiveModule
+                    ? `МОДУЛ ${String(moduleNumber).padStart(2, '0')}`
+                    : 'СВОБОДНА СКИЦА'}
+                </span>
+                <b>
+                  {hasActiveModule
+                    ? `Свободна скица · Модул ${moduleNumber}`
+                    : 'Без модул · без оферта и без заключена система'}
+                </b>
               </div>
 
               <div className="constructor-free-settings">
@@ -1259,9 +1839,12 @@ export default function ConstructorShell({
                 <button
                   type="button"
                   className="constructor-create-offer"
+                  disabled={!canEditConstruction || !construction}
                   onClick={() => onCreateOfferFromSketch(construction ? constructionToSnapshot(construction) : null)}
                 >
-                  Създай оферта от тази скица
+                  {hasActiveModule
+                    ? `Създай оферта от Модул ${moduleNumber}`
+                    : 'Създай оферта от тази скица'}
                 </button>
               )}
             </section>
@@ -1290,16 +1873,55 @@ export default function ConstructorShell({
           <section className="constructor-properties-section">
             <div className="constructor-panel-heading">
               <span>СВОЙСТВА</span>
-              <b>{selectedDivider
-                ? (selectedDivider.axis === 'vertical' ? 'Вертикален делител' : 'Хоризонтален делител')
-                : selectedField
+              <b>{selectedAngledDivider
+                ? 'Ъглов делител'
+                : selectedDivider
+                  ? (selectedDivider.axis === 'vertical' ? 'Вертикален делител' : 'Хоризонтален делител')
+                  : selectedField
                   ? `Поле ${selectedField.sequence}`
                   : frameSelected && frame
                     ? 'Каса / рамка'
                     : 'Избран елемент'}</b>
             </div>
 
-            {selectedDivider && frame ? (
+            {selectedAngledDivider && frame ? (
+              <div className="constructor-frame-properties constructor-divider-properties">
+                <div className="constructor-property-row">
+                  <span>Горен край</span>
+                  <b>{Math.round(selectedAngledDivider.topOffsetMm)} mm от левия ръб на родителското ПОЛЕ</b>
+                </div>
+                <div className="constructor-property-row">
+                  <span>Долен край</span>
+                  <b>{Math.round(selectedAngledDivider.bottomOffsetMm)} mm от левия ръб на родителското ПОЛЕ</b>
+                </div>
+                <div className="constructor-property-row">
+                  <span>Дължина</span>
+                  <b>{Math.round(selectedAngledDivider.lengthMm)} mm · автоматично от двата края</b>
+                </div>
+                <div className="constructor-property-row">
+                  <span>Схемна видима ширина</span>
+                  <b>{Math.round(selectedAngledDivider.thicknessMm)} mm · read-only до Profile Resolution</b>
+                </div>
+                <div className="constructor-property-row">
+                  <span>Управление</span>
+                  <b>Горен grip и долен grip се местят независимо · drag върху тялото мести целия делител</b>
+                </div>
+                <div className="constructor-property-row">
+                  <span>Закотвяне в ъгъл</span>
+                  <b>0 mm / пълна ширина = точен вътрешен ъгъл · snap в последните 30 mm</b>
+                </div>
+                <div className="constructor-property-row">
+                  <span>FIELD topology</span>
+                  <b>Двете страни са реални polygon / triangle / trapezoid ПОЛЕТА</b>
+                </div>
+                <button type="button" className="constructor-delete-divider" onClick={removeSelectedAngledDivider}>
+                  Изтрий ъгловия делител
+                </button>
+                <p className="constructor-invariant-note">
+                  Ъгловият делител е конструктивен split, не CAD линия. Краищата могат да се закотвят точно във вътрешен ъгъл; при ъгъл FIELD topology допуска triangle ПОЛЕ.
+                </p>
+              </div>
+            ) : selectedDivider && frame ? (
               <div className="constructor-frame-properties constructor-divider-properties">
                 <label>
                   <span>{selectedDivider.axis === 'vertical' ? 'Схемен размер ляво поле' : 'Схемен размер горно поле'}</span>
@@ -1393,8 +2015,8 @@ export default function ConstructorShell({
                   <b>{selectedField.id}</b>
                 </div>
                 <div className="constructor-property-row">
-                  <span>Вътрешен схемен размер на полето</span>
-                  <b>{Math.round(selectedField.bounds.widthMm)} × {Math.round(selectedField.bounds.heightMm)} mm</b>
+                  <span>{selectedField.polygon ? 'Габарит на polygon ПОЛЕТО' : 'Вътрешен схемен размер на полето'}</span>
+                  <b>{Math.round(selectedField.bounds.widthMm)} × {Math.round(selectedField.bounds.heightMm)} mm{selectedField.polygon ? ' · polygon' : ''}</b>
                 </div>
                 <div className="constructor-property-row">
                   <span>Позиция във вътрешния контур</span>
@@ -1402,15 +2024,118 @@ export default function ConstructorShell({
                 </div>
                 <div className="constructor-property-row">
                   <span>Тип поле</span>
-                  <b>Не е зададен · следващ семантичен етап</b>
+                  <b>
+                    {selectedField.fieldType === 'fixed'
+                      ? 'Фиксирано · FIX'
+                      : selectedField.fieldType === 'operable'
+                        ? 'Отваряемо · логическо крило'
+                        : 'Не е зададен'}
+                  </b>
                 </div>
+
+                <div className="constructor-field-semantic-controls">
+                  <span>ТИП ПОЛЕ</span>
+                  <div className="constructor-field-semantic-buttons">
+                    <button
+                      type="button"
+                      className={selectedField.fieldType === 'fixed' ? 'is-selected' : ''}
+                      onClick={() => applyFieldType(selectedField.id, 'fixed')}
+                    >
+                      Фиксирано
+                    </button>
+                    <button
+                      type="button"
+                      className={selectedField.fieldType === 'operable' ? 'is-selected' : ''}
+                      onClick={() => applyFieldType(selectedField.id, 'operable')}
+                    >
+                      Отваряемо / крило
+                    </button>
+                    <button
+                      type="button"
+                      className="is-clear"
+                      disabled={selectedField.fieldType === null}
+                      onClick={() => applyFieldType(selectedField.id, null)}
+                    >
+                      Изчисти
+                    </button>
+                  </div>
+                </div>
+
+                {selectedField.fieldType === 'operable' && (
+                  <>
+                    <div className="constructor-field-semantic-controls">
+                      <span>РЕЖИМ НА ОТВАРЯНЕ</span>
+                      <div className="constructor-field-semantic-buttons is-three">
+                        {([
+                          ['side-hinged', 'Странично'],
+                          ['tilt', 'Падащо'],
+                          ['tilt-turn', 'Странично + падащо'],
+                        ] as const).map(([modeId, label]) => (
+                          <button
+                            key={modeId}
+                            type="button"
+                            className={selectedField.openingMode === modeId ? 'is-selected' : ''}
+                            onClick={() => applySelectedFieldOpeningMode(modeId)}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {(selectedField.openingMode === 'side-hinged' ||
+                      selectedField.openingMode === 'tilt-turn') && (
+                      <div className="constructor-field-semantic-controls">
+                        <span>РАБОТНА ПОСОКА</span>
+                        <div className="constructor-field-semantic-buttons">
+                          <button
+                            type="button"
+                            className={selectedField.openingHanding === 'left' ? 'is-selected' : ''}
+                            onClick={() => applySelectedFieldOpeningHanding('left')}
+                          >
+                            Ляво
+                          </button>
+                          <button
+                            type="button"
+                            className={selectedField.openingHanding === 'right' ? 'is-selected' : ''}
+                            onClick={() => applySelectedFieldOpeningHanding('right')}
+                          >
+                            Дясно
+                          </button>
+                          <button
+                            type="button"
+                            className="is-clear"
+                            disabled={selectedField.openingHanding === null}
+                            onClick={() => applySelectedFieldOpeningHanding(null)}
+                          >
+                            Изчисти
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="constructor-property-row">
+                      <span>Визуализация на крилото</span>
+                      <b>
+                        {selectedField.openingMode === null
+                          ? 'Контур на крило · избери режим на отваряне'
+                          : selectedField.openingMode === 'tilt'
+                            ? 'Падащ opening symbol · без ляво / дясно'
+                            : selectedField.openingHanding === null
+                              ? 'Избери Ляво / Дясно за огледален opening symbol'
+                              : `${selectedField.openingMode === 'tilt-turn' ? 'Комбиниран' : 'Страничен'} ${selectedField.openingHanding === 'left' ? 'ляв' : 'десен'} opening symbol`}
+                      </b>
+                    </div>
+                  </>
+                )}
+
                 <div className="constructor-field-action-hint">
                   <span>РАЗДЕЛЯНЕ НА ПОЛЕ</span>
                   <p>Избери вертикален или хоризонтален делител и кликни в това поле. Делителят няма да преминава автоматично през съседните полета.</p>
                 </div>
                 <p className="constructor-invariant-note">
-                  Това е каноничен FIELD обект. Върху него по-късно ще се прилагат FIX, крило,
-                  отваряемост, стъкло и обков без промяна на основната топология.
+                  FIX / отваряемо / режим / ляво-дясно са канонични FIELD семантики.
+                  Opening symbol-ът следва работната конвенция на Конструктора и не избира профил, обков или машинна геометрия.
                 </p>
               </div>
             ) : frameSelected && frame ? (

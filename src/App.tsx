@@ -15,6 +15,7 @@ import { buildOfferModuleDefaults } from './domain/offerModuleDefaults'
 import { resolveConstructionTopology } from './domain/construction'
 import {
   createFirstOfferModule,
+  createOfferModule,
   areOfferModuleFieldsDescribed,
   getOfferModuleConfiguredFieldCount,
   getOfferModuleConfiguredOpeningCount,
@@ -97,6 +98,12 @@ type OfferDraft = {
   commonConditions: string
 }
 
+
+type FreeConstructorModule = {
+  id: string
+  sequence: number
+}
+
 const EMPTY_OFFER: OfferDraft = {
   clientName: '',
   clientEik: '',
@@ -126,11 +133,18 @@ export default function App() {
   const [offer, setOffer] = useState<OfferDraft>(EMPTY_OFFER)
   const [saved, setSaved] = useState(false)
   const [modules, setModules] = useState<OfferModuleDraft[]>([])
+  const [activeModuleId, setActiveModuleId] = useState<string | null>(null)
+  const [moduleSketchDrafts, setModuleSketchDrafts] = useState<
+    Record<string, ConstructorDraftSnapshot | null>
+  >({})
   const [constructorMode, setConstructorMode] = useState<'offer' | 'free' | null>(null)
   const [offerStartedFromFreeSketch, setOfferStartedFromFreeSketch] = useState(false)
-  const [freeSketchDraft, setFreeSketchDraft] = useState<ConstructorDraftSnapshot | null>(null)
+  const [freeModules, setFreeModules] = useState<FreeConstructorModule[]>([])
+  const [activeFreeModuleId, setActiveFreeModuleId] = useState<string | null>(null)
+  const [freeModuleSketchDrafts, setFreeModuleSketchDrafts] = useState<
+    Record<string, ConstructorDraftSnapshot | null>
+  >({})
   const [offerSourceSketch, setOfferSourceSketch] = useState<ConstructorDraftSnapshot | null>(null)
-  const [offerModuleSketchDraft, setOfferModuleSketchDraft] = useState<ConstructorDraftSnapshot | null>(null)
 
   const clientObjectReady =
     offer.clientName.trim().length > 0 &&
@@ -241,9 +255,20 @@ export default function App() {
       })
     : undefined
 
-  const firstModule = modules[0]
+  const firstModule = (
+    modules.find((module) => module.id === activeModuleId) ?? modules[0]
+  )
+  const activeModuleSketchDraft = firstModule
+    ? moduleSketchDrafts[firstModule.id] ?? null
+    : null
+  const activeFreeModule = (
+    freeModules.find((module) => module.id === activeFreeModuleId) ?? freeModules[0] ?? null
+  )
+  const activeFreeModuleDraft = activeFreeModule
+    ? freeModuleSketchDrafts[activeFreeModule.id] ?? null
+    : null
   const constructorTopologyAuthoritative = Boolean(
-    offerModuleSketchDraft?.topology ?? offerSourceSketch?.topology,
+    activeModuleSketchDraft?.topology,
   )
   const firstModuleBasicsReady = firstModule
     ? isOfferModuleBasicsReady(firstModule)
@@ -279,8 +304,8 @@ export default function App() {
     >,
   ) => {
     setModules((current) =>
-      current.map((module, index) =>
-        index === 0 ? { ...module, ...patch } : module,
+      current.map((module) =>
+        module.id === firstModule?.id ? { ...module, ...patch } : module,
       ),
     )
   }
@@ -290,8 +315,8 @@ export default function App() {
     patch: Partial<OfferModuleFieldDraft>,
   ) => {
     setModules((current) =>
-      current.map((module, moduleIndex) => {
-        if (moduleIndex !== 0) {
+      current.map((module) => {
+        if (module.id !== firstModule?.id) {
           return module
         }
 
@@ -309,8 +334,8 @@ export default function App() {
     topologyFields: readonly ConstructorFieldTopologySummary[],
   ) => {
     setModules((current) =>
-      current.map((module, index) =>
-        index === 0
+      current.map((module) =>
+        module.id === firstModule?.id
           ? {
               ...module,
               fieldCount: topologyFields.length,
@@ -321,6 +346,9 @@ export default function App() {
                   id: field.id,
                   sequence: field.sequence,
                   widthMm: field.widthMm,
+                  fieldType: field.fieldType,
+                  openingMode: field.openingMode,
+                  openingHanding: field.openingHanding,
                 })),
               ),
             }
@@ -334,8 +362,8 @@ export default function App() {
     source: ModuleInputSource,
   ) => {
     setModules((current) =>
-      current.map((module, index) =>
-        index === 0
+      current.map((module) =>
+        module.id === firstModule?.id
           ? {
               ...module,
               fieldCount,
@@ -524,10 +552,11 @@ export default function App() {
     setOffer(EMPTY_OFFER)
     setSaved(false)
     setModules([])
+    setActiveModuleId(null)
+    setModuleSketchDrafts({})
     setConstructorMode(null)
     setOfferStartedFromFreeSketch(false)
     setOfferSourceSketch(null)
-    setOfferModuleSketchDraft(null)
     setOfferStartOpen(true)
   }
 
@@ -537,12 +566,12 @@ export default function App() {
   }
 
   const startOfferFromFreeSketch = (draft: ConstructorDraftSnapshot | null) => {
-    setFreeSketchDraft(draft)
     setOfferSourceSketch(draft)
-    setOfferModuleSketchDraft(draft)
     setOffer(EMPTY_OFFER)
     setSaved(false)
     setModules([])
+    setActiveModuleId(null)
+    setModuleSketchDrafts({})
     setConstructorMode(null)
     setOfferStartedFromFreeSketch(true)
     setOfferStartOpen(true)
@@ -557,47 +586,146 @@ export default function App() {
     }
 
     setSaved(true)
-    if (offerSourceSketch) {
-      setOfferModuleSketchDraft(offerSourceSketch)
+
+    if (modules.length > 0) {
+      if (!activeModuleId) {
+        setActiveModuleId(modules[0].id)
+      }
+      return
     }
-    setModules((current) => {
-      if (current.length > 0) {
-        return current
-      }
 
-      const createdModule = createFirstOfferModule(moduleDefaults)
-      const sourceFrame = offerSourceSketch?.frame
+    const createdModule = createFirstOfferModule(moduleDefaults)
+    const sourceFrame = offerSourceSketch?.frame
+    const sourceTopology = offerSourceSketch?.topology
+    const topologyFields = sourceTopology
+      ? resolveConstructionTopology(sourceTopology).fields
+      : []
 
-      if (!sourceFrame) {
-        return [createdModule]
-      }
+    const hydratedModule = sourceFrame
+      ? {
+          ...createdModule,
+          widthMm: sourceFrame.widthMm,
+          widthSource: sourceTopology ? 'constructor' as const : 'manual' as const,
+          heightMm: sourceFrame.heightMm,
+          heightSource: sourceTopology ? 'constructor' as const : 'manual' as const,
+          fieldCount: sourceTopology ? topologyFields.length : null,
+          fieldCountSource: sourceTopology ? 'constructor' as const : 'unset' as const,
+          fields: sourceTopology
+            ? syncOfferModuleFieldsFromTopology(
+                [],
+                topologyFields.map((field) => ({
+                  id: field.id,
+                  sequence: field.sequence,
+                  widthMm: field.bounds.widthMm,
+                  fieldType: field.fieldType,
+                  openingMode: field.openingMode,
+                  openingHanding: field.openingHanding,
+                })),
+              )
+            : [],
+        }
+      : createdModule
 
-      const sourceTopology = offerSourceSketch?.topology
-      const topologyFields = sourceTopology
-        ? resolveConstructionTopology(sourceTopology).fields
-        : []
-
-      return [{
-        ...createdModule,
-        widthMm: sourceFrame.widthMm,
-        widthSource: sourceTopology ? 'constructor' : 'manual',
-        heightMm: sourceFrame.heightMm,
-        heightSource: sourceTopology ? 'constructor' : 'manual',
-        fieldCount: sourceTopology ? topologyFields.length : null,
-        fieldCountSource: sourceTopology ? 'constructor' : 'unset',
-        fields: sourceTopology
-          ? syncOfferModuleFieldsFromTopology(
-              [],
-              topologyFields.map((field) => ({
-                id: field.id,
-                sequence: field.sequence,
-                widthMm: field.bounds.widthMm,
-              })),
-            )
-          : [],
-      }]
+    setModules([hydratedModule])
+    setActiveModuleId(hydratedModule.id)
+    setModuleSketchDrafts({
+      [hydratedModule.id]: offerSourceSketch ?? null,
     })
   }
+
+  const createNextFreeModule = () => {
+    const nextSequence = freeModules.reduce(
+      (maximum, module) => Math.max(maximum, module.sequence),
+      0,
+    ) + 1
+    const created: FreeConstructorModule = {
+      id: `free-module-${nextSequence}`,
+      sequence: nextSequence,
+    }
+
+    setFreeModules((current) => [...current, created])
+    setActiveFreeModuleId(created.id)
+    setFreeModuleSketchDrafts((current) => ({
+      ...current,
+      [created.id]: null,
+    }))
+  }
+
+  const selectFreeModule = (moduleId: string) => {
+    if (!freeModules.some((module) => module.id === moduleId)) return
+    setActiveFreeModuleId(moduleId)
+  }
+
+  const setActiveFreeModuleDraft = (draft: ConstructorDraftSnapshot | null) => {
+    if (!activeFreeModule) return
+    setFreeModuleSketchDrafts((current) => ({
+      ...current,
+      [activeFreeModule.id]: draft,
+    }))
+  }
+
+  const resetActiveFreeModuleDraft = () => {
+    if (!activeFreeModule) return
+    setFreeModuleSketchDrafts((current) => ({
+      ...current,
+      [activeFreeModule.id]: null,
+    }))
+  }
+
+  const setActiveModuleDraft = (draft: ConstructorDraftSnapshot | null) => {
+    if (!firstModule) return
+    setModuleSketchDrafts((current) => ({
+      ...current,
+      [firstModule.id]: draft,
+    }))
+  }
+
+  const selectModule = (moduleId: string) => {
+    if (!modules.some((module) => module.id === moduleId)) return
+    setActiveModuleId(moduleId)
+  }
+
+  const createNextModule = () => {
+    if (!moduleDefaults) return
+
+    const nextSequence = modules.reduce(
+      (maximum, module) => Math.max(maximum, module.sequence),
+      0,
+    ) + 1
+    const created = createOfferModule(moduleDefaults, nextSequence)
+
+    setModules((current) => [...current, created])
+    setActiveModuleId(created.id)
+    setModuleSketchDrafts((current) => ({
+      ...current,
+      [created.id]: null,
+    }))
+    setConstructorMode('offer')
+  }
+
+  const resetActiveModuleDraft = () => {
+    if (!firstModule) return
+
+    setModuleSketchDrafts((current) => ({
+      ...current,
+      [firstModule.id]: null,
+    }))
+    setModules((current) => current.map((module) => (
+      module.id === firstModule.id
+        ? {
+            ...module,
+            widthMm: null,
+            widthSource: 'unset',
+            heightMm: null,
+            heightSource: 'unset',
+            fieldCount: null,
+            fieldCountSource: 'unset',
+            fields: [],
+          }
+        : module
+    )))
+  }
+
 
   return (
     <div className="app-shell">
@@ -652,18 +780,37 @@ export default function App() {
       <main className={constructorMode ? 'constructor-host' : 'home-workspace'}>
         {constructorMode === 'free' ? (
           <ConstructorShell
+            key={activeFreeModule?.id ?? 'free-no-module'}
             mode="free"
-            initialDraft={freeSketchDraft}
-            onDraftChange={setFreeSketchDraft}
+            moduleNumber={activeFreeModule?.sequence ?? 0}
+            moduleItems={freeModules.map((module) => ({
+              id: module.id,
+              sequence: module.sequence,
+            }))}
+            activeModuleId={activeFreeModule?.id}
+            initialDraft={activeFreeModuleDraft}
+            onDraftChange={setActiveFreeModuleDraft}
+            onSelectModule={selectFreeModule}
+            onCreateModule={createNextFreeModule}
+            onResetModule={resetActiveFreeModuleDraft}
             onClose={() => setConstructorMode(null)}
             onCreateOfferFromSketch={startOfferFromFreeSketch}
           />
         ) : constructorMode === 'offer' && firstModule ? (
           <ConstructorShell
+            key={firstModule.id}
             mode="offer"
             moduleNumber={firstModule.sequence}
-            initialDraft={offerModuleSketchDraft ?? offerSourceSketch}
-            onDraftChange={setOfferModuleSketchDraft}
+            moduleItems={modules.map((module) => ({
+              id: module.id,
+              sequence: module.sequence,
+            }))}
+            activeModuleId={firstModule.id}
+            initialDraft={activeModuleSketchDraft}
+            onDraftChange={setActiveModuleDraft}
+            onSelectModule={selectModule}
+            onCreateModule={createNextModule}
+            onResetModule={resetActiveModuleDraft}
             offerContext={{
               profileSystemLabel: selectedProfileSystem
                 ? `${selectedProfileSystem.manufacturer} ${selectedProfileSystem.name}`
@@ -1520,12 +1667,12 @@ export default function App() {
             {saved && firstModule && (
               <section
                 className="module-workspace"
-                aria-labelledby="module-1-title"
+                aria-labelledby={`module-${firstModule.sequence}-title`}
               >
                 <div className="module-workspace-heading">
                   <div>
-                    <span>МОДУЛ 01</span>
-                    <h2 id="module-1-title">Модул 1</h2>
+                    <span>МОДУЛ {String(firstModule.sequence).padStart(2, '0')}</span>
+                    <h2 id={`module-${firstModule.sequence}-title`}>Модул {firstModule.sequence}</h2>
                     <p>
                       Модулът работи в общата техническа конфигурация на офертата.
                       Отворете Конструктора за CAD-подобното работно поле; текущите
@@ -1546,6 +1693,28 @@ export default function App() {
                       Отвори Конструктор
                     </button>
                   </div>
+                </div>
+
+                <div className="module-workspace-switcher" aria-label="Модули в офертата">
+                  <div className="module-workspace-tabs">
+                    {modules.map((module) => (
+                      <button
+                        type="button"
+                        key={module.id}
+                        className={module.id === firstModule.id ? 'is-active' : ''}
+                        onClick={() => selectModule(module.id)}
+                      >
+                        Модул {module.sequence}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    className="module-workspace-new"
+                    onClick={createNextModule}
+                  >
+                    + Нов модул
+                  </button>
                 </div>
 
                 <div className="module-inherited-defaults">
@@ -1582,7 +1751,7 @@ export default function App() {
                 </div>
 
                 <div className="module-optional-note" role="status">
-                  <b>Модул 1 може да остане чернова.</b>
+                  <b>Модул {firstModule.sequence} може да остане чернова.</b>
                   <span>
                     Всички модулни стойности на този етап са опционални. Използвайте
                     падащите менюта за стандартните избори или ръчно въвеждане за
@@ -1884,7 +2053,7 @@ export default function App() {
                     )}
                     {constructorTopologyAuthoritative && (
                       <p className="module-constructor-boundary">
-                        Броят полета се управлява от Конструктора. За промяна отвори Модул 1 в Конструктора и раздели/обедини ПОЛЕ.
+                        Броят полета се управлява от Конструктора. За промяна отвори Модул {firstModule.sequence} в Конструктора и раздели/обедини ПОЛЕ.
                       </p>
                     )}
                   </section>
@@ -1898,13 +2067,18 @@ export default function App() {
                     <div className="module-fields-heading">
                       <div>
                         <span>CONCEPT 06C + 06D + 06E</span>
-                        <h3 id="module-fields-title">Полетата на Модул 1</h3>
+                        <h3 id="module-fields-title">Полетата на Модул {firstModule.sequence}</h3>
                         <p>
                           Всяко поле е отделна опционална чернова. Изберете
                           потвърден тип от менюто или използвайте ръчно описание
                           за нестандартен случай. За отваряемо поле може отделно
                           да зададете начин на отваряне и, когато е приложимо, работна страна ляво / дясно; всичко може да остане празно.
                         </p>
+                        {constructorTopologyAuthoritative && (
+                          <p className="module-constructor-boundary">
+                            Типът на ПОЛЕТО и отваряемостта идват от Конструктора. Редактирай ги върху самото ПОЛЕ, за да има една канонична истина.
+                          </p>
+                        )}
                       </div>
 
                       <div className="module-fields-progress">
@@ -1939,6 +2113,7 @@ export default function App() {
                                   ? 'custom'
                                   : field.fieldType ?? ''
                               }
+                              disabled={constructorTopologyAuthoritative}
                               onChange={(event) =>
                                 selectFirstModuleFieldType(
                                   fieldIndex,
@@ -1971,7 +2146,8 @@ export default function App() {
                             </label>
                           )}
 
-                          {field.fieldTypeSource === 'preset' &&
+                          {(field.fieldTypeSource === 'preset' ||
+                            field.fieldTypeSource === 'constructor') &&
                             field.fieldType === 'operable' && (
                               <div className="module-opening-block">
                                 <label className="field">
@@ -1982,6 +2158,7 @@ export default function App() {
                                         ? 'custom'
                                         : field.openingMode ?? ''
                                     }
+                                    disabled={constructorTopologyAuthoritative}
                                     onChange={(event) =>
                                       selectFirstModuleFieldOpeningMode(
                                         fieldIndex,
@@ -2015,7 +2192,8 @@ export default function App() {
                                 )}
 
                                 {(field.openingModeSource === 'manual' ||
-                                  (field.openingModeSource === 'preset' &&
+                                  ((field.openingModeSource === 'preset' ||
+                                    field.openingModeSource === 'constructor') &&
                                     (field.openingMode === 'side-hinged' ||
                                       field.openingMode === 'tilt-turn'))) && (
                                   <div className="module-handing-block">
@@ -2027,6 +2205,7 @@ export default function App() {
                                             ? 'custom'
                                             : field.openingHanding ?? ''
                                         }
+                                        disabled={constructorTopologyAuthoritative}
                                         onChange={(event) =>
                                           selectFirstModuleFieldOpeningHanding(
                                             fieldIndex,
@@ -2186,7 +2365,7 @@ export default function App() {
                   <b>
                     {firstModuleStructureReady
                       ? 'Основните данни и броят полета са въведени.'
-                      : 'Модул 1 е запазен като опционална чернова.'}
+                      : `Модул ${firstModule.sequence} е запазен като опционална чернова.`}
                   </b>
                   <span>
                     {firstModuleStructureReady

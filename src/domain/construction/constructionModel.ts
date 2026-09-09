@@ -1,4 +1,7 @@
 export type ConstructionAxis = 'vertical' | 'horizontal'
+export type ConstructionDividerKind = ConstructionAxis | 'angled'
+
+export type ConstructionPoint = { xMm: number; yMm: number }
 
 /** Neutral schematic frame face before a real profile is resolved. */
 export const CONSTRUCTION_DEFAULT_FRAME_FACE_MM = 60
@@ -49,10 +52,27 @@ export type ConstructionFieldNode =
       first: ConstructionFieldNode
       second: ConstructionFieldNode
     }
+  | {
+      kind: 'angled-split'
+      /** FIELD lineage before the angled split. */
+      field: ConstructionFieldDefinition
+      divider: {
+        id: string
+        axis: 'angled'
+        /** Horizontal offset of the centerline from the parent FIELD left edge at the top boundary. */
+        topOffsetMm: number
+        /** Horizontal offset of the centerline from the parent FIELD left edge at the bottom boundary. */
+        bottomOffsetMm: number
+        /** Schematic visible divider face. Read-only until Profile Resolution. */
+        thicknessMm: number
+      }
+      first: ConstructionFieldNode
+      second: ConstructionFieldNode
+    }
 
 export type ConstructionModel = {
   /** Older 01C.1/01C.2 topologies remain readable; new 01C.3 drafts emit field-topology-03. */
-  version: 'field-topology-01' | 'field-topology-02' | 'field-topology-03'
+  version: 'field-topology-01' | 'field-topology-02' | 'field-topology-03' | 'field-topology-04' | 'field-topology-05' | 'field-topology-06' | 'field-topology-07'
   frame: ConstructionFrame
   /** Schematic visible frame face. Not a profile-resolved production value. */
   frameFaceMm?: number
@@ -71,6 +91,8 @@ export type ConstructionFieldBounds = {
 export type ResolvedConstructionField = ConstructionFieldDefinition & {
   sequence: number
   bounds: ConstructionFieldBounds
+  /** Optional real polygon for non-rectangular FIELD topology. Points use frame-local mm coordinates. */
+  polygon?: ConstructionPoint[]
 }
 
 export type ResolvedConstructionDivider = {
@@ -90,6 +112,23 @@ export type ResolvedConstructionDivider = {
   secondClearMm: number
   /** Schematic physical face consumed by the divider in the topology. */
   thicknessMm: number
+  /** Optional physical face polygon when a normal divider is clipped by a polygon FIELD. */
+  facePolygon?: ConstructionPoint[]
+}
+
+export type ResolvedConstructionAngledDivider = {
+  id: string
+  parentFieldId: string
+  parentBounds: ConstructionFieldBounds
+  axis: 'angled'
+  topPoint: ConstructionPoint
+  bottomPoint: ConstructionPoint
+  topOffsetMm: number
+  bottomOffsetMm: number
+  thicknessMm: number
+  lengthMm: number
+  /** Schematic face polygon. */
+  facePolygon: ConstructionPoint[]
 }
 
 export type ConstructorDividerSnapshot = {
@@ -100,7 +139,7 @@ export type ConstructorDividerSnapshot = {
 }
 
 export type ConstructorDraftSnapshot = {
-  version: 'constructor-01b' | 'constructor-01c' | 'constructor-01c.1' | 'constructor-01c.2' | 'constructor-01c.3' | 'constructor-01c.3.2'
+  version: 'constructor-01b' | 'constructor-01c' | 'constructor-01c.1' | 'constructor-01c.2' | 'constructor-01c.3' | 'constructor-01c.3.2' | 'constructor-01c.3.3' | 'constructor-01c.3.4' | 'constructor-01c.3.5' | 'constructor-01c.3.6' | 'constructor-01c.3.7' | 'constructor-01d'
   frame: ConstructionFrame
   /** Legacy 01C persistence. Read-only compatibility for old clean drafts. */
   dividers?: ConstructorDividerSnapshot[]
@@ -119,7 +158,7 @@ export function createFieldDefinition(id: string): ConstructionFieldDefinition {
 
 export function createConstructionModel(frame: ConstructionFrame): ConstructionModel {
   return {
-    version: 'field-topology-03',
+    version: 'field-topology-05',
     frame: { ...frame },
     frameFaceMm: CONSTRUCTION_DEFAULT_FRAME_FACE_MM,
     root: {

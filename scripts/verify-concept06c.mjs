@@ -27,7 +27,7 @@ assert.match(modules, /hasOfferModuleFieldType/)
 assert.match(modules, /areOfferModuleFieldsDescribed/)
 assert.match(modules, /standard field widths have been supplied yet/)
 
-assert.match(app, /Полетата на Модул 1/)
+assert.match(app, /Полетата на Модул \{firstModule\.sequence\}/)
 assert.match(app, /Всяко поле е отделна опционална чернова/)
 assert.match(app, /Тип поле/)
 assert.match(app, /MODULE_FIELD_TYPE_PRESETS/)
