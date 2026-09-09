@@ -1982,3 +1982,75 @@
     flex-basis: 190px;
   }
 }
+
+/* Profile Resolution 01A — human profile assignment without geometry mutation */
+.constructor-profile-resolution-section {
+  border-color: #9fc7cd;
+  background: linear-gradient(180deg, #f6fbfc, #edf7f8);
+}
+
+.constructor-profile-resolution-progress {
+  margin-top: 8px;
+  padding: 8px 9px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid #b6d3d8;
+  border-radius: 5px;
+  background: #ffffff;
+}
+
+.constructor-profile-resolution-progress span {
+  color: #68858c;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .45px;
+}
+
+.constructor-profile-resolution-progress b {
+  color: #087d91;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.constructor-profile-resolution-control {
+  display: grid;
+  gap: 5px;
+  padding: 9px;
+  border: 1px solid #9fc8cf;
+  border-radius: 5px;
+  background: linear-gradient(180deg, #f7fcfd, #edf7f8);
+}
+
+.constructor-profile-resolution-control > span {
+  color: #537980;
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: .5px;
+}
+
+.constructor-profile-resolution-control select {
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid #9bbdc4;
+  border-radius: 4px;
+  outline: 0;
+  background: #fff;
+  color: #244b55;
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.constructor-profile-resolution-control select:focus {
+  border-color: #1399ae;
+  box-shadow: 0 0 0 2px rgba(19, 153, 174, .12);
+}
+
+.constructor-profile-resolution-control small {
+  color: #70868c;
+  font-size: 8px;
+  line-height: 1.35;
+}

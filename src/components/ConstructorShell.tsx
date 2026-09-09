@@ -38,6 +38,18 @@ import {
 } from '../domain/construction'
 export type { ConstructorDividerSnapshot, ConstructorDraftSnapshot } from '../domain/construction'
 import type { ConstructorDraftSnapshot } from '../domain/construction'
+import {
+  getDividerProfileCandidates,
+  getFieldSashProfileCandidates,
+  getFrameProfileCandidates,
+  getProfileResolutionProgress,
+  reconcileModuleProfileResolution,
+  setDividerProfileAssignment,
+  setFieldSashProfileAssignment,
+  setFrameProfileAssignment,
+  type ModuleProfileResolution,
+} from '../domain/profileResolution'
+import { getProfileSystemById, type ProfileDefinition } from '../data/profileSystems'
 import './ConstructorShell.css'
 
 export type ConstructorMode = 'offer' | 'free'
@@ -54,6 +66,7 @@ export type ConstructorFieldTopologySummary = {
 }
 
 type ConstructorOfferContext = {
+  profileSystemId: string
   profileSystemLabel: string
   colorLabel: string
   foilModeLabel: string
@@ -62,6 +75,7 @@ type ConstructorOfferContext = {
 }
 
 type ConstructorModuleSummary = {
+  productType: 'window' | 'door' | null
   productTypeLabel: string
   widthMm: number | null
   heightMm: number | null
@@ -85,7 +99,9 @@ type ConstructorShellProps = {
   offerContext?: ConstructorOfferContext
   moduleSummary?: ConstructorModuleSummary
   initialDraft?: ConstructorDraftSnapshot | null
+  profileResolution?: ModuleProfileResolution | null
   onDraftChange?: (draft: ConstructorDraftSnapshot | null) => void
+  onProfileResolutionChange?: (resolution: ModuleProfileResolution) => void
   onModuleSizeChange?: (size: ConstructorModuleSize) => void
   onFieldTopologyChange?: (fields: readonly ConstructorFieldTopologySummary[]) => void
   onSelectModule?: (moduleId: string) => void
@@ -165,6 +181,7 @@ const MIN_FRAME_MM = 200
 const MAX_WORLD_MM = 5000
 
 const FREE_MODULE_SUMMARY: ConstructorModuleSummary = {
+  productType: null,
   productTypeLabel: 'Свободна скица',
   widthMm: null,
   heightMm: null,
@@ -244,7 +261,9 @@ export default function ConstructorShell({
   offerContext,
   moduleSummary = FREE_MODULE_SUMMARY,
   initialDraft,
+  profileResolution,
   onDraftChange,
+  onProfileResolutionChange,
   onModuleSizeChange,
   onFieldTopologyChange,
   onSelectModule,
@@ -314,6 +333,50 @@ export default function ConstructorShell({
   const selectedDivider = dividers.find((divider) => divider.id === selectedDividerId) ?? null
   const selectedAngledDivider = angledDividers.find((divider) => divider.id === selectedAngledDividerId) ?? null
   const conceptualFieldCount = fields.length
+  const selectedProfileSystem = !isFreeMode && offerContext
+    ? getProfileSystemById(offerContext.profileSystemId)
+    : undefined
+  const profileResolvableDividerIds = useMemo(
+    () => [
+      ...dividers.map((divider) => divider.id),
+      ...angledDividers.map((divider) => divider.id),
+    ],
+    [dividers, angledDividers],
+  )
+  const effectiveProfileResolution = useMemo(
+    () => selectedProfileSystem
+      ? reconcileModuleProfileResolution(
+          profileResolution,
+          selectedProfileSystem,
+          moduleSummary.productType,
+          profileResolvableDividerIds,
+          fields,
+        )
+      : null,
+    [
+      profileResolution,
+      selectedProfileSystem,
+      moduleSummary.productType,
+      profileResolvableDividerIds,
+      fields,
+    ],
+  )
+  const profileResolutionProgress = useMemo(
+    () => getProfileResolutionProgress(
+      effectiveProfileResolution,
+      Boolean(frame),
+      moduleSummary.productType,
+      profileResolvableDividerIds,
+      fields,
+    ),
+    [effectiveProfileResolution, frame, moduleSummary.productType, profileResolvableDividerIds, fields],
+  )
+
+  useEffect(() => {
+    if (!effectiveProfileResolution || !onProfileResolutionChange) return
+    if (JSON.stringify(profileResolution) === JSON.stringify(effectiveProfileResolution)) return
+    onProfileResolutionChange(effectiveProfileResolution)
+  }, [effectiveProfileResolution, onProfileResolutionChange, profileResolution])
 
   const snapMm = (value: number) => {
     const safeValue = clamp(value, 0, MAX_WORLD_MM)
@@ -1033,6 +1096,74 @@ export default function ConstructorShell({
   ]
     .filter(Boolean)
     .join(' ')
+
+  const publishProfileResolution = (next: ModuleProfileResolution) => {
+    onProfileResolutionChange?.(next)
+  }
+
+  const applyFrameProfile = (profileCode: string | null) => {
+    if (!selectedProfileSystem) return
+    publishProfileResolution(
+      setFrameProfileAssignment(
+        effectiveProfileResolution,
+        selectedProfileSystem,
+        profileCode,
+      ),
+    )
+  }
+
+  const applyDividerProfile = (dividerId: string, profileCode: string | null) => {
+    if (!selectedProfileSystem) return
+    publishProfileResolution(
+      setDividerProfileAssignment(
+        effectiveProfileResolution,
+        selectedProfileSystem,
+        dividerId,
+        profileCode,
+      ),
+    )
+  }
+
+  const applySelectedFieldSashProfile = (profileCode: string | null) => {
+    if (!selectedProfileSystem || !selectedField) return
+    publishProfileResolution(
+      setFieldSashProfileAssignment(
+        effectiveProfileResolution,
+        selectedProfileSystem,
+        moduleSummary.productType,
+        selectedField,
+        profileCode,
+      ),
+    )
+  }
+
+  const renderProfileAssignment = (
+    label: string,
+    candidates: readonly ProfileDefinition[],
+    value: string,
+    onChange: (profileCode: string | null) => void,
+  ) => (
+    <div className="constructor-profile-resolution-control">
+      <span>{label}</span>
+      <select
+        aria-label={label}
+        value={value}
+        onChange={(event) => onChange(event.target.value || null)}
+      >
+        <option value="">Не е избран профил</option>
+        {candidates.map((candidate) => (
+          <option key={candidate.code} value={candidate.code}>
+            {candidate.code} · {candidate.labelBg}
+          </option>
+        ))}
+      </select>
+      <small>
+        {value
+          ? 'source: human · код от избраната профилна система'
+          : 'Изборът е ръчен · FacadeFlow не избира кандидат автоматично'}
+      </small>
+    </div>
+  )
 
   return (
     <section className={`constructor-shell${showModuleStrip ? ' has-module-navigation' : ''}`} aria-label={`FacadeFlow Constructor · ${title}`}>
@@ -1870,6 +2001,25 @@ export default function ConstructorShell({
             </section>
           )}
 
+          {!isFreeMode && selectedProfileSystem && effectiveProfileResolution && (
+            <section className="constructor-properties-section constructor-profile-resolution-section">
+              <div className="constructor-panel-heading">
+                <span>PROFILE RESOLUTION 01A</span>
+                <b>Ръчно присвояване на реални профили</b>
+              </div>
+
+              <div className="constructor-profile-resolution-progress">
+                <span>РАЗРЕШЕНИ ЕЛЕМЕНТИ</span>
+                <b>{profileResolutionProgress.assigned} / {profileResolutionProgress.required}</b>
+              </div>
+
+              <p className="constructor-invariant-note">
+                Кодовете идват само от {selectedProfileSystem.manufacturer} {selectedProfileSystem.name}.
+                Изборът е human-confirmed; геометрията остава схемна 60/40 mm до следващия Profile Semantics етап.
+              </p>
+            </section>
+          )}
+
           <section className="constructor-properties-section">
             <div className="constructor-panel-heading">
               <span>СВОЙСТВА</span>
@@ -1902,6 +2052,12 @@ export default function ConstructorShell({
                   <span>Схемна видима ширина</span>
                   <b>{Math.round(selectedAngledDivider.thicknessMm)} mm · read-only до Profile Resolution</b>
                 </div>
+                {selectedProfileSystem && effectiveProfileResolution && renderProfileAssignment(
+                  'ПРОФИЛ НА ДЕЛИТЕЛЯ',
+                  getDividerProfileCandidates(selectedProfileSystem),
+                  effectiveProfileResolution.dividers[selectedAngledDivider.id]?.profileCode ?? '',
+                  (profileCode) => applyDividerProfile(selectedAngledDivider.id, profileCode),
+                )}
                 <div className="constructor-property-row">
                   <span>Управление</span>
                   <b>Горен grip и долен grip се местят независимо · drag върху тялото мести целия делител</b>
@@ -1981,10 +2137,12 @@ export default function ConstructorShell({
                   <span>Управление с мишка</span>
                   <b>Променя се само положението на делителя</b>
                 </div>
-                <div className="constructor-property-row">
-                  <span>Профил</span>
-                  <b>Не е определен · ширината по-късно идва от Profile Data</b>
-                </div>
+                {selectedProfileSystem && effectiveProfileResolution && renderProfileAssignment(
+                  'ПРОФИЛ НА ДЕЛИТЕЛЯ',
+                  getDividerProfileCandidates(selectedProfileSystem),
+                  effectiveProfileResolution.dividers[selectedDivider.id]?.profileCode ?? '',
+                  (profileCode) => applyDividerProfile(selectedDivider.id, profileCode),
+                )}
                 <div className="constructor-property-row">
                   <span>Геометрична логика</span>
                   <b>ПОЛЕ + {Math.round(selectedDivider.thicknessMm)} mm делител + ПОЛЕ</b>
@@ -2005,7 +2163,7 @@ export default function ConstructorShell({
                   Изтрий делителя
                 </button>
                 <p className="constructor-invariant-note">
-                  Drag върху делителя променя само положението му. Дължината следва автоматично родителското ПОЛЕ. Ширината е read-only схемна стойност до Profile Resolution и по-късно ще идва от реалния профил.
+                  Drag върху делителя променя само положението му. Дължината следва автоматично родителското ПОЛЕ. Кодът вече може да бъде human-confirmed; ширината по-късно идва от Profile Data след размерна семантика и остава read-only схемна стойност в 01A.
                 </p>
               </div>
             ) : selectedField && frame ? (
@@ -2060,6 +2218,44 @@ export default function ConstructorShell({
                     </button>
                   </div>
                 </div>
+
+                {selectedField.fieldType === 'operable' && selectedProfileSystem && effectiveProfileResolution && (
+                  getFieldSashProfileCandidates(
+                    selectedProfileSystem,
+                    moduleSummary.productType,
+                    selectedField.fieldType,
+                  ).length > 0
+                    ? renderProfileAssignment(
+                        'ПРОФИЛ НА КРИЛОТО',
+                        getFieldSashProfileCandidates(
+                          selectedProfileSystem,
+                          moduleSummary.productType,
+                          selectedField.fieldType,
+                        ),
+                        effectiveProfileResolution.fieldSashes[selectedField.id]?.profileCode ?? '',
+                        applySelectedFieldSashProfile,
+                      )
+                    : (
+                        <div className="constructor-property-row">
+                          <span>ПРОФИЛ НА КРИЛОТО</span>
+                          <b>Избери стандартен тип изделие Прозорец / Врата, за да се определи ролята sash / door-sash.</b>
+                        </div>
+                      )
+                )}
+
+                {selectedField.fieldType === 'fixed' && (
+                  <div className="constructor-property-row">
+                    <span>ПРОФИЛ НА КРИЛОТО</span>
+                    <b>Не се изисква · FIX полето няма логическо крило.</b>
+                  </div>
+                )}
+
+                {selectedField.fieldType === null && (
+                  <div className="constructor-property-row">
+                    <span>ПРОФИЛ НА КРИЛОТО</span>
+                    <b>Първо задай FIX или Отваряемо. FacadeFlow не предполага профил.</b>
+                  </div>
+                )}
 
                 {selectedField.fieldType === 'operable' && (
                   <>
@@ -2197,8 +2393,14 @@ export default function ConstructorShell({
                 </div>
                 <div className="constructor-property-row">
                   <span>Схемна видима ширина</span>
-                  <b>{Math.round(frameFaceMm)} mm · преди Profile Resolution</b>
+                  <b>{Math.round(frameFaceMm)} mm · остава схемна в Profile Resolution 01A</b>
                 </div>
+                {selectedProfileSystem && effectiveProfileResolution && renderProfileAssignment(
+                  'ПРОФИЛ НА КАСАТА',
+                  getFrameProfileCandidates(selectedProfileSystem),
+                  effectiveProfileResolution.frame?.profileCode ?? '',
+                  applyFrameProfile,
+                )}
                 <div className="constructor-property-row">
                   <span>Профилна дълбочина</span>
                   <b>Не е определена без системна семантика</b>
@@ -2224,8 +2426,9 @@ export default function ConstructorShell({
             <span>ТЕХНИЧЕСКА ГРАНИЦА</span>
             <b>Конструктивна скица, не машинна геометрия</b>
             <p>
-              Касата, ПОЛЕТАТА и локалните делители са параметрични. Крилата, FIX семантиката,
-              отварянията, профилният resolver, срезовете и машинните данни още не се генерират.
+              Касата, ПОЛЕТАТА и локалните делители са параметрични. Profile Resolution 01A пази само
+              human-confirmed кодове; профилните размерни семантики, реалната profile-aware геометрия,
+              армировките, срезовете и машинните данни още не се генерират.
             </p>
           </section>
         </aside>

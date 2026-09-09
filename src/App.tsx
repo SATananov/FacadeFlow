@@ -14,6 +14,10 @@ import {
 import { buildOfferModuleDefaults } from './domain/offerModuleDefaults'
 import { resolveConstructionTopology } from './domain/construction'
 import {
+  createModuleProfileResolution,
+  type ModuleProfileResolution,
+} from './domain/profileResolution'
+import {
   createFirstOfferModule,
   createOfferModule,
   areOfferModuleFieldsDescribed,
@@ -137,6 +141,9 @@ export default function App() {
   const [moduleSketchDrafts, setModuleSketchDrafts] = useState<
     Record<string, ConstructorDraftSnapshot | null>
   >({})
+  const [moduleProfileResolutions, setModuleProfileResolutions] = useState<
+    Record<string, ModuleProfileResolution>
+  >({})
   const [constructorMode, setConstructorMode] = useState<'offer' | 'free' | null>(null)
   const [offerStartedFromFreeSketch, setOfferStartedFromFreeSketch] = useState(false)
   const [freeModules, setFreeModules] = useState<FreeConstructorModule[]>([])
@@ -207,6 +214,7 @@ export default function App() {
 
     if (field === 'foilModeId' || field === 'glazingId') {
       setModules([])
+      setModuleProfileResolutions({})
     }
   }
 
@@ -222,6 +230,7 @@ export default function App() {
     }))
     setSaved(false)
     setModules([])
+    setModuleProfileResolutions({})
   }
 
   const selectFinish = (colorId: string) => {
@@ -232,6 +241,7 @@ export default function App() {
     }))
     setSaved(false)
     setModules([])
+    setModuleProfileResolutions({})
   }
 
   const selectHardwareStandard = (hardwareStandardId: string) => {
@@ -242,6 +252,7 @@ export default function App() {
     }))
     setSaved(false)
     setModules([])
+    setModuleProfileResolutions({})
   }
 
   const moduleDefaults = canContinueToModules
@@ -260,6 +271,10 @@ export default function App() {
   )
   const activeModuleSketchDraft = firstModule
     ? moduleSketchDrafts[firstModule.id] ?? null
+    : null
+  const activeModuleProfileResolution = firstModule
+    ? moduleProfileResolutions[firstModule.id] ??
+      createModuleProfileResolution(firstModule.inheritedDefaults.profileSystemId)
     : null
   const activeFreeModule = (
     freeModules.find((module) => module.id === activeFreeModuleId) ?? freeModules[0] ?? null
@@ -552,6 +567,7 @@ export default function App() {
     setOffer(EMPTY_OFFER)
     setSaved(false)
     setModules([])
+    setModuleProfileResolutions({})
     setActiveModuleId(null)
     setModuleSketchDrafts({})
     setConstructorMode(null)
@@ -570,6 +586,7 @@ export default function App() {
     setOffer(EMPTY_OFFER)
     setSaved(false)
     setModules([])
+    setModuleProfileResolutions({})
     setActiveModuleId(null)
     setModuleSketchDrafts({})
     setConstructorMode(null)
@@ -631,6 +648,11 @@ export default function App() {
     setModuleSketchDrafts({
       [hydratedModule.id]: offerSourceSketch ?? null,
     })
+    setModuleProfileResolutions({
+      [hydratedModule.id]: createModuleProfileResolution(
+        hydratedModule.inheritedDefaults.profileSystemId,
+      ),
+    })
   }
 
   const createNextFreeModule = () => {
@@ -680,6 +702,14 @@ export default function App() {
     }))
   }
 
+  const setActiveModuleProfileResolution = (resolution: ModuleProfileResolution) => {
+    if (!firstModule) return
+    setModuleProfileResolutions((current) => ({
+      ...current,
+      [firstModule.id]: resolution,
+    }))
+  }
+
   const selectModule = (moduleId: string) => {
     if (!modules.some((module) => module.id === moduleId)) return
     setActiveModuleId(moduleId)
@@ -700,6 +730,12 @@ export default function App() {
       ...current,
       [created.id]: null,
     }))
+    setModuleProfileResolutions((current) => ({
+      ...current,
+      [created.id]: createModuleProfileResolution(
+        created.inheritedDefaults.profileSystemId,
+      ),
+    }))
     setConstructorMode('offer')
   }
 
@@ -709,6 +745,12 @@ export default function App() {
     setModuleSketchDrafts((current) => ({
       ...current,
       [firstModule.id]: null,
+    }))
+    setModuleProfileResolutions((current) => ({
+      ...current,
+      [firstModule.id]: createModuleProfileResolution(
+        firstModule.inheritedDefaults.profileSystemId,
+      ),
     }))
     setModules((current) => current.map((module) => (
       module.id === firstModule.id
@@ -808,10 +850,13 @@ export default function App() {
             activeModuleId={firstModule.id}
             initialDraft={activeModuleSketchDraft}
             onDraftChange={setActiveModuleDraft}
+            profileResolution={activeModuleProfileResolution}
+            onProfileResolutionChange={setActiveModuleProfileResolution}
             onSelectModule={selectModule}
             onCreateModule={createNextModule}
             onResetModule={resetActiveModuleDraft}
             offerContext={{
+              profileSystemId: firstModule.inheritedDefaults.profileSystemId,
               profileSystemLabel: selectedProfileSystem
                 ? `${selectedProfileSystem.manufacturer} ${selectedProfileSystem.name}`
                 : firstModule.inheritedDefaults.profileSystemId,
@@ -823,6 +868,7 @@ export default function App() {
                 firstModule.inheritedDefaults.hardwareStandardId,
             }}
             moduleSummary={{
+              productType: firstModule.productType,
               productTypeLabel:
                 MODULE_PRODUCT_TYPE_PRESETS.find(
                   (option) => option.id === firstModule.productType,
