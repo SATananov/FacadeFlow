@@ -5,3 +5,5 @@ export * from './catalog'
 export * from './finishOptions'
 export * from './glazingOptions'
 export * from './hardwareOptions'
+
+export * from './dimensionalSemantics'

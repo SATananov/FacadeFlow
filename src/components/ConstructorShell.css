@@ -2054,3 +2054,520 @@
   font-size: 8px;
   line-height: 1.35;
 }
+
+/* Profile Resolution 01B — dimensional semantics before profile-aware geometry */
+.constructor-parametric-frame.has-bay-dimensions .constructor-frame-dimension-width {
+  bottom: -58px;
+}
+
+.constructor-bay-dimension-band {
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  right: 0;
+  bottom: -30px;
+  height: 22px;
+  pointer-events: none;
+}
+
+.constructor-bay-dimension {
+  position: absolute;
+  top: 0;
+  height: 20px;
+  border-top: 1px solid #6d8389;
+  color: #315159;
+  font-size: 9px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.constructor-bay-dimension::before,
+.constructor-bay-dimension::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  height: 10px;
+  border-left: 1px solid #6d8389;
+}
+
+.constructor-bay-dimension::before { left: 0; }
+.constructor-bay-dimension::after { right: 0; }
+
+.constructor-bay-dimension span {
+  position: relative;
+  top: -10px;
+  padding: 2px 5px;
+  border: 1px solid #b6c9cd;
+  border-radius: 3px;
+  background: rgba(248, 251, 252, .98);
+  white-space: nowrap;
+}
+
+.constructor-dimensional-chain-section {
+  border-color: #9fbfc8;
+  background: linear-gradient(180deg, #f7fbfc, #edf5f7);
+}
+
+.constructor-dimensional-overall {
+  margin-top: 8px;
+  padding: 9px;
+  display: grid;
+  gap: 3px;
+  border: 1px solid #aecbd1;
+  border-radius: 5px;
+  background: #fff;
+}
+
+.constructor-dimensional-overall span,
+.constructor-dimensional-gates span,
+.constructor-profile-semantics-heading span,
+.constructor-semantic-dimension > span,
+.constructor-raw-callouts > span {
+  color: #628088;
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: .45px;
+}
+
+.constructor-dimensional-overall b {
+  color: #164d59;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.constructor-dimensional-overall small,
+.constructor-semantic-dimension small,
+.constructor-raw-callouts small {
+  color: #70868c;
+  font-size: 8px;
+  line-height: 1.35;
+}
+
+.constructor-dimensional-gates {
+  margin-top: 7px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.constructor-dimensional-gates > div {
+  min-width: 0;
+  padding: 7px;
+  display: grid;
+  gap: 3px;
+  border: 1px solid #c3d3d7;
+  border-radius: 4px;
+  background: #f8fbfb;
+}
+
+.constructor-dimensional-gates b {
+  color: #915229;
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.constructor-profile-semantics-card,
+.constructor-field-dimensional-chain {
+  margin-top: 8px;
+  padding: 8px;
+  display: grid;
+  gap: 6px;
+  border: 1px solid #b9ccd0;
+  border-radius: 6px;
+  background: #f7fafb;
+}
+
+.constructor-profile-semantics-card .constructor-profile-semantics-card {
+  margin-top: 4px;
+  background: #fbfdfd;
+}
+
+.constructor-profile-semantics-heading {
+  min-width: 0;
+  padding-bottom: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px solid #d0dddf;
+}
+
+.constructor-profile-semantics-heading b {
+  min-width: 0;
+  color: #204c56;
+  font-size: 10px;
+  font-weight: 950;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.constructor-semantic-dimension {
+  padding: 7px 8px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px 8px;
+  border: 1px solid #d0dcde;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.constructor-semantic-dimension b {
+  color: #2b4c54;
+  font-size: 10px;
+  font-weight: 950;
+  text-align: right;
+}
+
+.constructor-semantic-dimension em {
+  grid-column: 1 / -1;
+  justify-self: start;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: #edf2f3;
+  color: #687d82;
+  font-size: 7px;
+  font-style: normal;
+  font-weight: 950;
+  letter-spacing: .35px;
+}
+
+.constructor-semantic-dimension small {
+  grid-column: 1 / -1;
+}
+
+.constructor-semantic-dimension.status-human-confirmed {
+  border-color: #9fc9b2;
+  background: #f2faf5;
+}
+
+.constructor-semantic-dimension.status-human-confirmed b,
+.constructor-semantic-dimension.status-human-confirmed em {
+  color: #24734a;
+}
+
+.constructor-semantic-dimension.status-system-nominal {
+  border-color: #b8d0d6;
+  background: #f3f8f9;
+}
+
+.constructor-semantic-dimension.status-system-nominal b,
+.constructor-semantic-dimension.status-system-nominal em {
+  color: #2b7180;
+}
+
+.constructor-semantic-dimension.status-schematic-only {
+  border-style: dashed;
+}
+
+.constructor-semantic-dimension.status-unknown {
+  border-color: #dec8b5;
+  background: #fff9f2;
+}
+
+.constructor-semantic-dimension.status-unknown b,
+.constructor-semantic-dimension.status-unknown em {
+  color: #955b2f;
+}
+
+.constructor-raw-callouts {
+  padding: 7px 8px;
+  display: grid;
+  gap: 3px;
+  border: 1px dashed #c7d3d6;
+  border-radius: 4px;
+  background: #f4f7f8;
+}
+
+.constructor-raw-callouts b {
+  color: #405e65;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.constructor-dimensional-result-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 5px;
+}
+
+@media (min-width: 1650px) {
+  .constructor-dimensional-result-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Constructor Inspector UX 01 — compact contextual inspector */
+.constructor-compact-inspector {
+  padding: 9px;
+}
+
+.constructor-inspector-context-card,
+.constructor-inspector-main-card {
+  margin-bottom: 9px;
+}
+
+.constructor-inspector-context-summary,
+.constructor-inspector-selection-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.constructor-inspector-context-summary > div,
+.constructor-inspector-selection-header > div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.constructor-inspector-context-summary span,
+.constructor-inspector-selection-header span {
+  color: #6d858b;
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: .55px;
+}
+
+.constructor-inspector-context-summary b,
+.constructor-inspector-selection-header b {
+  min-width: 0;
+  overflow: hidden;
+  color: #274850;
+  font-size: 11px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.constructor-inspector-context-summary > em {
+  flex: 0 0 auto;
+  padding: 3px 5px;
+  border: 1px solid #afc7cc;
+  border-radius: 999px;
+  background: #eff6f7;
+  color: #678087;
+  font-size: 7px;
+  font-style: normal;
+  font-weight: 950;
+  letter-spacing: .35px;
+}
+
+.constructor-inspector-details {
+  margin-top: 8px;
+  border-top: 1px solid #d4e0e2;
+}
+
+.constructor-inspector-details > summary,
+.constructor-safety-details > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.constructor-inspector-details > summary::-webkit-details-marker,
+.constructor-safety-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.constructor-inspector-details > summary {
+  padding: 7px 0 1px;
+  color: #527078;
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.constructor-inspector-details > summary::after {
+  content: '▾';
+  float: right;
+  color: #789097;
+}
+
+.constructor-inspector-details[open] > summary::after {
+  content: '▴';
+}
+
+.constructor-inspector-settings-grid {
+  margin-top: 7px;
+  gap: 5px;
+}
+
+.constructor-inspector-settings-grid > div {
+  padding: 6px 7px;
+}
+
+.constructor-create-offer-compact {
+  margin-top: 8px;
+}
+
+.constructor-inspector-selection-header {
+  padding-bottom: 8px;
+}
+
+.constructor-inspector-selection-header small {
+  color: #71878d;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.constructor-inspector-resolution-badge {
+  flex: 0 0 auto;
+  min-width: 48px;
+  padding: 5px 6px;
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  border: 1px solid #9fc7ce;
+  border-radius: 6px;
+  background: #eff9fa;
+}
+
+.constructor-inspector-resolution-badge span {
+  color: #61838a;
+  font-size: 6px;
+  font-weight: 950;
+  letter-spacing: .4px;
+}
+
+.constructor-inspector-resolution-badge b {
+  color: #078499;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.constructor-inspector-resolution-badge.is-neutral {
+  border-color: #ccd9dc;
+  background: #f4f7f8;
+}
+
+.constructor-inspector-resolution-badge.is-neutral b {
+  color: #7b9095;
+}
+
+.constructor-inspector-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid #b8cdd1;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #edf4f5;
+}
+
+.constructor-inspector-tabs button {
+  min-width: 0;
+  height: 31px;
+  padding: 0 5px;
+  border: 0;
+  border-right: 1px solid #c6d6d9;
+  background: transparent;
+  color: #5c777e;
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.constructor-inspector-tabs button:last-child {
+  border-right: 0;
+}
+
+.constructor-inspector-tabs button:hover {
+  background: #f7fbfb;
+}
+
+.constructor-inspector-tabs button.is-active {
+  background: #fff;
+  color: #087e92;
+  box-shadow: inset 0 -2px 0 #0a9bb0;
+}
+
+.constructor-inspector-pane {
+  padding-top: 9px;
+}
+
+.constructor-inspector-pane .constructor-frame-properties {
+  gap: 7px;
+}
+
+.constructor-inspector-pane .constructor-profile-resolution-control,
+.constructor-inspector-pane .constructor-profile-semantics-card,
+.constructor-inspector-pane .constructor-field-dimensional-chain {
+  margin: 0;
+}
+
+.constructor-inspector-module-dimensions {
+  margin-bottom: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+
+.constructor-inspector-module-dimensions > div {
+  min-width: 0;
+  padding: 7px;
+  display: grid;
+  gap: 2px;
+  border: 1px solid #c5d5d8;
+  border-radius: 4px;
+  background: #f6fafb;
+}
+
+.constructor-inspector-module-dimensions > div:first-child {
+  grid-column: 1 / -1;
+  background: #fff;
+}
+
+.constructor-inspector-module-dimensions span {
+  color: #67838a;
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: .4px;
+}
+
+.constructor-inspector-module-dimensions b {
+  color: #28505a;
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.constructor-safety-details {
+  padding: 8px 10px;
+}
+
+.constructor-safety-details > summary {
+  display: grid;
+  gap: 2px;
+}
+
+.constructor-safety-details > summary::after {
+  content: '▾';
+  position: absolute;
+  right: 10px;
+  color: #a27a53;
+}
+
+.constructor-safety-details[open] > summary::after {
+  content: '▴';
+}
+
+.constructor-safety-details > summary span {
+  color: #9c6a38;
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: .7px;
+}
+
+.constructor-safety-details > summary b {
+  padding-right: 14px;
+  color: #684d34;
+  font-size: 9px;
+}
+
+.constructor-safety-details p {
+  margin-top: 7px;
+}
+
+.constructor-contract-marker {
+  display: none !important;
+}
+
+.constructor-safety-details > summary {
+  position: relative;
+}

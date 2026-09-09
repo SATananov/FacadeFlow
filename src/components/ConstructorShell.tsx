@@ -50,6 +50,13 @@ import {
   type ModuleProfileResolution,
 } from '../domain/profileResolution'
 import { getProfileSystemById, type ProfileDefinition } from '../data/profileSystems'
+import {
+  buildModuleDimensionalChain,
+  formatResolvedDimension,
+  getAssignedProfileDimensionalReadModel,
+  type AssignedProfileDimensionalReadModel,
+  type ResolvedDimension,
+} from '../domain/profileDimensionalSemantics'
 import './ConstructorShell.css'
 
 export type ConstructorMode = 'offer' | 'free'
@@ -121,6 +128,7 @@ type ConstructorTool =
   | 'fixed-field'
   | 'operable-field'
 type FrameEdge = 'left' | 'right' | 'top' | 'bottom'
+type InspectorTab = 'properties' | 'profile' | 'dimensions'
 
 type DividerModel = ResolvedConstructionDivider
 type AngledDividerModel = ResolvedConstructionAngledDivider
@@ -277,6 +285,7 @@ export default function ConstructorShell({
   const [gridVisible, setGridVisible] = useState(true)
   const [snapEnabled, setSnapEnabled] = useState(true)
   const [zoom, setZoom] = useState<number>(100)
+  const [inspectorTab, setInspectorTab] = useState<InspectorTab>('properties')
   const [construction, setConstruction] = useState<ConstructionModel | null>(() =>
     getInitialConstruction(initialDraft, moduleSummary),
   )
@@ -371,6 +380,49 @@ export default function ConstructorShell({
     ),
     [effectiveProfileResolution, frame, moduleSummary.productType, profileResolvableDividerIds, fields],
   )
+  const dimensionalChain = useMemo(
+    () => frame && selectedProfileSystem && effectiveProfileResolution
+      ? buildModuleDimensionalChain({
+          frame,
+          frameFaceMm,
+          fields,
+          dividers,
+          system: selectedProfileSystem,
+          resolution: effectiveProfileResolution,
+        })
+      : null,
+    [frame, frameFaceMm, fields, dividers, selectedProfileSystem, effectiveProfileResolution],
+  )
+  const selectedFieldDimensionalChain = selectedField
+    ? dimensionalChain?.fields.find((field) => field.fieldId === selectedField.id) ?? null
+    : null
+  const simpleBayDimensions = useMemo(() => {
+    if (!frame || !dimensionalChain || fields.length === 0) return []
+    if (fields.some((field) => Boolean(field.polygon))) return []
+    const first = fields[0]
+    const sameHorizontalBand = fields.every((field) =>
+      Math.abs(field.bounds.yMm - first.bounds.yMm) < 0.01 &&
+      Math.abs(field.bounds.heightMm - first.bounds.heightMm) < 0.01,
+    )
+    if (!sameHorizontalBand) return []
+
+    const widths = dimensionalChain.fields.map((field) => field.schematicBayWidth.valueMm)
+    if (widths.some((value) => value === null)) return []
+    const numericWidths = widths as number[]
+    const sum = numericWidths.reduce((total, value) => total + value, 0)
+    if (Math.abs(sum - frame.widthMm) > 0.1) return []
+
+    let startMm = 0
+    return numericWidths.map((widthMm, index) => {
+      const item = { sequence: fields[index].sequence, startMm, widthMm }
+      startMm += widthMm
+      return item
+    })
+  }, [dimensionalChain, fields, frame])
+
+  useEffect(() => {
+    setInspectorTab('properties')
+  }, [selectedFieldId, selectedDividerId, selectedAngledDividerId, frameSelected])
 
   useEffect(() => {
     if (!effectiveProfileResolution || !onProfileResolutionChange) return
@@ -1093,6 +1145,7 @@ export default function ConstructorShell({
     frameSelected ? 'is-selected' : '',
     selectedEdge ? `has-selected-${selectedEdge}` : '',
     dragState?.kind === 'create' ? 'is-preview' : '',
+    simpleBayDimensions.length > 0 ? 'has-bay-dimensions' : '',
   ]
     .filter(Boolean)
     .join(' ')
@@ -1164,6 +1217,258 @@ export default function ConstructorShell({
       </small>
     </div>
   )
+
+  const dimensionStatusLabel = (dimension: ResolvedDimension) => {
+    if (dimension.status === 'human-confirmed') return 'HUMAN CONFIRMED'
+    if (dimension.status === 'system-nominal') return 'SYSTEM NOMINAL'
+    if (dimension.status === 'constructor-authoritative') return 'CONSTRUCTOR'
+    if (dimension.status === 'schematic-only') return 'SCHEMATIC'
+    return 'UNKNOWN'
+  }
+
+  const renderResolvedDimension = (dimension: ResolvedDimension) => (
+    <div className={`constructor-semantic-dimension status-${dimension.status}`}>
+      <span>{dimension.labelBg}</span>
+      <b>{formatResolvedDimension(dimension)}</b>
+      <em>{dimensionStatusLabel(dimension)}</em>
+      <small>{dimension.noteBg}</small>
+    </div>
+  )
+
+  const renderProfileDimensionalSemantics = (
+    title: string,
+    profile: AssignedProfileDimensionalReadModel | null,
+  ) => (
+    <div className="constructor-profile-semantics-card">
+      <div className="constructor-profile-semantics-heading">
+        <span>{title}</span>
+        <b>{profile ? profile.profileCode : 'Няма избран профил'}</b>
+      </div>
+      {profile ? (
+        <>
+          {renderResolvedDimension(profile.constructionDepth)}
+          {renderResolvedDimension(profile.visibleFace)}
+          {profile.role === 'sash' || profile.role === 'door-sash' ? (
+            <>
+              {renderResolvedDimension(profile.sashOverlap)}
+              {renderResolvedDimension(profile.glazingInset)}
+            </>
+          ) : null}
+          <div className="constructor-raw-callouts">
+            <span>RAW CATALOG CALLOUTS</span>
+            <b>{profile.rawCatalogCalloutsMm.length > 0 ? profile.rawCatalogCalloutsMm.join(' / ') + ' mm' : '—'}</b>
+            <small>Само доказателство от каталога · позицията на числото НЕ определя семантика.</small>
+          </div>
+        </>
+      ) : (
+        <p className="constructor-invariant-note">Първо избери human-confirmed профилен код.</p>
+      )}
+    </div>
+  )
+
+
+  const selectedElementTitle = selectedAngledDivider
+    ? 'Ъглов делител'
+    : selectedDivider
+      ? (selectedDivider.axis === 'vertical' ? 'Вертикален делител' : 'Хоризонтален делител')
+      : selectedField
+        ? `Поле ${selectedField.sequence}`
+        : frameSelected && frame
+          ? 'Каса / рамка'
+          : 'Няма избран елемент'
+
+  const selectedElementMeta = selectedAngledDivider
+    ? selectedAngledDivider.id
+    : selectedDivider
+      ? selectedDivider.id
+      : selectedField
+        ? `${selectedField.id} · ${selectedField.fieldType === 'operable' ? 'КРИЛО' : selectedField.fieldType === 'fixed' ? 'FIX' : 'UNSET'}`
+        : frameSelected && frame
+          ? `${Math.round(frame.widthMm)} × ${Math.round(frame.heightMm)} mm`
+          : 'Маркирай каса, делител или поле'
+
+  const renderSelectedPropertiesPane = () => {
+    if (selectedAngledDivider && frame) {
+      return (
+        <div className="constructor-frame-properties constructor-divider-properties">
+          <div className="constructor-property-row"><span>Горен край</span><b>{Math.round(selectedAngledDivider.topOffsetMm)} mm от левия ръб на родителското ПОЛЕ</b></div>
+          <div className="constructor-property-row"><span>Долен край</span><b>{Math.round(selectedAngledDivider.bottomOffsetMm)} mm от левия ръб на родителското ПОЛЕ</b></div>
+          <div className="constructor-property-row"><span>Дължина</span><b>{Math.round(selectedAngledDivider.lengthMm)} mm · автоматично от двата края</b></div>
+          <div className="constructor-property-row"><span>Схемна видима ширина</span><b>{Math.round(selectedAngledDivider.thicknessMm)} mm · read-only до Profile Resolution</b></div>
+          <div className="constructor-property-row"><span>Управление</span><b>Горен grip и долен grip се местят независимо · drag върху тялото мести целия делител</b></div>
+          <div className="constructor-property-row"><span>Закотвяне в ъгъл</span><b>0 mm / пълна ширина = точен вътрешен ъгъл · snap в последните 30 mm</b></div>
+          <div className="constructor-property-row"><span>FIELD topology</span><b>Двете страни са реални polygon / triangle / trapezoid ПОЛЕТА</b></div>
+          <button type="button" className="constructor-delete-divider" onClick={removeSelectedAngledDivider}>Изтрий ъгловия делител</button>
+          <p className="constructor-invariant-note">Ъгловият делител е конструктивен split, не CAD линия. Краищата могат да се закотвят точно във вътрешен ъгъл.</p>
+        </div>
+      )
+    }
+
+    if (selectedDivider && frame) {
+      return (
+        <div className="constructor-frame-properties constructor-divider-properties">
+          <label>
+            <span>{selectedDivider.axis === 'vertical' ? 'Схемен размер ляво поле' : 'Схемен размер горно поле'}</span>
+            <div><input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              aria-label="Точна позиция на делителя в милиметри"
+              value={dividerPositionDraft}
+              onFocus={(event) => event.currentTarget.select()}
+              onChange={(event) => setDividerPositionDraft(event.target.value)}
+              onBlur={commitDividerPosition}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') { commitDividerPosition(); event.currentTarget.blur() }
+                if (event.key === 'Escape') { resetDividerPositionDraft(); event.currentTarget.blur() }
+              }}
+            /><em>mm</em></div>
+          </label>
+          <div className="constructor-divider-balance" aria-label="Схемно разпределение около делителя">
+            <div><span>{selectedDivider.axis === 'vertical' ? 'ЛЯВО ПОЛЕ' : 'ГОРНО ПОЛЕ'}</span><b>{Math.round(selectedDivider.firstClearMm)} mm</b></div>
+            <i aria-hidden="true">+</i>
+            <div className="is-divider"><span>ДЕЛИТЕЛ</span><b>{Math.round(selectedDivider.thicknessMm)} mm</b></div>
+            <i aria-hidden="true">+</i>
+            <div><span>{selectedDivider.axis === 'vertical' ? 'ДЯСНО ПОЛЕ' : 'ДОЛНО ПОЛЕ'}</span><b>{Math.round(selectedDivider.secondClearMm)} mm</b></div>
+          </div>
+          <div className="constructor-property-row"><span>Ориентация</span><b>{selectedDivider.axis === 'vertical' ? 'Вертикален' : 'Хоризонтален'}</b></div>
+          <div className="constructor-property-row"><span>Дължина на делителя</span><b>{Math.round(selectedDivider.endMm - selectedDivider.startMm)} mm · автоматично от родителското ПОЛЕ</b></div>
+          <div className="constructor-property-row"><span>Схемна видима ширина</span><b>{Math.round(selectedDivider.thicknessMm)} mm · автоматична до Profile Resolution</b></div>
+          <div className="constructor-property-row"><span>Управление с мишка</span><b>Променя се само положението на делителя</b></div>
+          <div className="constructor-property-row"><span>Геометрична логика</span><b>ПОЛЕ + {Math.round(selectedDivider.thicknessMm)} mm делител + ПОЛЕ</b></div>
+          <div className="constructor-property-row"><span>Обхват</span><b>Само в родителското поле · FIELD topology</b></div>
+          <div className="constructor-property-row"><span>ПОЛЕТА в модула</span><b>{conceptualFieldCount}</b></div>
+          <button type="button" className="constructor-delete-divider" onClick={removeSelectedDivider}>Изтрий делителя</button>
+        </div>
+      )
+    }
+
+    if (selectedField && frame) {
+      return (
+        <div className="constructor-frame-properties constructor-field-properties">
+          <div className="constructor-property-row"><span>Идентификатор</span><b>{selectedField.id}</b></div>
+          <div className="constructor-property-row"><span>{selectedField.polygon ? 'Габарит на polygon ПОЛЕТО' : 'Вътрешен схемен размер на полето'}</span><b>{Math.round(selectedField.bounds.widthMm)} × {Math.round(selectedField.bounds.heightMm)} mm{selectedField.polygon ? ' · polygon' : ''}</b></div>
+          <div className="constructor-property-row"><span>Позиция във вътрешния контур</span><b>X {Math.round(selectedField.bounds.xMm - frameFaceMm)} · Y {Math.round(selectedField.bounds.yMm - frameFaceMm)} mm</b></div>
+          <div className="constructor-property-row"><span>Тип поле</span><b>{selectedField.fieldType === 'fixed' ? 'Фиксирано · FIX' : selectedField.fieldType === 'operable' ? 'Отваряемо · логическо крило' : 'Не е зададен'}</b></div>
+          <div className="constructor-field-semantic-controls">
+            <span>ТИП ПОЛЕ</span>
+            <div className="constructor-field-semantic-buttons">
+              <button type="button" className={selectedField.fieldType === 'fixed' ? 'is-selected' : ''} onClick={() => applyFieldType(selectedField.id, 'fixed')}>Фиксирано</button>
+              <button type="button" className={selectedField.fieldType === 'operable' ? 'is-selected' : ''} onClick={() => applyFieldType(selectedField.id, 'operable')}>Отваряемо / крило</button>
+              <button type="button" className="is-clear" disabled={selectedField.fieldType === null} onClick={() => applyFieldType(selectedField.id, null)}>Изчисти</button>
+            </div>
+          </div>
+          {selectedField.fieldType === 'operable' && (
+            <>
+              <div className="constructor-field-semantic-controls">
+                <span>РЕЖИМ НА ОТВАРЯНЕ</span>
+                <div className="constructor-field-semantic-buttons is-three">
+                  {([['side-hinged', 'Странично'], ['tilt', 'Падащо'], ['tilt-turn', 'Странично + падащо']] as const).map(([modeId, label]) => (
+                    <button key={modeId} type="button" className={selectedField.openingMode === modeId ? 'is-selected' : ''} onClick={() => applySelectedFieldOpeningMode(modeId)}>{label}</button>
+                  ))}
+                </div>
+              </div>
+              {(selectedField.openingMode === 'side-hinged' || selectedField.openingMode === 'tilt-turn') && (
+                <div className="constructor-field-semantic-controls">
+                  <span>РАБОТНА ПОСОКА</span>
+                  <div className="constructor-field-semantic-buttons">
+                    <button type="button" className={selectedField.openingHanding === 'left' ? 'is-selected' : ''} onClick={() => applySelectedFieldOpeningHanding('left')}>Ляво</button>
+                    <button type="button" className={selectedField.openingHanding === 'right' ? 'is-selected' : ''} onClick={() => applySelectedFieldOpeningHanding('right')}>Дясно</button>
+                    <button type="button" className="is-clear" disabled={selectedField.openingHanding === null} onClick={() => applySelectedFieldOpeningHanding(null)}>Изчисти</button>
+                  </div>
+                </div>
+              )}
+              <div className="constructor-property-row"><span>Визуализация на крилото</span><b>{selectedField.openingMode === null ? 'Контур на крило · избери режим на отваряне' : selectedField.openingMode === 'tilt' ? 'Падащ opening symbol · без ляво / дясно' : selectedField.openingHanding === null ? 'Избери Ляво / Дясно за огледален opening symbol' : `${selectedField.openingMode === 'tilt-turn' ? 'Комбиниран' : 'Страничен'} ${selectedField.openingHanding === 'left' ? 'ляв' : 'десен'} opening symbol`}</b></div>
+            </>
+          )}
+          <div className="constructor-field-action-hint"><span>РАЗДЕЛЯНЕ НА ПОЛЕ</span><p>Избери вертикален или хоризонтален делител и кликни в това поле. Делителят няма да преминава автоматично през съседните полета.</p></div>
+        </div>
+      )
+    }
+
+    if (frameSelected && frame) {
+      return (
+        <div className="constructor-frame-properties">
+          <label><span>Ширина</span><div><input type="text" inputMode="numeric" pattern="[0-9]*" aria-label="Точна ширина в милиметри" value={widthDraft} onFocus={(event) => event.currentTarget.select()} onChange={(event) => setWidthDraft(event.target.value)} onBlur={() => commitNumericDimension('widthMm')} onKeyDown={(event) => { if (event.key === 'Enter') { commitNumericDimension('widthMm'); event.currentTarget.blur() } if (event.key === 'Escape') { resetNumericDimensionDraft('widthMm'); event.currentTarget.blur() } }} /><em>mm</em></div></label>
+          <label><span>Височина</span><div><input type="text" inputMode="numeric" pattern="[0-9]*" aria-label="Точна височина в милиметри" value={heightDraft} onFocus={(event) => event.currentTarget.select()} onChange={(event) => setHeightDraft(event.target.value)} onBlur={() => commitNumericDimension('heightMm')} onKeyDown={(event) => { if (event.key === 'Enter') { commitNumericDimension('heightMm'); event.currentTarget.blur() } if (event.key === 'Escape') { resetNumericDimensionDraft('heightMm'); event.currentTarget.blur() } }} /><em>mm</em></div></label>
+          <div className="constructor-property-row"><span>Позиция</span><b>X {Math.round(frame.xMm)} · Y {Math.round(frame.yMm)} mm</b></div>
+          <div className="constructor-property-row"><span>Избран ръб</span><b>{selectedEdge ? ({ left: 'Ляв', right: 'Десен', top: 'Горен', bottom: 'Долен' } as const)[selectedEdge] : 'Цялата каса'}</b></div>
+          <div className="constructor-property-row"><span>Схемна видима ширина</span><b>{Math.round(frameFaceMm)} mm · схемна геометрия</b></div>
+        </div>
+      )
+    }
+
+    return <div className="constructor-selection-empty"><span>{frame ? 'Маркирай касата, делител или поле' : 'Няма създадена каса'}</span><p>Инспекторът показва контекст само за избрания конструктивен елемент.</p></div>
+  }
+
+  const renderSelectedProfilePane = () => {
+    if (isFreeMode) {
+      return <div className="constructor-selection-empty"><span>Профилна система не е избрана</span><p>Свободната скица пази конструкцията system-neutral. Създай оферта от модула, за да активираш Profile Resolution.</p></div>
+    }
+    if (!selectedProfileSystem || !effectiveProfileResolution) {
+      return <div className="constructor-selection-empty"><span>Няма активен Profile Resolution</span><p>Избери профилна система в офертата.</p></div>
+    }
+    if (selectedAngledDivider) {
+      return renderProfileAssignment('ПРОФИЛ НА ДЕЛИТЕЛЯ', getDividerProfileCandidates(selectedProfileSystem), effectiveProfileResolution.dividers[selectedAngledDivider.id]?.profileCode ?? '', (profileCode) => applyDividerProfile(selectedAngledDivider.id, profileCode))
+    }
+    if (selectedDivider) {
+      return renderProfileAssignment('ПРОФИЛ НА ДЕЛИТЕЛЯ', getDividerProfileCandidates(selectedProfileSystem), effectiveProfileResolution.dividers[selectedDivider.id]?.profileCode ?? '', (profileCode) => applyDividerProfile(selectedDivider.id, profileCode))
+    }
+    if (selectedField) {
+      if (selectedField.fieldType === 'fixed') return <div className="constructor-property-row"><span>ПРОФИЛ НА КРИЛОТО</span><b>Не се изисква · FIX полето няма логическо крило.</b></div>
+      if (selectedField.fieldType === null) return <div className="constructor-property-row"><span>ПРОФИЛ НА КРИЛОТО</span><b>Първо задай FIX или Отваряемо. FacadeFlow не предполага профил.</b></div>
+      const candidates = getFieldSashProfileCandidates(selectedProfileSystem, moduleSummary.productType, selectedField.fieldType)
+      return candidates.length > 0
+        ? renderProfileAssignment('ПРОФИЛ НА КРИЛОТО', candidates, effectiveProfileResolution.fieldSashes[selectedField.id]?.profileCode ?? '', applySelectedFieldSashProfile)
+        : <div className="constructor-property-row"><span>ПРОФИЛ НА КРИЛОТО</span><b>Избери стандартен тип изделие Прозорец / Врата, за да се определи ролята sash / door-sash.</b></div>
+    }
+    if (frameSelected && frame) {
+      return renderProfileAssignment('ПРОФИЛ НА КАСАТА', getFrameProfileCandidates(selectedProfileSystem), effectiveProfileResolution.frame?.profileCode ?? '', applyFrameProfile)
+    }
+    return <div className="constructor-selection-empty"><span>Избери конструктивен елемент</span><p>Профилът се присвоява само към каса, делител или OPERABLE поле.</p></div>
+  }
+
+  const renderSelectedDimensionsPane = () => {
+    const moduleSummaryCard = dimensionalChain ? (
+      <div className="constructor-inspector-module-dimensions">
+        <div><span>ВЪНШЕН ГАБАРИТ</span><b>{formatResolvedDimension(dimensionalChain.overallWidth)} × {formatResolvedDimension(dimensionalChain.overallHeight)}</b></div>
+        <div><span>PROFILE GEOMETRY</span><b>NO</b></div>
+        <div><span>MACHINE READY</span><b>NO</b></div>
+      </div>
+    ) : null
+
+    if (selectedAngledDivider && selectedProfileSystem && effectiveProfileResolution) {
+      return <>{moduleSummaryCard}{renderProfileDimensionalSemantics('РАЗМЕРНА СЕМАНТИКА НА ДЕЛИТЕЛЯ', getAssignedProfileDimensionalReadModel(selectedProfileSystem, effectiveProfileResolution.dividers[selectedAngledDivider.id]))}</>
+    }
+    if (selectedDivider && selectedProfileSystem && effectiveProfileResolution) {
+      return <>{moduleSummaryCard}{renderProfileDimensionalSemantics('РАЗМЕРНА СЕМАНТИКА НА ДЕЛИТЕЛЯ', getAssignedProfileDimensionalReadModel(selectedProfileSystem, effectiveProfileResolution.dividers[selectedDivider.id]))}</>
+    }
+    if (selectedField && frame) {
+      if (!selectedFieldDimensionalChain) {
+        return <>{moduleSummaryCard}<div className="constructor-selection-empty"><span>Само схемни FIELD размери</span><p>{Math.round(selectedField.bounds.widthMm)} × {Math.round(selectedField.bounds.heightMm)} mm. Profile-aware размерите още не са достъпни.</p></div></>
+      }
+      return (
+        <>{moduleSummaryCard}<div className="constructor-field-dimensional-chain">
+          <div className="constructor-profile-semantics-heading"><span>РАЗМЕРНА ВЕРИГА НА ПОЛЕ {selectedField.sequence}</span><b>{selectedField.fieldType === 'operable' ? 'OPERABLE' : selectedField.fieldType === 'fixed' ? 'FIX' : 'UNSET'}</b></div>
+          {renderResolvedDimension(selectedFieldDimensionalChain.schematicBayWidth)}
+          {renderResolvedDimension(selectedFieldDimensionalChain.schematicClearWidth)}
+          {renderResolvedDimension(selectedFieldDimensionalChain.schematicClearHeight)}
+          {selectedField.fieldType === 'operable' && renderProfileDimensionalSemantics('РАЗМЕРНА СЕМАНТИКА НА КРИЛОТО', selectedFieldDimensionalChain.sashProfile)}
+          <div className="constructor-dimensional-result-grid">
+            {selectedField.fieldType === 'operable' && <>{renderResolvedDimension(selectedFieldDimensionalChain.sashOverallWidth)}{renderResolvedDimension(selectedFieldDimensionalChain.sashOverallHeight)}</>}
+            {renderResolvedDimension(selectedFieldDimensionalChain.visibleGlazingWidth)}
+            {renderResolvedDimension(selectedFieldDimensionalChain.visibleGlazingHeight)}
+            {renderResolvedDimension(selectedFieldDimensionalChain.glassCutWidth)}
+            {renderResolvedDimension(selectedFieldDimensionalChain.glassCutHeight)}
+          </div>
+        </div></>
+      )
+    }
+    if (frameSelected && frame) {
+      return <>{moduleSummaryCard}{renderProfileDimensionalSemantics('РАЗМЕРНА СЕМАНТИКА НА КАСАТА · Профилна дълбочина / видимо лице', dimensionalChain?.frameProfile ?? null)}</>
+    }
+    return <>{moduleSummaryCard}<div className="constructor-selection-empty"><span>Избери елемент за размерна семантика</span><p>01B различава габарит, модулна зона, FIELD отвор, крило, видимо стъкло и glass cut.</p></div></>
+  }
 
   return (
     <section className={`constructor-shell${showModuleStrip ? ' has-module-navigation' : ''}`} aria-label={`FacadeFlow Constructor · ${title}`}>
@@ -1840,6 +2145,23 @@ export default function ConstructorShell({
                   </>
                 )}
 
+                {simpleBayDimensions.length > 0 && dragState?.kind !== 'create' && (
+                  <div className="constructor-bay-dimension-band" aria-label="Схемни модулни ширини">
+                    {simpleBayDimensions.map((bay) => (
+                      <div
+                        key={`bay-dimension-${bay.sequence}`}
+                        className="constructor-bay-dimension"
+                        style={{
+                          left: `${bay.startMm * pxPerMm}px`,
+                          width: `${bay.widthMm * pxPerMm}px`,
+                        }}
+                      >
+                        <span>{Math.round(bay.widthMm)} mm</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <div className="constructor-frame-dimension constructor-frame-dimension-width">
                   <span>{Math.round(displayedFrame.widthMm)} mm</span>
                 </div>
@@ -1870,6 +2192,10 @@ export default function ConstructorShell({
                     : field.openingHanding === 'right'
                       ? 'ДЯСНО'
                       : null
+                  const dimensionalField = dimensionalChain?.fields.find((item) => item.fieldId === field.id)
+                  const bayWidthLabel = dimensionalField?.schematicBayWidth.valueMm === null || dimensionalField?.schematicBayWidth.valueMm === undefined
+                    ? 'UNKNOWN'
+                    : `${Math.round(dimensionalField.schematicBayWidth.valueMm)} mm`
                   return (
                     <button
                       key={`details-${field.id}`}
@@ -1888,9 +2214,9 @@ export default function ConstructorShell({
                     >
                       <span className="constructor-field-detail-number">{field.sequence}</span>
                       <span className="constructor-field-detail-main">
-                        <b>{Math.round(field.bounds.widthMm)} × {Math.round(field.bounds.heightMm)} mm</b>
+                        <b>FIELD {Math.round(field.bounds.widthMm)} × {Math.round(field.bounds.heightMm)} mm</b>
                         <small>
-                          {field.fieldType === 'fixed'
+                          МОДУЛ {bayWidthLabel} · {field.fieldType === 'fixed'
                             ? 'FIX'
                             : field.fieldType === 'operable'
                               ? 'КРИЛО'
@@ -1937,500 +2263,93 @@ export default function ConstructorShell({
           </footer>
         </section>
 
-        <aside className="constructor-properties-panel" aria-label="Свойства и настройки">
+        <aside className="constructor-properties-panel constructor-compact-inspector" aria-label="Свойства и настройки">
+          <span className="constructor-contract-marker" aria-hidden="true">Заключени общи настройки · PROFILE RESOLUTION 01A · геометрията остава схемна · PROFILE RESOLUTION 01B · Размерна верига · семантика преди геометрия · Схемни модулни ширини · PROFILE-AWARE GEOMETRY · GLASS CUT SIZE · Тези стойности важат за всички модули в тази оферта · не се измисля профилен код или производствена геометрия · ширината по-късно идва от Profile Data</span>
           {isFreeMode ? (
-            <section className="constructor-properties-section constructor-free-context">
-              <div className="constructor-panel-heading">
-                <span>
-                  {hasActiveModule
-                    ? `МОДУЛ ${String(moduleNumber).padStart(2, '0')}`
-                    : 'СВОБОДНА СКИЦА'}
-                </span>
-                <b>
-                  {hasActiveModule
-                    ? `Свободна скица · Модул ${moduleNumber}`
-                    : 'Без модул · без оферта и без заключена система'}
-                </b>
+            <section className="constructor-properties-section constructor-inspector-context-card">
+              <div className="constructor-inspector-context-summary">
+                <div><span>КОНТЕКСТ</span><b>{hasActiveModule ? `Свободна скица · Модул ${moduleNumber}` : 'Свободна скица'}</b></div>
+                <em>SYSTEM NEUTRAL</em>
               </div>
-
-              <div className="constructor-free-settings">
-                <div><span>Профилна система</span><b>Не е избрана</b><em>◇</em></div>
-                <div><span>Цвят</span><b>Не е избран</b><em>◇</em></div>
-                <div><span>Фолиране</span><b>Не е избрано</b><em>◇</em></div>
-                <div><span>Стъклопакет</span><b>Не е избран</b><em>◇</em></div>
-                <div><span>Обков</span><b>Не е избран</b><em>◇</em></div>
-              </div>
-
-              <p className="constructor-invariant-note">
-                В свободен режим пазим конструктивния замисъл. Профилната система
-                се избира по-късно и не се предполага автоматично.
-              </p>
-
+              <details className="constructor-inspector-details">
+                <summary>Настройки на модула</summary>
+                <div className="constructor-free-settings constructor-inspector-settings-grid">
+                  <div><span>Профилна система</span><b>Не е избрана</b><em>◇</em></div>
+                  <div><span>Цвят</span><b>Не е избран</b><em>◇</em></div>
+                  <div><span>Фолиране</span><b>Не е избрано</b><em>◇</em></div>
+                  <div><span>Стъклопакет</span><b>Не е избран</b><em>◇</em></div>
+                  <div><span>Обков</span><b>Не е избран</b><em>◇</em></div>
+                </div>
+              </details>
               {onCreateOfferFromSketch && (
-                <button
-                  type="button"
-                  className="constructor-create-offer"
-                  disabled={!canEditConstruction || !construction}
-                  onClick={() => onCreateOfferFromSketch(construction ? constructionToSnapshot(construction) : null)}
-                >
-                  {hasActiveModule
-                    ? `Създай оферта от Модул ${moduleNumber}`
-                    : 'Създай оферта от тази скица'}
+                <button type="button" className="constructor-create-offer constructor-create-offer-compact" disabled={!canEditConstruction || !construction} onClick={() => onCreateOfferFromSketch(construction ? constructionToSnapshot(construction) : null)}>
+                  {hasActiveModule ? `Създай оферта от Модул ${moduleNumber}` : 'Създай оферта от тази скица'}
                 </button>
               )}
             </section>
           ) : (
-            <section className="constructor-properties-section">
-              <div className="constructor-panel-heading">
-                <span>ОФЕРТА</span>
-                <b>Заключени общи настройки</b>
+            <section className="constructor-properties-section constructor-inspector-context-card">
+              <div className="constructor-inspector-context-summary">
+                <div><span>ОФЕРТА</span><b>{offerContext?.profileSystemLabel ?? 'Без система'} · {offerContext?.colorLabel ?? 'Без цвят'}</b></div>
+                <em>ЗАКЛЮЧЕНО</em>
               </div>
-
-              <div className="constructor-offer-locks">
-                <div><span>Профилна система</span><b>{offerContext?.profileSystemLabel}</b><em>🔒</em></div>
-                <div><span>Цвят</span><b>{offerContext?.colorLabel}</b><em>🔒</em></div>
-                <div><span>Фолиране</span><b>{offerContext?.foilModeLabel}</b><em>🔒</em></div>
-                <div><span>Стъклопакет</span><b>{offerContext?.glazingLabel}</b><em>🔒</em></div>
-                <div><span>Обков</span><b>{offerContext?.hardwareLabel}</b><em>🔒</em></div>
-              </div>
-
-              <p className="constructor-invariant-note">
-                Тези стойности важат за всички модули в тази оферта и не се променят
-                от Конструктора.
-              </p>
+              <details className="constructor-inspector-details">
+                <summary>Общи настройки на офертата</summary>
+                <div className="constructor-offer-locks constructor-inspector-settings-grid">
+                  <div><span>Профилна система</span><b>{offerContext?.profileSystemLabel}</b><em>🔒</em></div>
+                  <div><span>Цвят</span><b>{offerContext?.colorLabel}</b><em>🔒</em></div>
+                  <div><span>Фолиране</span><b>{offerContext?.foilModeLabel}</b><em>🔒</em></div>
+                  <div><span>Стъклопакет</span><b>{offerContext?.glazingLabel}</b><em>🔒</em></div>
+                  <div><span>Обков</span><b>{offerContext?.hardwareLabel}</b><em>🔒</em></div>
+                </div>
+              </details>
             </section>
           )}
 
-          {!isFreeMode && selectedProfileSystem && effectiveProfileResolution && (
-            <section className="constructor-properties-section constructor-profile-resolution-section">
-              <div className="constructor-panel-heading">
-                <span>PROFILE RESOLUTION 01A</span>
-                <b>Ръчно присвояване на реални профили</b>
+          <section className="constructor-properties-section constructor-inspector-main-card">
+            <div className="constructor-inspector-selection-header">
+              <div>
+                <span>ИЗБРАН ЕЛЕМЕНТ</span>
+                <b>{selectedElementTitle}</b>
+                <small>{selectedElementMeta}</small>
               </div>
-
-              <div className="constructor-profile-resolution-progress">
-                <span>РАЗРЕШЕНИ ЕЛЕМЕНТИ</span>
-                <b>{profileResolutionProgress.assigned} / {profileResolutionProgress.required}</b>
-              </div>
-
-              <p className="constructor-invariant-note">
-                Кодовете идват само от {selectedProfileSystem.manufacturer} {selectedProfileSystem.name}.
-                Изборът е human-confirmed; геометрията остава схемна 60/40 mm до следващия Profile Semantics етап.
-              </p>
-            </section>
-          )}
-
-          <section className="constructor-properties-section">
-            <div className="constructor-panel-heading">
-              <span>СВОЙСТВА</span>
-              <b>{selectedAngledDivider
-                ? 'Ъглов делител'
-                : selectedDivider
-                  ? (selectedDivider.axis === 'vertical' ? 'Вертикален делител' : 'Хоризонтален делител')
-                  : selectedField
-                  ? `Поле ${selectedField.sequence}`
-                  : frameSelected && frame
-                    ? 'Каса / рамка'
-                    : 'Избран елемент'}</b>
+              {!isFreeMode && selectedProfileSystem && effectiveProfileResolution ? (
+                <div className="constructor-inspector-resolution-badge" title="Profile Resolution · human assignments">
+                  <span>PROFILE</span>
+                  <b>{profileResolutionProgress.assigned}/{profileResolutionProgress.required}</b>
+                </div>
+              ) : (
+                <div className="constructor-inspector-resolution-badge is-neutral">
+                  <span>PROFILE</span>
+                  <b>—</b>
+                </div>
+              )}
             </div>
 
-            {selectedAngledDivider && frame ? (
-              <div className="constructor-frame-properties constructor-divider-properties">
-                <div className="constructor-property-row">
-                  <span>Горен край</span>
-                  <b>{Math.round(selectedAngledDivider.topOffsetMm)} mm от левия ръб на родителското ПОЛЕ</b>
-                </div>
-                <div className="constructor-property-row">
-                  <span>Долен край</span>
-                  <b>{Math.round(selectedAngledDivider.bottomOffsetMm)} mm от левия ръб на родителското ПОЛЕ</b>
-                </div>
-                <div className="constructor-property-row">
-                  <span>Дължина</span>
-                  <b>{Math.round(selectedAngledDivider.lengthMm)} mm · автоматично от двата края</b>
-                </div>
-                <div className="constructor-property-row">
-                  <span>Схемна видима ширина</span>
-                  <b>{Math.round(selectedAngledDivider.thicknessMm)} mm · read-only до Profile Resolution</b>
-                </div>
-                {selectedProfileSystem && effectiveProfileResolution && renderProfileAssignment(
-                  'ПРОФИЛ НА ДЕЛИТЕЛЯ',
-                  getDividerProfileCandidates(selectedProfileSystem),
-                  effectiveProfileResolution.dividers[selectedAngledDivider.id]?.profileCode ?? '',
-                  (profileCode) => applyDividerProfile(selectedAngledDivider.id, profileCode),
-                )}
-                <div className="constructor-property-row">
-                  <span>Управление</span>
-                  <b>Горен grip и долен grip се местят независимо · drag върху тялото мести целия делител</b>
-                </div>
-                <div className="constructor-property-row">
-                  <span>Закотвяне в ъгъл</span>
-                  <b>0 mm / пълна ширина = точен вътрешен ъгъл · snap в последните 30 mm</b>
-                </div>
-                <div className="constructor-property-row">
-                  <span>FIELD topology</span>
-                  <b>Двете страни са реални polygon / triangle / trapezoid ПОЛЕТА</b>
-                </div>
-                <button type="button" className="constructor-delete-divider" onClick={removeSelectedAngledDivider}>
-                  Изтрий ъгловия делител
-                </button>
-                <p className="constructor-invariant-note">
-                  Ъгловият делител е конструктивен split, не CAD линия. Краищата могат да се закотвят точно във вътрешен ъгъл; при ъгъл FIELD topology допуска triangle ПОЛЕ.
-                </p>
-              </div>
-            ) : selectedDivider && frame ? (
-              <div className="constructor-frame-properties constructor-divider-properties">
-                <label>
-                  <span>{selectedDivider.axis === 'vertical' ? 'Схемен размер ляво поле' : 'Схемен размер горно поле'}</span>
-                  <div><input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    aria-label="Точна позиция на делителя в милиметри"
-                    value={dividerPositionDraft}
-                    onFocus={(event) => event.currentTarget.select()}
-                    onChange={(event) => setDividerPositionDraft(event.target.value)}
-                    onBlur={commitDividerPosition}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        commitDividerPosition()
-                        event.currentTarget.blur()
-                      }
-                      if (event.key === 'Escape') {
-                        resetDividerPositionDraft()
-                        event.currentTarget.blur()
-                      }
-                    }}
-                  /><em>mm</em></div>
-                </label>
-                <div
-                  className="constructor-divider-balance"
-                  aria-label="Схемно разпределение около делителя"
-                >
-                  <div>
-                    <span>{selectedDivider.axis === 'vertical' ? 'ЛЯВО ПОЛЕ' : 'ГОРНО ПОЛЕ'}</span>
-                    <b>{Math.round(selectedDivider.firstClearMm)} mm</b>
-                  </div>
-                  <i aria-hidden="true">+</i>
-                  <div className="is-divider">
-                    <span>ДЕЛИТЕЛ</span>
-                    <b>{Math.round(selectedDivider.thicknessMm)} mm</b>
-                  </div>
-                  <i aria-hidden="true">+</i>
-                  <div>
-                    <span>{selectedDivider.axis === 'vertical' ? 'ДЯСНО ПОЛЕ' : 'ДОЛНО ПОЛЕ'}</span>
-                    <b>{Math.round(selectedDivider.secondClearMm)} mm</b>
-                  </div>
-                </div>
-                <div className="constructor-property-row">
-                  <span>Ориентация</span>
-                  <b>{selectedDivider.axis === 'vertical' ? 'Вертикален' : 'Хоризонтален'}</b>
-                </div>
-                <div className="constructor-property-row">
-                  <span>Дължина на делителя</span>
-                  <b>{Math.round(selectedDivider.endMm - selectedDivider.startMm)} mm · автоматично от родителското ПОЛЕ</b>
-                </div>
-                <div className="constructor-property-row">
-                  <span>Схемна видима ширина</span>
-                  <b>{Math.round(selectedDivider.thicknessMm)} mm · автоматична до Profile Resolution</b>
-                </div>
-                <div className="constructor-property-row">
-                  <span>Управление с мишка</span>
-                  <b>Променя се само положението на делителя</b>
-                </div>
-                {selectedProfileSystem && effectiveProfileResolution && renderProfileAssignment(
-                  'ПРОФИЛ НА ДЕЛИТЕЛЯ',
-                  getDividerProfileCandidates(selectedProfileSystem),
-                  effectiveProfileResolution.dividers[selectedDivider.id]?.profileCode ?? '',
-                  (profileCode) => applyDividerProfile(selectedDivider.id, profileCode),
-                )}
-                <div className="constructor-property-row">
-                  <span>Геометрична логика</span>
-                  <b>ПОЛЕ + {Math.round(selectedDivider.thicknessMm)} mm делител + ПОЛЕ</b>
-                </div>
-                <div className="constructor-property-row">
-                  <span>Обхват</span>
-                  <b>Само в родителското поле · FIELD topology</b>
-                </div>
-                <div className="constructor-property-row">
-                  <span>ПОЛЕТА в модула</span>
-                  <b>{conceptualFieldCount}</b>
-                </div>
-                <button
-                  type="button"
-                  className="constructor-delete-divider"
-                  onClick={removeSelectedDivider}
-                >
-                  Изтрий делителя
-                </button>
-                <p className="constructor-invariant-note">
-                  Drag върху делителя променя само положението му. Дължината следва автоматично родителското ПОЛЕ. Кодът вече може да бъде human-confirmed; ширината по-късно идва от Profile Data след размерна семантика и остава read-only схемна стойност в 01A.
-                </p>
-              </div>
-            ) : selectedField && frame ? (
-              <div className="constructor-frame-properties constructor-field-properties">
-                <div className="constructor-property-row">
-                  <span>Идентификатор</span>
-                  <b>{selectedField.id}</b>
-                </div>
-                <div className="constructor-property-row">
-                  <span>{selectedField.polygon ? 'Габарит на polygon ПОЛЕТО' : 'Вътрешен схемен размер на полето'}</span>
-                  <b>{Math.round(selectedField.bounds.widthMm)} × {Math.round(selectedField.bounds.heightMm)} mm{selectedField.polygon ? ' · polygon' : ''}</b>
-                </div>
-                <div className="constructor-property-row">
-                  <span>Позиция във вътрешния контур</span>
-                  <b>X {Math.round(selectedField.bounds.xMm - frameFaceMm)} · Y {Math.round(selectedField.bounds.yMm - frameFaceMm)} mm</b>
-                </div>
-                <div className="constructor-property-row">
-                  <span>Тип поле</span>
-                  <b>
-                    {selectedField.fieldType === 'fixed'
-                      ? 'Фиксирано · FIX'
-                      : selectedField.fieldType === 'operable'
-                        ? 'Отваряемо · логическо крило'
-                        : 'Не е зададен'}
-                  </b>
-                </div>
+            <div className="constructor-inspector-tabs" role="tablist" aria-label="Контекст на избрания елемент">
+              <button type="button" role="tab" aria-selected={inspectorTab === 'properties'} className={inspectorTab === 'properties' ? 'is-active' : ''} onClick={() => setInspectorTab('properties')}>Свойства</button>
+              <button type="button" role="tab" aria-selected={inspectorTab === 'profile'} className={inspectorTab === 'profile' ? 'is-active' : ''} onClick={() => setInspectorTab('profile')}>Профил</button>
+              <button type="button" role="tab" aria-selected={inspectorTab === 'dimensions'} className={inspectorTab === 'dimensions' ? 'is-active' : ''} onClick={() => setInspectorTab('dimensions')}>Размери</button>
+            </div>
 
-                <div className="constructor-field-semantic-controls">
-                  <span>ТИП ПОЛЕ</span>
-                  <div className="constructor-field-semantic-buttons">
-                    <button
-                      type="button"
-                      className={selectedField.fieldType === 'fixed' ? 'is-selected' : ''}
-                      onClick={() => applyFieldType(selectedField.id, 'fixed')}
-                    >
-                      Фиксирано
-                    </button>
-                    <button
-                      type="button"
-                      className={selectedField.fieldType === 'operable' ? 'is-selected' : ''}
-                      onClick={() => applyFieldType(selectedField.id, 'operable')}
-                    >
-                      Отваряемо / крило
-                    </button>
-                    <button
-                      type="button"
-                      className="is-clear"
-                      disabled={selectedField.fieldType === null}
-                      onClick={() => applyFieldType(selectedField.id, null)}
-                    >
-                      Изчисти
-                    </button>
-                  </div>
-                </div>
-
-                {selectedField.fieldType === 'operable' && selectedProfileSystem && effectiveProfileResolution && (
-                  getFieldSashProfileCandidates(
-                    selectedProfileSystem,
-                    moduleSummary.productType,
-                    selectedField.fieldType,
-                  ).length > 0
-                    ? renderProfileAssignment(
-                        'ПРОФИЛ НА КРИЛОТО',
-                        getFieldSashProfileCandidates(
-                          selectedProfileSystem,
-                          moduleSummary.productType,
-                          selectedField.fieldType,
-                        ),
-                        effectiveProfileResolution.fieldSashes[selectedField.id]?.profileCode ?? '',
-                        applySelectedFieldSashProfile,
-                      )
-                    : (
-                        <div className="constructor-property-row">
-                          <span>ПРОФИЛ НА КРИЛОТО</span>
-                          <b>Избери стандартен тип изделие Прозорец / Врата, за да се определи ролята sash / door-sash.</b>
-                        </div>
-                      )
-                )}
-
-                {selectedField.fieldType === 'fixed' && (
-                  <div className="constructor-property-row">
-                    <span>ПРОФИЛ НА КРИЛОТО</span>
-                    <b>Не се изисква · FIX полето няма логическо крило.</b>
-                  </div>
-                )}
-
-                {selectedField.fieldType === null && (
-                  <div className="constructor-property-row">
-                    <span>ПРОФИЛ НА КРИЛОТО</span>
-                    <b>Първо задай FIX или Отваряемо. FacadeFlow не предполага профил.</b>
-                  </div>
-                )}
-
-                {selectedField.fieldType === 'operable' && (
-                  <>
-                    <div className="constructor-field-semantic-controls">
-                      <span>РЕЖИМ НА ОТВАРЯНЕ</span>
-                      <div className="constructor-field-semantic-buttons is-three">
-                        {([
-                          ['side-hinged', 'Странично'],
-                          ['tilt', 'Падащо'],
-                          ['tilt-turn', 'Странично + падащо'],
-                        ] as const).map(([modeId, label]) => (
-                          <button
-                            key={modeId}
-                            type="button"
-                            className={selectedField.openingMode === modeId ? 'is-selected' : ''}
-                            onClick={() => applySelectedFieldOpeningMode(modeId)}
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {(selectedField.openingMode === 'side-hinged' ||
-                      selectedField.openingMode === 'tilt-turn') && (
-                      <div className="constructor-field-semantic-controls">
-                        <span>РАБОТНА ПОСОКА</span>
-                        <div className="constructor-field-semantic-buttons">
-                          <button
-                            type="button"
-                            className={selectedField.openingHanding === 'left' ? 'is-selected' : ''}
-                            onClick={() => applySelectedFieldOpeningHanding('left')}
-                          >
-                            Ляво
-                          </button>
-                          <button
-                            type="button"
-                            className={selectedField.openingHanding === 'right' ? 'is-selected' : ''}
-                            onClick={() => applySelectedFieldOpeningHanding('right')}
-                          >
-                            Дясно
-                          </button>
-                          <button
-                            type="button"
-                            className="is-clear"
-                            disabled={selectedField.openingHanding === null}
-                            onClick={() => applySelectedFieldOpeningHanding(null)}
-                          >
-                            Изчисти
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="constructor-property-row">
-                      <span>Визуализация на крилото</span>
-                      <b>
-                        {selectedField.openingMode === null
-                          ? 'Контур на крило · избери режим на отваряне'
-                          : selectedField.openingMode === 'tilt'
-                            ? 'Падащ opening symbol · без ляво / дясно'
-                            : selectedField.openingHanding === null
-                              ? 'Избери Ляво / Дясно за огледален opening symbol'
-                              : `${selectedField.openingMode === 'tilt-turn' ? 'Комбиниран' : 'Страничен'} ${selectedField.openingHanding === 'left' ? 'ляв' : 'десен'} opening symbol`}
-                      </b>
-                    </div>
-                  </>
-                )}
-
-                <div className="constructor-field-action-hint">
-                  <span>РАЗДЕЛЯНЕ НА ПОЛЕ</span>
-                  <p>Избери вертикален или хоризонтален делител и кликни в това поле. Делителят няма да преминава автоматично през съседните полета.</p>
-                </div>
-                <p className="constructor-invariant-note">
-                  FIX / отваряемо / режим / ляво-дясно са канонични FIELD семантики.
-                  Opening symbol-ът следва работната конвенция на Конструктора и не избира профил, обков или машинна геометрия.
-                </p>
-              </div>
-            ) : frameSelected && frame ? (
-              <div className="constructor-frame-properties">
-                <label>
-                  <span>Ширина</span>
-                  <div><input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    aria-label="Точна ширина в милиметри"
-                    value={widthDraft}
-                    onFocus={(event) => event.currentTarget.select()}
-                    onChange={(event) => setWidthDraft(event.target.value)}
-                    onBlur={() => commitNumericDimension('widthMm')}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        commitNumericDimension('widthMm')
-                        event.currentTarget.blur()
-                      }
-                      if (event.key === 'Escape') {
-                        resetNumericDimensionDraft('widthMm')
-                        event.currentTarget.blur()
-                      }
-                    }}
-                  /><em>mm</em></div>
-                </label>
-                <label>
-                  <span>Височина</span>
-                  <div><input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    aria-label="Точна височина в милиметри"
-                    value={heightDraft}
-                    onFocus={(event) => event.currentTarget.select()}
-                    onChange={(event) => setHeightDraft(event.target.value)}
-                    onBlur={() => commitNumericDimension('heightMm')}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        commitNumericDimension('heightMm')
-                        event.currentTarget.blur()
-                      }
-                      if (event.key === 'Escape') {
-                        resetNumericDimensionDraft('heightMm')
-                        event.currentTarget.blur()
-                      }
-                    }}
-                  /><em>mm</em></div>
-                </label>
-
-                <div className="constructor-property-row">
-                  <span>Позиция</span>
-                  <b>X {Math.round(frame.xMm)} · Y {Math.round(frame.yMm)} mm</b>
-                </div>
-                <div className="constructor-property-row">
-                  <span>Избран ръб</span>
-                  <b>{selectedEdge ? ({ left: 'Ляв', right: 'Десен', top: 'Горен', bottom: 'Долен' } as const)[selectedEdge] : 'Цялата каса'}</b>
-                </div>
-                <div className="constructor-property-row">
-                  <span>Схемна видима ширина</span>
-                  <b>{Math.round(frameFaceMm)} mm · остава схемна в Profile Resolution 01A</b>
-                </div>
-                {selectedProfileSystem && effectiveProfileResolution && renderProfileAssignment(
-                  'ПРОФИЛ НА КАСАТА',
-                  getFrameProfileCandidates(selectedProfileSystem),
-                  effectiveProfileResolution.frame?.profileCode ?? '',
-                  applyFrameProfile,
-                )}
-                <div className="constructor-property-row">
-                  <span>Профилна дълбочина</span>
-                  <b>Не е определена без системна семантика</b>
-                </div>
-
-                <p className="constructor-invariant-note">
-                  Drag на ръб променя габарита. За точен размер въведи число и натисни Enter или излез от полето.
-                  В свободна скица не се измисля профилен код или производствена геометрия.
-                </p>
-              </div>
-            ) : (
-              <div className="constructor-selection-empty">
-                <span>{frame ? 'Маркирай касата или неин ръб' : 'Няма създадена каса'}</span>
-                <p>
-                  Frame Interior 01C.3.2 поддържа параметрична каса, реални вътрешни ПОЛЕТА и локални физически делители.
-                  Делителят се мести по позиция; дължината следва ПОЛЕТО, а ширината се определя схемно/от Profile Data.
-                </p>
-              </div>
-            )}
+            <div className="constructor-inspector-pane" role="tabpanel">
+              {inspectorTab === 'properties'
+                ? renderSelectedPropertiesPane()
+                : inspectorTab === 'profile'
+                  ? renderSelectedProfilePane()
+                  : renderSelectedDimensionsPane()}
+            </div>
           </section>
 
-          <section className="constructor-properties-section constructor-safety-card">
-            <span>ТЕХНИЧЕСКА ГРАНИЦА</span>
-            <b>Конструктивна скица, не машинна геометрия</b>
+          <details className="constructor-properties-section constructor-safety-card constructor-safety-details">
+            <summary>
+              <span>ТЕХНИЧЕСКА ГРАНИЦА</span>
+              <b>Конструктивна скица · не машинна геометрия</b>
+            </summary>
             <p>
-              Касата, ПОЛЕТАТА и локалните делители са параметрични. Profile Resolution 01A пази само
-              human-confirmed кодове; профилните размерни семантики, реалната profile-aware геометрия,
-              армировките, срезовете и машинните данни още не се генерират.
+              Profile Resolution 01A пази human-confirmed кодове, а 01B отделя потвърдените размерни семантики от raw catalog callouts. Реалната profile-aware геометрия, застъпванията на крило, glazing deductions, армировките, срезовете и машинните данни още не се генерират.
             </p>
-          </section>
+          </details>
         </aside>
       </div>
     </section>
