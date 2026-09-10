@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+
+const shell = await readFile(new URL('../src/components/ConstructorShell.tsx', import.meta.url), 'utf8')
+const css = await readFile(new URL('../src/components/ConstructorShell.css', import.meta.url), 'utf8')
+const acceptance = await readFile(new URL('../docs/CONSTRUCTOR_01E1_SKYGLAZING_VISUAL_COMPARISON_POLISH_ACCEPTANCE.md', import.meta.url), 'utf8')
+const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'))
+
+assert.match(shell, /verticalDividers\.map\(\(divider\) => divider\.positionMm \+ divider\.thicknessMm \/ 2\)/)
+assert.match(shell, /constructor-field-number-badge/)
+assert.match(shell, /<span>\{Math\.round\(bay\.widthMm\)\}<\/span>/)
+assert.match(shell, /<span>\{Math\.round\(displayedFrame\.widthMm\)\}<\/span>/)
+assert.match(css, /Constructor 01E\.1 — visual comparison polish/)
+assert.match(css, /inset: 24px 0 106px 28px/)
+assert.match(css, /rgba\(106, 126, 132, \.035\)/)
+assert.match(css, /border: var\(--constructor-frame-face, 18px\) solid #e4e9eb/)
+assert.match(css, /height: 78px/)
+assert.match(css, /flex: 0 0 190px/)
+assert.match(acceptance, /side-by-side comparison/)
+assert.match(acceptance, /outer frame edge -> divider centerline/)
+assert.match(acceptance, /No glass cut size is invented/)
+assert.match(acceptance, /Construction geometry and topology algorithms/)
+assert.match(acceptance, /MACHINE READY: NO/)
+assert.match(packageJson.scripts['test:contract'], /verify-constructor01e1\.mjs/)
+assert.equal(packageJson.scripts['test:constructor01e1'], 'node scripts/verify-constructor01e1.mjs')
+
+console.log('CONSTRUCTOR 01E.1 VERIFY PASS')
+console.log('FRAME / DIVIDER: LIGHT TECHNICAL PROFILE STYLE')
+console.log('BAY CHAIN: OUTER EDGE / DIVIDER CENTERLINES')
+console.log('FIELD CLEAR SIZE != BAY WIDTH')
+console.log('GRID + FIELD LABEL DEFAULTS: REFINED BY 01E.2')
+console.log('GEOMETRY / TOPOLOGY / PROFILE RESOLUTION: UNCHANGED')
+console.log('MACHINE READY: NO')

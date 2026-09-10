@@ -488,7 +488,7 @@ export default function ConstructorShell({
     ? dimensionalChain?.fields.find((field) => field.fieldId === selectedField.id) ?? null
     : null
   const simpleBayDimensions = useMemo(() => {
-    if (!frame || !dimensionalChain || fields.length === 0) return []
+    if (!frame || fields.length < 2) return []
     if (fields.some((field) => Boolean(field.polygon))) return []
     const first = fields[0]
     const sameHorizontalBand = fields.every((field) =>
@@ -497,19 +497,25 @@ export default function ConstructorShell({
     )
     if (!sameHorizontalBand) return []
 
-    const widths = dimensionalChain.fields.map((field) => field.schematicBayWidth.valueMm)
-    if (widths.some((value) => value === null)) return []
-    const numericWidths = widths as number[]
-    const sum = numericWidths.reduce((total, value) => total + value, 0)
-    if (Math.abs(sum - frame.widthMm) > 0.1) return []
+    const verticalDividers = dividers
+      .filter((divider) => divider.axis === 'vertical')
+      .slice()
+      .sort((a, b) => a.positionMm - b.positionMm)
+    if (verticalDividers.length !== Math.max(0, fields.length - 1)) return []
 
-    let startMm = 0
-    return numericWidths.map((widthMm, index) => {
-      const item = { sequence: fields[index].sequence, startMm, widthMm }
-      startMm += widthMm
-      return item
-    })
-  }, [dimensionalChain, fields, frame])
+    const boundaries = [
+      0,
+      ...verticalDividers.map((divider) => divider.positionMm + divider.thicknessMm / 2),
+      frame.widthMm,
+    ]
+    if (boundaries.some((value, index) => index > 0 && value <= boundaries[index - 1])) return []
+
+    return boundaries.slice(0, -1).map((startMm, index) => ({
+      sequence: fields[index]?.sequence ?? index + 1,
+      startMm,
+      widthMm: boundaries[index + 1] - startMm,
+    }))
+  }, [dividers, fields, frame])
 
   useEffect(() => {
     setInspectorTab('properties')
@@ -2166,7 +2172,7 @@ export default function ConstructorShell({
           </button>
         </aside>
 
-        <section className="constructor-workarea" aria-label="CAD работно поле">
+        <section className="constructor-workarea" aria-label="CAD работно поле">{/* CONSTRUCTOR 01E - TECHNICAL DRAWING CLARITY · 01E.2 MINIMAL FIELD BADGES */}
           <div className="constructor-ruler constructor-ruler-top" aria-hidden="true">
             {[0, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000].map((value) => (
               <span key={value} style={{ left: `${value * pxPerMm}px` }}>{value}</span>
@@ -2526,17 +2532,17 @@ export default function ConstructorShell({
                           width: `${bay.widthMm * pxPerMm}px`,
                         }}
                       >
-                        <span>{Math.round(bay.widthMm)} mm</span>
+                        <span>{Math.round(bay.widthMm)}</span>
                       </div>
                     ))}
                   </div>
                 )}
 
                 <div className="constructor-frame-dimension constructor-frame-dimension-width">
-                  <span>{Math.round(displayedFrame.widthMm)} mm</span>
+                  <span>{Math.round(displayedFrame.widthMm)}</span>
                 </div>
                 <div className="constructor-frame-dimension constructor-frame-dimension-height">
-                  <span>{Math.round(displayedFrame.heightMm)} mm</span>
+                  <span>{Math.round(displayedFrame.heightMm)}</span>
                 </div>
               </div>
             )}
