@@ -1542,9 +1542,20 @@
   vector-effect: non-scaling-stroke;
 }
 
-.constructor-operable-visual rect {
+/* 01E.5.1 correction: sash is a schematic profile ring, not four floating corner strokes. */
+.constructor-operable-visual .sash-profile-outer {
+  stroke: rgba(65, 82, 87, .94);
   stroke-width: 1.7;
-  stroke: rgba(65, 82, 87, .92);
+}
+
+.constructor-operable-visual .sash-profile-inner {
+  stroke: rgba(72, 88, 94, .90);
+  stroke-width: 1.35;
+}
+
+.constructor-operable-visual .sash-profile-mitre {
+  stroke: rgba(72, 88, 94, .90);
+  stroke-width: 1.25;
 }
 
 .constructor-operable-visual .opening-primary {
@@ -2757,7 +2768,8 @@
   transform: translateY(-50%);
 }
 
-.constructor-field-surface.has-unresolved-sash-geometry .constructor-operable-visual rect {
+.constructor-field-surface.has-unresolved-sash-geometry .constructor-operable-visual .sash-profile-outer,
+.constructor-field-surface.has-unresolved-sash-geometry .constructor-operable-visual .sash-profile-inner {
   stroke-dasharray: 5 4;
 }
 
@@ -2778,7 +2790,8 @@
   pointer-events: none;
 }
 
-.constructor-field-surface.has-reviewed-sash-geometry .constructor-operable-visual rect {
+.constructor-field-surface.has-reviewed-sash-geometry .constructor-operable-visual .sash-profile-outer,
+.constructor-field-surface.has-reviewed-sash-geometry .constructor-operable-visual .sash-profile-inner {
   stroke-dasharray: none;
   stroke-width: 2;
 }
@@ -2925,7 +2938,238 @@
   border-color: #4f666d;
 }
 
-.constructor-field-surface.is-operable .constructor-operable-visual.mode-unset rect {
+.constructor-field-surface.is-operable .constructor-operable-visual.mode-unset .sash-profile-outer,
+.constructor-field-surface.is-operable .constructor-operable-visual.mode-unset .sash-profile-inner {
   stroke: rgba(74, 89, 94, .72);
   stroke-dasharray: none;
+}
+
+/* Constructor 01E.5.2 — frame / divider / sash overlap clarity.
+ * This is visual-only schematic layering. It does not introduce catalog mm or cut geometry.
+ */
+.constructor-frame-visual {
+  z-index: 8;
+  background: transparent;
+  pointer-events: none;
+}
+
+.constructor-parametric-frame.is-selected .constructor-frame-visual {
+  outline: none;
+  outline-offset: 0;
+}
+
+/* The outer frame is visually in front of mullion/divider ends, matching the
+ * assembly-reading hierarchy: FRAME -> DIVIDER -> SASH -> GLAZING.
+ */
+.constructor-divider {
+  z-index: 7;
+}
+
+.constructor-divider > .constructor-divider-face {
+  background: #edf1f2;
+  box-shadow:
+    inset 0 0 0 1px rgba(63, 77, 82, .92),
+    inset 2px 0 0 rgba(255, 255, 255, .95),
+    inset -2px 0 0 rgba(255, 255, 255, .95);
+}
+
+.constructor-divider.horizontal > .constructor-divider-face {
+  box-shadow:
+    inset 0 0 0 1px rgba(63, 77, 82, .92),
+    inset 0 2px 0 rgba(255, 255, 255, .95),
+    inset 0 -2px 0 rgba(255, 255, 255, .95);
+}
+
+.constructor-sash-profile-visual {
+  position: absolute;
+  inset: 4px;
+  z-index: 1;
+  display: block;
+  box-sizing: border-box;
+  border: 1.35px solid rgba(61, 77, 82, .94);
+  background: rgba(243, 247, 248, .96);
+  pointer-events: none;
+}
+
+.constructor-sash-profile-visual .sash-profile-inner {
+  position: absolute;
+  inset: 10px;
+  display: block;
+  box-sizing: border-box;
+  border: 1.2px solid rgba(69, 85, 90, .88);
+  background: rgba(220, 242, 247, .98);
+}
+
+.constructor-sash-profile-visual .sash-profile-mitre {
+  position: absolute;
+  z-index: 2;
+  display: block;
+  width: 14.15px;
+  height: 1px;
+  background: rgba(69, 85, 90, .88);
+  transform-origin: left center;
+  pointer-events: none;
+}
+
+.constructor-sash-profile-visual .sash-profile-mitre.mitre-tl {
+  left: 0;
+  top: 0;
+  transform: rotate(45deg);
+}
+
+.constructor-sash-profile-visual .sash-profile-mitre.mitre-tr {
+  right: 0;
+  top: 0;
+  transform: rotate(-45deg);
+  transform-origin: right center;
+}
+
+.constructor-sash-profile-visual .sash-profile-mitre.mitre-bl {
+  left: 0;
+  bottom: 0;
+  transform: rotate(-45deg);
+}
+
+.constructor-sash-profile-visual .sash-profile-mitre.mitre-br {
+  right: 0;
+  bottom: 0;
+  transform: rotate(45deg);
+  transform-origin: right center;
+}
+
+/* Opening geometry starts on the inner sash contour. The fixed pixel inset
+ * keeps the schematic sash band visually consistent across narrow/wide fields.
+ */
+.constructor-operable-visual {
+  inset: 14px;
+  z-index: 2;
+  width: calc(100% - 28px);
+  height: calc(100% - 28px);
+}
+
+.constructor-field-surface.has-unresolved-sash-geometry .constructor-sash-profile-visual {
+  opacity: .82;
+}
+
+.constructor-field-surface.has-reviewed-sash-geometry .constructor-sash-profile-visual {
+  opacity: 1;
+}
+
+.constructor-field-surface.is-operable .constructor-operable-visual.mode-unset {
+  opacity: 1;
+}
+
+
+/* Constructor 01E.5.3 — profile line hierarchy & selection cleanup.
+ * Goal: closer SkyGlazing-like reading by reducing non-structural parallel lines.
+ * FRAME / DIVIDER / SASH / GLAZING hierarchy stays visual only; geometry is unchanged.
+ */
+.constructor-frame-visual {
+  box-shadow:
+    inset 0 0 0 1px rgba(70, 83, 88, .94),
+    inset 0 0 0 2px rgba(255, 255, 255, .96),
+    0 0 0 1px rgba(70, 83, 88, .94);
+}
+
+.constructor-frame-visual::before {
+  display: none;
+}
+
+.constructor-field-surface {
+  background: rgba(226, 240, 244, .88);
+  box-shadow: none;
+}
+
+.constructor-field-surface:hover {
+  background: rgba(223, 239, 244, .94);
+  box-shadow: none;
+}
+
+.constructor-field-surface.is-selected {
+  background: rgba(220, 238, 243, .96);
+  box-shadow: none;
+}
+
+.constructor-divider > .constructor-divider-face {
+  box-shadow:
+    inset 0 0 0 1px rgba(63, 77, 82, .92),
+    inset 1px 0 0 rgba(255, 255, 255, .95),
+    inset -1px 0 0 rgba(255, 255, 255, .95);
+}
+
+.constructor-divider.horizontal > .constructor-divider-face {
+  box-shadow:
+    inset 0 0 0 1px rgba(63, 77, 82, .92),
+    inset 0 1px 0 rgba(255, 255, 255, .95),
+    inset 0 -1px 0 rgba(255, 255, 255, .95);
+}
+
+.constructor-sash-profile-visual {
+  inset: 5px;
+  border: 1.25px solid rgba(61, 77, 82, .94);
+}
+
+.constructor-sash-profile-visual .sash-profile-inner {
+  inset: 11px;
+  border: 1.1px solid rgba(69, 85, 90, .88);
+}
+
+
+/* Constructor 01E.5.4 — sash profile band & overlap readability.
+ * Visual-only schematic hierarchy inspired by the supplied reference drawing.
+ * No catalog overlap, rebate, profile-face or cut dimensions are inferred here.
+ */
+.constructor-frame-visual {
+  border-color: #f1f4f4;
+  box-shadow:
+    inset 0 0 0 1px rgba(62, 75, 80, .92),
+    0 0 0 1px rgba(62, 75, 80, .92);
+}
+
+.constructor-divider > .constructor-divider-face {
+  background: #f4f6f6;
+  box-shadow: inset 0 0 0 1px rgba(62, 75, 80, .92);
+}
+
+.constructor-divider.horizontal > .constructor-divider-face {
+  box-shadow: inset 0 0 0 1px rgba(62, 75, 80, .92);
+}
+
+/* The sash reads as a light profile band between exactly two meaningful
+ * contours: outer sash edge and glazing-side sash edge. */
+.constructor-sash-profile-visual {
+  inset: 1px;
+  z-index: 2;
+  border: 1.25px solid rgba(54, 68, 73, .96);
+  background: #f7f9f9;
+}
+
+.constructor-sash-profile-visual .sash-profile-inner {
+  inset: 10px;
+  border: 1.15px solid rgba(61, 76, 81, .92);
+  background: rgba(211, 239, 245, .98);
+}
+
+.constructor-sash-profile-visual .sash-profile-mitre {
+  width: 14.15px;
+  background: rgba(61, 76, 81, .90);
+}
+
+/* Opening geometry sits on the glazing-side sash contour. This is a fixed-pixel
+ * display inset only; it is not a claimed physical overlap or rebate value. */
+.constructor-operable-visual {
+  inset: 11px;
+  z-index: 3;
+  width: calc(100% - 22px);
+  height: calc(100% - 22px);
+}
+
+/* Keep operable glazing visibly distinct from the light sash band. */
+.constructor-field-surface.is-operable {
+  background: rgba(211, 239, 245, .98);
+}
+
+/* FIX stays glazing-only: no sash band is introduced. */
+.constructor-field-surface.is-fixed {
+  background: rgba(219, 237, 241, .94);
 }

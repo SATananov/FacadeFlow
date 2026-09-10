@@ -2324,62 +2324,73 @@ export default function ConstructorShell({
                     }}
                   >
                     {field.fieldType === 'operable' && (
-                      <svg
-                        className={`constructor-operable-visual mode-${field.openingMode ?? 'unset'} handing-${field.openingHanding ?? 'none'}`}
-                        viewBox="0 0 100 100"
-                        preserveAspectRatio="none"
-                        aria-hidden="true"
-                      >
-                        <rect x="3" y="3" width="94" height="94" rx="1.5" />
-                        {field.openingMode === 'side-hinged' && field.openingHanding === 'left' && (
-                          <>
-                            <line className="opening-primary" x1="7" y1="7" x2="93" y2="50" />
-                            <line className="opening-primary" x1="7" y1="93" x2="93" y2="50" />
-                          </>
-                        )}
-                        {field.openingMode === 'side-hinged' && field.openingHanding === 'right' && (
-                          <>
-                            <line className="opening-primary" x1="93" y1="7" x2="7" y2="50" />
-                            <line className="opening-primary" x1="93" y1="93" x2="7" y2="50" />
-                          </>
-                        )}
-                        {field.openingMode === 'tilt' && (
-                          <>
-                            <line className="opening-tilt" x1="7" y1="93" x2="50" y2="7" />
-                            <line className="opening-tilt" x1="93" y1="93" x2="50" y2="7" />
-                          </>
-                        )}
-                        {field.openingMode === 'tilt-turn' && field.openingHanding === 'left' && (
-                          <>
-                            <line className="opening-primary" x1="7" y1="7" x2="93" y2="50" />
-                            <line className="opening-primary" x1="7" y1="93" x2="93" y2="50" />
-                            <line className="opening-tilt" x1="7" y1="93" x2="50" y2="7" />
-                            <line className="opening-tilt" x1="93" y1="93" x2="50" y2="7" />
-                          </>
-                        )}
-                        {field.openingMode === 'tilt-turn' && field.openingHanding === 'right' && (
-                          <>
-                            <line className="opening-primary" x1="93" y1="7" x2="7" y2="50" />
-                            <line className="opening-primary" x1="93" y1="93" x2="7" y2="50" />
-                            <line className="opening-tilt" x1="7" y1="93" x2="50" y2="7" />
-                            <line className="opening-tilt" x1="93" y1="93" x2="50" y2="7" />
-                          </>
-                        )}
-                        {(field.openingMode === 'side-hinged' || field.openingMode === 'tilt-turn') &&
-                          field.openingHanding === 'left' && (
-                            <g className="constructor-opening-handle" aria-hidden="true">
-                              <circle cx="93" cy="50" r="2.2" />
-                              <line x1="91" y1="50" x2="84" y2="50" />
-                            </g>
+                      <>
+                        {/* CONSTRUCTOR 01E.5.2: fixed-pixel schematic sash ring.
+                            It clarifies frame/divider/sash overlap without claiming catalog millimetres. */}
+                        <span className="constructor-sash-profile-visual" aria-hidden="true">
+                          <span className="sash-profile-inner" />
+                          <i className="sash-profile-mitre mitre-tl" />
+                          <i className="sash-profile-mitre mitre-tr" />
+                          <i className="sash-profile-mitre mitre-bl" />
+                          <i className="sash-profile-mitre mitre-br" />
+                        </span>
+                        {/* CONSTRUCTOR 01E.5.2: opening symbol is inset to the inner sash contour. */}
+                        <svg
+                          className={`constructor-operable-visual mode-${field.openingMode ?? 'unset'} handing-${field.openingHanding ?? 'none'}`}
+                          viewBox="0 0 100 100"
+                          preserveAspectRatio="none"
+                          aria-hidden="true"
+                        >
+                          {field.openingMode === 'side-hinged' && field.openingHanding === 'left' && (
+                            <>
+                              <line className="opening-primary" x1="0" y1="0" x2="100" y2="50" />
+                              <line className="opening-primary" x1="0" y1="100" x2="100" y2="50" />
+                            </>
                           )}
-                        {(field.openingMode === 'side-hinged' || field.openingMode === 'tilt-turn') &&
-                          field.openingHanding === 'right' && (
-                            <g className="constructor-opening-handle" aria-hidden="true">
-                              <circle cx="7" cy="50" r="2.2" />
-                              <line x1="9" y1="50" x2="16" y2="50" />
-                            </g>
+                          {field.openingMode === 'side-hinged' && field.openingHanding === 'right' && (
+                            <>
+                              <line className="opening-primary" x1="100" y1="0" x2="0" y2="50" />
+                              <line className="opening-primary" x1="100" y1="100" x2="0" y2="50" />
+                            </>
                           )}
-                      </svg>
+                          {field.openingMode === 'tilt' && (
+                            <>
+                              <line className="opening-tilt" x1="0" y1="100" x2="50" y2="0" />
+                              <line className="opening-tilt" x1="100" y1="100" x2="50" y2="0" />
+                            </>
+                          )}
+                          {field.openingMode === 'tilt-turn' && field.openingHanding === 'left' && (
+                            <>
+                              <line className="opening-primary" x1="0" y1="0" x2="100" y2="50" />
+                              <line className="opening-primary" x1="0" y1="100" x2="100" y2="50" />
+                              <line className="opening-tilt" x1="0" y1="100" x2="50" y2="0" />
+                              <line className="opening-tilt" x1="100" y1="100" x2="50" y2="0" />
+                            </>
+                          )}
+                          {field.openingMode === 'tilt-turn' && field.openingHanding === 'right' && (
+                            <>
+                              <line className="opening-primary" x1="100" y1="0" x2="0" y2="50" />
+                              <line className="opening-primary" x1="100" y1="100" x2="0" y2="50" />
+                              <line className="opening-tilt" x1="0" y1="100" x2="50" y2="0" />
+                              <line className="opening-tilt" x1="100" y1="100" x2="50" y2="0" />
+                            </>
+                          )}
+                          {(field.openingMode === 'side-hinged' || field.openingMode === 'tilt-turn') &&
+                            field.openingHanding === 'left' && (
+                              <g className="constructor-opening-handle" aria-hidden="true">
+                                <circle cx="100" cy="50" r="2.2" />
+                                <line x1="100" y1="50" x2="92" y2="50" />
+                              </g>
+                            )}
+                          {(field.openingMode === 'side-hinged' || field.openingMode === 'tilt-turn') &&
+                            field.openingHanding === 'right' && (
+                              <g className="constructor-opening-handle" aria-hidden="true">
+                                <circle cx="0" cy="50" r="2.2" />
+                                <line x1="0" y1="50" x2="8" y2="50" />
+                              </g>
+                            )}
+                        </svg>
+                      </>
                     )}
                     <span className="constructor-field-number-badge" aria-hidden="true">
                       {field.sequence}

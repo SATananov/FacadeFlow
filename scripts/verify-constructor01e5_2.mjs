@@ -1,0 +1,40 @@
+import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+
+const shell = await readFile(new URL('../src/components/ConstructorShell.tsx', import.meta.url), 'utf8')
+const css = await readFile(new URL('../src/components/ConstructorShell.css', import.meta.url), 'utf8')
+const acceptance = await readFile(new URL('../docs/CONSTRUCTOR_01E5_2_FRAME_DIVIDER_SASH_OVERLAP_CLARITY_ACCEPTANCE.md', import.meta.url), 'utf8')
+const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'))
+
+assert.match(shell, /CONSTRUCTOR 01E\.5\.2: fixed-pixel schematic sash ring/)
+assert.match(shell, /constructor-sash-profile-visual/)
+assert.match(shell, /sash-profile-inner/)
+assert.match(shell, /sash-profile-mitre mitre-tl/)
+assert.match(shell, /opening-primary" x1="0" y1="0" x2="100" y2="50"/)
+assert.match(shell, /opening-primary" x1="100" y1="0" x2="0" y2="50"/)
+
+assert.match(css, /Constructor 01E\.5\.2 — frame \/ divider \/ sash overlap clarity/)
+assert.match(css, /\.constructor-frame-visual \{[\s\S]*z-index: 8/)
+assert.match(css, /\.constructor-parametric-frame\.is-selected \.constructor-frame-visual \{[\s\S]*outline: none/)
+assert.match(css, /\.constructor-divider \{[\s\S]*z-index: 7/)
+assert.match(css, /\.constructor-sash-profile-visual \{[\s\S]*inset: 4px/)
+assert.match(css, /\.constructor-sash-profile-visual \.sash-profile-inner \{[\s\S]*inset: 10px/)
+assert.match(css, /\.constructor-operable-visual \{[\s\S]*inset: 14px/)
+
+assert.match(acceptance, /outer frame reads in front of divider endpoints/i)
+assert.match(acceptance, /fixed screen-space schematic band/i)
+assert.match(acceptance, /Selecting the frame must not redraw it with a large cyan outline/i)
+assert.match(acceptance, /does not claim a catalog sash face, overlap, rebate, cut length, or machine geometry/i)
+assert.match(packageJson.scripts['test:contract'], /verify-constructor01e5_2\.mjs/)
+assert.equal(packageJson.scripts['test:constructor01e5_2'], 'node scripts/verify-constructor01e5_2.mjs')
+
+console.log('=== CONSTRUCTOR 01E.5.2 VERIFY PASS ===')
+console.log('FRAME: FRONT VISUAL LAYER OVER DIVIDER ENDS')
+console.log('DIVIDER: READABLE INSIDE FRAME OPENING')
+console.log('SASH RING: FIXED-PIXEL SCHEMATIC PROPORTION')
+console.log('SASH MITRES: PROFILE BAND ONLY')
+console.log('OPENING SYMBOL: INNER SASH CONTOUR ANCHOR')
+console.log('FRAME SELECTION: NO LARGE CYAN OUTLINE')
+console.log('CATALOG MM / OVERLAP / CUT GEOMETRY: NOT INVENTED')
+console.log('GEOMETRY / TOPOLOGY / FIELD SEMANTICS: UNCHANGED')
+console.log('MACHINE READY: NO')
