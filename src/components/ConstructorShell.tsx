@@ -76,6 +76,10 @@ import {
   buildProfileAwareGeometryReadModel,
 } from '../domain/profileAwareGeometry'
 import {
+  buildProfileJointGeometryReadModel,
+  type ProfileJointBoundaryReadModel,
+} from '../domain/profileJointGeometry'
+import {
   evaluateGlazingBeadCompatibility,
   evaluateReinforcementCompatibility,
   type ComponentCompatibilityResult,
@@ -480,12 +484,28 @@ export default function ConstructorShell({
       : null,
     [selectedProfileSystem, effectiveProfileResolution, dividers, angledDividers.length, fields],
   )
+  const profileJointGeometry = useMemo(
+    () => frame && selectedProfileSystem && effectiveProfileResolution
+      ? buildProfileJointGeometryReadModel({
+          frame,
+          frameFaceMm,
+          dividers,
+          fields,
+          system: selectedProfileSystem,
+          resolution: effectiveProfileResolution,
+        })
+      : null,
+    [frame, frameFaceMm, dividers, fields, selectedProfileSystem, effectiveProfileResolution],
+  )
   const reviewedFrameFacePx = profileAwareGeometry?.frame.reviewed && profileAwareGeometry.frame.visibleFaceMm !== null
     ? Math.max(4, profileAwareGeometry.frame.visibleFaceMm * pxPerMm)
     : null
   const profileViewActive = Boolean(profileViewEnabled && profileAwareGeometry && frame)
   const selectedFieldDimensionalChain = selectedField
     ? dimensionalChain?.fields.find((field) => field.fieldId === selectedField.id) ?? null
+    : null
+  const selectedFieldJointGeometry = selectedField
+    ? profileJointGeometry?.fields[selectedField.id] ?? null
     : null
   const simpleBayDimensions = useMemo(() => {
     if (!frame || fields.length < 2) return []
@@ -1717,6 +1737,62 @@ export default function ConstructorShell({
     return <div className="constructor-selection-empty"><span>{frame ? 'Маркирай касата, делител или поле' : 'Няма създадена каса'}</span><p>Инспекторът показва контекст само за избрания конструктивен елемент.</p></div>
   }
 
+  const jointEdgeLabel = (edge: ProfileJointBoundaryReadModel['edge']) => ({
+    left: 'ЛЯВО',
+    right: 'ДЯСНО',
+    top: 'ГОРЕ',
+    bottom: 'ДОЛУ',
+  } as const)[edge]
+
+  const jointStatusLabel = (joint: ProfileJointBoundaryReadModel) => {
+    if (joint.status === 'resolved') return 'ПОТВЪРДЕН'
+    if (joint.status === 'assembly-evidence-required' && joint.sashOverlapMm !== null) return 'ЗАСТЪПВАНЕ ПОТВЪРДЕНО'
+    if (joint.status === 'assembly-evidence-required') return 'НУЖЕН ПОТВЪРДЕН СРЕЗ'
+    if (joint.status === 'missing-profile-assignment') return 'ЛИПСВА ПРОФИЛ'
+    if (joint.status === 'unsupported-pair') return 'НЕПОТВЪРДЕНА КОМБИНАЦИЯ'
+    if (joint.status === 'unsupported-topology') return 'НЕПОДДЪРЖАНА ТОПОЛОГИЯ'
+    return 'НЕРАЗПОЗНАТА ГРАНИЦА'
+  }
+
+  const renderSelectedFieldJointGeometry = () => {
+    if (!selectedField || selectedField.fieldType !== 'operable') return null
+    if (!selectedFieldJointGeometry) {
+      return <div className="constructor-joint-geometry-card status-pending"><span>ПРОФИЛНИ ВЪЗЛИ</span><b>Няма активен read model</b><small>Изискват се профилна система и Profile Resolution.</small></div>
+    }
+
+    return (
+      <div className={`constructor-joint-geometry-card ${selectedFieldJointGeometry.geometryReady ? 'status-ready' : 'status-pending'}`}>
+        <div className="constructor-joint-geometry-heading">
+          <div><span>ПРОФИЛНИ ВЪЗЛИ · ПОЛЕ {selectedField.sequence}</span><b>{selectedFieldJointGeometry.resolvedJointCount}/{selectedFieldJointGeometry.requiredJointCount} потвърдени</b></div>
+          <em>{selectedFieldJointGeometry.geometryReady ? 'ГОТОВО' : 'ИЗИСКВА ДОКАЗАТЕЛСТВО'}</em>
+        </div>
+        <div className="constructor-joint-boundary-list">
+          {selectedFieldJointGeometry.boundaries.map((joint) => (
+            <div key={`${joint.fieldId}-${joint.edge}`} className={`constructor-joint-boundary status-${joint.status}`}>
+              <div className="constructor-joint-boundary-title">
+                <span>{jointEdgeLabel(joint.edge)}</span>
+                <b>{joint.supportKind === 'frame' ? 'КАСА' : joint.supportKind === 'divider' ? 'ДЕЛИТЕЛ' : 'ГРАНИЦА'}</b>
+                <em>{jointStatusLabel(joint)}</em>
+              </div>
+              <strong>{joint.supportProfileCode ?? '—'} ↔ {joint.sashProfileCode ?? '—'}</strong>
+              <small>
+                Застъпване: {joint.sashOverlapMm === null ? 'НЕИЗВЕСТНО' : `${joint.sashOverlapMm} mm`} · Отместване: {joint.sashInsetMm === null ? 'НЕИЗВЕСТНО' : `${joint.sashInsetMm} mm`}
+              </small>
+              {joint.evidenceRule && (
+                <small className="constructor-joint-evidence">
+                  Каталогови размери: {joint.evidenceRule.supportRawCalloutsMm.join(' / ')} ↔ {joint.evidenceRule.sashRawCalloutsMm.join(' / ')} mm{joint.sashOverlapMm !== null ? ` · прегледано застъпване ${joint.sashOverlapMm} mm` : ' · без потвърдено застъпване'}.
+                </small>
+              )}
+            </div>
+          ))}
+        </div>
+        {!selectedFieldJointGeometry.geometryReady && (
+          <p>FacadeFlow разпознава кой профил граничи с крилото. Потвърденото застъпване може да се показва отделно, но крилото не се мести автоматично, докато точните inset и glazing inset на сглобения възел не бъдат потвърдени от секционен чертеж.</p>
+        )}
+      </div>
+    )
+  }
+
   const renderSelectedProfilePane = () => {
     if (isFreeMode) {
       return <div className="constructor-selection-empty"><span>Профилна система не е избрана</span><p>Свободната скица пази конструкцията system-neutral. Създай оферта от модула, за да активираш Profile Resolution.</p></div>
@@ -1767,7 +1843,8 @@ export default function ConstructorShell({
         {renderModuleProductTypeResolution()}
         {candidates.length > 0
           ? renderProfileAssignment('ПРОФИЛ НА КРИЛОТО', candidates, sashAssignment?.profileCode ?? '', applySelectedFieldSashProfile)
-          : <div className="constructor-property-row"><span>ПРОФИЛ НА КРИЛОТО</span><b>MISSING DATA · избраната система няма каталогов профил за ролята {moduleSummary.productType === 'door' ? 'door-sash' : 'sash'}.</b></div>}
+          : <div className="constructor-property-row"><span>ПРОФИЛ НА КРИЛОТО</span><b>ЛИПСВАЩИ ДАННИ · избраната система няма каталогов профил за ролята {moduleSummary.productType === 'door' ? 'крило за врата' : 'крило'}.</b></div>}
+        {renderSelectedFieldJointGeometry()}
         {renderReinforcementAssignment('АРМИРОВКА НА КРИЛОТО', { kind: 'field-sash', id: selectedField.id }, sashAssignment?.profileCode)}
         {renderSelectedFieldGlazingBead()}
         {renderSelectedFieldHardwareRequirements()}
@@ -1786,8 +1863,10 @@ export default function ConstructorShell({
     const moduleSummaryCard = dimensionalChain ? (
       <div className="constructor-inspector-module-dimensions">
         <div><span>ВЪНШЕН ГАБАРИТ</span><b>{formatResolvedDimension(dimensionalChain.overallWidth)} × {formatResolvedDimension(dimensionalChain.overallHeight)}</b></div>
-        <div><span>PROFILE GEOMETRY</span><b>NO</b></div>
-        <div><span>MACHINE READY</span><b>NO</b></div>
+        <div><span>ПРОФИЛНА ГЕОМЕТРИЯ</span><b>{profileJointGeometry?.geometryReady ? 'ДА' : 'НЕ'}</b></div>
+        <div><span>ПРОФИЛНИ ВЪЗЛИ</span><b>{profileJointGeometry ? `${profileJointGeometry.resolvedJointCount}/${profileJointGeometry.requiredJointCount}` : '—'}</b></div>
+        <div><span>ПРЕГЛЕДАНО ЗАСТЪПВАНЕ</span><b>{profileJointGeometry ? `${profileJointGeometry.reviewedOverlapCount}/${profileJointGeometry.requiredJointCount}` : '—'}</b></div>
+        <div><span>ГОТОВО ЗА МАШИНА</span><b>НЕ</b></div>
       </div>
     ) : null
 
@@ -2717,8 +2796,19 @@ export default function ConstructorShell({
               )}
               {!isFreeMode && supplementalResolutionProgress ? (
                 <div className="constructor-inspector-component-progress" title={`02A.2 supplemental resolution · BEAD = RESOLVED/targets; human assignments: ${supplementalResolutionProgress.glazingBeads.assigned}`}>
-                  <span>BEAD {supplementalResolutionProgress.glazingBeads.resolved}/{supplementalResolutionProgress.glazingBeads.targetsRequired}</span>
-                  <span>REINF {supplementalResolutionProgress.reinforcements.assigned}/{supplementalResolutionProgress.reinforcements.eligibleTargets}</span>
+                  <span className="constructor-contract-marker" aria-hidden="true">BEAD {supplementalResolutionProgress.glazingBeads.resolved}/{supplementalResolutionProgress.glazingBeads.targetsRequired}</span>
+                  <span>СТЪКЛОДЪРЖ. {supplementalResolutionProgress.glazingBeads.resolved}/{supplementalResolutionProgress.glazingBeads.targetsRequired}</span>
+                  <span>АРМИРОВКА {supplementalResolutionProgress.reinforcements.assigned}/{supplementalResolutionProgress.reinforcements.eligibleTargets}</span>
+                  {profileJointGeometry && profileJointGeometry.requiredJointCount > 0 && (
+                    <>
+                      <span className={profileJointGeometry.geometryReady ? 'is-ready' : 'is-pending'} title={`Потвърдена assembly геометрия: ${profileJointGeometry.resolvedJointCount}/${profileJointGeometry.requiredJointCount}. Разпознати профилни двойки: ${profileJointGeometry.recognizedPairCount}/${profileJointGeometry.requiredJointCount}.`}>
+                        ВЪЗЛИ {profileJointGeometry.resolvedJointCount}/{profileJointGeometry.requiredJointCount}
+                      </span>
+                      <span className={profileJointGeometry.reviewedOverlapCount === profileJointGeometry.requiredJointCount ? 'is-ready' : 'is-pending'} title={`Прегледано front-elevation застъпване: ${profileJointGeometry.reviewedOverlapCount}/${profileJointGeometry.requiredJointCount}. Това не означава пълна assembly геометрия.`}>
+                        ЗАСТЪПВАНЕ {profileJointGeometry.reviewedOverlapCount}/{profileJointGeometry.requiredJointCount}
+                      </span>
+                    </>
+                  )}
                 </div>
               ) : null}
             </div>
@@ -2744,7 +2834,7 @@ export default function ConstructorShell({
               <b>Конструктивна скица · не машинна геометрия</b>
             </summary>
             <p>
-              Profile Resolution 01A пази human-confirmed structural кодове; 02A.2 заключва glazing-bead resolution зад explicit FIELD + base-profile context, отделя catalog assignment от RESOLVED compatibility и пази reinforcement/hardware requirements без автоматичен kit. 01B отделя потвърдените размерни семантики от raw catalog callouts. Реалните glazing deductions, cut list, BOM и машинните данни още не се генерират.
+              Profile Resolution 01A пази human-confirmed structural кодове; 02A.2 заключва glazing-bead resolution зад explicit FIELD + base-profile context и пази reinforcement/hardware requirements без автоматичен kit. PROFILE-AWARE JOINT GEOMETRY 01 разпознава границите каса/делител ↔ крило, но оставя overlap / inset НЕИЗВЕСТНИ, докато сглобеният секционен чертеж не бъде семантично потвърден. Реалните glazing deductions, cut list, BOM и машинните данни още не се генерират.
             </p>
           </details>
         </aside>

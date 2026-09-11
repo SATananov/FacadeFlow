@@ -3173,3 +3173,144 @@
 .constructor-field-surface.is-fixed {
   background: rgba(219, 237, 241, .94);
 }
+
+/* PROFILE-AWARE JOINT GEOMETRY 01 — evidence-bound PRELUDE 60 joint read model */
+.constructor-inspector-component-progress span.is-pending {
+  border-color: #d6b98f;
+  background: #fff8ee;
+  color: #855c2c;
+}
+
+.constructor-inspector-component-progress span.is-ready {
+  border-color: #9acdb8;
+  background: #f3fbf7;
+  color: #28775a;
+}
+
+.constructor-joint-geometry-card {
+  display: grid;
+  gap: 7px;
+  padding: 9px;
+  border: 1px solid #c4d5d8;
+  border-radius: 5px;
+  background: #f8fbfb;
+}
+
+.constructor-joint-geometry-card.status-pending {
+  border-color: #d8c5a9;
+  background: #fffaf3;
+}
+
+.constructor-joint-geometry-card.status-ready {
+  border-color: #9acdb8;
+  background: #f4fbf7;
+}
+
+.constructor-joint-geometry-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.constructor-joint-geometry-heading > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.constructor-joint-geometry-heading span {
+  color: #688087;
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: .5px;
+}
+
+.constructor-joint-geometry-heading b {
+  color: #31545d;
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.constructor-joint-geometry-heading em {
+  flex: 0 0 auto;
+  padding: 3px 5px;
+  border: 1px solid #d4b887;
+  border-radius: 999px;
+  background: #fff5e6;
+  color: #8a602a;
+  font-size: 6.5px;
+  font-style: normal;
+  font-weight: 950;
+  letter-spacing: .3px;
+}
+
+.constructor-joint-boundary-list {
+  display: grid;
+  gap: 5px;
+}
+
+.constructor-joint-boundary {
+  display: grid;
+  gap: 3px;
+  padding: 7px 8px;
+  border: 1px solid #d0dcde;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, .88);
+}
+
+.constructor-joint-boundary.status-assembly-evidence-required {
+  border-style: dashed;
+  border-color: #d6be98;
+}
+
+.constructor-joint-boundary.status-resolved {
+  border-color: #9acdb8;
+  background: #f3fbf7;
+}
+
+.constructor-joint-boundary-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.constructor-joint-boundary-title span {
+  min-width: 32px;
+  color: #31545d;
+  font-size: 7px;
+  font-weight: 950;
+}
+
+.constructor-joint-boundary-title b {
+  color: #5e747a;
+  font-size: 7px;
+  font-weight: 900;
+}
+
+.constructor-joint-boundary-title em {
+  margin-left: auto;
+  color: #8b642e;
+  font-size: 6px;
+  font-style: normal;
+  font-weight: 950;
+  text-align: right;
+}
+
+.constructor-joint-boundary > strong {
+  color: #264850;
+  font-size: 9px;
+  font-weight: 950;
+}
+
+.constructor-joint-boundary > small,
+.constructor-joint-geometry-card > p {
+  margin: 0;
+  color: #6d7f84;
+  font-size: 7.5px;
+  line-height: 1.35;
+}
+
+.constructor-joint-boundary .constructor-joint-evidence {
+  color: #7d704f;
+}
