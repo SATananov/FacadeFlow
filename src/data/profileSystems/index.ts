@@ -11,3 +11,5 @@ export * from './dimensionalSemantics'
 export * from './componentInventory'
 
 export * from './jointSemantics'
+
+export * from './glazingEvidence'
