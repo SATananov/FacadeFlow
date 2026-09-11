@@ -61,6 +61,7 @@ import {
 import {
   getGlazingOptionById,
   getProfileSystemById,
+  getSelectableProfileSystems,
   type GlazingBeadDefinition,
   type ProfileDefinition,
   type ReinforcementDefinition,
@@ -79,6 +80,9 @@ import {
   buildProfileJointGeometryReadModel,
   type ProfileJointBoundaryReadModel,
 } from '../domain/profileJointGeometry'
+import {
+  buildProfileAwareSashGeometryReadModel,
+} from '../domain/profileAwareSashGeometry'
 import {
   evaluateGlazingBeadCompatibility,
   evaluateReinforcementCompatibility,
@@ -134,6 +138,8 @@ type ConstructorShellProps = {
   moduleItems?: readonly ConstructorModuleNavItem[]
   activeModuleId?: string
   offerContext?: ConstructorOfferContext
+  freeProfileSystemId?: string
+  onFreeProfileSystemChange?: (profileSystemId: string) => void
   moduleSummary?: ConstructorModuleSummary
   initialDraft?: ConstructorDraftSnapshot | null
   profileResolution?: ModuleProfileResolution | null
@@ -298,6 +304,8 @@ export default function ConstructorShell({
   moduleItems = [],
   activeModuleId,
   offerContext,
+  freeProfileSystemId = '',
+  onFreeProfileSystemChange,
   moduleSummary = FREE_MODULE_SUMMARY,
   initialDraft,
   profileResolution,
@@ -375,9 +383,9 @@ export default function ConstructorShell({
   const selectedDivider = dividers.find((divider) => divider.id === selectedDividerId) ?? null
   const selectedAngledDivider = angledDividers.find((divider) => divider.id === selectedAngledDividerId) ?? null
   const conceptualFieldCount = fields.length
-  const selectedProfileSystem = !isFreeMode && offerContext
-    ? getProfileSystemById(offerContext.profileSystemId)
-    : undefined
+  const selectedProfileSystem = getProfileSystemById(
+    isFreeMode ? freeProfileSystemId : offerContext?.profileSystemId ?? '',
+  )
   const selectedGlazing = !isFreeMode && offerContext
     ? getGlazingOptionById(offerContext.glazingId)
     : undefined
@@ -497,6 +505,19 @@ export default function ConstructorShell({
       : null,
     [frame, frameFaceMm, dividers, fields, selectedProfileSystem, effectiveProfileResolution],
   )
+  const profileAwareSashGeometry = useMemo(
+    () => frame && selectedProfileSystem && effectiveProfileResolution && profileJointGeometry
+      ? buildProfileAwareSashGeometryReadModel({
+          frame,
+          dividers,
+          fields,
+          system: selectedProfileSystem,
+          resolution: effectiveProfileResolution,
+          joints: profileJointGeometry,
+        })
+      : null,
+    [frame, dividers, fields, selectedProfileSystem, effectiveProfileResolution, profileJointGeometry],
+  )
   const reviewedFrameFacePx = profileAwareGeometry?.frame.reviewed && profileAwareGeometry.frame.visibleFaceMm !== null
     ? Math.max(4, profileAwareGeometry.frame.visibleFaceMm * pxPerMm)
     : null
@@ -506,6 +527,9 @@ export default function ConstructorShell({
     : null
   const selectedFieldJointGeometry = selectedField
     ? profileJointGeometry?.fields[selectedField.id] ?? null
+    : null
+  const selectedFieldSashGeometry = selectedField
+    ? profileAwareSashGeometry?.fields[selectedField.id] ?? null
     : null
   const simpleBayDimensions = useMemo(() => {
     if (!frame || fields.length < 2) return []
@@ -1297,7 +1321,6 @@ export default function ConstructorShell({
   }
 
   const applyModuleProductTypeFromConstructor = (productType: 'window' | 'door' | null) => {
-    if (isFreeMode) return
     onModuleProductTypeChange?.(productType)
   }
 
@@ -1786,19 +1809,24 @@ export default function ConstructorShell({
             </div>
           ))}
         </div>
-        {!selectedFieldJointGeometry.geometryReady && (
-          <p>FacadeFlow разпознава кой профил граничи с крилото. Потвърденото застъпване може да се показва отделно, но крилото не се мести автоматично, докато точните inset и glazing inset на сглобения възел не бъдат потвърдени от секционен чертеж.</p>
+        {selectedFieldSashGeometry?.placementReady && selectedFieldSashGeometry.outerBoundsMm && (
+          <div className="constructor-sash-placement-summary status-ready">
+            <span>ПРЕГЛЕДАНА ПРЕДНА ГЕОМЕТРИЯ НА КРИЛОТО</span>
+            <b>{Math.round(selectedFieldSashGeometry.outerBoundsMm.widthMm * 100) / 100} × {Math.round(selectedFieldSashGeometry.outerBoundsMm.heightMm * 100) / 100} mm</b>
+            <small>Видимо лице: {selectedFieldSashGeometry.sashVisibleFaceMm} mm · reviewed overlap: {selectedFieldSashGeometry.overlapByEdgeMm.left}/{selectedFieldSashGeometry.overlapByEdgeMm.right}/{selectedFieldSashGeometry.overlapByEdgeMm.top}/{selectedFieldSashGeometry.overlapByEdgeMm.bottom} mm.</small>
+            <small>Glazing inset / glass cut: НЕИЗВЕСТНО · construction topology не се променя.</small>
+          </div>
+        )}
+        {!selectedFieldSashGeometry?.placementReady && (
+          <p>FacadeFlow разпознава joint evidence и reviewed overlap, но front-elevation sash placement остава блокирано, докато всички четири support faces и sash visible face не са human-confirmed.</p>
         )}
       </div>
     )
   }
 
   const renderSelectedProfilePane = () => {
-    if (isFreeMode) {
-      return <div className="constructor-selection-empty"><span>Профилна система не е избрана</span><p>Свободната скица пази конструкцията system-neutral. Създай оферта от модула, за да активираш Profile Resolution.</p></div>
-    }
     if (!selectedProfileSystem || !effectiveProfileResolution) {
-      return <div className="constructor-selection-empty"><span>Няма активен Profile Resolution</span><p>Избери профилна система в офертата.</p></div>
+      return <div className="constructor-selection-empty"><span>Профилна система не е избрана</span><p>{isFreeMode ? 'Избери работна система в Настройки на модула.' : 'Избери профилна система в офертата.'}</p></div>
     }
     if (selectedAngledDivider) {
       const assignment = effectiveProfileResolution.dividers[selectedAngledDivider.id]
@@ -1866,6 +1894,7 @@ export default function ConstructorShell({
         <div><span>ПРОФИЛНА ГЕОМЕТРИЯ</span><b>{profileJointGeometry?.geometryReady ? 'ДА' : 'НЕ'}</b></div>
         <div><span>ПРОФИЛНИ ВЪЗЛИ</span><b>{profileJointGeometry ? `${profileJointGeometry.resolvedJointCount}/${profileJointGeometry.requiredJointCount}` : '—'}</b></div>
         <div><span>ПРЕГЛЕДАНО ЗАСТЪПВАНЕ</span><b>{profileJointGeometry ? `${profileJointGeometry.reviewedOverlapCount}/${profileJointGeometry.requiredJointCount}` : '—'}</b></div>
+        <div><span>ПРЕДНА ГЕОМЕТРИЯ НА КРИЛОТО</span><b>{profileAwareSashGeometry ? `${profileAwareSashGeometry.reviewedPlacementCount}/${profileAwareSashGeometry.requiredPlacementCount}` : '—'}</b></div>
         <div><span>ГОТОВО ЗА МАШИНА</span><b>НЕ</b></div>
       </div>
     ) : null
@@ -1927,7 +1956,7 @@ export default function ConstructorShell({
             <p>
               {isFreeMode
                 ? hasActiveModule
-                  ? `Работиш по Модул ${moduleNumber}. Всеки модул пази собствена параметрична скица; система може да бъде приложена по-късно.`
+                  ? `Работиш по Модул ${moduleNumber}. Всеки модул пази собствена параметрична скица, профилна система и тип.`
                   : 'Създай Модул 1, за да започнеш. Всеки следващ модул ще пази собствена независима скица.'
                 : 'Параметрична каса с истински вътрешни ПОЛЕТА. Всеки делител пази собствената си позиция; мести се само избраният елемент.'}
             </p>
@@ -2023,7 +2052,7 @@ export default function ConstructorShell({
             type="button"
             className={profileViewActive ? 'is-active' : ''}
             disabled={!profileAwareGeometry || !frame}
-            title={profileAwareGeometry ? 'Reviewed profile face overlay; topology остава авторитетно' : 'Изисква оферта, профилна система и Profile Resolution'}
+            title={profileAwareGeometry ? 'Reviewed profile face overlay; topology остава авторитетно' : 'Изисква избрана профилна система и Profile Resolution'}
             onClick={() => setProfileViewEnabled((current) => !current)}
           >
             Profile View {profileViewEnabled ? 'ON' : 'OFF'}
@@ -2358,11 +2387,14 @@ export default function ConstructorShell({
                   <i className="constructor-frame-mitre mitre-br" />
                 </div>
 
-                {frame && dragState?.kind !== 'create' && fields.map((field) => (
+                {frame && dragState?.kind !== 'create' && fields.map((field) => {
+                  const sashPlacement = profileViewActive ? profileAwareSashGeometry?.fields[field.id] : null
+                  const innerProfileBoundsMm = sashPlacement?.placementReady ? sashPlacement.innerProfileBoundsMm : null
+                  return (
                   <button
                     key={field.id}
                     type="button"
-                    className={`constructor-field-surface ${selectedFieldId === field.id ? 'is-selected' : ''} ${field.fieldType === 'fixed' ? 'is-fixed' : field.fieldType === 'operable' ? 'is-operable' : 'is-unset'} ${profileViewActive && field.fieldType === 'operable' ? (profileAwareGeometry?.sashes[field.id]?.reviewed ? 'has-reviewed-sash-geometry' : 'has-unresolved-sash-geometry') : ''}`}
+                    className={`constructor-field-surface ${selectedFieldId === field.id ? 'is-selected' : ''} ${field.fieldType === 'fixed' ? 'is-fixed' : field.fieldType === 'operable' ? 'is-operable' : 'is-unset'} ${profileViewActive && field.fieldType === 'operable' ? (innerProfileBoundsMm ? 'has-reviewed-sash-placement' : profileAwareGeometry?.sashes[field.id]?.reviewed ? 'has-reviewed-sash-geometry' : 'has-unresolved-sash-geometry') : ''}`}
                     style={{
                       left: `${field.bounds.xMm * pxPerMm}px`,
                       top: `${field.bounds.yMm * pxPerMm}px`,
@@ -2414,8 +2446,16 @@ export default function ConstructorShell({
                           <i className="sash-profile-mitre mitre-br" />
                         </span>
                         {/* CONSTRUCTOR 01E.5.2: opening symbol is inset to the inner sash contour. */}
+                        {/* 01.1: reviewed placement uses domain bounds; fallback retains the schematic CSS inset. */}
                         <svg
                           className={`constructor-operable-visual mode-${field.openingMode ?? 'unset'} handing-${field.openingHanding ?? 'none'}`}
+                          style={innerProfileBoundsMm ? {
+                            inset: 'auto',
+                            left: `${(innerProfileBoundsMm.xMm - field.bounds.xMm) * pxPerMm}px`,
+                            top: `${(innerProfileBoundsMm.yMm - field.bounds.yMm) * pxPerMm}px`,
+                            width: `${innerProfileBoundsMm.widthMm * pxPerMm}px`,
+                            height: `${innerProfileBoundsMm.heightMm * pxPerMm}px`,
+                          } : undefined}
                           viewBox="0 0 100 100"
                           preserveAspectRatio="none"
                           aria-hidden="true"
@@ -2475,7 +2515,41 @@ export default function ConstructorShell({
                       {field.sequence}
                     </span>
                   </button>
-                ))}
+                  )
+                })}
+
+                {profileViewActive && frame && profileAwareSashGeometry && fields.map((field) => {
+                  const sashGeometry = profileAwareSashGeometry.fields[field.id]
+                  if (!sashGeometry?.placementReady || !sashGeometry.outerBoundsMm || !sashGeometry.innerProfileBoundsMm || sashGeometry.sashVisibleFaceMm === null) return null
+                  return (
+                    <span
+                      key={`reviewed-sash-${field.id}`}
+                      className="constructor-reviewed-sash-placement"
+                      style={{
+                        left: `${sashGeometry.outerBoundsMm.xMm * pxPerMm}px`,
+                        top: `${sashGeometry.outerBoundsMm.yMm * pxPerMm}px`,
+                        width: `${sashGeometry.outerBoundsMm.widthMm * pxPerMm}px`,
+                        height: `${sashGeometry.outerBoundsMm.heightMm * pxPerMm}px`,
+                        '--constructor-reviewed-sash-face': `${sashGeometry.sashVisibleFaceMm * pxPerMm}px`,
+                      } as CSSProperties}
+                      aria-hidden="true"
+                    >
+                      <span
+                        className="constructor-reviewed-sash-inner-face"
+                        style={{
+                          left: `${(sashGeometry.innerProfileBoundsMm.xMm - sashGeometry.outerBoundsMm.xMm) * pxPerMm}px`,
+                          top: `${(sashGeometry.innerProfileBoundsMm.yMm - sashGeometry.outerBoundsMm.yMm) * pxPerMm}px`,
+                          width: `${sashGeometry.innerProfileBoundsMm.widthMm * pxPerMm}px`,
+                          height: `${sashGeometry.innerProfileBoundsMm.heightMm * pxPerMm}px`,
+                        }}
+                      />
+                      <i className="constructor-reviewed-sash-mitre mitre-tl" />
+                      <i className="constructor-reviewed-sash-mitre mitre-tr" />
+                      <i className="constructor-reviewed-sash-mitre mitre-bl" />
+                      <i className="constructor-reviewed-sash-mitre mitre-br" />
+                    </span>
+                  )
+                })}
 
                 {frame && dragState?.kind !== 'create' && dividers.map((divider) => {
                   const faceClipPath = divider.facePolygon
@@ -2735,17 +2809,27 @@ export default function ConstructorShell({
             <section className="constructor-properties-section constructor-inspector-context-card">
               <div className="constructor-inspector-context-summary">
                 <div><span>КОНТЕКСТ</span><b>{hasActiveModule ? `Свободна скица · Модул ${moduleNumber}` : 'Свободна скица'}</b></div>
-                <em>SYSTEM NEUTRAL</em>
+                <em>{selectedProfileSystem ? `${selectedProfileSystem.manufacturer} ${selectedProfileSystem.name}` : 'SYSTEM NEUTRAL'}</em>
               </div>
               <details className="constructor-inspector-details">
                 <summary>Настройки на модула</summary>
                 <div className="constructor-free-settings constructor-inspector-settings-grid">
-                  <div><span>Профилна система</span><b>Не е избрана</b><em>◇</em></div>
+                  <label className="constructor-free-system-selector">
+                    <span>Профилна система</span>
+                    <select value={freeProfileSystemId} disabled={!onFreeProfileSystemChange} onChange={(event) => onFreeProfileSystemChange?.(event.target.value)}>
+                      <option value="">Не е избрана · system-neutral</option>
+                      {getSelectableProfileSystems().map((system) => (
+                        <option key={system.id} value={system.id}>{system.manufacturer} {system.name}</option>
+                      ))}
+                    </select>
+                    <small>Работна система за скицата · не е оферта.</small>
+                  </label>
                   <div><span>Цвят</span><b>Не е избран</b><em>◇</em></div>
                   <div><span>Фолиране</span><b>Не е избрано</b><em>◇</em></div>
                   <div><span>Стъклопакет</span><b>Не е избран</b><em>◇</em></div>
                   <div><span>Обков</span><b>Не е избран</b><em>◇</em></div>
                 </div>
+                {renderModuleProductTypeResolution()}
               </details>
               {onCreateOfferFromSketch && (
                 <button type="button" className="constructor-create-offer constructor-create-offer-compact" disabled={!canEditConstruction || !construction} onClick={() => onCreateOfferFromSketch(construction ? constructionToSnapshot(construction) : null)}>
@@ -2779,7 +2863,7 @@ export default function ConstructorShell({
                 <b>{selectedElementTitle}</b>
                 <small>{selectedElementMeta}</small>
               </div>
-              {!isFreeMode && selectedProfileSystem && effectiveProfileResolution ? (
+              {selectedProfileSystem && effectiveProfileResolution ? (
                 <div
                   className={`constructor-inspector-resolution-badge ${profileResolutionProgress.assigned === profileResolutionProgress.required ? 'is-complete' : 'is-incomplete'}`}
                   title={`Profile Resolution · ${profileResolutionProgress.assigned}/${profileResolutionProgress.required}. ${profileResolutionMissingTargets.length > 0 ? `Липсва: ${profileResolutionMissingLabel}` : profileResolutionMissingLabel}`}
@@ -2794,7 +2878,7 @@ export default function ConstructorShell({
                   <b>—</b>
                 </div>
               )}
-              {!isFreeMode && supplementalResolutionProgress ? (
+              {selectedProfileSystem && effectiveProfileResolution && supplementalResolutionProgress ? (
                 <div className="constructor-inspector-component-progress" title={`02A.2 supplemental resolution · BEAD = RESOLVED/targets; human assignments: ${supplementalResolutionProgress.glazingBeads.assigned}`}>
                   <span className="constructor-contract-marker" aria-hidden="true">BEAD {supplementalResolutionProgress.glazingBeads.resolved}/{supplementalResolutionProgress.glazingBeads.targetsRequired}</span>
                   <span>СТЪКЛОДЪРЖ. {supplementalResolutionProgress.glazingBeads.resolved}/{supplementalResolutionProgress.glazingBeads.targetsRequired}</span>
@@ -2807,6 +2891,7 @@ export default function ConstructorShell({
                       <span className={profileJointGeometry.reviewedOverlapCount === profileJointGeometry.requiredJointCount ? 'is-ready' : 'is-pending'} title={`Прегледано front-elevation застъпване: ${profileJointGeometry.reviewedOverlapCount}/${profileJointGeometry.requiredJointCount}. Това не означава пълна assembly геометрия.`}>
                         ЗАСТЪПВАНЕ {profileJointGeometry.reviewedOverlapCount}/{profileJointGeometry.requiredJointCount}
                       </span>
+                      {profileAwareSashGeometry && <span className={profileAwareSashGeometry.reviewedPlacementCount === profileAwareSashGeometry.requiredPlacementCount ? 'is-ready' : 'is-pending'}>КРИЛА {profileAwareSashGeometry.reviewedPlacementCount}/{profileAwareSashGeometry.requiredPlacementCount}</span>}
                     </>
                   )}
                 </div>
@@ -2834,7 +2919,7 @@ export default function ConstructorShell({
               <b>Конструктивна скица · не машинна геометрия</b>
             </summary>
             <p>
-              Profile Resolution 01A пази human-confirmed structural кодове; 02A.2 заключва glazing-bead resolution зад explicit FIELD + base-profile context и пази reinforcement/hardware requirements без автоматичен kit. PROFILE-AWARE JOINT GEOMETRY 01 разпознава границите каса/делител ↔ крило, но оставя overlap / inset НЕИЗВЕСТНИ, докато сглобеният секционен чертеж не бъде семантично потвърден. Реалните glazing deductions, cut list, BOM и машинните данни още не се генерират.
+              Profile Resolution 01A пази human-confirmed structural кодове; 02A.2 заключва glazing-bead resolution зад explicit FIELD + base-profile context и пази reinforcement/hardware requirements без автоматичен kit. PROFILE-AWARE SASH GEOMETRY 01 използва reviewed support faces и 22 mm evidence-bound overlap само за front-elevation placement на поддържаната PRELUDE 60 комбинация; точните inset и glazing inset на сглобения възел остават НЕИЗВЕСТНИ. Реалните glazing deductions, glass cut, cut list, BOM и машинните данни още не се генерират.
             </p>
           </details>
         </aside>

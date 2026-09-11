@@ -1,4 +1,5 @@
 import type { ProfileRole } from './types'
+import { PRELUDE_60_REVIEWED_SASH_OVERLAP } from './jointSemantics'
 
 export type ProfileSemanticSource = 'human-confirmed' | 'system-nominal'
 
@@ -48,6 +49,26 @@ export const profileDimensionalSemantics: readonly ProfileDimensionalSemantics[]
       valueMm: 42,
       source: 'human-confirmed',
       noteBg: 'Human-confirmed работна семантика: видима височина/лице на каса 482.30.',
+    },
+  },
+  {
+    systemId: 'kmg-prelude-60',
+    profileCode: '482.05',
+    role: 'sash',
+    constructionDepth: {
+      valueMm: 60,
+      source: 'system-nominal',
+      noteBg: 'Номинална системна дълбочина PRELUDE 60.',
+    },
+    visibleFace: {
+      valueMm: PRELUDE_60_REVIEWED_SASH_OVERLAP.sashVisibleFaceMm,
+      source: 'human-confirmed',
+      noteBg: 'Reviewed PRELUDE 60 semantics: видимо лице на крило 482.05 = 56 mm.',
+    },
+    sashOverlap: {
+      valueMm: PRELUDE_60_REVIEWED_SASH_OVERLAP.overlapMm,
+      source: 'human-confirmed',
+      noteBg: 'Reviewed front-elevation overlap за 482.05 = 22 mm. Това не определя glazing inset или cut geometry.',
     },
   },
   {

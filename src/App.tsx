@@ -15,6 +15,7 @@ import { buildOfferModuleDefaults } from './domain/offerModuleDefaults'
 import { resolveConstructionTopology } from './domain/construction'
 import {
   createModuleProfileResolution,
+  reconcileModuleProfileResolution,
   type ModuleProfileResolution,
 } from './domain/profileResolution'
 import {
@@ -106,6 +107,27 @@ type OfferDraft = {
 type FreeConstructorModule = {
   id: string
   sequence: number
+  profileSystemId: string
+  productType: 'window' | 'door' | null
+  profileResolution: ModuleProfileResolution | null
+}
+
+function reconcileFreeModuleProfiles(module: FreeConstructorModule, draft: ConstructorDraftSnapshot | null): FreeConstructorModule {
+  const system = getProfileSystemById(module.profileSystemId)
+  if (!system || !draft) {
+    return { ...module, profileResolution: system ? createModuleProfileResolution(system.id) : null }
+  }
+  const topology = draft?.topology ? resolveConstructionTopology(draft.topology) : null
+  return {
+    ...module,
+    profileResolution: reconcileModuleProfileResolution(
+      module.profileResolution,
+      system,
+      module.productType,
+      [...(topology?.dividers ?? []), ...(topology?.angledDividers ?? [])].map((divider) => divider.id),
+      topology?.fields ?? [],
+    ),
+  }
 }
 
 const EMPTY_OFFER: OfferDraft = {
@@ -583,7 +605,7 @@ export default function App() {
 
   const startOfferFromFreeSketch = (draft: ConstructorDraftSnapshot | null) => {
     setOfferSourceSketch(draft)
-    setOffer(EMPTY_OFFER)
+    setOffer({ ...EMPTY_OFFER, profileSystemId: activeFreeModule?.profileSystemId ?? '' })
     setSaved(false)
     setModules([])
     setModuleProfileResolutions({})
@@ -663,6 +685,11 @@ export default function App() {
     const created: FreeConstructorModule = {
       id: `free-module-${nextSequence}`,
       sequence: nextSequence,
+      profileSystemId: activeFreeModule?.profileSystemId ?? '',
+      productType: null,
+      profileResolution: activeFreeModule?.profileSystemId
+        ? createModuleProfileResolution(activeFreeModule.profileSystemId)
+        : null,
     }
 
     setFreeModules((current) => [...current, created])
@@ -684,14 +711,31 @@ export default function App() {
       ...current,
       [activeFreeModule.id]: draft,
     }))
+    setFreeModules((current) => current.map((module) => module.id === activeFreeModule.id
+      ? reconcileFreeModuleProfiles(module, draft) : module))
   }
 
   const resetActiveFreeModuleDraft = () => {
+    setActiveFreeModuleDraft(null)
+  }
+
+  const setActiveFreeModuleSystem = (profileSystemId: string) => {
+    if (!activeFreeModule || (profileSystemId && !SELECTABLE_PROFILE_SYSTEMS.some((system) => system.id === profileSystemId))) return
+    setFreeModules((current) => current.map((module) => module.id === activeFreeModule.id && module.profileSystemId !== profileSystemId
+      ? { ...module, profileSystemId, profileResolution: profileSystemId ? createModuleProfileResolution(profileSystemId) : null }
+      : module))
+  }
+
+  const setActiveFreeModuleProductType = (productType: 'window' | 'door' | null) => {
     if (!activeFreeModule) return
-    setFreeModuleSketchDrafts((current) => ({
-      ...current,
-      [activeFreeModule.id]: null,
-    }))
+    setFreeModules((current) => current.map((module) => module.id === activeFreeModule.id
+      ? reconcileFreeModuleProfiles({ ...module, productType }, activeFreeModuleDraft) : module))
+  }
+
+  const setActiveFreeModuleProfileResolution = (profileResolution: ModuleProfileResolution) => {
+    if (!activeFreeModule) return
+    setFreeModules((current) => current.map((module) => module.id === activeFreeModule.id && module.profileSystemId === profileResolution.profileSystemId
+      ? reconcileFreeModuleProfiles({ ...module, profileResolution }, activeFreeModuleDraft) : module))
   }
 
   const setActiveModuleDraft = (draft: ConstructorDraftSnapshot | null) => {
@@ -832,6 +876,17 @@ export default function App() {
             activeModuleId={activeFreeModule?.id}
             initialDraft={activeFreeModuleDraft}
             onDraftChange={setActiveFreeModuleDraft}
+            freeProfileSystemId={activeFreeModule?.profileSystemId ?? ''}
+            onFreeProfileSystemChange={activeFreeModule ? setActiveFreeModuleSystem : undefined}
+            profileResolution={activeFreeModule?.profileResolution ?? null}
+            onProfileResolutionChange={setActiveFreeModuleProfileResolution}
+            moduleSummary={{
+              productType: activeFreeModule?.productType ?? null,
+              productTypeLabel: MODULE_PRODUCT_TYPE_PRESETS.find((option) => option.id === activeFreeModule?.productType)?.labelBg ?? 'Не е зададен',
+              widthMm: activeFreeModuleDraft?.frame.widthMm ?? null,
+              heightMm: activeFreeModuleDraft?.frame.heightMm ?? null,
+            }}
+            onModuleProductTypeChange={activeFreeModule ? setActiveFreeModuleProductType : undefined}
             onSelectModule={selectFreeModule}
             onCreateModule={createNextFreeModule}
             onResetModule={resetActiveFreeModuleDraft}

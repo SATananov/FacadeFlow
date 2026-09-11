@@ -89,35 +89,38 @@ function supportForEdge(args: {
   const frameTop = frameFaceMm
   const frameBottom = frame.heightMm - frameFaceMm
 
+  // A local divider must cover the whole edge, not just share its coordinate.
+  // Multiple covering candidates are ambiguous and must fail closed.
+  const uniqueSupport = (candidates: readonly ResolvedConstructionDivider[]): BoundarySupport | null =>
+    candidates.length === 1 ? { kind: 'divider', id: candidates[0].id } : null
+  const coversSpan = (divider: ResolvedConstructionDivider, start: number, end: number) =>
+    divider.startMm <= start + EPSILON_MM && divider.endMm >= end - EPSILON_MM
+
   if (edge === 'left') {
     if (near(left, frameLeft)) return { kind: 'frame', id: 'frame' }
-    const divider = dividers.find((item) =>
-      item.axis === 'vertical' && near(left, item.positionMm + item.thicknessMm),
-    )
-    return divider ? { kind: 'divider', id: divider.id } : null
+    return uniqueSupport(dividers.filter((item) =>
+      item.axis === 'vertical' && near(left, item.positionMm + item.thicknessMm) && coversSpan(item, top, bottom),
+    ))
   }
 
   if (edge === 'right') {
     if (near(right, frameRight)) return { kind: 'frame', id: 'frame' }
-    const divider = dividers.find((item) =>
-      item.axis === 'vertical' && near(right, item.positionMm),
-    )
-    return divider ? { kind: 'divider', id: divider.id } : null
+    return uniqueSupport(dividers.filter((item) =>
+      item.axis === 'vertical' && near(right, item.positionMm) && coversSpan(item, top, bottom),
+    ))
   }
 
   if (edge === 'top') {
     if (near(top, frameTop)) return { kind: 'frame', id: 'frame' }
-    const divider = dividers.find((item) =>
-      item.axis === 'horizontal' && near(top, item.positionMm + item.thicknessMm),
-    )
-    return divider ? { kind: 'divider', id: divider.id } : null
+    return uniqueSupport(dividers.filter((item) =>
+      item.axis === 'horizontal' && near(top, item.positionMm + item.thicknessMm) && coversSpan(item, left, right),
+    ))
   }
 
   if (near(bottom, frameBottom)) return { kind: 'frame', id: 'frame' }
-  const divider = dividers.find((item) =>
-    item.axis === 'horizontal' && near(bottom, item.positionMm),
-  )
-  return divider ? { kind: 'divider', id: divider.id } : null
+  return uniqueSupport(dividers.filter((item) =>
+    item.axis === 'horizontal' && near(bottom, item.positionMm) && coversSpan(item, left, right),
+  ))
 }
 
 function unresolvedBoundary(

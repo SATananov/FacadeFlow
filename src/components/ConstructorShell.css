@@ -3314,3 +3314,128 @@
 .constructor-joint-boundary .constructor-joint-evidence {
   color: #7d704f;
 }
+
+/* PROFILE-AWARE SASH GEOMETRY 01 — reviewed front-elevation placement.
+ * The outer sash contour is placed only when all four support edges have
+ * evidence-bound reviewed overlap and human-confirmed visible faces.
+ * Glazing inset, cut geometry and machine geometry remain intentionally unknown.
+ */
+.constructor-field-surface.has-reviewed-sash-placement .constructor-sash-profile-visual {
+  opacity: 0;
+}
+
+.constructor-reviewed-sash-placement {
+  position: absolute;
+  z-index: 6;
+  display: block;
+  box-sizing: border-box;
+  /* Decorative outline leaves the frame-local containing block unchanged. */
+  outline: 1.2px solid rgba(49, 65, 70, .98);
+  outline-offset: -1.2px;
+  background: transparent;
+  box-shadow: inset 0 0 0 var(--constructor-reviewed-sash-face, 12px) rgba(248, 250, 250, .96);
+  pointer-events: none;
+}
+
+.constructor-reviewed-sash-inner-face {
+  position: absolute;
+  box-sizing: border-box;
+  outline: 1.1px solid rgba(58, 74, 79, .94);
+  outline-offset: -1.1px;
+  background: rgba(211, 239, 245, .14);
+  pointer-events: none;
+}
+
+.constructor-reviewed-sash-mitre {
+  position: absolute;
+  z-index: 1;
+  width: calc(var(--constructor-reviewed-sash-face, 12px) * 1.414214);
+  height: 1px;
+  display: block;
+  background: rgba(58, 74, 79, .88);
+  transform-origin: left center;
+  pointer-events: none;
+}
+
+.constructor-reviewed-sash-mitre.mitre-tl {
+  left: 0;
+  top: 0;
+  transform: rotate(45deg);
+}
+
+.constructor-reviewed-sash-mitre.mitre-tr {
+  right: 0;
+  top: 0;
+  transform: rotate(-45deg);
+  transform-origin: right center;
+}
+
+.constructor-reviewed-sash-mitre.mitre-bl {
+  left: 0;
+  bottom: 0;
+  transform: rotate(-45deg);
+}
+
+.constructor-reviewed-sash-mitre.mitre-br {
+  right: 0;
+  bottom: 0;
+  transform: rotate(45deg);
+  transform-origin: right center;
+}
+
+.constructor-sash-placement-summary {
+  display: grid;
+  gap: 3px;
+  margin-top: 7px;
+  padding: 8px 9px;
+  border: 1px solid #bdd3d7;
+  border-radius: 5px;
+  background: #f5fafb;
+}
+
+.constructor-sash-placement-summary.status-ready {
+  border-color: #8cb9c1;
+  background: #eef8f9;
+}
+
+.constructor-sash-placement-summary > span {
+  color: #48676e;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .55px;
+}
+
+.constructor-sash-placement-summary > b {
+  color: #203f47;
+  font-size: 11px;
+}
+
+.constructor-sash-placement-summary > small {
+  color: #60777d;
+  font-size: 8px;
+  line-height: 1.35;
+}
+
+/* Free Constructor Profile Context 01 — module-local human selection. */
+.constructor-free-system-selector {
+  display: grid;
+  gap: 5px;
+  padding: 7px 0;
+  color: #48676e;
+  font-size: 10px;
+}
+
+.constructor-free-system-selector select {
+  width: 100%;
+  min-width: 0;
+  padding: 6px;
+  border: 1px solid #bdd3d7;
+  border-radius: 4px;
+  background: #fff;
+  color: #203f47;
+  font: inherit;
+}
+
+.constructor-free-system-selector small {
+  line-height: 1.4;
+}
