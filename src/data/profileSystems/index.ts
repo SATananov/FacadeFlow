@@ -9,3 +9,5 @@ export * from './hardwareOptions'
 export * from './dimensionalSemantics'
 
 export * from './componentInventory'
+
+export * from './jointSemantics'

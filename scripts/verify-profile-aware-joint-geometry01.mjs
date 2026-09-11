@@ -1,0 +1,61 @@
+import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+
+const jointData = await readFile(new URL('../src/data/profileSystems/jointSemantics.ts', import.meta.url), 'utf8')
+const jointDomain = await readFile(new URL('../src/domain/profileJointGeometry.ts', import.meta.url), 'utf8')
+const profileGeometry = await readFile(new URL('../src/domain/profileAwareGeometry.ts', import.meta.url), 'utf8')
+const shell = await readFile(new URL('../src/components/ConstructorShell.tsx', import.meta.url), 'utf8')
+const shellCss = await readFile(new URL('../src/components/ConstructorShell.css', import.meta.url), 'utf8')
+const acceptance = await readFile(new URL('../docs/PROFILE_AWARE_JOINT_GEOMETRY_01_PRELUDE60_FOUNDATION_ACCEPTANCE.md', import.meta.url), 'utf8')
+const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'))
+
+// 01 foundation invariants remain valid after later evidence-review steps.
+assert.match(jointData, /jointKind: 'frame-sash'/)
+assert.match(jointData, /supportProfileCode: '482\.30'/)
+assert.match(jointData, /sashProfileCode: '482\.05'/)
+assert.match(jointData, /supportRawCalloutsMm: \[60, 64, 42\]/)
+assert.match(jointData, /jointKind: 'mullion-sash'/)
+assert.match(jointData, /supportProfileCode: '482\.21'/)
+assert.match(jointData, /supportRawCalloutsMm: \[60, 84, 40\]/)
+assert.match(jointData, /sashInsetMm: null/)
+assert.match(jointData, /glazingInsetMm: null/)
+
+assert.match(jointDomain, /PROFILE_JOINT_GEOMETRY_VERSION = 'profile-aware-joint-geometry-01'/)
+assert.match(jointDomain, /item\.positionMm \+ item\.thicknessMm/)
+assert.match(jointDomain, /near\(right, item\.positionMm\)/)
+assert.match(jointDomain, /near\(top, item\.positionMm \+ item\.thicknessMm\)/)
+assert.match(jointDomain, /near\(bottom, item\.positionMm\)/)
+assert.match(jointDomain, /field\.polygon/)
+assert.match(jointDomain, /unsupported-topology/)
+assert.match(jointDomain, /mutatesConstructionGeometry: false/)
+assert.match(jointDomain, /machineReady: false/)
+
+assert.match(profileGeometry, /assigned\.sashOverlap\.status === 'human-confirmed'/)
+assert.match(profileGeometry, /assigned\.glazingInset\.status === 'human-confirmed'/)
+assert.match(profileGeometry, /UNRESOLVED — крилото остава schematic/)
+
+assert.match(shell, /buildProfileJointGeometryReadModel/)
+assert.match(shell, /ПРОФИЛНИ ВЪЗЛИ/)
+assert.match(shell, /НУЖЕН ПОТВЪРДЕН СРЕЗ/)
+assert.match(shell, /Застъпване:/)
+assert.match(shell, /Отместване:/)
+assert.match(shell, /ВЪЗЛИ \{profileJointGeometry\.resolvedJointCount\}/)
+assert.match(shellCss, /PROFILE-AWARE JOINT GEOMETRY 01/)
+assert.match(shellCss, /constructor-joint-geometry-card/)
+
+// The original foundation acceptance remains historical evidence of the gated starting point.
+assert.match(acceptance, /482\.30.*60 \/ 64 \/ 42 mm/)
+assert.match(acceptance, /482\.05.*60 \/ 56 \/ 56 mm/)
+assert.match(acceptance, /482\.21.*60 \/ 84 \/ 40 mm/)
+assert.match(acceptance, /MACHINE READY: \*\*NO\*\*/)
+assert.match(packageJson.scripts['test:contract'], /verify-profile-aware-joint-geometry01\.mjs/)
+assert.equal(packageJson.scripts['test:profile-joint-geometry01'], 'node scripts/verify-profile-aware-joint-geometry01.mjs')
+
+console.log('=== PROFILE-AWARE JOINT GEOMETRY 01 VERIFY PASS ===')
+console.log('PRELUDE 60 JOINT PAIRS: FRAME-SASH + MULLION-SASH RECOGNIZED')
+console.log('TOPOLOGY: FRAME / NORMAL DIVIDER BOUNDARIES RESOLVED WITHOUT MUTATION')
+console.log('POLYGON / ANGLED JOINT RECONSTRUCTION: DEFERRED')
+console.log('EXACT SASH INSET / GLAZING INSET: STILL GATED')
+console.log('PROFILE-AWARE SASH GEOMETRY: STILL GATED')
+console.log('BOM / CUT LIST / MACHINE: NO')
+console.log('MACHINE READY: NO')

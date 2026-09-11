@@ -42,7 +42,7 @@ assert.match(css, /\.constructor-layout/)
 assert.match(css, /\.constructor-canvas\.has-grid/)
 assert.match(css, /\.constructor-statusbar/)
 assert.match(css, /\.constructor-offer-locks/)
-assert.match(css, /grid-template-columns: 210px minmax\(460px, 1fr\) 280px/)
+assert.match(css, /grid-template-columns: 192px minmax\(520px, 1fr\) 300px/)
 
 assert.match(packageJson.scripts['test:contract'], /verify-constructor01a\.mjs/)
 

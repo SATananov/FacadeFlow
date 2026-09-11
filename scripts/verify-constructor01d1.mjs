@@ -12,18 +12,18 @@ assert.match(shell, /handing-\$\{field\.openingHanding \?\? 'none'\}/)
 
 // side-hinged left: left corners -> right midpoint
 assert.match(shell, /openingMode === 'side-hinged' && field\.openingHanding === 'left'/)
-assert.match(shell, /x1="7" y1="7" x2="93" y2="50"/)
-assert.match(shell, /x1="7" y1="93" x2="93" y2="50"/)
+assert.match(shell, /x1="0" y1="0" x2="100" y2="50"/)
+assert.match(shell, /x1="0" y1="100" x2="100" y2="50"/)
 
 // side-hinged right: mirrored
 assert.match(shell, /openingMode === 'side-hinged' && field\.openingHanding === 'right'/)
-assert.match(shell, /x1="93" y1="7" x2="7" y2="50"/)
-assert.match(shell, /x1="93" y1="93" x2="7" y2="50"/)
+assert.match(shell, /x1="100" y1="0" x2="0" y2="50"/)
+assert.match(shell, /x1="100" y1="100" x2="0" y2="50"/)
 
 // tilt: bottom corners -> top midpoint
 assert.match(shell, /openingMode === 'tilt'/)
-assert.match(shell, /x1="7" y1="93" x2="50" y2="7"/)
-assert.match(shell, /x1="93" y1="93" x2="50" y2="7"/)
+assert.match(shell, /x1="0" y1="100" x2="50" y2="0"/)
+assert.match(shell, /x1="100" y1="100" x2="50" y2="0"/)
 
 // tilt-turn combines both marks
 assert.match(shell, /openingMode === 'tilt-turn' && field\.openingHanding === 'left'/)

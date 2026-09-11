@@ -1,6 +1,7 @@
 import type { ProfileSystemCatalogEntry } from './types'
 
 const source = 'KMG PVC Profiles Systems'
+const currentSeries60Source = 'KMG /series 60mm/'
 
 export const kmgPrelude60: ProfileSystemCatalogEntry = {
   id: 'kmg-prelude-60',
@@ -14,8 +15,8 @@ export const kmgPrelude60: ProfileSystemCatalogEntry = {
   mainProfiles: [
     { code: '482.30', role: 'frame', labelBg: 'Каса', labelCatalog: 'frame', dimensions: { calloutsMm: [60, 64, 42] }, evidence: { documentTitle: source, page: 2, section: 'Main profiles' } },
     { code: '482.20', role: 'frame', labelBg: 'Каса', labelCatalog: 'frame', dimensions: { calloutsMm: [60, 68, 46] }, evidence: { documentTitle: source, page: 2, section: 'Main profiles' } },
-    { code: '482.05', role: 'sash', labelBg: 'Крило', labelCatalog: 'sash', dimensions: { calloutsMm: [60, 56, 56] }, evidence: { documentTitle: source, page: 2, section: 'Main profiles' } },
-    { code: '482.18', role: 'sash', labelBg: 'Крило', labelCatalog: 'sash', dimensions: { calloutsMm: [60, 56, 56] }, evidence: { documentTitle: source, page: 2, section: 'Main profiles' } },
+    { code: '482.05', role: 'sash', labelBg: 'Крило', labelCatalog: 'sash', dimensions: { calloutsMm: [60, 78, 56] }, evidence: { documentTitle: currentSeries60Source, page: 1, section: 'Main profiles · 482.05 sash · reviewed current catalogue callouts' } },
+    { code: '482.18', role: 'sash', labelBg: 'Крило', labelCatalog: 'sash', dimensions: { calloutsMm: [60, 78, 56] }, evidence: { documentTitle: currentSeries60Source, page: 1, section: 'Main profiles · 482.18 sash · reviewed current catalogue callouts' } },
     { code: '482.25', role: 'sash', labelBg: 'Крило', labelCatalog: 'sash', dimensions: { calloutsMm: [60, 75, 73] }, evidence: { documentTitle: source, page: 2, section: 'Main profiles' } },
     { code: '482.23', role: 'sash', labelBg: 'Крило', labelCatalog: 'sash', dimensions: { calloutsMm: [60, 95, 53] }, evidence: { documentTitle: source, page: 2, section: 'Main profiles' } },
     { code: '482.26', role: 'door-sash', labelBg: 'Крило за врата', labelCatalog: 'door sash', dimensions: { calloutsMm: [60, 102, 102] }, evidence: { documentTitle: source, page: 2, section: 'Main profiles' } },
