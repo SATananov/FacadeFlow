@@ -243,6 +243,60 @@
   letter-spacing: .45px;
 }
 
+.empty-home-update {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #93cbd4;
+}
+
+.empty-home-update-check,
+.empty-home-update-available button {
+  min-height: 30px;
+  padding: 0 12px;
+  border: 1px solid rgba(128, 210, 223, .32);
+  border-radius: 9px;
+  background: rgba(8, 31, 39, .52);
+  color: #b9e2e8;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.empty-home-update-check:hover:not(:disabled),
+.empty-home-update-available button:hover {
+  border-color: rgba(84, 205, 222, .72);
+  background: rgba(17, 92, 105, .52);
+  color: #f0fbfc;
+}
+
+.empty-home-update-check:disabled {
+  cursor: wait;
+  opacity: .7;
+}
+
+.empty-home-update small {
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.empty-home-update-available {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.empty-home-update[data-state='available'] {
+  color: #9de8b2;
+}
+
+.empty-home-update-error {
+  color: #f2b6aa;
+}
+
 .empty-home p {
   width: min(620px, 100%);
   margin: 0;

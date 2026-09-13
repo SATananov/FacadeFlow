@@ -1,4 +1,4 @@
-import type { FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useProjectWorkspace } from './hooks/useProjectWorkspace'
 import { ProjectAssurancePanel } from './components/ProjectAssurancePanel'
 import { AssemblyReviewPanel } from './components/AssemblyReviewPanel'
@@ -56,6 +56,7 @@ import ConstructorShell, {
   type ConstructorFieldTopologySummary,
 } from './components/ConstructorShell'
 import { APP_VERSION } from './appVersion'
+import { compareAppVersions, getDesktopUpdateApi } from './desktopUpdate'
 import './App.css'
 
 const nadezhdaLogoUrl = './branding/nadezhda-header.png'
@@ -113,6 +114,50 @@ const CONFIRMED_GLAZING_OPTIONS = getConfirmedGlazingOptions()
 const CONFIRMED_HARDWARE_STANDARDS = getConfirmedHardwareStandards()
 
 export default function App() {
+  const [updateCheck, setUpdateCheck] = useState<
+    | { status: 'idle' }
+    | { status: 'checking' }
+    | { status: 'current'; latestVersion: string }
+    | { status: 'available'; latestVersion: string }
+    | { status: 'error'; message: string }
+  >({ status: 'idle' })
+
+  const checkForUpdates = async () => {
+    const api = getDesktopUpdateApi()
+    if (!api) {
+      setUpdateCheck({
+        status: 'error',
+        message: 'Проверката е достъпна в инсталирания FacadeFlow.',
+      })
+      return
+    }
+
+    setUpdateCheck({ status: 'checking' })
+    const result = await api.checkForUpdates()
+    if (!result.ok) {
+      setUpdateCheck({ status: 'error', message: result.message })
+      return
+    }
+
+    setUpdateCheck(
+      compareAppVersions(result.latestVersion, APP_VERSION) > 0
+        ? { status: 'available', latestVersion: result.latestVersion }
+        : { status: 'current', latestVersion: result.latestVersion },
+    )
+  }
+
+  const openUpdatePage = async () => {
+    const api = getDesktopUpdateApi()
+    if (!api) return
+    const result = await api.openUpdatePage()
+    if (!result.ok) {
+      setUpdateCheck({
+        status: 'error',
+        message: result.message ?? 'Страницата за обновяване не може да бъде отворена.',
+      })
+    }
+  }
+
   const workspace = useProjectWorkspace()
   const {
     offerStartOpen, setOfferStartOpen, offer, setOffer, saved, setSaved,
@@ -875,6 +920,34 @@ export default function App() {
               <h2>FacadeFlow</h2>
 
               <span className="empty-home-version">версия {APP_VERSION}</span>
+
+              <div className="empty-home-update" data-state={updateCheck.status}>
+                <button
+                  type="button"
+                  className="empty-home-update-check"
+                  onClick={() => void checkForUpdates()}
+                  disabled={updateCheck.status === 'checking'}
+                >
+                  {updateCheck.status === 'checking' ? 'Проверява...' : 'Проверка за обновяване'}
+                </button>
+
+                {updateCheck.status === 'current' && (
+                  <small>FacadeFlow е актуален · {updateCheck.latestVersion}</small>
+                )}
+
+                {updateCheck.status === 'available' && (
+                  <div className="empty-home-update-available">
+                    <small>Налична версия {updateCheck.latestVersion}</small>
+                    <button type="button" onClick={() => void openUpdatePage()}>
+                      Свали обновяването
+                    </button>
+                  </div>
+                )}
+
+                {updateCheck.status === 'error' && (
+                  <small className="empty-home-update-error">{updateCheck.message}</small>
+                )}
+              </div>
 
               <p>
                 Започнете по начина, който е удобен за задачата: директно в
