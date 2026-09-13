@@ -1,3 +1,4 @@
+import { createRuntimeLoader } from './runtime-loader.mjs'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
@@ -18,8 +19,8 @@ const prestige = await readFile(
 
 assert.match(app, /getSelectableProfileSystems/)
 assert.match(app, /getProfileSystemById/)
-assert.match(app, /profileSystemId: string/)
-assert.match(app, /profileSystemId: ''/)
+
+
 assert.match(app, /SELECTABLE_PROFILE_SYSTEMS\.map/)
 assert.match(app, /Профилна система/)
 assert.match(app, /Първо попълнете Клиент и Обект/)
@@ -49,3 +50,7 @@ console.log('OFFER PERSISTS: profileSystemId')
 console.log('MODULE CONTINUE GATE: PROFILE SYSTEM REQUIRED')
 console.log('AUTOMATIC GEOMETRY: NO')
 console.log('MACHINE READY: NO')
+
+const domain = createRuntimeLoader()('src/domain/project/projectModel')
+const form = domain.getOfferForm(domain.createProjectSnapshot())
+assert.equal(form.profileSystemId, '', 'neutral profileSystemId in canonical project')

@@ -1,3 +1,4 @@
+import { createRuntimeLoader } from './runtime-loader.mjs'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
@@ -38,8 +39,8 @@ assert.match(glazing, /Pane\/spacer sub-thicknesses are intentionally NOT inferr
 assert.match(glazing, /Compatibility with a selected profile system is also NOT inferred/)
 assert.match(index, /glazingOptions/)
 
-assert.match(app, /glazingId: string/)
-assert.match(app, /glazingId: ''/)
+
+
 assert.match(app, /getConfirmedGlazingOptions/)
 assert.match(app, /getGlazingOptionById/)
 assert.match(app, /Стъклопакет/)
@@ -70,3 +71,7 @@ console.log('PANE/SPACER SUB-THICKNESSES: NOT INFERRED')
 console.log('PROFILE-SYSTEM COMPATIBILITY: NOT YET VALIDATED')
 console.log('AUTOMATIC GEOMETRY: NO')
 console.log('MACHINE READY: NO')
+
+const domain = createRuntimeLoader()('src/domain/project/projectModel')
+const form = domain.getOfferForm(domain.createProjectSnapshot())
+assert.equal(form.glazingId, '', 'neutral glazingId in canonical project')

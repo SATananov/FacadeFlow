@@ -7,7 +7,7 @@ const shellCss = fs.readFileSync('src/components/ConstructorShell.css', 'utf8')
 const acceptance = fs.readFileSync('docs/CONSTRUCTOR_01A_1_DIRECT_ENTRY_ACCEPTANCE.md', 'utf8')
 
 const checks = [
-  [app.includes("useState<'offer' | 'free' | null>(null)"), 'App has explicit offer/free constructor launch modes'],
+  [app.includes('useProjectWorkspace') && app.includes('setConstructorMode'), 'App has explicit offer/free constructor launch modes'],
   [app.includes('startFreeConstructor'), 'App exposes direct constructor entry'],
   [app.includes('Свободна скица · без оферта'), 'Header labels direct entry as free sketch without offer'],
   [app.includes('mode="free"'), 'App launches shared ConstructorShell in free mode'],

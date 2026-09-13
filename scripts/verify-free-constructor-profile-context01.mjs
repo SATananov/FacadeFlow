@@ -133,9 +133,16 @@ test('free Profile pane, badges and reviewed placement render without offerConte
   const render = mount(Shell, active())
   let tree = render()
   assert.equal(nodes(tree, (node) => node.props?.className === 'constructor-reviewed-sash-placement').length, 2)
-  assert.ok(nodes(tree, (node) => node.props?.className === 'constructor-inspector-component-progress').length)
+  assert.equal(nodes(tree, (node) => node.props?.className === 'constructor-inspector-component-progress').length, 0, 'guided mode keeps dense component progress hidden')
+  const freeWorkButton = nodes(tree, (node) => node.type === 'button' && text(node) === 'Свободна работа')[0]
+  assert.ok(freeWorkButton, 'Free work mode button')
+  freeWorkButton.props.onClick()
+  tree = render()
+  assert.ok(nodes(tree, (node) => node.props?.className === 'constructor-inspector-component-progress').length, 'component progress remains available in free work mode')
   assert.match(text(tree), /КРИЛА 2\/2/)
-  button(tree, 'Профил').props.onClick()
+  const profileTab = nodes(tree, (node) => node.type === 'button' && node.props?.role === 'tab' && text(node) === 'Профил')[0]
+  assert.ok(profileTab, 'Profile inspector tab')
+  profileTab.props.onClick()
   tree = render()
   assert.doesNotMatch(text(nodes(tree, (node) => node.props?.role === 'tabpanel')[0]), /Профилна система не е избрана/)
   const hasOption = (value) => nodes(tree, (node) => node.type === 'option' && node.props.value === value).length > 0
@@ -146,7 +153,7 @@ test('free Profile pane, badges and reviewed placement render without offerConte
   nodes(tree, (node) => node.props.className?.startsWith('constructor-parametric-frame'))[0].props.onPointerDown({ stopPropagation() {} })
   tree = render()
   assert.ok(hasOption('482.30'), 'frame catalogue option in actual Profile pane')
-  const view = button(tree, 'Profile View')
+  const view = button(tree, 'Профилен изглед')
   assert.equal(view.props.disabled, false)
   view.props.onClick()
   tree = render()
@@ -181,7 +188,7 @@ test('module switch restores independent system, type, assignments and sketch', 
   assert.equal(active().freeProfileSystemId, prelude.id)
   assert.equal(active().moduleSummary.productType, 'window')
   assert.deepEqual(active().profileResolution, approvedResolution)
-  assert.strictEqual(active().initialDraft, draft)
+  assert.deepEqual(active().initialDraft, draft)
   active().onSelectModule(secondId)
   assert.equal(active().freeProfileSystemId, otherSystem.id)
   assert.equal(active().moduleSummary.productType, 'door')
@@ -191,7 +198,7 @@ test('module switch restores independent system, type, assignments and sketch', 
 test('system change and clear remove assignments without changing topology', () => {
   active().onFreeProfileSystemChange(otherSystem.id)
   clean(active().profileResolution, otherSystem.id)
-  assert.strictEqual(active().initialDraft, draft)
+  assert.deepEqual(active().initialDraft, draft)
   active().onFreeProfileSystemChange('')
   assert.equal(active().profileResolution, null)
   assert.equal(active().freeProfileSystemId, '')
@@ -223,7 +230,8 @@ for (const systemId of [prelude.id, '']) {
       assert.ok(nodes(appTree, (node) => node.type === 'input' && node.props.name === name).every((node) => !node.props.checked))
     }
     // Inspect real App state as controls can be gated until client/object input.
-    const offer = host.values.find((value) => value && 'clientName' in Object(value))
+    const session = host.values.find((value) => value?.snapshot?.schemaVersion === load('src/domain/project/projectModel').PROJECT_SCHEMA_VERSION)
+    const offer = load('src/domain/project/projectModel').getOfferForm(session.snapshot)
     assert.equal(offer.profileSystemId, systemId)
     for (const name of ['colorId', 'foilModeId', 'glazingId', 'hardwareStandardId', 'clientName', 'objectName']) assert.equal(offer[name], '')
     button(appTree, 'Свободна скица · без оферта').props.onClick()

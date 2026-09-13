@@ -1,3 +1,4 @@
+import { createRuntimeLoader } from './runtime-loader.mjs'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
@@ -28,10 +29,10 @@ assert.match(finishes, /getProfileSystemFinishOptionById/)
 assert.match(finishes, /getProfileSystemFoilModeById/)
 assert.match(index, /finishOptions/)
 
-assert.match(app, /colorId: string/)
-assert.match(app, /foilModeId: string/)
-assert.match(app, /colorId: ''/)
-assert.match(app, /foilModeId: ''/)
+
+
+
+
 assert.match(app, /getProfileSystemFinishOptions/)
 assert.match(app, /getProfileSystemFinishOptionById/)
 assert.match(app, /getProfileSystemFoilModeById/)
@@ -45,8 +46,8 @@ assert.match(app, /Boolean\(selectedFinish\)/)
 assert.match(app, /Boolean\(selectedFoilMode\)/)
 assert.match(app, /const selectProfileSystem/)
 assert.match(app, /const selectFinish/)
-assert.match(app, /colorId: ''/)
-assert.match(app, /foilModeId: ''/)
+
+
 assert.doesNotMatch(app, /color: 'Бяло'/)
 assert.doesNotMatch(app, /value=\{offer\.color\}/)
 
@@ -64,3 +65,8 @@ console.log('SOURCE: HUMAN-CONFIRMED OPERATIONAL DATA')
 console.log('EXTERIOR-ONLY INTERIOR COLOR: UNSPECIFIED')
 console.log('AUTOMATIC GEOMETRY: NO')
 console.log('MACHINE READY: NO')
+
+const domain = createRuntimeLoader()('src/domain/project/projectModel')
+const form = domain.getOfferForm(domain.createProjectSnapshot())
+assert.equal(form.colorId, '', 'neutral colorId in canonical project')
+assert.equal(form.foilModeId, '', 'neutral foilModeId in canonical project')

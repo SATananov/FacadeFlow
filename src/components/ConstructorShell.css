@@ -3439,3 +3439,1215 @@
 .constructor-free-system-selector small {
   line-height: 1.4;
 }
+
+/* GLAZING CONTEXT 01B — explicit per-FIELD human thickness + bead UI */
+.constructor-glazing-context-card {
+  padding: 8px;
+  border: 1px solid #c5dadd;
+  border-radius: 6px;
+  background: #f9fcfc;
+}
+
+.constructor-glazing-thickness-control,
+.constructor-glazing-candidates {
+  display: grid;
+  gap: 6px;
+  padding: 9px;
+  border: 1px solid #c8dadd;
+  border-radius: 5px;
+  background: #ffffff;
+}
+
+.constructor-glazing-thickness-control > div:first-child,
+.constructor-glazing-candidates-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.constructor-glazing-thickness-control > div:first-child span,
+.constructor-glazing-candidates-heading span {
+  color: #5d7b82;
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: .45px;
+}
+
+.constructor-glazing-thickness-control > div:first-child b,
+.constructor-glazing-candidates-heading b {
+  color: #286a77;
+  font-size: 9px;
+  font-weight: 950;
+  text-align: right;
+}
+
+.constructor-glazing-thickness-entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 5px;
+}
+
+.constructor-glazing-thickness-entry input {
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid #9bbdc4;
+  border-radius: 4px;
+  outline: 0;
+  background: #fff;
+  color: #244b55;
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.constructor-glazing-thickness-entry input:focus {
+  border-color: #1399ae;
+  box-shadow: 0 0 0 2px rgba(19, 153, 174, .12);
+}
+
+.constructor-glazing-thickness-entry > span {
+  color: #617d84;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.constructor-glazing-thickness-entry button {
+  height: 34px;
+  padding: 0 9px;
+  border: 1px solid #8db8c0;
+  border-radius: 4px;
+  background: #eef8f9;
+  color: #286673;
+  font-size: 8px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.constructor-glazing-thickness-entry button.is-clear {
+  border-color: #c8d3d5;
+  background: #f7f9f9;
+  color: #6b7d82;
+}
+
+.constructor-glazing-thickness-entry button:disabled {
+  cursor: default;
+  opacity: .45;
+}
+
+.constructor-glazing-thickness-control > small,
+.constructor-glazing-candidates > small {
+  color: #73868b;
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+.constructor-glazing-candidate-list {
+  display: grid;
+  gap: 4px;
+}
+
+.constructor-glazing-candidate {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 7px;
+  border: 1px solid #d5e1e3;
+  border-radius: 4px;
+  background: #f7fbfb;
+}
+
+.constructor-glazing-candidate b {
+  color: #225c68;
+  font-size: 9px;
+  font-weight: 950;
+}
+
+.constructor-glazing-candidate span {
+  color: #526e75;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.constructor-glazing-candidate em {
+  color: #6b7e83;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.constructor-glazing-bead-control select:disabled {
+  cursor: default;
+  opacity: .62;
+  background: #f2f6f6;
+}
+
+/* Constructor Guidance 01 — first-use guided FIELD workflow */
+.constructor-field-workflow-guide {
+  margin: 8px 0 9px;
+  padding: 9px;
+  display: grid;
+  gap: 8px;
+  border: 1px solid #a7cfd5;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #f8fcfd, #edf8fa);
+}
+
+.constructor-field-workflow-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.constructor-field-workflow-heading > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.constructor-field-workflow-heading span {
+  color: #5b7d84;
+  font-size: 7.5px;
+  font-weight: 950;
+  letter-spacing: .5px;
+}
+
+.constructor-field-workflow-heading b {
+  color: #174f5b;
+  font-size: 10px;
+  line-height: 1.25;
+}
+
+.constructor-field-workflow-heading em {
+  flex: 0 0 auto;
+  padding: 3px 6px;
+  border: 1px solid #9fcbd2;
+  border-radius: 999px;
+  background: #fff;
+  color: #167e91;
+  font-size: 6.5px;
+  font-style: normal;
+  font-weight: 950;
+  letter-spacing: .42px;
+}
+
+.constructor-field-workflow-steps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.constructor-field-workflow-steps > div {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid #d2dfe1;
+  border-radius: 5px;
+  background: #fff;
+}
+
+.constructor-field-workflow-steps i {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #eef3f4;
+  color: #71858a;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.constructor-field-workflow-steps div > div {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+}
+
+.constructor-field-workflow-steps span {
+  overflow: hidden;
+  color: #6f8388;
+  font-size: 6.5px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.constructor-field-workflow-steps b {
+  overflow: hidden;
+  color: #4c646a;
+  font-size: 7.5px;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.constructor-field-workflow-steps > div.is-current {
+  border-color: #28a8ba;
+  box-shadow: 0 0 0 1px rgba(40, 168, 186, .12);
+  background: #f2fbfc;
+}
+
+.constructor-field-workflow-steps > div.is-current i {
+  background: #1399ae;
+  color: #fff;
+}
+
+.constructor-field-workflow-steps > div.is-current b {
+  color: #087d91;
+}
+
+.constructor-field-workflow-steps > div.is-done {
+  border-color: #b8d8ce;
+  background: #f5fbf8;
+}
+
+.constructor-field-workflow-steps > div.is-done i {
+  background: #dff1ea;
+  color: #327763;
+}
+
+.constructor-field-workflow-steps > div.is-done b {
+  color: #327763;
+}
+
+.constructor-field-workflow-next {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 7px;
+  border: 1px solid #b9d7dc;
+  border-radius: 5px;
+  background: #fff;
+}
+
+.constructor-field-workflow-next > div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.constructor-field-workflow-next strong {
+  color: #174f5b;
+  font-size: 8.5px;
+  line-height: 1.25;
+}
+
+.constructor-field-workflow-next small {
+  color: #6b8186;
+  font-size: 7.5px;
+  line-height: 1.35;
+}
+
+.constructor-field-workflow-next > button,
+.constructor-field-workflow-actions button {
+  min-height: 30px;
+  padding: 0 9px;
+  border: 1px solid #71b7c2;
+  border-radius: 4px;
+  background: #eef9fa;
+  color: #176878;
+  font-size: 7.5px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.constructor-field-workflow-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.constructor-field-workflow-next.is-done {
+  border-color: #b9d8cf;
+  background: #f4faf7;
+}
+
+.constructor-shared-frame-profile-context {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid #b5d4d9;
+  border-radius: 5px;
+  background: #f8fcfc;
+}
+
+.constructor-shared-frame-profile-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.constructor-shared-frame-profile-heading span {
+  color: #557980;
+  font-size: 7.5px;
+  font-weight: 950;
+  letter-spacing: .42px;
+}
+
+.constructor-shared-frame-profile-heading b {
+  color: #177c8e;
+  font-size: 6.5px;
+  font-weight: 950;
+  letter-spacing: .35px;
+}
+
+.constructor-shared-frame-profile-context > small {
+  color: #71868b;
+  font-size: 7.5px;
+  line-height: 1.35;
+}
+
+/* Constructor Guidance 01.1 — guided next action.
+ * UX-only: one dominant action takes the user to the exact required control.
+ */
+.constructor-field-workflow-guide {
+  border-width: 2px;
+  border-color: #69bbc7;
+  background: linear-gradient(180deg, #ffffff, #eefafb);
+  box-shadow: 0 4px 14px rgba(20, 104, 120, .10);
+}
+
+.constructor-field-workflow-heading span {
+  color: #087d91;
+  font-size: 8px;
+  letter-spacing: .65px;
+}
+
+.constructor-field-workflow-heading b {
+  margin-top: 1px;
+  color: #123f49;
+  font-size: 11.5px;
+  line-height: 1.28;
+}
+
+.constructor-field-workflow-heading em {
+  border-color: #56b0bd;
+  background: #e9f9fb;
+  color: #087d91;
+}
+
+.constructor-field-workflow-next {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 7px;
+  padding: 8px;
+  border-color: #9cced5;
+  background: #fff;
+}
+
+.constructor-field-workflow-next strong {
+  font-size: 9px;
+}
+
+.constructor-field-workflow-next > button.constructor-field-workflow-primary-action,
+.constructor-field-workflow-actions button {
+  width: 100%;
+  min-height: 34px;
+  border-color: #138fa3;
+  background: #149db3;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(20, 157, 179, .18);
+  font-size: 8px;
+}
+
+.constructor-field-workflow-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.constructor-guidance-control-target,
+.constructor-glazing-thickness-control,
+.constructor-glazing-bead-control {
+  scroll-margin-block: 80px;
+}
+
+.constructor-guidance-control-target.is-guidance-target,
+.constructor-glazing-thickness-control.is-guidance-target,
+.constructor-glazing-bead-control.is-guidance-target {
+  position: relative;
+  border-radius: 6px;
+  outline: 2px solid #159db2;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px rgba(21, 157, 178, .10);
+}
+
+.constructor-guidance-control-target.is-guidance-target::before,
+.constructor-glazing-thickness-control.is-guidance-target::before,
+.constructor-glazing-bead-control.is-guidance-target::before {
+  content: 'СЕГА ТУК';
+  position: absolute;
+  z-index: 4;
+  top: -9px;
+  right: 7px;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: #159db2;
+  color: #fff;
+  font-size: 6px;
+  font-weight: 950;
+  letter-spacing: .45px;
+  pointer-events: none;
+}
+
+/* CONSTRUCTOR VIEW 01 — viewport-only pan + automatic Fit to View.
+   This moves the camera, never construction topology or saved geometry. */
+.constructor-canvas.is-pan-tool {
+  cursor: grab;
+}
+
+.constructor-canvas.is-pan-tool.is-panning {
+  cursor: grabbing;
+}
+
+.constructor-canvas.is-pan-tool *,
+.constructor-canvas.is-pan-tool button {
+  cursor: inherit !important;
+}
+
+
+/* CONSTRUCTOR UX 02 — Guided Inspector.
+ * UX only: fixed inspector shell, explicit work mode, large module-settings target,
+ * contextual internal scrolling. Domain, topology and technical selection semantics unchanged.
+ */
+@media (min-width: 821px) {
+  .constructor-compact-inspector {
+    align-self: start;
+    height: calc(100vh - 162px);
+    min-height: 520px;
+    max-height: 980px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  .constructor-compact-inspector > .constructor-inspector-context-card,
+  .constructor-compact-inspector > .constructor-safety-details,
+  .constructor-compact-inspector > .constructor-work-mode-switch,
+  .constructor-compact-inspector > .constructor-guided-task-driver {
+    flex: 0 0 auto;
+  }
+
+  .constructor-compact-inspector > .constructor-inspector-main-card {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .constructor-inspector-main-card .constructor-inspector-pane {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    padding-right: 4px;
+  }
+
+  .constructor-inspector-details[open] {
+    max-height: min(42vh, 410px);
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+.constructor-work-mode-switch {
+  padding: 8px;
+  display: grid;
+  gap: 6px;
+  border: 1px solid #b9cfd3;
+  border-radius: 8px;
+  background: #f7fbfb;
+}
+
+.constructor-work-mode-switch > span {
+  color: #688188;
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: .55px;
+}
+
+.constructor-work-mode-switch > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid #c4d5d8;
+  border-radius: 7px;
+  background: #eaf1f2;
+}
+
+.constructor-work-mode-switch button {
+  min-height: 32px;
+  padding: 5px 7px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #587279;
+  font-size: 8px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.constructor-work-mode-switch button.is-active {
+  background: #fff;
+  color: #087f93;
+  box-shadow: 0 1px 5px rgba(24, 86, 98, .15), inset 0 -2px 0 #159db2;
+}
+
+.constructor-work-mode-switch > small {
+  color: #75898e;
+  font-size: 7px;
+  line-height: 1.35;
+}
+
+.constructor-guided-task-driver {
+  padding: 9px;
+  display: grid;
+  gap: 7px;
+  border: 2px solid #5bb4c1;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff, #edf9fb);
+  box-shadow: 0 4px 12px rgba(18, 118, 135, .09);
+}
+
+.constructor-guided-task-driver > div {
+  display: grid;
+  gap: 2px;
+}
+
+.constructor-guided-task-driver span {
+  color: #087d91;
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: .55px;
+}
+
+.constructor-guided-task-driver b {
+  color: #173f48;
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.constructor-guided-task-driver small {
+  color: #667f85;
+  font-size: 7.5px;
+  line-height: 1.4;
+}
+
+.constructor-guided-task-driver button {
+  min-height: 34px;
+  border: 1px solid #138fa3;
+  border-radius: 6px;
+  background: #149db3;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.constructor-guided-task-driver.is-neutral {
+  border-width: 1px;
+  border-color: #c3d5d8;
+  background: #f7fafb;
+  box-shadow: none;
+}
+
+.constructor-inspector-settings-summary {
+  min-height: 52px;
+  padding: 8px 9px !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid #bdd1d5;
+  border-radius: 7px;
+  background: #f8fbfc;
+  user-select: none;
+}
+
+.constructor-inspector-settings-summary::after {
+  display: none !important;
+}
+
+.constructor-inspector-settings-summary > span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.constructor-inspector-settings-summary > span b {
+  color: #274850;
+  font-size: 9.5px;
+  font-weight: 950;
+}
+
+.constructor-inspector-settings-summary > span small {
+  overflow: hidden;
+  color: #71878d;
+  font-size: 7px;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.constructor-inspector-settings-summary > strong {
+  flex: 0 0 auto;
+  min-width: 66px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  color: #0b8296;
+  font-size: 8px;
+  font-weight: 950;
+}
+
+.constructor-inspector-settings-summary > strong i {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #83bdc7;
+  border-radius: 50%;
+  background: #fff;
+  color: #087f93;
+  font-size: 13px;
+  font-style: normal;
+  line-height: 1;
+}
+
+.constructor-inspector-details > .constructor-inspector-settings-summary:hover {
+  border-color: #55adba;
+  background: #f1fafb;
+}
+
+.constructor-inspector-settings-grid > div.is-informational {
+  border-style: solid;
+  border-color: #d8e2e4;
+  background: #f7f9f9;
+  cursor: default;
+}
+
+.constructor-inspector-settings-grid > div.is-informational b {
+  color: #72868b;
+  font-size: 7.5px;
+  font-weight: 800;
+}
+
+.constructor-inspector-settings-grid > div.is-informational em {
+  color: #9aa9ad;
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-field-workflow-guide {
+  flex: 0 0 auto;
+  margin-top: 0;
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-field-workflow-steps {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-field-workflow-steps > div {
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 4px;
+  padding: 5px;
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-field-workflow-steps i {
+  width: 18px;
+  height: 18px;
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-field-workflow-steps span {
+  display: none;
+}
+
+@media (max-width: 1120px) and (min-width: 821px) {
+  .constructor-work-mode-switch button {
+    font-size: 7px;
+  }
+
+  .constructor-inspector-settings-summary > strong {
+    min-width: 28px;
+    font-size: 0;
+  }
+}
+
+@media (max-width: 820px) {
+  .constructor-compact-inspector {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .constructor-inspector-main-card .constructor-inspector-pane,
+  .constructor-inspector-details[open] {
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+/* CONSTRUCTOR UX 02.1 — Step-by-step flow polish.
+ * Keeps a single active task visible, adds compact progress, and makes locked tools obvious.
+ * UX only: no domain, topology, profile-resolution or AF01A semantics are changed.
+ */
+.constructor-guided-task-progress,
+.constructor-field-workflow-progress {
+  display: grid;
+  gap: 4px;
+}
+
+.constructor-guided-task-progress > span,
+.constructor-field-workflow-progress > span {
+  color: #58757c;
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: .45px;
+}
+
+.constructor-guided-task-progress > div,
+.constructor-field-workflow-progress > div {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #dbe8ea;
+}
+
+.constructor-guided-task-progress > div > i,
+.constructor-field-workflow-progress > div > i {
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  background: #149db3;
+  transition: width .18s ease;
+}
+
+.constructor-field-workflow-progress {
+  padding: 0 2px 4px;
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-field-workflow-steps {
+  display: none;
+}
+
+.constructor-layout.is-guided-workflow .constructor-tool-list button:disabled {
+  position: relative;
+  opacity: .72;
+  border-style: dashed;
+  background: #f2f5f5;
+}
+
+.constructor-layout.is-guided-workflow .constructor-tool-list button:disabled::after {
+  content: 'ПО-КЪСНО';
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  padding: 2px 4px;
+  border: 1px solid #c6d4d7;
+  border-radius: 4px;
+  background: #eef3f4;
+  color: #789096;
+  font-size: 6px;
+  font-weight: 950;
+  letter-spacing: .35px;
+}
+
+.constructor-layout.is-guided-workflow .constructor-tool-list button:disabled small {
+  padding-right: 40px;
+}
+
+/* CONSTRUCTOR UX 02.2 — Focused Guided Inspector.
+ * One visible task, quiet internal scrolling, human-readable progress.
+ * UX only: domain, topology, profile resolution and AF01A semantics are unchanged.
+ */
+@media (min-width: 821px) {
+  .constructor-compact-inspector.is-guided-mode .constructor-inspector-main-card .constructor-inspector-pane {
+    scroll-behavior: smooth;
+    scroll-padding-block: 10px 16px;
+    scrollbar-width: thin;
+    scrollbar-color: #9bbdc4 transparent;
+  }
+
+  .constructor-compact-inspector.is-guided-mode .constructor-inspector-main-card .constructor-inspector-pane::-webkit-scrollbar,
+  .constructor-compact-inspector.is-guided-mode .constructor-inspector-details[open]::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .constructor-compact-inspector.is-guided-mode .constructor-inspector-main-card .constructor-inspector-pane::-webkit-scrollbar-button,
+  .constructor-compact-inspector.is-guided-mode .constructor-inspector-details[open]::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  .constructor-compact-inspector.is-guided-mode .constructor-inspector-main-card .constructor-inspector-pane::-webkit-scrollbar-track,
+  .constructor-compact-inspector.is-guided-mode .constructor-inspector-details[open]::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .constructor-compact-inspector.is-guided-mode .constructor-inspector-main-card .constructor-inspector-pane::-webkit-scrollbar-thumb,
+  .constructor-compact-inspector.is-guided-mode .constructor-inspector-details[open]::-webkit-scrollbar-thumb {
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: #9bbdc4;
+    background-clip: padding-box;
+  }
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-inspector-context-card {
+  padding-block: 7px;
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-inspector-context-summary {
+  margin-bottom: 0;
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-inspector-settings-summary {
+  min-height: 44px;
+}
+
+.constructor-inspector-resolution-badge-guided {
+  min-width: 112px;
+  max-width: 142px;
+  padding: 6px 8px;
+  display: grid;
+  gap: 2px;
+  text-align: right;
+}
+
+.constructor-inspector-resolution-badge-guided span {
+  font-size: 6px;
+  letter-spacing: .45px;
+}
+
+.constructor-inspector-resolution-badge-guided b {
+  font-size: 7.5px;
+  line-height: 1.25;
+  white-space: normal;
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-guidance-control-target.is-guidance-target,
+.constructor-compact-inspector.is-guided-mode .constructor-glazing-thickness-control.is-guidance-target {
+  border-radius: 8px;
+  box-shadow: 0 0 0 2px rgba(20, 157, 179, .16), 0 5px 14px rgba(23, 99, 112, .08);
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-component-resolution-stack {
+  gap: 8px;
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-field-workflow-guide + .constructor-inspector-tabs {
+  margin-top: 6px;
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-safety-details {
+  opacity: .86;
+}
+
+/* CONSTRUCTOR UX 02.3 — Single-focus Inspector.
+ * Guided mode exposes only the active control. Secondary details remain optional,
+ * while Free Work keeps the full inspector. Domain semantics are unchanged.
+ */
+.constructor-compact-inspector.is-guided-mode .constructor-guided-active-control {
+  margin-top: 8px;
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-guided-active-control .constructor-inspector-tabs {
+  display: none;
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-guided-active-control .constructor-inspector-pane,
+.constructor-compact-inspector.is-guided-mode .constructor-guided-secondary-details .constructor-inspector-pane {
+  max-height: none !important;
+  overflow: visible !important;
+  scrollbar-width: auto;
+  scroll-behavior: auto;
+  scrollbar-gutter: auto;
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-guided-active-control .constructor-inspector-pane::-webkit-scrollbar,
+.constructor-compact-inspector.is-guided-mode .constructor-guided-secondary-details .constructor-inspector-pane::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.constructor-guided-secondary-details {
+  margin-top: 8px;
+  border: 1px solid #c6d9dd;
+  border-radius: 9px;
+  background: #f8fbfb;
+  overflow: clip;
+}
+
+.constructor-guided-secondary-details > summary {
+  min-height: 46px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.constructor-guided-secondary-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.constructor-guided-secondary-details > summary span {
+  display: grid;
+  gap: 2px;
+}
+
+.constructor-guided-secondary-details > summary b {
+  color: #274950;
+  font-size: 9px;
+}
+
+.constructor-guided-secondary-details > summary small {
+  color: #789096;
+  font-size: 7px;
+  line-height: 1.3;
+}
+
+.constructor-guided-secondary-details > summary strong {
+  color: #168fa4;
+  font-size: 7px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.constructor-guided-secondary-details > summary strong i {
+  display: inline-block;
+  margin-left: 3px;
+  font-style: normal;
+  transition: transform .16s ease;
+}
+
+.constructor-guided-secondary-details[open] > summary {
+  border-bottom: 1px solid #d6e3e5;
+  background: #f1f7f8;
+}
+
+.constructor-guided-secondary-details[open] > summary strong i {
+  transform: rotate(180deg);
+}
+
+.constructor-guided-secondary-details .constructor-inspector-tabs {
+  margin: 8px 8px 0;
+}
+
+.constructor-guided-secondary-details .constructor-inspector-pane {
+  padding: 8px;
+}
+
+.constructor-field-workflow-finish-action {
+  min-width: 110px;
+}
+
+/* Single-focus filtering: when the guided workflow points at one technical input,
+ * unrelated controls are not shown. They remain available through Free Work or
+ * the optional Details disclosure once the active step is complete. */
+.constructor-compact-inspector.is-guided-mode .constructor-guided-active-control.guidance-frame-profile .constructor-inspector-pane > .constructor-component-resolution-stack > *,
+.constructor-compact-inspector.is-guided-mode .constructor-guided-active-control.guidance-sash-profile .constructor-inspector-pane > .constructor-component-resolution-stack > *,
+.constructor-compact-inspector.is-guided-mode .constructor-guided-active-control.guidance-module-type .constructor-inspector-pane > .constructor-component-resolution-stack > *,
+.constructor-compact-inspector.is-guided-mode .constructor-guided-active-control.guidance-glazing-thickness .constructor-inspector-pane > .constructor-component-resolution-stack > *,
+.constructor-compact-inspector.is-guided-mode .constructor-guided-active-control.guidance-glazing-bead .constructor-inspector-pane > .constructor-component-resolution-stack > * {
+  display: none;
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-guided-active-control.guidance-frame-profile .constructor-inspector-pane > .constructor-component-resolution-stack > .constructor-shared-frame-profile-context {
+  display: grid;
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-guided-active-control.guidance-sash-profile .constructor-guidance-control-target.is-guidance-target,
+.constructor-compact-inspector.is-guided-mode .constructor-guided-active-control.guidance-module-type .constructor-guidance-control-target.is-guidance-target,
+.constructor-compact-inspector.is-guided-mode .constructor-guided-active-control.guidance-glazing-thickness .constructor-inspector-pane > .constructor-component-resolution-stack > .constructor-glazing-context-card,
+.constructor-compact-inspector.is-guided-mode .constructor-guided-active-control.guidance-glazing-bead .constructor-inspector-pane > .constructor-component-resolution-stack > .constructor-glazing-context-card {
+  display: block;
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-guided-active-control.guidance-glazing-thickness .constructor-glazing-context-card > * {
+  display: none;
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-guided-active-control.guidance-glazing-thickness .constructor-glazing-context-card > .constructor-glazing-thickness-control {
+  display: grid;
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-guided-active-control.guidance-glazing-bead .constructor-glazing-context-card > * {
+  display: none;
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-guided-active-control.guidance-glazing-bead .constructor-glazing-context-card > .constructor-glazing-candidates,
+.constructor-compact-inspector.is-guided-mode .constructor-guided-active-control.guidance-glazing-bead .constructor-glazing-context-card > .constructor-glazing-bead-control {
+  display: grid;
+}
+
+@media (max-width: 820px) {
+  .constructor-guided-secondary-details > summary {
+    min-height: 42px;
+  }
+}
+
+/* CONSTRUCTOR UX 02.4 — Unified Inspector Layout.
+ * Guided mode uses one scroll owner for the whole right inspector and keeps only
+ * the active decision prominent. Nested card/pane scrolling is removed.
+ * Free Work preserves the full technical inspector. Domain semantics unchanged.
+ */
+@media (min-width: 821px) {
+  .constructor-compact-inspector.is-guided-mode {
+    height: calc(100vh - 162px);
+    min-height: 520px;
+    max-height: 980px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #9bbdc4 transparent;
+    scrollbar-gutter: stable;
+    padding-right: 8px;
+  }
+
+  .constructor-compact-inspector.is-guided-mode::-webkit-scrollbar {
+    width: 7px;
+  }
+
+  .constructor-compact-inspector.is-guided-mode::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  .constructor-compact-inspector.is-guided-mode::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .constructor-compact-inspector.is-guided-mode::-webkit-scrollbar-thumb {
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: #9bbdc4;
+    background-clip: padding-box;
+  }
+
+  .constructor-compact-inspector.is-guided-mode > .constructor-inspector-main-card {
+    flex: 0 0 auto;
+    min-height: auto;
+    display: block;
+    overflow: visible;
+  }
+
+  .constructor-compact-inspector.is-guided-mode .constructor-inspector-details[open],
+  .constructor-compact-inspector.is-guided-mode .constructor-inspector-main-card .constructor-inspector-pane,
+  .constructor-compact-inspector.is-guided-mode .constructor-guided-active-control .constructor-inspector-pane,
+  .constructor-compact-inspector.is-guided-mode .constructor-guided-secondary-details .constructor-inspector-pane {
+    max-height: none !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    scrollbar-gutter: auto;
+    scrollbar-width: none;
+  }
+
+  .constructor-compact-inspector.is-guided-mode .constructor-inspector-details[open]::-webkit-scrollbar,
+  .constructor-compact-inspector.is-guided-mode .constructor-inspector-main-card .constructor-inspector-pane::-webkit-scrollbar,
+  .constructor-compact-inspector.is-guided-mode .constructor-guided-active-control .constructor-inspector-pane::-webkit-scrollbar,
+  .constructor-compact-inspector.is-guided-mode .constructor-guided-secondary-details .constructor-inspector-pane::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+}
+
+/* Guided module context is a compact context summary, not a second form. */
+.constructor-compact-inspector.is-guided-mode .constructor-inspector-settings-grid > .is-informational {
+  display: none;
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-inspector-settings-grid {
+  gap: 7px;
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-inspector-details[open] > .constructor-inspector-settings-summary {
+  margin-bottom: 7px;
+}
+
+.constructor-guided-inline-help {
+  display: block;
+  margin: 6px 1px 0;
+  color: #6f858b;
+  font-size: 7.5px;
+  line-height: 1.35;
+}
+
+/* Keep the selected element and its one active action visually dominant. */
+.constructor-compact-inspector.is-guided-mode .constructor-inspector-main-card {
+  border-color: #b8d7dc;
+  background: #fbfdfd;
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-inspector-selection-header {
+  margin-bottom: 6px;
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-guided-active-control,
+.constructor-compact-inspector.is-guided-mode .constructor-guided-secondary-details {
+  margin-top: 7px;
+}
+
+/* The safety boundary stays available but quiet in guided work. */
+.constructor-compact-inspector.is-guided-mode .constructor-safety-details {
+  flex: 0 0 auto;
+  margin-bottom: 4px;
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-safety-details > summary {
+  min-height: 42px;
+}
+
+/* Development/debug status never overlays the drawing in Step-by-step mode. */
+.constructor-layout.is-guided-workflow .constructor-field-surface.has-unresolved-sash-geometry.is-selected::after {
+  display: none;
+}
+
+/* In Free Work keep the technical warning, but make it human-readable Bulgarian. */
+.constructor-layout.is-free-workflow .constructor-field-surface.has-unresolved-sash-geometry.is-selected::after {
+  content: 'ГЕОМЕТРИЯ НА КРИЛОТО · НЕОПРЕДЕЛЕНА';
+  font-size: 5.8px;
+  letter-spacing: .18px;
+}
+
+@media (max-width: 820px) {
+  .constructor-compact-inspector.is-guided-mode {
+    overflow: visible;
+    padding-right: 12px;
+  }
+}
+
+
+/* CONSTRUCTOR UX 02.4.1 — Guided Inspector Micro-Polish.
+ * In Step-by-step, inactive context and safety sections return to compact
+ * summaries when the active task changes. One scroll owner remains unchanged.
+ */
+.constructor-compact-inspector.is-guided-mode .constructor-safety-details > summary {
+  min-height: 36px;
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+
+.constructor-compact-inspector.is-guided-mode .constructor-safety-details > summary b {
+  line-height: 1.25;
+}

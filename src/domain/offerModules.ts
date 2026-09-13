@@ -239,11 +239,12 @@ export interface OfferModuleDraft {
 export function createOfferModule(
   defaults: OfferModuleDefaults,
   sequence: number,
+  id: string = globalThis.crypto.randomUUID(),
 ): OfferModuleDraft {
   const safeSequence = Math.max(1, Math.floor(sequence))
 
   return {
-    id: `module-${safeSequence}`,
+    id,
     sequence: safeSequence,
     inheritedDefaults: { ...defaults },
 

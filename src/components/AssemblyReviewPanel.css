@@ -1,0 +1,21 @@
+.assembly-review-dialog { width: min(850px, calc(100vw - 32px)); max-height: 86vh; box-sizing: border-box; border: 1px solid #c7d2d9; border-radius: 14px; padding: 24px; color: #233640; background: #fff; box-shadow: 0 20px 70px #142c4240; }
+.assembly-review-dialog::backdrop { background: #102b4266; }
+.assembly-review-dialog header { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
+.assembly-review-dialog h2 { margin: 0 0 6px; font-size: 22px; }
+.assembly-review-dialog header p { margin-top: 0; color: #526774; }
+.assembly-review-dialog button { padding: 8px 14px; border: 1px solid #bac9d3; border-radius: 7px; background: #f7fafc; color: #233640; cursor: pointer; }
+.assembly-review-boundary, .assembly-review-blocker { padding: 12px 14px; background: #fff7e7; border-left: 3px solid #bd8323; border-radius: 6px; line-height: 1.5; }
+.assembly-review-summary { display: flex; flex-wrap: wrap; gap: 8px 24px; padding: 14px 0; }
+.assembly-review-summary span { color: #925b12; }
+.assembly-review-source { color: #526774; font-size: 13px; overflow-wrap: anywhere; }
+.assembly-review-requirements { display: grid; gap: 10px; padding: 0; list-style: none; }
+.assembly-review-requirements li { padding: 14px; border: 1px solid #d9e1e7; border-radius: 8px; }
+.assembly-review-requirements small, .assembly-review-requirements b { display: block; }
+.assembly-review-requirements small { color: #526774; margin-bottom: 6px; }
+.assembly-review-requirements p, .assembly-review-blocker p { margin: 7px 0 0; line-height: 1.5; }
+.assembly-review-gates { list-style: none; padding: 0; }
+.assembly-review-gates li { display: grid; grid-template-columns: 1fr auto; gap: 5px 12px; padding: 12px 0; border-bottom: 1px solid #d9e1e7; }
+.assembly-review-gates small { grid-column: 1 / -1; color: #526774; }
+.assembly-review-dialog details { margin: 18px 0; }
+.assembly-review-dialog summary { cursor: pointer; }
+@media (max-width: 600px) { .assembly-review-dialog { padding: 16px; } .assembly-review-dialog h2 { font-size: 19px; } }

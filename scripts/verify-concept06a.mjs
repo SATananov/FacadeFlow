@@ -1,3 +1,4 @@
+import { createRuntimeLoader } from './runtime-loader.mjs'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
@@ -25,8 +26,14 @@ assert.match(modules, /MODULE_PRODUCT_TYPE_PRESETS/)
 assert.match(modules, /id: 'window', labelBg: 'Прозорец'/)
 assert.match(modules, /id: 'door', labelBg: 'Врата'/)
 
-assert.match(app, /useState<OfferModuleDraft\[\]>/)
-assert.match(app, /createFirstOfferModule\(moduleDefaults\)/)
+assert.match(app, /useProjectWorkspace/)
+const load = createRuntimeLoader()
+const model = load('src/domain/project/projectModel')
+const operations = load('src/domain/project/projectOperations')
+const state = operations.completeOfferSetup(model.createProjectSnapshot())
+assert.equal(model.getOfferModules(state).length, 1)
+assert.equal(model.getOfferModules(state)[0].widthMm, null)
+assert.equal(model.getOfferModules(state)[0].productType, null)
 assert.match(app, /МОДУЛ \{String\(firstModule\.sequence\)\.padStart\(2, '0'\)\}/)
 assert.match(app, /Модул \{firstModule\.sequence\}/)
 assert.match(app, /createNextModule/)

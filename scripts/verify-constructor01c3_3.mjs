@@ -1,3 +1,4 @@
+import { createRuntimeLoader } from './runtime-loader.mjs'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
@@ -20,7 +21,13 @@ assert.match(topology, /moveDividerWithPreservedDescendants/)
 assert.match(topology, /CONSTRUCTION_MIN_FIELD_MM/)
 
 assert.match(modules, /export function createOfferModule/)
-assert.match(modules, /id: `module-\$\{safeSequence\}`/)
+const load = createRuntimeLoader()
+const factory = load('src/domain/offerModules').createOfferModule
+const projectModel = load('src/domain/project/projectModel')
+const defaults = load('src/domain/offerModuleDefaults').buildOfferModuleDefaults(projectModel.EMPTY_OFFER)
+const first = factory(defaults, 1), second = factory(defaults, 1)
+assert.notEqual(first.id, second.id)
+assert.equal(first.sequence, second.sequence)
 assert.match(app, /activeModuleId/)
 assert.match(app, /moduleSketchDrafts/)
 assert.match(app, /createNextModule/)

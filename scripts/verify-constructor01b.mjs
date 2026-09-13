@@ -52,7 +52,7 @@ assert.match(css, /\.constructor-frame-dimension-width/)
 assert.match(css, /\.constructor-frame-dimension-height/)
 
 assert.match(app, /(?:freeSketchDraft|freeModuleSketchDrafts)/)
-assert.match(app, /offerSourceSketch/)
+assert.match(app, /workspace.copyFreeModuleToOffer/)
 assert.match(app, /initialDraft=\{(?:freeSketchDraft|activeFreeModuleDraft)\}/)
 assert.match(app, /onDraftChange=\{(?:setFreeSketchDraft|setActiveFreeModuleDraft)\}/)
 assert.match(app, /onModuleSizeChange/)

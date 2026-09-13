@@ -1,0 +1,363 @@
+.project-assurance-launcher {
+  position: static;
+  min-width: 214px;
+  min-height: 38px;
+  width: auto;
+  margin-left: auto;
+  padding: 6px 10px;
+  display: grid;
+  align-content: center;
+  gap: 1px;
+  text-align: left;
+  border: 1px solid #199caf;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #0d3540, #145362);
+  color: #f2fbfc;
+  box-shadow: inset 0 -2px #22b6c8;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+
+.project-assurance-launcher:hover {
+  border-color: #58c6d3;
+  background: linear-gradient(135deg, #10414d, #176272);
+}
+
+.project-assurance-launcher.has-review {
+  border-color: #e28a47;
+  box-shadow: 0 10px 28px #0613194a, inset 0 -2px #e28a47;
+}
+
+.project-assurance-launcher-title {
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: .02em;
+}
+
+.project-assurance-launcher-meta {
+  color: #b9d8dd;
+  font-size: 9px;
+  line-height: 1.25;
+}
+
+.project-assurance-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(4, 13, 17, .34);
+  backdrop-filter: blur(1px);
+}
+
+.project-assurance-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: min(480px, calc(100vw - 24px));
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #f5f9fa;
+  color: #17343c;
+  border-left: 1px solid #79aeb8;
+  box-shadow: -22px 0 50px rgba(3, 13, 17, .28);
+}
+
+.project-assurance-header {
+  flex: 0 0 auto;
+  padding: 18px 18px 14px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  background: linear-gradient(135deg, #0b2730, #123f4b);
+  color: #f3fbfc;
+  border-bottom: 3px solid #14a7ba;
+}
+
+.project-assurance-header h2 {
+  margin: 2px 0 4px;
+  font-size: 19px;
+}
+
+.project-assurance-header p {
+  margin: 0;
+  color: #b7d0d5;
+  font-size: 11px;
+}
+
+.project-assurance-eyebrow {
+  color: #70d6e2;
+  font-size: 9px;
+  letter-spacing: .12em;
+}
+
+.project-assurance-close {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border: 1px solid #56818a;
+  border-radius: 7px;
+  background: #0a222a;
+  color: #e8f4f6;
+  font-size: 23px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.project-assurance-body {
+  min-height: 0;
+  padding: 14px 16px 28px;
+  overflow-y: auto;
+}
+
+.project-assurance-callout {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 3px;
+  border: 1px solid #b8cbd0;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.project-assurance-callout.is-draft {
+  border-color: #dfb27a;
+  background: #fff8ee;
+}
+
+.project-assurance-callout.is-review {
+  border-color: #d88d4d;
+  background: #fff4e8;
+}
+
+.project-assurance-section {
+  margin: 0 0 12px;
+  padding: 12px;
+  border: 1px solid #c6d7da;
+  border-radius: 9px;
+  background: #fff;
+}
+
+.project-assurance-section h3 {
+  margin: 0 0 10px;
+  color: #21525d;
+  font-size: 12px;
+  letter-spacing: .03em;
+}
+
+.project-assurance-controls {
+  display: grid;
+  gap: 9px;
+}
+
+.project-assurance-controls label {
+  display: grid;
+  gap: 5px;
+  color: #48656c;
+  font-size: 10px;
+}
+
+.project-assurance-drawer button,
+.project-assurance-drawer input,
+.project-assurance-drawer select {
+  width: 100%;
+  min-height: 36px;
+  padding: 7px 9px;
+  border: 1px solid #aac6cc;
+  border-radius: 6px;
+  background: #fff;
+  color: #17343c;
+  font: inherit;
+}
+
+.project-assurance-drawer button {
+  cursor: pointer;
+}
+
+/* Drawer close control must not inherit the full-width form-button rule above. */
+.project-assurance-drawer .project-assurance-close {
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 34px;
+  border: 1px solid #56818a;
+  border-radius: 7px;
+  background: #0a222a;
+  color: #e8f4f6;
+  font-size: 23px;
+  line-height: 1;
+}
+
+.project-assurance-drawer .project-assurance-close:hover {
+  background: #123b46;
+}
+
+.project-assurance-drawer .project-assurance-close:focus-visible {
+  outline: 2px solid #70d6e2;
+  outline-offset: 2px;
+}
+
+.project-assurance-drawer button:disabled {
+  opacity: .48;
+  cursor: default;
+}
+
+.project-assurance-drawer .project-assurance-primary {
+  border-color: #168da0;
+  background: linear-gradient(180deg, #18a6ba, #118497);
+  color: #fff;
+  font-weight: 700;
+}
+
+.project-assurance-statement {
+  margin-bottom: 12px;
+  padding: 13px;
+  overflow-wrap: anywhere;
+  border: 1px solid #79b8c2;
+  border-left: 4px solid #0b9caf;
+  border-radius: 9px;
+  background: #eef9fb;
+  font-size: 11px;
+}
+
+.project-assurance-statement p {
+  margin: 6px 0;
+}
+
+.project-assurance-statement dl div {
+  display: flex;
+  gap: 10px;
+}
+
+.project-assurance-statement dt {
+  font-weight: 700;
+}
+
+.project-assurance-statement dd {
+  margin: 0;
+}
+
+.project-assurance-exact-badge {
+  display: inline-block;
+  margin-bottom: 4px;
+  padding: 3px 6px;
+  border: 1px solid #73b9c4;
+  border-radius: 999px;
+  color: #177183;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .1em;
+}
+
+.project-assurance-boundary {
+  margin: 10px 0;
+  padding: 9px;
+  border: 1px dashed #d19a61;
+  border-radius: 7px;
+  background: #fff8ee;
+  color: #76502f;
+  line-height: 1.45;
+}
+
+
+.project-assurance-empty-guide {
+  display: grid;
+  gap: 7px;
+  padding: 11px;
+  border: 1px dashed #d6a56f;
+  border-radius: 8px;
+  background: #fff8ee;
+  color: #6d4b2d;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.project-assurance-empty-guide b {
+  color: #8a5528;
+  font-size: 11px;
+}
+
+.project-assurance-empty-guide button {
+  margin-top: 2px;
+  border-color: #b9cfd3;
+  background: #fff;
+  color: #245561;
+  font-weight: 700;
+}
+
+.project-assurance-empty {
+  margin: 0;
+  color: #6d8186;
+  font-size: 10px;
+}
+
+.project-assurance-history {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 7px;
+  list-style: none;
+}
+
+.project-assurance-history li {
+  padding: 8px 9px;
+  display: grid;
+  gap: 2px;
+  border: 1px solid #bfd4d8;
+  border-radius: 7px;
+  background: #f8fbfb;
+}
+
+.project-assurance-history li.is-current {
+  border-color: #87bfa0;
+  background: #f1faf5;
+}
+
+.project-assurance-history li.is-stale {
+  border-color: #dc9d62;
+  background: #fff6ec;
+}
+
+.project-assurance-history span,
+.project-assurance-history small {
+  color: #617a80;
+  font-size: 9px;
+}
+
+.project-assurance-message {
+  padding: 9px 11px;
+  border-radius: 7px;
+  font-size: 10px;
+}
+
+.project-assurance-message.is-error {
+  background: #fff0f2;
+  color: #9f1239;
+  border: 1px solid #f0a8b6;
+}
+
+.project-assurance-message.is-notice {
+  background: #eefaf5;
+  color: #166534;
+  border: 1px solid #a9d7bd;
+}
+
+@media (max-width: 760px) {
+  .project-assurance-launcher {
+    width: 100%;
+    min-width: 0;
+    margin-left: 0;
+  }
+
+  .project-assurance-drawer {
+    width: 100vw;
+  }
+}

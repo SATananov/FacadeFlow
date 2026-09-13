@@ -1,0 +1,43 @@
+import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+
+const resolution = await readFile('src/domain/profileResolution.ts', 'utf8')
+const constructor = await readFile('src/components/ConstructorShell.tsx', 'utf8')
+const packageJson = JSON.parse(await readFile('package.json', 'utf8'))
+const acceptance = await readFile('docs/GLAZING_CONTEXT_01B_CONSTRUCTOR_HUMAN_GLAZING_BEAD_UI_ACCEPTANCE.md', 'utf8')
+
+assert.match(resolution, /human-field-glazing-01b/)
+assert.match(resolution, /fieldGlazingThicknesses/)
+assert.match(resolution, /setFieldHumanGlazingThicknessAssignment/)
+assert.match(resolution, /getFieldHumanGlazingThicknessMm/)
+assert.match(resolution, /delete fieldGlazingBeads\[field\.id\]/)
+
+assert.match(constructor, /Дебелина на стъклопакета за избраното поле/)
+assert.match(constructor, /КАТАЛОЖНИ BEAD КАНДИДАТИ/)
+assert.match(constructor, /СТЪКЛОДЪРЖАТЕЛ · HUMAN SELECTION/)
+assert.match(constructor, /resolveHumanGlazingContext/)
+assert.match(constructor, /catalog match ≠ resolved compatibility/i)
+assert.match(constructor, /auto-select: NO/)
+assert.match(constructor, /BASE-PROFILE COMPATIBILITY: UNCONFIRMED/)
+assert.match(constructor, /GLAZING INSET: UNKNOWN/)
+assert.match(constructor, /GLASS CUT: UNKNOWN/)
+assert.doesNotMatch(constructor, /selectedGlazing\?\.totalThicknessMm \?\? null,\n\s*profileCode/)
+
+assert.match(packageJson.scripts['test:glazing-context01b-runtime'], /verify-glazing-context01b-runtime\.ts/)
+assert.match(packageJson.scripts['test:contract'], /verify-glazing-context01b\.mjs/)
+assert.match(acceptance, /24 mm -> `482\.15` \+ `482\.01`/)
+assert.match(acceptance, /32 mm -> `482\.22`/)
+assert.match(acceptance, /AUTOMATIC BEAD SELECTION: NO/)
+assert.match(acceptance, /CONSTRUCTION TOPOLOGY: UNCHANGED/)
+assert.match(acceptance, /MACHINE READY: NO/)
+
+console.log('=== GLAZING CONTEXT 01B VERIFY PASS ===')
+console.log('CONSTRUCTOR HUMAN THICKNESS: EXPLICIT PER FIELD')
+console.log('24 mm CANDIDATES: 482.15 + 482.01')
+console.log('32 mm CANDIDATE: 482.22 / NO AUTO-SELECT')
+console.log('BEAD SELECTION: HUMAN ONLY + BASE-CONTEXT GATED')
+console.log('BASE-PROFILE COMPATIBILITY: UNCONFIRMED')
+console.log('GLAZING INSET: UNKNOWN')
+console.log('GLASS CUT: UNKNOWN')
+console.log('CONSTRUCTION TOPOLOGY: UNCHANGED')
+console.log('MACHINE READY: NO')

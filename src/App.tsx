@@ -1,4 +1,9 @@
-import { useState, type FormEvent } from 'react'
+import type { FormEvent } from 'react'
+import { useProjectWorkspace } from './hooks/useProjectWorkspace'
+import { ProjectAssurancePanel } from './components/ProjectAssurancePanel'
+import { AssemblyReviewPanel } from './components/AssemblyReviewPanel'
+import { ProjectManagerPanel } from './components/ProjectManagerPanel'
+import { createStableId, getProjectDisplayName, type OfferDraft, type FreeConstructorModule } from './domain/project/projectModel'
 import {
   getConfirmedGlazingOptions,
   getConfirmedHardwareStandards,
@@ -19,7 +24,6 @@ import {
   type ModuleProfileResolution,
 } from './domain/profileResolution'
 import {
-  createFirstOfferModule,
   createOfferModule,
   areOfferModuleFieldsDescribed,
   getOfferModuleConfiguredFieldCount,
@@ -83,35 +87,6 @@ const CONTRACTOR_DATA = {
   email: 'nadejda94@mail.bg',
 } as const
 
-type OfferDraft = {
-  clientName: string
-  clientEik: string
-  clientAddress: string
-  clientPhone: string
-  clientEmail: string
-  clientContactPerson: string
-
-  objectName: string
-  objectAddress: string
-
-  profileSystemId: string
-  colorId: string
-  foilModeId: string
-  glazingId: string
-  hardwareStandardId: string
-  hardwareManufacturerId: 'unspecified'
-  commonConditions: string
-}
-
-
-type FreeConstructorModule = {
-  id: string
-  sequence: number
-  profileSystemId: string
-  productType: 'window' | 'door' | null
-  profileResolution: ModuleProfileResolution | null
-}
-
 function reconcileFreeModuleProfiles(module: FreeConstructorModule, draft: ConstructorDraftSnapshot | null): FreeConstructorModule {
   const system = getProfileSystemById(module.profileSystemId)
   if (!system || !draft) {
@@ -130,50 +105,20 @@ function reconcileFreeModuleProfiles(module: FreeConstructorModule, draft: Const
   }
 }
 
-const EMPTY_OFFER: OfferDraft = {
-  clientName: '',
-  clientEik: '',
-  clientAddress: '',
-  clientPhone: '',
-  clientEmail: '',
-  clientContactPerson: '',
-
-  objectName: '',
-  objectAddress: '',
-
-  profileSystemId: '',
-  colorId: '',
-  foilModeId: '',
-  glazingId: '',
-  hardwareStandardId: '',
-  hardwareManufacturerId: 'unspecified',
-  commonConditions: '',
-}
-
 const SELECTABLE_PROFILE_SYSTEMS = getSelectableProfileSystems()
 const CONFIRMED_GLAZING_OPTIONS = getConfirmedGlazingOptions()
 const CONFIRMED_HARDWARE_STANDARDS = getConfirmedHardwareStandards()
 
 export default function App() {
-  const [offerStartOpen, setOfferStartOpen] = useState(false)
-  const [offer, setOffer] = useState<OfferDraft>(EMPTY_OFFER)
-  const [saved, setSaved] = useState(false)
-  const [modules, setModules] = useState<OfferModuleDraft[]>([])
-  const [activeModuleId, setActiveModuleId] = useState<string | null>(null)
-  const [moduleSketchDrafts, setModuleSketchDrafts] = useState<
-    Record<string, ConstructorDraftSnapshot | null>
-  >({})
-  const [moduleProfileResolutions, setModuleProfileResolutions] = useState<
-    Record<string, ModuleProfileResolution>
-  >({})
-  const [constructorMode, setConstructorMode] = useState<'offer' | 'free' | null>(null)
-  const [offerStartedFromFreeSketch, setOfferStartedFromFreeSketch] = useState(false)
-  const [freeModules, setFreeModules] = useState<FreeConstructorModule[]>([])
-  const [activeFreeModuleId, setActiveFreeModuleId] = useState<string | null>(null)
-  const [freeModuleSketchDrafts, setFreeModuleSketchDrafts] = useState<
-    Record<string, ConstructorDraftSnapshot | null>
-  >({})
-  const [offerSourceSketch, setOfferSourceSketch] = useState<ConstructorDraftSnapshot | null>(null)
+  const workspace = useProjectWorkspace()
+  const {
+    offerStartOpen, setOfferStartOpen, offer, setOffer, saved, setSaved,
+    modules, setModules, activeModuleId, setActiveModuleId,
+    moduleSketchDrafts, setModuleSketchDrafts, moduleProfileResolutions, setModuleProfileResolutions,
+    constructorMode, setConstructorMode, offerStartedFromFreeSketch,
+    freeModules, setFreeModules, activeFreeModuleId, setActiveFreeModuleId,
+    freeModuleSketchDrafts, setFreeModuleSketchDrafts,
+  } = workspace
 
   const clientObjectReady =
     offer.clientName.trim().length > 0 &&
@@ -235,8 +180,7 @@ export default function App() {
     setSaved(false)
 
     if (field === 'foilModeId' || field === 'glazingId') {
-      setModules([])
-      setModuleProfileResolutions({})
+      workspace.clearConfiguredModules()
     }
   }
 
@@ -251,8 +195,7 @@ export default function App() {
       hardwareManufacturerId: 'unspecified',
     }))
     setSaved(false)
-    setModules([])
-    setModuleProfileResolutions({})
+    workspace.clearConfiguredModules()
   }
 
   const selectFinish = (colorId: string) => {
@@ -262,8 +205,7 @@ export default function App() {
       foilModeId: '',
     }))
     setSaved(false)
-    setModules([])
-    setModuleProfileResolutions({})
+    workspace.clearConfiguredModules()
   }
 
   const selectHardwareStandard = (hardwareStandardId: string) => {
@@ -273,8 +215,7 @@ export default function App() {
       hardwareManufacturerId: 'unspecified',
     }))
     setSaved(false)
-    setModules([])
-    setModuleProfileResolutions({})
+    workspace.clearConfiguredModules()
   }
 
   const moduleDefaults = canContinueToModules
@@ -585,18 +526,7 @@ export default function App() {
     })
   }
 
-  const startNewOffer = () => {
-    setOffer(EMPTY_OFFER)
-    setSaved(false)
-    setModules([])
-    setModuleProfileResolutions({})
-    setActiveModuleId(null)
-    setModuleSketchDrafts({})
-    setConstructorMode(null)
-    setOfferStartedFromFreeSketch(false)
-    setOfferSourceSketch(null)
-    setOfferStartOpen(true)
-  }
+  const startNewOffer = workspace.newProject
 
   const startFreeConstructor = () => {
     setConstructorMode('free')
@@ -604,77 +534,13 @@ export default function App() {
   }
 
   const startOfferFromFreeSketch = (draft: ConstructorDraftSnapshot | null) => {
-    setOfferSourceSketch(draft)
-    setOffer({ ...EMPTY_OFFER, profileSystemId: activeFreeModule?.profileSystemId ?? '' })
-    setSaved(false)
-    setModules([])
-    setModuleProfileResolutions({})
-    setActiveModuleId(null)
-    setModuleSketchDrafts({})
-    setConstructorMode(null)
-    setOfferStartedFromFreeSketch(true)
-    setOfferStartOpen(true)
+    if (activeFreeModule) workspace.copyFreeModuleToOffer(activeFreeModule.id, draft)
   }
 
   const submitOffer = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-
-    if (!canContinueToModules || !moduleDefaults) {
-      setSaved(false)
-      return
-    }
-
-    setSaved(true)
-
-    if (modules.length > 0) {
-      if (!activeModuleId) {
-        setActiveModuleId(modules[0].id)
-      }
-      return
-    }
-
-    const createdModule = createFirstOfferModule(moduleDefaults)
-    const sourceFrame = offerSourceSketch?.frame
-    const sourceTopology = offerSourceSketch?.topology
-    const topologyFields = sourceTopology
-      ? resolveConstructionTopology(sourceTopology).fields
-      : []
-
-    const hydratedModule = sourceFrame
-      ? {
-          ...createdModule,
-          widthMm: sourceFrame.widthMm,
-          widthSource: sourceTopology ? 'constructor' as const : 'manual' as const,
-          heightMm: sourceFrame.heightMm,
-          heightSource: sourceTopology ? 'constructor' as const : 'manual' as const,
-          fieldCount: sourceTopology ? topologyFields.length : null,
-          fieldCountSource: sourceTopology ? 'constructor' as const : 'unset' as const,
-          fields: sourceTopology
-            ? syncOfferModuleFieldsFromTopology(
-                [],
-                topologyFields.map((field) => ({
-                  id: field.id,
-                  sequence: field.sequence,
-                  widthMm: field.bounds.widthMm,
-                  fieldType: field.fieldType,
-                  openingMode: field.openingMode,
-                  openingHanding: field.openingHanding,
-                })),
-              )
-            : [],
-        }
-      : createdModule
-
-    setModules([hydratedModule])
-    setActiveModuleId(hydratedModule.id)
-    setModuleSketchDrafts({
-      [hydratedModule.id]: offerSourceSketch ?? null,
-    })
-    setModuleProfileResolutions({
-      [hydratedModule.id]: createModuleProfileResolution(
-        hydratedModule.inheritedDefaults.profileSystemId,
-      ),
-    })
+    if (!canContinueToModules || !moduleDefaults) return
+    workspace.completeOfferSetup()
   }
 
   const createNextFreeModule = () => {
@@ -683,7 +549,7 @@ export default function App() {
       0,
     ) + 1
     const created: FreeConstructorModule = {
-      id: `free-module-${nextSequence}`,
+      id: createStableId(),
       sequence: nextSequence,
       profileSystemId: activeFreeModule?.profileSystemId ?? '',
       productType: null,
@@ -862,6 +728,39 @@ export default function App() {
           </button>
         </div>
       </header>
+
+      <div className="project-persistence" role="region" aria-label="Текущ проект">
+        <span className="project-persistence-label">Проект</span>
+        <span role="status" className={`project-save-status is-${workspace.persistence.status}`}>
+          {workspace.persistence.status === 'saved' ? 'Запазено локално'
+            : workspace.persistence.status === 'failed' ? 'Записът не е потвърден' : 'Незапазени промени'}
+        </span>
+        <button type="button" onClick={workspace.saveNow} disabled={workspace.persistence.blocked}>Запази локално</button>
+        <ProjectManagerPanel
+          current={{
+            id: workspace.snapshot.project.id,
+            label: getProjectDisplayName(workspace.snapshot),
+            moduleCount: Object.keys(workspace.snapshot.modulesById).length,
+            headRevisionNumber: workspace.snapshot.revisions.headRevisionId
+              ? workspace.snapshot.revisions.revisionsById[workspace.snapshot.revisions.headRevisionId]?.number ?? null
+              : null,
+          }}
+          projects={workspace.projects}
+          blocked={workspace.persistence.blocked}
+          onOpen={workspace.openProject}
+          onNew={workspace.newProject}
+        />
+        <ProjectAssurancePanel key={workspace.snapshot.project.id} snapshot={workspace.snapshot}
+          moduleId={(constructorMode === 'free' ? activeFreeModule?.id : activeModuleId) ?? null}
+          blocked={workspace.persistence.blocked} onRecord={workspace.recordRevision}
+          onInspect={workspace.prepareConfirmation} onConfirm={workspace.confirmStatement} />
+        <AssemblyReviewPanel snapshot={workspace.snapshot}
+          moduleId={(constructorMode === 'free' ? activeFreeModule?.id : activeModuleId) ?? null} />
+        {workspace.persistence.error && <span role="alert" className="project-save-error">
+          {workspace.persistence.error}
+          {workspace.persistence.blocked ? ' Оригиналният запис е запазен. Използвай „Създай оферта“ за нов независим проект.' : ' Работата остава в паметта; опитай записа отново.'}
+        </span>}
+      </div>
 
       <main className={constructorMode ? 'constructor-host' : 'home-workspace'}>
         {constructorMode === 'free' ? (
@@ -1076,7 +975,7 @@ export default function App() {
                     </div>
 
                     <div>
-                      <span>E-MAIL</span>
+                      <span>ИМЕЙЛ</span>
                       <b>{CONTRACTOR_DATA.email}</b>
                     </div>
                   </div>
@@ -2176,7 +2075,8 @@ export default function App() {
                   >
                     <div className="module-fields-heading">
                       <div>
-                        <span>CONCEPT 06C + 06D + 06E</span>
+                        {/* CONCEPT 06C + 06D + 06E */}
+                        <span>НАСТРОЙКИ НА ПОЛЕТАТА</span>
                         <h3 id="module-fields-title">Полетата на Модул {firstModule.sequence}</h3>
                         <p>
                           Всяко поле е отделна опционална чернова. Изберете

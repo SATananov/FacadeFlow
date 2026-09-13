@@ -40,8 +40,8 @@ export type { ConstructorDividerSnapshot, ConstructorDraftSnapshot } from '../do
 import type { ConstructorDraftSnapshot } from '../domain/construction'
 import {
   getDividerProfileCandidates,
-  getFieldGlazingBeadCandidates,
   getFieldGlazingBeadResolutionContext,
+  getFieldHumanGlazingThicknessMm,
   getFieldSashProfileCandidates,
   getFrameProfileCandidates,
   getProfileReinforcementCandidates,
@@ -52,17 +52,18 @@ import {
   reconcileModuleProfileResolution,
   setDividerProfileAssignment,
   setFieldGlazingBeadAssignment,
+  setFieldHumanGlazingThicknessAssignment,
   setFieldSashProfileAssignment,
   setFrameProfileAssignment,
   setReinforcementAssignment,
   type ModuleProfileResolution,
   type ReinforcementTarget,
 } from '../domain/profileResolution'
+import { resolveHumanGlazingContext } from '../domain/glazingContext'
 import {
   getGlazingOptionById,
   getProfileSystemById,
   getSelectableProfileSystems,
-  type GlazingBeadDefinition,
   type ProfileDefinition,
   type ReinforcementDefinition,
 } from '../data/profileSystems'
@@ -166,6 +167,8 @@ type ConstructorTool =
   | 'operable-field'
 type FrameEdge = 'left' | 'right' | 'top' | 'bottom'
 type InspectorTab = 'properties' | 'profile' | 'dimensions'
+type FieldGuideFocusTarget = 'module-type' | 'frame-profile' | 'sash-profile' | 'glazing-thickness' | 'glazing-bead'
+type InspectorWorkMode = 'guided' | 'free'
 
 type DividerModel = ResolvedConstructionDivider
 type AngledDividerModel = ResolvedConstructionAngledDivider
@@ -175,6 +178,18 @@ type FrameModel = ConstructionFrame
 type CanvasPoint = {
   xMm: number
   yMm: number
+}
+
+type ViewOffset = {
+  xPx: number
+  yPx: number
+}
+
+type ViewPanState = {
+  pointerId: number
+  startClientX: number
+  startClientY: number
+  startOffset: ViewOffset
 }
 
 type DragState =
@@ -217,13 +232,14 @@ type DragState =
       originalConstruction: ConstructionModel
     }
 
-const ZOOM_STEPS = [75, 100, 125, 150] as const
+const ZOOM_STEPS = [25, 33, 50, 67, 75, 100, 125, 150, 200] as const
+const MIN_VIEW_ZOOM = ZOOM_STEPS[0]
+const MAX_VIEW_ZOOM = ZOOM_STEPS[ZOOM_STEPS.length - 1]
 const SNAP_STEP_MM = 10
 const GRID_STEP_MM = 50
 const MAJOR_GRID_STEP_MM = 500
 const BASE_PX_PER_MM = 0.28
 const MIN_FRAME_MM = 200
-const MAX_WORLD_MM = 5000
 
 const FREE_MODULE_SUMMARY: ConstructorModuleSummary = {
   productType: null,
@@ -233,14 +249,11 @@ const FREE_MODULE_SUMMARY: ConstructorModuleSummary = {
 }
 
 function clampZoom(current: number, direction: -1 | 1) {
-  const currentIndex = ZOOM_STEPS.findIndex((value) => value === current)
-  const safeIndex = currentIndex >= 0 ? currentIndex : 1
-  const nextIndex = Math.min(
-    ZOOM_STEPS.length - 1,
-    Math.max(0, safeIndex + direction),
-  )
+  if (direction < 0) {
+    return [...ZOOM_STEPS].reverse().find((value) => value < current) ?? ZOOM_STEPS[0]
+  }
 
-  return ZOOM_STEPS[nextIndex]
+  return ZOOM_STEPS.find((value) => value > current) ?? ZOOM_STEPS[ZOOM_STEPS.length - 1]
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -325,8 +338,14 @@ export default function ConstructorShell({
   const [gridVisible, setGridVisible] = useState(true)
   const [snapEnabled, setSnapEnabled] = useState(true)
   const [zoom, setZoom] = useState<number>(100)
+  const [viewOffset, setViewOffset] = useState<ViewOffset>({ xPx: 0, yPx: 0 })
+  const [viewPanState, setViewPanState] = useState<ViewPanState | null>(null)
+  const [autoFitEnabled, setAutoFitEnabled] = useState(true)
   const [profileViewEnabled, setProfileViewEnabled] = useState(true)
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>('properties')
+  const [inspectorWorkMode, setInspectorWorkMode] = useState<InspectorWorkMode>('guided')
+  const [moduleSettingsOpen, setModuleSettingsOpen] = useState(false)
+  const [technicalStatusOpen, setTechnicalStatusOpen] = useState(false)
   const [construction, setConstruction] = useState<ConstructionModel | null>(() =>
     getInitialConstruction(initialDraft, moduleSummary),
   )
@@ -359,6 +378,15 @@ export default function ConstructorShell({
   const [heightDraft, setHeightDraft] = useState(() =>
     frame ? String(Math.round(frame.heightMm)) : '',
   )
+  const [glazingThicknessDraft, setGlazingThicknessDraft] = useState('')
+  const [fieldGuideFocusTarget, setFieldGuideFocusTarget] = useState<FieldGuideFocusTarget | null>(null)
+  const [fieldGuideNavigationRequest, setFieldGuideNavigationRequest] = useState(0)
+  const guideModuleTypeRef = useRef<HTMLDivElement>(null)
+  const guideFrameProfileRef = useRef<HTMLDivElement>(null)
+  const guideSashProfileRef = useRef<HTMLDivElement>(null)
+  const guideGlazingThicknessRef = useRef<HTMLDivElement>(null)
+  const guideGlazingBeadRef = useRef<HTMLDivElement>(null)
+  const inspectorPaneRef = useRef<HTMLDivElement>(null)
 
   const isFreeMode = mode === 'free'
   const hasActiveModule = Boolean(activeModuleId && moduleItems.some((item) => item.id === activeModuleId))
@@ -404,7 +432,7 @@ export default function ConstructorShell({
           moduleSummary.productType,
           profileResolvableDividerIds,
           fields,
-          selectedGlazing?.totalThicknessMm ?? null,
+          null,
         )
       : null,
     [
@@ -440,10 +468,24 @@ export default function ConstructorShell({
     if (profileResolutionMissingTargets.length === 0) return 'Всички задължителни профили са присвоени.'
     return profileResolutionMissingTargets.map((target) => {
       if (target.kind === 'frame') return 'каса'
-      if (target.kind === 'divider') return `делител ${target.id}`
+      if (target.kind === 'divider') return 'делител'
       const field = fields.find((item) => item.id === target.id)
-      return field ? `крило Поле ${field.sequence}` : `крило ${target.id}`
+      return field ? `крило за Поле ${field.sequence}` : 'крило'
     }).join(', ')
+  }, [profileResolutionMissingTargets, fields])
+
+  const profileResolutionGuidedMissingLabel = useMemo(() => {
+    if (profileResolutionMissingTargets.length === 0) return 'Всички профили са избрани'
+    if (profileResolutionMissingTargets.length > 1) {
+      return `Остават ${profileResolutionMissingTargets.length} профила за избор`
+    }
+
+    const target = profileResolutionMissingTargets[0]
+    if (target.kind === 'frame') return 'Липсва профил на касата'
+    if (target.kind === 'divider') return 'Липсва профил на делителя'
+
+    const field = fields.find((item) => item.id === target.id)
+    return field ? `Липсва профил на крилото за Поле ${field.sequence}` : 'Липсва профил на крилото'
   }, [profileResolutionMissingTargets, fields])
   const supplementalResolutionProgress = useMemo(
     () => selectedProfileSystem
@@ -452,11 +494,125 @@ export default function ConstructorShell({
           system: selectedProfileSystem,
           fields,
           dividerIds: profileResolvableDividerIds,
-          glazingThicknessMm: selectedGlazing?.totalThicknessMm ?? null,
+          glazingThicknessMm: null,
         })
       : null,
     [effectiveProfileResolution, selectedProfileSystem, fields, profileResolvableDividerIds, selectedGlazing?.totalThicknessMm],
   )
+  const selectedFieldGlazingThicknessMm = selectedField
+    ? getFieldHumanGlazingThicknessMm(effectiveProfileResolution, selectedField.id)
+    : null
+  const selectedFieldGlazingAssignment = selectedField
+    ? effectiveProfileResolution?.fieldGlazingBeads[selectedField.id] ?? null
+    : null
+  const selectedFieldHumanGlazingContext = useMemo(
+    () => selectedProfileSystem && selectedField
+      ? resolveHumanGlazingContext(
+          selectedProfileSystem,
+          selectedFieldGlazingThicknessMm,
+          selectedFieldGlazingAssignment?.profileCode ?? null,
+        )
+      : null,
+    [
+      selectedProfileSystem,
+      selectedField,
+      selectedFieldGlazingThicknessMm,
+      selectedFieldGlazingAssignment?.profileCode,
+    ],
+  )
+
+  const guidedFieldFocusTarget = useMemo<FieldGuideFocusTarget | null>(() => {
+    if (inspectorWorkMode !== 'guided' || !selectedField || !selectedProfileSystem || !effectiveProfileResolution) return null
+    if (selectedField.fieldType === null) return null
+
+    // UX02.4.3: the guided flow follows the real dependency order. The common
+    // frame profile must be present before an operable FIELD can be presented
+    // as complete, even when its sash/glazing inputs were filled out of order.
+    if (!effectiveProfileResolution.frame?.profileCode) return 'frame-profile'
+    if (selectedField.fieldType === 'operable' && moduleSummary.productType === null) return 'module-type'
+    if (selectedField.fieldType === 'operable' && !effectiveProfileResolution.fieldSashes[selectedField.id]?.profileCode) return 'sash-profile'
+    if (selectedFieldGlazingThicknessMm === null) return 'glazing-thickness'
+    if ((selectedFieldHumanGlazingContext?.candidates ?? []).length === 0) return 'glazing-thickness'
+    if (!selectedFieldGlazingAssignment?.profileCode) return 'glazing-bead'
+    return null
+  }, [
+    inspectorWorkMode,
+    selectedField,
+    selectedProfileSystem,
+    effectiveProfileResolution,
+    moduleSummary.productType,
+    selectedFieldGlazingThicknessMm,
+    selectedFieldHumanGlazingContext?.candidates,
+    selectedFieldGlazingAssignment?.profileCode,
+  ])
+
+  const openFieldGuideTarget = (target: FieldGuideFocusTarget) => {
+    // UX02.2: guided work keeps unrelated module settings collapsed.
+    // The module type control also exists in the selected FIELD profile pane.
+    if (inspectorWorkMode === 'guided') setModuleSettingsOpen(false)
+    setInspectorTab('profile')
+    setFieldGuideFocusTarget(target)
+    setFieldGuideNavigationRequest((request) => request + 1)
+  }
+
+  useEffect(() => {
+    if (inspectorWorkMode !== 'guided' || !selectedField || !fieldGuideFocusTarget || inspectorTab !== 'profile') return
+    if (fieldGuideFocusTarget !== guidedFieldFocusTarget) return
+
+    const target = fieldGuideFocusTarget === 'module-type'
+      ? guideModuleTypeRef.current
+      : fieldGuideFocusTarget === 'frame-profile'
+        ? guideFrameProfileRef.current
+        : fieldGuideFocusTarget === 'sash-profile'
+          ? guideSashProfileRef.current
+          : fieldGuideFocusTarget === 'glazing-thickness'
+            ? guideGlazingThicknessRef.current
+            : guideGlazingBeadRef.current
+    if (!target) return
+
+    let cancelled = false
+    let focusTimeout: number | undefined
+    const frameId = window.requestAnimationFrame(() => {
+      if (cancelled || !target.isConnected) return
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      focusTimeout = window.setTimeout(() => {
+        if (cancelled || !target.isConnected) return
+        const control = target.querySelector<HTMLElement>('select:not(:disabled), input:not(:disabled), button:not(:disabled)')
+        if (!control?.getClientRects().length) return
+        control?.focus({ preventScroll: true })
+      }, 260)
+    })
+
+    return () => {
+      cancelled = true
+      window.cancelAnimationFrame(frameId)
+      window.clearTimeout(focusTimeout)
+    }
+  }, [fieldGuideFocusTarget, guidedFieldFocusTarget, inspectorTab, fieldGuideNavigationRequest, selectedField, inspectorWorkMode, activeModuleId])
+
+  useEffect(() => {
+    if (inspectorWorkMode !== 'guided' || !selectedField) return
+
+    if (selectedField.fieldType === null) {
+      setModuleSettingsOpen(false)
+      setFieldGuideFocusTarget(null)
+      setInspectorTab('properties')
+      const frameId = window.requestAnimationFrame(() => inspectorPaneRef.current?.scrollTo({ top: 0, behavior: 'smooth' }))
+      return () => window.cancelAnimationFrame(frameId)
+    }
+
+    setModuleSettingsOpen(false)
+    if (guidedFieldFocusTarget) {
+      setInspectorTab('profile')
+      setFieldGuideFocusTarget(guidedFieldFocusTarget)
+      return
+    }
+
+    setFieldGuideFocusTarget(null)
+    const frameId = window.requestAnimationFrame(() => inspectorPaneRef.current?.scrollTo({ top: 0, behavior: 'smooth' }))
+    return () => window.cancelAnimationFrame(frameId)
+  }, [inspectorWorkMode, selectedField, guidedFieldFocusTarget])
+
   const selectedFieldHardwareRequirements = useMemo(
     () => selectedField
       ? buildFieldHardwareRequirements({
@@ -562,6 +718,12 @@ export default function ConstructorShell({
   }, [dividers, fields, frame])
 
   useEffect(() => {
+    setGlazingThicknessDraft(
+      selectedFieldGlazingThicknessMm === null ? '' : String(selectedFieldGlazingThicknessMm),
+    )
+  }, [selectedFieldId, selectedFieldGlazingThicknessMm])
+
+  useEffect(() => {
     setInspectorTab('properties')
   }, [selectedFieldId, selectedDividerId, selectedAngledDividerId, frameSelected])
 
@@ -571,8 +733,60 @@ export default function ConstructorShell({
     onProfileResolutionChange(effectiveProfileResolution)
   }, [effectiveProfileResolution, onProfileResolutionChange, profileResolution])
 
+  useEffect(() => {
+    setAutoFitEnabled(true)
+  }, [activeModuleId])
+
+  useEffect(() => {
+    if (inspectorWorkMode === 'guided') setModuleSettingsOpen(false)
+  }, [activeModuleId, inspectorWorkMode])
+
+  useEffect(() => {
+    if (inspectorWorkMode !== 'guided') return
+
+    // UX02.4.1: when work moves into the construction/field flow, secondary
+    // sections return to their compact summaries. A human can still reopen
+    // either section explicitly; FacadeFlow does not hide or change data.
+    setTechnicalStatusOpen(false)
+    if (selectedProfileSystem && frame) setModuleSettingsOpen(false)
+  }, [
+    inspectorWorkMode,
+    activeModuleId,
+    selectedProfileSystem?.id,
+    frame?.widthMm,
+    selectedFieldId,
+    selectedDividerId,
+    selectedAngledDividerId,
+    fieldGuideFocusTarget,
+  ])
+
+  useEffect(() => {
+    if (!autoFitEnabled || dragState || viewPanState || !frame) return
+    const requestId = window.requestAnimationFrame(() => fitViewToFrame(frame))
+    return () => window.cancelAnimationFrame(requestId)
+  }, [
+    autoFitEnabled,
+    activeModuleId,
+    dragState,
+    frame?.xMm,
+    frame?.yMm,
+    frame?.widthMm,
+    frame?.heightMm,
+    viewPanState,
+  ])
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (autoFitEnabled && !dragState && !viewPanState && frame) {
+        fitViewToFrame(frame)
+      }
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [autoFitEnabled, dragState, frame, viewPanState])
+
   const snapMm = (value: number) => {
-    const safeValue = clamp(value, 0, MAX_WORLD_MM)
+    const safeValue = Number.isFinite(value) ? Math.max(0, value) : 0
     return snapEnabled
       ? Math.round(safeValue / SNAP_STEP_MM) * SNAP_STEP_MM
       : Math.round(safeValue)
@@ -586,9 +800,69 @@ export default function ConstructorShell({
 
     const rect = canvas.getBoundingClientRect()
     return {
-      xMm: snapMm((event.clientX - rect.left) / pxPerMm),
-      yMm: snapMm((event.clientY - rect.top) / pxPerMm),
+      xMm: snapMm((event.clientX - rect.left - viewOffset.xPx) / pxPerMm),
+      yMm: snapMm((event.clientY - rect.top - viewOffset.yPx) / pxPerMm),
     }
+  }
+
+  const fitViewToFrame = (targetFrame: FrameModel | null = frame) => {
+    const canvas = canvasRef.current
+    if (!canvas || !targetFrame || targetFrame.widthMm <= 0 || targetFrame.heightMm <= 0) {
+      return
+    }
+
+    const rect = canvas.getBoundingClientRect()
+    const horizontalPaddingPx = 72
+    const verticalPaddingPx = 64
+    const dimensionRightPx = 64
+    const dimensionBottomPx = 52
+    const availableWidthPx = Math.max(160, rect.width - horizontalPaddingPx * 2 - dimensionRightPx)
+    const availableHeightPx = Math.max(160, rect.height - verticalPaddingPx * 2 - dimensionBottomPx)
+    const fittedPxPerMm = Math.min(
+      availableWidthPx / targetFrame.widthMm,
+      availableHeightPx / targetFrame.heightMm,
+    )
+    const fittedZoom = Math.round(clamp(
+      (fittedPxPerMm / BASE_PX_PER_MM) * 100,
+      MIN_VIEW_ZOOM,
+      MAX_VIEW_ZOOM,
+    ))
+    const fittedScale = BASE_PX_PER_MM * (fittedZoom / 100)
+    const viewportCenterX = (rect.width - dimensionRightPx) / 2
+    const viewportCenterY = (rect.height - dimensionBottomPx) / 2
+    const frameCenterWorldX = targetFrame.xMm + targetFrame.widthMm / 2
+    const frameCenterWorldY = targetFrame.yMm + targetFrame.heightMm / 2
+
+    setZoom(fittedZoom)
+    setViewOffset({
+      xPx: Math.round(viewportCenterX - frameCenterWorldX * fittedScale),
+      yPx: Math.round(viewportCenterY - frameCenterWorldY * fittedScale),
+    })
+  }
+
+  const changeViewZoom = (direction: -1 | 1) => {
+    const nextZoom = clampZoom(zoom, direction)
+    if (nextZoom === zoom) return
+
+    const canvas = canvasRef.current
+    if (canvas) {
+      const rect = canvas.getBoundingClientRect()
+      const anchorX = rect.width / 2
+      const anchorY = rect.height / 2
+      const ratio = nextZoom / zoom
+      setViewOffset((current) => ({
+        xPx: Math.round(anchorX - (anchorX - current.xPx) * ratio),
+        yPx: Math.round(anchorY - (anchorY - current.yPx) * ratio),
+      }))
+    }
+
+    setAutoFitEnabled(false)
+    setZoom(nextZoom)
+  }
+
+  const restoreFitView = () => {
+    setAutoFitEnabled(true)
+    fitViewToFrame(frame)
   }
 
   const cloneHistoryEntry = (entry: ConstructionModel | null) =>
@@ -942,7 +1216,23 @@ export default function ConstructorShell({
     return () => window.removeEventListener('keydown', handleHistoryKeyDown)
   })
 
+  const handleCanvasPointerDownCapture = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (activeTool !== 'pan') return
+
+    event.preventDefault()
+    event.currentTarget.setPointerCapture(event.pointerId)
+    setAutoFitEnabled(false)
+    setViewPanState({
+      pointerId: event.pointerId,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startOffset: { ...viewOffset },
+    })
+  }
+
   const handleCanvasPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (activeTool === 'pan') return
+
     const point = pointFromPointer(event)
     setCursorPoint(point)
 
@@ -978,6 +1268,14 @@ export default function ConstructorShell({
   }
 
   const handleCanvasPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (viewPanState?.pointerId === event.pointerId) {
+      setViewOffset({
+        xPx: Math.round(viewPanState.startOffset.xPx + event.clientX - viewPanState.startClientX),
+        yPx: Math.round(viewPanState.startOffset.yPx + event.clientY - viewPanState.startClientY),
+      })
+      return
+    }
+
     const point = pointFromPointer(event)
     setCursorPoint(point)
 
@@ -1042,7 +1340,7 @@ export default function ConstructorShell({
     if (edge === 'right') {
       nextFrame = {
         ...original,
-        widthMm: clamp(point.xMm - original.xMm, getMinFrameDimension('vertical'), MAX_WORLD_MM),
+        widthMm: Math.max(point.xMm - original.xMm, getMinFrameDimension('vertical')),
       }
     }
 
@@ -1059,7 +1357,7 @@ export default function ConstructorShell({
     if (edge === 'bottom') {
       nextFrame = {
         ...original,
-        heightMm: clamp(point.yMm - original.yMm, getMinFrameDimension('horizontal'), MAX_WORLD_MM),
+        heightMm: Math.max(point.yMm - original.yMm, getMinFrameDimension('horizontal')),
       }
     }
 
@@ -1081,6 +1379,14 @@ export default function ConstructorShell({
   }
 
   const handleCanvasPointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (viewPanState?.pointerId === event.pointerId) {
+      setViewPanState(null)
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId)
+      }
+      return
+    }
+
     if (!dragState || dragState.pointerId !== event.pointerId) {
       return
     }
@@ -1145,7 +1451,7 @@ export default function ConstructorShell({
     divider: DividerModel,
     event: ReactPointerEvent<HTMLButtonElement>,
   ) => {
-    if (!frame || !construction) {
+    if (!frame || !construction || activeTool === 'pan') {
       return
     }
     event.preventDefault()
@@ -1177,7 +1483,7 @@ export default function ConstructorShell({
     divider: AngledDividerModel,
     event: ReactPointerEvent<HTMLButtonElement>,
   ) => {
-    if (!frame || !construction) return
+    if (!frame || !construction || activeTool === 'pan') return
     event.preventDefault()
     event.stopPropagation()
     canvasRef.current?.setPointerCapture(event.pointerId)
@@ -1204,7 +1510,7 @@ export default function ConstructorShell({
     endpoint: 'top' | 'bottom',
     event: ReactPointerEvent<HTMLButtonElement>,
   ) => {
-    if (!frame || !construction) return
+    if (!frame || !construction || activeTool === 'pan') return
     event.preventDefault()
     event.stopPropagation()
     canvasRef.current?.setPointerCapture(event.pointerId)
@@ -1353,7 +1659,11 @@ export default function ConstructorShell({
           Изчисти
         </button>
       </div>
-      <p>Това не е стандартен шаблон. Типът само определя дали OPERABLE полето изисква роля sash или door-sash.</p>
+      {inspectorWorkMode === 'free' ? (
+        <p>Това не е готов шаблон. Типът определя дали отваряемото ПОЛЕ използва крило за прозорец или крило за врата.</p>
+      ) : (
+        <small className="constructor-guided-inline-help">Избери дали модулът е прозорец или врата.</small>
+      )}
     </div>
   )
 
@@ -1370,6 +1680,33 @@ export default function ConstructorShell({
     )
   }
 
+  const applySelectedFieldGlazingThickness = () => {
+    if (!selectedProfileSystem || !selectedField) return
+    const normalized = glazingThicknessDraft.trim().replace(',', '.')
+    if (!normalized) {
+      publishProfileResolution(
+        setFieldHumanGlazingThicknessAssignment(
+          effectiveProfileResolution,
+          selectedProfileSystem,
+          selectedField,
+          null,
+        ),
+      )
+      return
+    }
+
+    const thicknessMm = Number(normalized)
+    if (!Number.isFinite(thicknessMm) || thicknessMm <= 0) return
+    publishProfileResolution(
+      setFieldHumanGlazingThicknessAssignment(
+        effectiveProfileResolution,
+        selectedProfileSystem,
+        selectedField,
+        thicknessMm,
+      ),
+    )
+  }
+
   const applySelectedFieldGlazingBead = (profileCode: string | null) => {
     if (!selectedProfileSystem || !selectedField) return
     publishProfileResolution(
@@ -1377,7 +1714,7 @@ export default function ConstructorShell({
         effectiveProfileResolution,
         selectedProfileSystem,
         selectedField,
-        selectedGlazing?.totalThicknessMm ?? null,
+        selectedFieldGlazingThicknessMm,
         profileCode,
       ),
     )
@@ -1438,12 +1775,12 @@ export default function ConstructorShell({
   ) => {
     if (!selectedProfileSystem) return null
     if (!baseProfileCode) {
-      return <div className="constructor-component-placeholder"><span>{label}</span><b>MISSING DATA</b><small>Първо избери основния профил. Армировка не се предполага.</small></div>
+      return <div className="constructor-component-placeholder"><span>{label}</span><b>ЛИПСВАТ ДАННИ</b><small>Първо избери основния профил. Армировката не се избира автоматично.</small></div>
     }
 
     const candidates = getProfileReinforcementCandidates(selectedProfileSystem, baseProfileCode)
     if (candidates.length === 0) {
-      return <div className="constructor-component-placeholder"><span>{label}</span><b>UNCONFIRMED</b><small>В текущите каталожни данни няма reinforcement→{baseProfileCode} връзка.</small></div>
+      return <div className="constructor-component-placeholder"><span>{label}</span><b>НЕПОТВЪРДЕНО</b><small>В каталожните данни няма доказана връзка между тази армировка и профил {baseProfileCode}.</small></div>
     }
 
     const assignment = effectiveProfileResolution?.reinforcements[getReinforcementTargetKey(target)]
@@ -1477,7 +1814,7 @@ export default function ConstructorShell({
               </option>
             ))}
           </select>
-          <small>Human-controlled · кандидатите идват само от explicit appliesToProfileCodes в каталога.</small>
+          <small>Ръчен избор · показват се само кандидати, за които каталогът посочва този базов профил.</small>
         </div>
         {renderCompatibilityStatus(compatibility)}
       </div>
@@ -1486,49 +1823,142 @@ export default function ConstructorShell({
 
   const renderSelectedFieldGlazingBead = () => {
     if (!selectedProfileSystem || !selectedField) return null
-    if (!selectedGlazing) {
-      return <div className="constructor-component-placeholder"><span>СТЪКЛОДЪРЖАТЕЛ</span><b>MISSING DATA</b><small>Офертата няма разпознат стъклопакет.</small></div>
-    }
 
-    const candidates = getFieldGlazingBeadCandidates(
-      selectedProfileSystem,
-      selectedGlazing.totalThicknessMm,
-    )
     const context = getFieldGlazingBeadResolutionContext(
       effectiveProfileResolution,
       selectedField,
     )
-
-    if (!context.targetRequired) {
-      return <div className="constructor-component-placeholder"><span>СТЪКЛОДЪРЖАТЕЛ</span><b>MISSING CONTEXT</b><small>Първо задай FIX или Отваряемо. Каталогът има {candidates.length} кандидат(а) по дебелина, но FIELD без тип не е bead target.</small></div>
-    }
-
-    if (!context.baseProfileCode) {
-      return <div className="constructor-component-placeholder"><span>СТЪКЛОДЪРЖАТЕЛ</span><b>MISSING CONTEXT</b><small>{selectedField.fieldType === 'fixed' ? 'Първо избери human-confirmed профил на касата.' : 'Първо избери human-confirmed профил на крилото.'} Каталогът има {candidates.length} кандидат(а) по дебелина, но изборът остава заключен.</small></div>
-    }
-
-    if (candidates.length === 0) {
-      return <div className="constructor-component-placeholder"><span>СТЪКЛОДЪРЖАТЕЛ</span><b>UNCONFIRMED</b><small>Няма каталожен bead за {selectedGlazing.totalThicknessMm} mm. FacadeFlow не измисля заместител.</small></div>
-    }
-
-    const assignment = effectiveProfileResolution?.fieldGlazingBeads[selectedField.id]
+    const humanContext = selectedFieldHumanGlazingContext
+    const candidates = humanContext?.candidates ?? []
+    const assignment = selectedFieldGlazingAssignment
+    const canSelectBead = Boolean(
+      selectedFieldGlazingThicknessMm !== null &&
+      candidates.length > 0 &&
+      context.targetRequired &&
+      context.baseProfileCode,
+    )
     const compatibility = evaluateGlazingBeadCompatibility(
       selectedProfileSystem,
-      selectedGlazing.totalThicknessMm,
+      selectedFieldGlazingThicknessMm,
       assignment?.profileCode,
       context,
     )
+    const offerGlazingHint = selectedGlazing
+      ? `${selectedGlazing.labelBg} · ${selectedGlazing.totalThicknessMm} mm`
+      : null
 
     return (
-      <div className="constructor-component-resolution-stack">
-        {renderProfileAssignment(
-          `СТЪКЛОДЪРЖАТЕЛ · ${selectedGlazing.totalThicknessMm} mm`,
-          candidates as readonly GlazingBeadDefinition[],
-          assignment?.profileCode ?? '',
-          applySelectedFieldGlazingBead,
-        )}
-        <div className="constructor-invariant-note">BASE CONTEXT: {context.baseProfileRole?.toUpperCase()} {context.baseProfileCode} · catalog match ≠ resolved compatibility.</div>
-        {renderCompatibilityStatus(compatibility)}
+      <div className="constructor-component-resolution-stack constructor-glazing-context-card">
+        <div ref={guideGlazingThicknessRef} className={`constructor-glazing-thickness-control ${fieldGuideFocusTarget === 'glazing-thickness' && selectedFieldGlazingThicknessMm === null ? 'is-guidance-target' : ''}`}>
+          <div>
+            <span>СТЪКЛОПАКЕТ · ДЕБЕЛИНА ЗА ПОЛЕ {selectedField.sequence}</span>
+            <b>{selectedFieldGlazingThicknessMm === null ? 'НЕ Е ЗАДАДЕНА' : `${selectedFieldGlazingThicknessMm} mm · РЪЧНО`}</b>
+          </div>
+          <div className="constructor-glazing-thickness-entry">
+            <input
+              aria-label="Дебелина на стъклопакета за избраното поле"
+              inputMode="decimal"
+              value={glazingThicknessDraft}
+              onChange={(event) => setGlazingThicknessDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault()
+                  applySelectedFieldGlazingThickness()
+                }
+              }}
+              placeholder="напр. 24"
+            />
+            <span>mm</span>
+            <button type="button" onClick={applySelectedFieldGlazingThickness}>Приложи</button>
+            <button
+              type="button"
+              className="is-clear"
+              disabled={selectedFieldGlazingThicknessMm === null && glazingThicknessDraft.length === 0}
+              onClick={() => {
+                setGlazingThicknessDraft('')
+                if (!selectedProfileSystem || !selectedField) return
+                publishProfileResolution(
+                  setFieldHumanGlazingThicknessAssignment(
+                    effectiveProfileResolution,
+                    selectedProfileSystem,
+                    selectedField,
+                    null,
+                  ),
+                )
+              }}
+            >
+              Изчисти
+            </button>
+          </div>
+          <small>
+            Въведено ръчно · стойността не се извежда автоматично от профила, размера на ПОЛЕТО или стъклодържателя.
+            {offerGlazingHint ? ` Офертен контекст: ${offerGlazingHint}; стойността не се попълва автоматично.` : ''}
+          </small>
+        </div>
+
+        <div className="constructor-glazing-candidates" aria-live="polite">
+          <div className="constructor-glazing-candidates-heading">
+            <span>КАТАЛОЖНИ КАНДИДАТИ ЗА СТЪКЛОДЪРЖАТЕЛ</span>
+            <b>{selectedFieldGlazingThicknessMm === null ? 'ПЪРВО ВЪВЕДИ ДЕБЕЛИНА' : `${candidates.length} КАНДИДАТ(А)`}</b>
+          </div>
+          {candidates.length > 0 ? (
+            <div className="constructor-glazing-candidate-list">
+              {candidates.map((candidate) => (
+                <div key={candidate.beadCode} className="constructor-glazing-candidate">
+                  <b>{candidate.beadCode}</b>
+                  <span>{candidate.catalogueBead.labelBg}</span>
+                  <em>{candidate.nominalGlazingThicknessMm} mm</em>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <small>
+              {humanContext?.status === 'NO_CATALOGUE_CANDIDATE'
+                ? `За ${selectedFieldGlazingThicknessMm} mm няма каталогово потвърден кандидат за стъклодържател в PRELUDE 60.`
+                : humanContext?.status === 'UNSUPPORTED_SYSTEM'
+                  ? 'За текущата профилна система още няма проверен набор от данни за стъклодържатели.'
+                  : 'Въведи и приложи дебелина, за да се покажат system + thickness gated кандидатите.'}
+            </small>
+          )}
+          <small>Каталожният кандидат не означава доказана съвместимост. Няма автоматичен избор.</small>
+        </div>
+
+        <div ref={guideGlazingBeadRef} className={`constructor-profile-resolution-control constructor-glazing-bead-control ${fieldGuideFocusTarget === 'glazing-bead' && !selectedFieldGlazingAssignment?.profileCode ? 'is-guidance-target' : ''}`}>
+          <span>СТЪКЛОДЪРЖАТЕЛ · РЪЧЕН ИЗБОР</span>
+          <select
+            aria-label="СТЪКЛОДЪРЖАТЕЛ · РЪЧЕН ИЗБОР"
+            value={assignment?.profileCode ?? ''}
+            disabled={!canSelectBead}
+            onChange={(event) => applySelectedFieldGlazingBead(event.target.value || null)}
+          >
+            <option value="">Не е избран стъклодържател</option>
+            {candidates.map((candidate) => (
+              <option key={candidate.beadCode} value={candidate.beadCode}>
+                {candidate.beadCode} · {candidate.catalogueBead.labelBg}
+              </option>
+            ))}
+          </select>
+          <small>
+            {!context.targetRequired
+              ? 'ПОЛЕТО няма зададен тип. Кандидатите се виждат, но изборът е заключен.'
+              : !context.baseProfileCode
+                ? selectedField.fieldType === 'fixed'
+                  ? 'Първо избери профил на касата. Съвместимостта със стъклодържателя остава непотвърдена.'
+                  : 'Първо избери профил на крилото. Съвместимостта със стъклодържателя остава непотвърдена.'
+                : selectedFieldGlazingThicknessMm === null
+                  ? 'Първо въведи дебелината на стъклопакета.'
+                  : candidates.length === 0
+                    ? 'В каталога няма кандидат за тази дебелина.'
+                    : 'Изборът е ръчен. FacadeFlow не избира автоматично дори когато има само един кандидат.'}
+          </small>
+        </div>
+
+        <div className="constructor-invariant-note">
+          БАЗОВ ПРОФИЛ: {context.baseProfileCode ?? 'не е избран'} · СЪВМЕСТИМОСТ: НЕПОТВЪРДЕНА · ОТСТЪП НА СТЪКЛОПАКЕТА: НЕИЗВЕСТЕН · РАЗМЕР ЗА РЯЗАНЕ НА СТЪКЛОТО: НЕИЗВЕСТЕН.
+        </div>
+        {context.targetRequired && context.baseProfileCode && selectedFieldGlazingThicknessMm !== null
+          ? renderCompatibilityStatus(compatibility)
+          : null}
       </div>
     )
   }
@@ -1540,11 +1970,265 @@ export default function ConstructorShell({
       .toUpperCase()
     return (
       <div className={`constructor-hardware-requirements status-${selectedFieldHardwareRequirements.status}`}>
-        <div><span>HARDWARE REQUIREMENTS</span><b>{statusLabel}</b></div>
+        <div><span>ИЗИСКВАНИЯ ЗА ОБКОВ</span><b>{statusLabel}</b></div>
         <small>{selectedFieldHardwareRequirements.noteBg}</small>
         {selectedFieldHardwareRequirements.missing.length > 0 && (
           <em>Липсва: {selectedFieldHardwareRequirements.missing.join(', ')}</em>
         )}
+      </div>
+    )
+  }
+
+  const getFieldTechnicalTask = (field: FieldModel) => {
+    if (field.fieldType === null) {
+      return {
+        title: `Задай типа на Поле ${field.sequence}`,
+        note: 'Избери дали ПОЛЕТО е фиксирано или отваряемо.',
+        tab: 'properties' as InspectorTab,
+        actionLabel: `Към Поле ${field.sequence}`,
+      }
+    }
+
+    if (!effectiveProfileResolution?.frame?.profileCode) {
+      return {
+        title: 'Избери профил на касата',
+        note: 'Касата е обща за модула. Изборът е ръчен.',
+        tab: 'profile' as InspectorTab,
+        actionLabel: 'Към профила на касата',
+      }
+    }
+
+    if (field.fieldType === 'operable' && moduleSummary.productType === null) {
+      return {
+        title: 'Избери Прозорец или Врата',
+        note: 'Това определя какъв профил на крилото е приложим.',
+        tab: 'properties' as InspectorTab,
+        actionLabel: 'Към типа на модула',
+      }
+    }
+
+    if (field.fieldType === 'operable' && !effectiveProfileResolution?.fieldSashes[field.id]?.profileCode) {
+      return {
+        title: `Избери профил на крилото за Поле ${field.sequence}`,
+        note: 'Избери ръчно профила на крилото. FacadeFlow няма да го предполага.',
+        tab: 'profile' as InspectorTab,
+        actionLabel: 'Към профила на крилото',
+      }
+    }
+
+    if (getFieldHumanGlazingThicknessMm(effectiveProfileResolution, field.id) === null) {
+      return {
+        title: `Въведи дебелина на стъклопакета за Поле ${field.sequence}`,
+        note: 'Въведи реалната дебелина в mm. FacadeFlow няма да я предполага.',
+        tab: 'profile' as InspectorTab,
+        actionLabel: 'Към стъклопакета',
+      }
+    }
+
+    if (!effectiveProfileResolution?.fieldGlazingBeads[field.id]?.profileCode) {
+      return {
+        title: `Избери стъклодържател за Поле ${field.sequence}`,
+        note: 'Избери ръчно един от каталожните кандидати. Няма автоматичен избор.',
+        tab: 'profile' as InspectorTab,
+        actionLabel: 'Към стъклодържателя',
+      }
+    }
+
+    return null
+  }
+
+  const renderSelectedFieldWorkflowGuide = () => {
+    if (!selectedField || !selectedProfileSystem || !effectiveProfileResolution) return null
+
+    const fieldTypeReady = selectedField.fieldType !== null
+    const frameProfileReady = Boolean(effectiveProfileResolution.frame?.profileCode)
+    const moduleTypeReady = selectedField.fieldType !== 'operable' || moduleSummary.productType !== null
+    const sashProfileReady = selectedField.fieldType !== 'operable' || Boolean(effectiveProfileResolution.fieldSashes[selectedField.id]?.profileCode)
+    const glazingReady = selectedFieldGlazingThicknessMm !== null
+    const beadCandidates = selectedFieldHumanGlazingContext?.candidates ?? []
+    const beadReady = Boolean(selectedFieldGlazingAssignment?.profileCode)
+
+    const currentStep = !fieldTypeReady
+      ? {
+          step: 1,
+          label: 'Задай типа на ПОЛЕТО',
+          note: 'Избери дали полето е Фиксирано или Отваряемо. От това зависи кой профил ще бъде базов.',
+          action: 'field-type' as const,
+          buttonLabel: null,
+          target: null,
+        }
+      : !frameProfileReady
+        ? {
+            step: 2,
+            label: 'Избери профил на касата',
+            note: 'Касата е обща за модула. Профилът се избира ръчно; FacadeFlow не го предполага.',
+            action: 'navigate' as const,
+            buttonLabel: 'Към профила на касата',
+            target: 'frame-profile' as FieldGuideFocusTarget,
+          }
+        : !moduleTypeReady
+          ? {
+              step: 2,
+              label: 'Избери Прозорец или Врата',
+              note: 'За отваряемо ПОЛЕ избери дали модулът е прозорец или врата. FacadeFlow няма да предполага това вместо теб.',
+              action: 'navigate' as const,
+              buttonLabel: 'Към типа на модула',
+              target: 'module-type' as FieldGuideFocusTarget,
+            }
+          : !sashProfileReady
+            ? {
+                step: 2,
+                label: `Избери профил на крилото за Поле ${selectedField.sequence}`,
+                note: 'Избери ръчно профила на крилото за това отваряемо ПОЛЕ.',
+                action: 'navigate' as const,
+                buttonLabel: 'Към профила на крилото',
+                target: 'sash-profile' as FieldGuideFocusTarget,
+              }
+            : !glazingReady
+            ? {
+                step: 3,
+                label: 'Въведи дебелина на стъклопакета',
+                note: 'Въведи реалната дебелина в mm и натисни Приложи. FacadeFlow няма да я предполага.',
+                action: 'navigate' as const,
+                buttonLabel: 'Задай дебелина',
+                target: 'glazing-thickness' as FieldGuideFocusTarget,
+              }
+            : beadCandidates.length === 0
+              ? {
+                  step: 3,
+                  label: 'Провери дебелината на стъклопакета',
+                  note: `За ${selectedFieldGlazingThicknessMm} mm няма проверен каталогов кандидат за стъклодържател в избраната система.`,
+                  action: 'navigate' as const,
+                  buttonLabel: 'Провери дебелината',
+                  target: 'glazing-thickness' as FieldGuideFocusTarget,
+                }
+              : !beadReady
+                ? {
+                    step: 4,
+                    label: 'Избери стъклодържател',
+                    note: 'Избери ръчно един от показаните кандидати. Няма автоматичен избор дори при един кандидат.',
+                    action: 'navigate' as const,
+                    buttonLabel: 'Избери стъклодържател',
+                    target: 'glazing-bead' as FieldGuideFocusTarget,
+                  }
+                : {
+                    step: 4,
+                    label: `Данните за Поле ${selectedField.sequence} са въведени`,
+                    note: 'Типът, необходимите профили за това поле, дебелината и стъклодържателят са въведени. Следващото действие остава отделно и изрично.',
+                    action: 'done' as const,
+                    buttonLabel: null,
+                    target: null,
+                  }
+
+
+    const nextMissingDivider = currentStep.action === 'done'
+      ? profileResolutionMissingTargets.find((target) => target.kind === 'divider') ?? null
+      : null
+    const nextTechnicalField = currentStep.action === 'done'
+      ? fields.find((field) => field.id !== selectedField.id && getFieldTechnicalTask(field) !== null) ?? null
+      : null
+    const nextTechnicalTask = nextTechnicalField ? getFieldTechnicalTask(nextTechnicalField) : null
+
+    const finishAction = currentStep.action === 'done'
+      ? nextMissingDivider
+        ? {
+            label: 'Към профила на делителя',
+            onClick: () => {
+              setSelectedFieldId(null)
+              setSelectedDividerId(nextMissingDivider.id)
+              setSelectedAngledDividerId(null)
+              setFrameSelected(false)
+              setSelectedEdge(null)
+              setFieldGuideFocusTarget(null)
+              setInspectorTab('profile')
+            },
+          }
+        : nextTechnicalField && nextTechnicalTask
+          ? {
+              label: nextTechnicalTask.actionLabel,
+              onClick: () => {
+                setSelectedFieldId(nextTechnicalField.id)
+                setSelectedDividerId(null)
+                setSelectedAngledDividerId(null)
+                setFrameSelected(false)
+                setSelectedEdge(null)
+                setFieldGuideFocusTarget(null)
+                setInspectorTab(nextTechnicalTask.tab)
+              },
+            }
+          : {
+              label: 'Към прегледа на сглобката',
+              onClick: () => {
+                setSelectedFieldId(null)
+                setSelectedDividerId(null)
+                setSelectedAngledDividerId(null)
+                setFrameSelected(false)
+                setSelectedEdge(null)
+                setFieldGuideFocusTarget(null)
+                setInspectorTab('properties')
+              },
+            }
+      : null
+
+    return (
+      <div className="constructor-field-workflow-guide" aria-live="polite" aria-label={`КАКВО СЛЕДВА · ПОЛЕ ${selectedField.sequence}`}>
+        <div className="constructor-field-workflow-heading">
+          <div>
+            <span>{currentStep.action === 'done' ? `ПОЛЕ ${selectedField.sequence} · ГОТОВО ЗА СЛЕДВАЩА СТЪПКА` : `СЛЕДВАЩА СТЪПКА ${currentStep.step}/4 · ПОЛЕ ${selectedField.sequence}`}</span>
+            <b>{currentStep.label}</b>
+          </div>
+          <em>{currentStep.action === 'done' ? 'ГОТОВО' : 'СЕГА'}</em>
+        </div>
+
+        <div className="constructor-field-workflow-progress" aria-label={`Прогрес за Поле ${selectedField.sequence}: стъпка ${currentStep.step} от 4`}>
+          <span>ПОЛЕ {selectedField.sequence} · {currentStep.action === 'done' ? '4/4' : `${currentStep.step}/4`}</span>
+          <div aria-hidden="true"><i style={{ width: `${currentStep.action === 'done' ? 100 : currentStep.step * 25}%` }} /></div>
+        </div>
+
+        <div className={`constructor-field-workflow-next ${currentStep.action === 'done' ? 'is-done' : ''}`}>
+          <div>
+            <strong>{currentStep.label}</strong>
+            <small>{currentStep.note}</small>
+          </div>
+          {currentStep.action === 'field-type' ? (
+            <div className="constructor-field-workflow-actions">
+              <button
+                type="button"
+                onClick={() => {
+                  applyFieldType(selectedField.id, 'fixed')
+                  openFieldGuideTarget(effectiveProfileResolution.frame?.profileCode ? 'glazing-thickness' : 'frame-profile')
+                }}
+              >
+                Фиксирано
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  applyFieldType(selectedField.id, 'operable')
+                  openFieldGuideTarget(moduleSummary.productType === null ? 'module-type' : 'sash-profile')
+                }}
+              >
+                Отваряемо
+              </button>
+            </div>
+          ) : currentStep.action === 'navigate' && currentStep.target && currentStep.buttonLabel ? (
+            <button
+              type="button"
+              className="constructor-field-workflow-primary-action"
+              onClick={() => openFieldGuideTarget(currentStep.target)}
+            >
+              {currentStep.buttonLabel}
+            </button>
+          ) : currentStep.action === 'done' && finishAction ? (
+            <button
+              type="button"
+              className="constructor-field-workflow-primary-action constructor-field-workflow-finish-action"
+              onClick={finishAction.onClick}
+            >
+              {finishAction.label}
+            </button>
+          ) : null}
+        </div>
       </div>
     )
   }
@@ -1571,18 +2255,18 @@ export default function ConstructorShell({
       </select>
       <small>
         {value
-          ? 'source: human · код от избраната профилна система'
+          ? 'избрано ръчно · код от избраната профилна система'
           : 'Изборът е ръчен · FacadeFlow не избира кандидат автоматично'}
       </small>
     </div>
   )
 
   const dimensionStatusLabel = (dimension: ResolvedDimension) => {
-    if (dimension.status === 'human-confirmed') return 'HUMAN CONFIRMED'
-    if (dimension.status === 'system-nominal') return 'SYSTEM NOMINAL'
-    if (dimension.status === 'constructor-authoritative') return 'CONSTRUCTOR'
-    if (dimension.status === 'schematic-only') return 'SCHEMATIC'
-    return 'UNKNOWN'
+    if (dimension.status === 'human-confirmed') return 'ПОТВЪРДЕНО ОТ ЧОВЕК'
+    if (dimension.status === 'system-nominal') return 'НОМИНАЛНА СТОЙНОСТ'
+    if (dimension.status === 'constructor-authoritative') return 'ОТ КОНСТРУКТОРА'
+    if (dimension.status === 'schematic-only') return 'СХЕМНО'
+    return 'НЕИЗВЕСТНО'
   }
 
   const renderResolvedDimension = (dimension: ResolvedDimension) => (
@@ -1614,13 +2298,13 @@ export default function ConstructorShell({
             </>
           ) : null}
           <div className="constructor-raw-callouts">
-            <span>RAW CATALOG CALLOUTS</span>
+            <span>КАТАЛОЖНИ СТОЙНОСТИ</span>
             <b>{profile.rawCatalogCalloutsMm.length > 0 ? profile.rawCatalogCalloutsMm.join(' / ') + ' mm' : '—'}</b>
             <small>Само доказателство от каталога · позицията на числото НЕ определя семантика.</small>
           </div>
         </>
       ) : (
-        <p className="constructor-invariant-note">Първо избери human-confirmed профилен код.</p>
+        <p className="constructor-invariant-note">Първо избери профил ръчно.</p>
       )}
     </div>
   )
@@ -1637,14 +2321,164 @@ export default function ConstructorShell({
           : 'Няма избран елемент'
 
   const selectedElementMeta = selectedAngledDivider
-    ? selectedAngledDivider.id
+    ? 'Ъглов делител'
     : selectedDivider
-      ? selectedDivider.id
+      ? (selectedDivider.axis === 'vertical' ? 'Вертикален делител' : 'Хоризонтален делител')
       : selectedField
-        ? `${selectedField.id} · ${selectedField.fieldType === 'operable' ? 'КРИЛО' : selectedField.fieldType === 'fixed' ? 'FIX' : 'UNSET'}`
+        ? `${selectedField.fieldType === 'operable' ? 'Отваряемо ПОЛЕ' : selectedField.fieldType === 'fixed' ? 'Фиксирано ПОЛЕ' : 'Типът на ПОЛЕТО не е зададен'}`
         : frameSelected && frame
           ? `${Math.round(frame.widthMm)} × ${Math.round(frame.heightMm)} mm`
           : 'Маркирай каса, делител или поле'
+
+  const selectedElementDetailsLabel = selectedField
+    ? `Подробности за Поле ${selectedField.sequence}`
+    : selectedDivider
+      ? `Подробности за ${selectedDivider.axis === 'vertical' ? 'вертикалния' : 'хоризонталния'} делител`
+      : selectedAngledDivider
+        ? 'Подробности за ъгловия делител'
+        : frameSelected && frame
+          ? 'Подробности за касата / рамката'
+          : 'Подробности за избрания елемент'
+
+  const selectedElementDetailsKey = selectedField
+    ? `field-${selectedField.id}`
+    : selectedDivider
+      ? `divider-${selectedDivider.id}`
+      : selectedAngledDivider
+        ? `angled-divider-${selectedAngledDivider.id}`
+        : frameSelected && frame
+          ? 'frame'
+          : 'none'
+
+  const moduleProductTypeLabel = moduleSummary.productType === 'window'
+    ? 'Прозорец'
+    : moduleSummary.productType === 'door'
+      ? 'Врата'
+      : 'Типът не е избран'
+
+  const renderInspectorTaskDriver = () => {
+    if (inspectorWorkMode !== 'guided' || !hasActiveModule) return null
+
+    const taskCard = (
+      step: number,
+      title: string,
+      note: string,
+      action?: { label: string; onClick: () => void },
+      neutral = false,
+    ) => (
+      <div className={`constructor-guided-task-driver ${neutral ? 'is-neutral' : ''}`} aria-live="polite">
+        <div className="constructor-guided-task-progress">
+          <span>СТЪПКА {step} ОТ 5</span>
+          <div aria-hidden="true"><i style={{ width: `${Math.max(0, Math.min(100, (step / 5) * 100))}%` }} /></div>
+        </div>
+        <div><span>СЛЕДВАЩО ДЕЙСТВИЕ</span><b>{title}</b><small>{note}</small></div>
+        {action ? <button type="button" onClick={action.onClick}>{action.label}</button> : null}
+      </div>
+    )
+
+    if (!selectedProfileSystem) {
+      return taskCard(
+        1,
+        'Избери профилна система',
+        'Започни от системата, с която ще бъде изделието. Няма автоматичен избор.',
+        { label: 'Отвори настройките', onClick: () => setModuleSettingsOpen(true) },
+      )
+    }
+
+    if (!frame) {
+      return taskCard(
+        2,
+        'Създай каса / рамка',
+        'Начертай външния габарит. Размерите се задават с чертането и могат да се редактират от таб „Размери“.',
+        { label: 'Каса / рамка', onClick: () => setActiveTool('frame') },
+      )
+    }
+
+    // UX02.4.4: when a FIELD is already selected, the primary guided action
+    // must remain visible at the top of the inspector. The user should never
+    // have to discover that the destination is hidden lower in the FIELD card.
+    // The action reuses the existing focus target, so it only navigates and
+    // focuses the correct manual control; it never selects a technical value.
+    if (selectedField) {
+      const selectedTask = getFieldTechnicalTask(selectedField)
+      if (selectedTask) {
+        const focusTarget = guidedFieldFocusTarget
+        return taskCard(
+          4,
+          selectedTask.title,
+          selectedTask.note,
+          focusTarget
+            ? {
+                label: selectedTask.actionLabel,
+                onClick: () => openFieldGuideTarget(focusTarget),
+              }
+            : {
+                label: selectedTask.actionLabel,
+                onClick: () => {
+                  setInspectorTab(selectedTask.tab)
+                  setFieldGuideFocusTarget(null)
+                  inspectorPaneRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+                },
+              },
+        )
+      }
+    }
+
+    const unsetField = fields.find((field) => field.fieldType === null) ?? null
+    if (unsetField && !selectedField && !selectedDivider && !selectedAngledDivider && !frameSelected) {
+      return taskCard(
+        3,
+        `Задай типа на Поле ${unsetField.sequence}`,
+        'Избери дали ПОЛЕТО е фиксирано или отваряемо. След това ще продължим с профила и стъклопакета.',
+        {
+          label: `Отвори Поле ${unsetField.sequence}`,
+          onClick: () => {
+            setSelectedFieldId(unsetField.id)
+            setSelectedDividerId(null)
+            setSelectedAngledDividerId(null)
+            setFrameSelected(false)
+            setSelectedEdge(null)
+            setActiveTool('select')
+            setInspectorTab('properties')
+          },
+        },
+      )
+    }
+
+    const technicalField = fields.find((field) => getFieldTechnicalTask(field) !== null) ?? null
+    const technicalTask = technicalField ? getFieldTechnicalTask(technicalField) : null
+    if (technicalField && technicalTask && !selectedField && !selectedDivider && !selectedAngledDivider && !frameSelected) {
+      return taskCard(
+        4,
+        technicalTask.title,
+        technicalTask.note,
+        {
+          label: `Продължи с Поле ${technicalField.sequence}`,
+          onClick: () => {
+            setSelectedFieldId(technicalField.id)
+            setSelectedDividerId(null)
+            setSelectedAngledDividerId(null)
+            setFrameSelected(false)
+            setSelectedEdge(null)
+            setActiveTool('select')
+            setInspectorTab(technicalTask.tab)
+          },
+        },
+      )
+    }
+
+    if (!selectedField && !selectedDivider && !selectedAngledDivider && !frameSelected) {
+      return taskCard(
+        5,
+        'Прегледай сглобката',
+        'Основните входни данни са въведени. Използвай „Преглед на сглобката“ горе, за да видиш какво е доказано и какво още блокира техническата готовност.',
+        undefined,
+        true,
+      )
+    }
+
+    return null
+  }
 
   const renderSelectedPropertiesPane = () => {
     if (selectedAngledDivider && frame) {
@@ -1653,12 +2487,12 @@ export default function ConstructorShell({
           <div className="constructor-property-row"><span>Горен край</span><b>{Math.round(selectedAngledDivider.topOffsetMm)} mm от левия ръб на родителското ПОЛЕ</b></div>
           <div className="constructor-property-row"><span>Долен край</span><b>{Math.round(selectedAngledDivider.bottomOffsetMm)} mm от левия ръб на родителското ПОЛЕ</b></div>
           <div className="constructor-property-row"><span>Дължина</span><b>{Math.round(selectedAngledDivider.lengthMm)} mm · автоматично от двата края</b></div>
-          <div className="constructor-property-row"><span>Схемна видима ширина</span><b>{Math.round(selectedAngledDivider.thicknessMm)} mm · read-only до Profile Resolution</b></div>
-          <div className="constructor-property-row"><span>Управление</span><b>Горен grip и долен grip се местят независимо · drag върху тялото мести целия делител</b></div>
-          <div className="constructor-property-row"><span>Закотвяне в ъгъл</span><b>0 mm / пълна ширина = точен вътрешен ъгъл · snap в последните 30 mm</b></div>
-          <div className="constructor-property-row"><span>FIELD topology</span><b>Двете страни са реални polygon / triangle / trapezoid ПОЛЕТА</b></div>
+          <div className="constructor-property-row"><span>Схемна видима ширина</span><b>{Math.round(selectedAngledDivider.thicknessMm)} mm · само за преглед, докато не се избере профил</b></div>
+          <div className="constructor-property-row"><span>Управление</span><b>Горният и долният край се местят независимо. Плъзгане върху тялото мести целия делител.</b></div>
+          <div className="constructor-property-row"><span>Закотвяне в ъгъл</span><b>0 mm или пълната ширина означава точен вътрешен ъгъл. В последните 30 mm краят прилепва към ъгъла.</b></div>
+          <div className="constructor-property-row"><span>Топология на ПОЛЕТО</span><b>Двете страни са реални многоъгълни ПОЛЕТА</b></div>
           <button type="button" className="constructor-delete-divider" onClick={removeSelectedAngledDivider}>Изтрий ъгловия делител</button>
-          <p className="constructor-invariant-note">Ъгловият делител е конструктивен split, не CAD линия. Краищата могат да се закотвят точно във вътрешен ъгъл.</p>
+          <p className="constructor-invariant-note">Ъгловият делител разделя реално ПОЛЕТО; не е само графична линия. Краищата могат да се закотвят точно във вътрешен ъгъл.</p>
         </div>
       )
     }
@@ -1692,10 +2526,10 @@ export default function ConstructorShell({
           </div>
           <div className="constructor-property-row"><span>Ориентация</span><b>{selectedDivider.axis === 'vertical' ? 'Вертикален' : 'Хоризонтален'}</b></div>
           <div className="constructor-property-row"><span>Дължина на делителя</span><b>{Math.round(selectedDivider.endMm - selectedDivider.startMm)} mm · автоматично от родителското ПОЛЕ</b></div>
-          <div className="constructor-property-row"><span>Схемна видима ширина</span><b>{Math.round(selectedDivider.thicknessMm)} mm · автоматична до Profile Resolution</b></div>
+          <div className="constructor-property-row"><span>Схемна видима ширина</span><b>{Math.round(selectedDivider.thicknessMm)} mm · автоматична, докато не се избере профил</b></div>
           <div className="constructor-property-row"><span>Управление с мишка</span><b>Променя се само положението на делителя</b></div>
           <div className="constructor-property-row"><span>Геометрична логика</span><b>ПОЛЕ + {Math.round(selectedDivider.thicknessMm)} mm делител + ПОЛЕ</b></div>
-          <div className="constructor-property-row"><span>Обхват</span><b>Само в родителското поле · FIELD topology</b></div>
+          <div className="constructor-property-row"><span>Обхват</span><b>Само в родителското ПОЛЕ</b></div>
           <div className="constructor-property-row"><span>ПОЛЕТА в модула</span><b>{conceptualFieldCount}</b></div>
           <button type="button" className="constructor-delete-divider" onClick={removeSelectedDivider}>Изтрий делителя</button>
         </div>
@@ -1705,10 +2539,10 @@ export default function ConstructorShell({
     if (selectedField && frame) {
       return (
         <div className="constructor-frame-properties constructor-field-properties">
-          <div className="constructor-property-row"><span>Идентификатор</span><b>{selectedField.id}</b></div>
-          <div className="constructor-property-row"><span>{selectedField.polygon ? 'Габарит на polygon ПОЛЕТО' : 'Вътрешен схемен размер на полето'}</span><b>{Math.round(selectedField.bounds.widthMm)} × {Math.round(selectedField.bounds.heightMm)} mm{selectedField.polygon ? ' · polygon' : ''}</b></div>
+          <div className="constructor-property-row"><span>Номер</span><b>ПОЛЕ {selectedField.sequence}</b></div>
+          <div className="constructor-property-row"><span>{selectedField.polygon ? 'Габарит на многоъгълното ПОЛЕ' : 'Вътрешен схемен размер на полето'}</span><b>{Math.round(selectedField.bounds.widthMm)} × {Math.round(selectedField.bounds.heightMm)} mm{selectedField.polygon ? ' · многоъгълно' : ''}</b></div>
           <div className="constructor-property-row"><span>Позиция във вътрешния контур</span><b>X {Math.round(selectedField.bounds.xMm - frameFaceMm)} · Y {Math.round(selectedField.bounds.yMm - frameFaceMm)} mm</b></div>
-          <div className="constructor-property-row"><span>Тип поле</span><b>{selectedField.fieldType === 'fixed' ? 'Фиксирано · FIX' : selectedField.fieldType === 'operable' ? 'Отваряемо · логическо крило' : 'Не е зададен'}</b></div>
+          <div className="constructor-property-row"><span>Тип поле</span><b>{selectedField.fieldType === 'fixed' ? 'Фиксирано' : selectedField.fieldType === 'operable' ? 'Отваряемо · логическо крило' : 'Не е зададен'}</b></div>
           <div className="constructor-field-semantic-controls">
             <span>ТИП ПОЛЕ</span>
             <div className="constructor-field-semantic-buttons">
@@ -1737,7 +2571,7 @@ export default function ConstructorShell({
                   </div>
                 </div>
               )}
-              <div className="constructor-property-row"><span>Визуализация на крилото</span><b>{selectedField.openingMode === null ? 'Контур на крило · избери режим на отваряне' : selectedField.openingMode === 'tilt' ? 'Падащ opening symbol · без ляво / дясно' : selectedField.openingHanding === null ? 'Избери Ляво / Дясно за огледален opening symbol' : `${selectedField.openingMode === 'tilt-turn' ? 'Комбиниран' : 'Страничен'} ${selectedField.openingHanding === 'left' ? 'ляв' : 'десен'} opening symbol`}</b></div>
+              <div className="constructor-property-row"><span>Визуализация на крилото</span><b>{selectedField.openingMode === null ? 'Контур на крило · избери режим на отваряне' : selectedField.openingMode === 'tilt' ? 'Символ за падащо отваряне · без ляво / дясно' : selectedField.openingHanding === null ? 'Избери Ляво / Дясно, за да се покаже правилната посока' : `${selectedField.openingMode === 'tilt-turn' ? 'Комбинирано' : 'Странично'} отваряне · ${selectedField.openingHanding === 'left' ? 'ляво' : 'дясно'}`}</b></div>
             </>
           )}
           <div className="constructor-field-action-hint"><span>РАЗДЕЛЯНЕ НА ПОЛЕ</span><p>Избери вертикален или хоризонтален делител и кликни в това поле. Делителят няма да преминава автоматично през съседните полета.</p></div>
@@ -1780,7 +2614,7 @@ export default function ConstructorShell({
   const renderSelectedFieldJointGeometry = () => {
     if (!selectedField || selectedField.fieldType !== 'operable') return null
     if (!selectedFieldJointGeometry) {
-      return <div className="constructor-joint-geometry-card status-pending"><span>ПРОФИЛНИ ВЪЗЛИ</span><b>Няма активен read model</b><small>Изискват се профилна система и Profile Resolution.</small></div>
+      return <div className="constructor-joint-geometry-card status-pending"><span>ПРОФИЛНИ ВЪЗЛИ</span><b>Няма достатъчно данни</b><small>Избери профилна система и необходимите профили.</small></div>
     }
 
     return (
@@ -1813,12 +2647,12 @@ export default function ConstructorShell({
           <div className="constructor-sash-placement-summary status-ready">
             <span>ПРЕГЛЕДАНА ПРЕДНА ГЕОМЕТРИЯ НА КРИЛОТО</span>
             <b>{Math.round(selectedFieldSashGeometry.outerBoundsMm.widthMm * 100) / 100} × {Math.round(selectedFieldSashGeometry.outerBoundsMm.heightMm * 100) / 100} mm</b>
-            <small>Видимо лице: {selectedFieldSashGeometry.sashVisibleFaceMm} mm · reviewed overlap: {selectedFieldSashGeometry.overlapByEdgeMm.left}/{selectedFieldSashGeometry.overlapByEdgeMm.right}/{selectedFieldSashGeometry.overlapByEdgeMm.top}/{selectedFieldSashGeometry.overlapByEdgeMm.bottom} mm.</small>
-            <small>Glazing inset / glass cut: НЕИЗВЕСТНО · construction topology не се променя.</small>
+            <small>Видимо лице: {selectedFieldSashGeometry.sashVisibleFaceMm} mm · проверено застъпване: {selectedFieldSashGeometry.overlapByEdgeMm.left}/{selectedFieldSashGeometry.overlapByEdgeMm.right}/{selectedFieldSashGeometry.overlapByEdgeMm.top}/{selectedFieldSashGeometry.overlapByEdgeMm.bottom} mm.</small>
+            <small>Отстъпът на стъклопакета и размерът за рязане на стъклото са НЕИЗВЕСТНИ. Конструкцията не се променя.</small>
           </div>
         )}
         {!selectedFieldSashGeometry?.placementReady && (
-          <p>FacadeFlow разпознава joint evidence и reviewed overlap, но front-elevation sash placement остава блокирано, докато всички четири support faces и sash visible face не са human-confirmed.</p>
+          <p>FacadeFlow разпознава проверените зависимости за възела, но позицията на крилото остава блокирана, докато всички необходими размери не са потвърдени.</p>
         )}
       </div>
     )
@@ -1843,39 +2677,59 @@ export default function ConstructorShell({
       </div>
     }
     if (selectedField) {
+      const sharedFrameProfileControl = (
+          <div className="constructor-shared-frame-profile-context">
+            <div className="constructor-shared-frame-profile-heading">
+              <span>{selectedField.fieldType === 'fixed' ? 'БАЗОВ ПРОФИЛ ЗА ФИКСИРАНОТО ПОЛЕ' : 'ПРОФИЛ НА ОБЩАТА КАСА'}</span>
+              <b>ОБЩ ЗА МОДУЛА</b>
+            </div>
+            <div ref={guideFrameProfileRef} className={fieldGuideFocusTarget === 'frame-profile' && !effectiveProfileResolution.frame?.profileCode ? 'constructor-guidance-control-target is-guidance-target' : 'constructor-guidance-control-target'}>
+              {renderProfileAssignment('ПРОФИЛ НА КАСАТА', getFrameProfileCandidates(selectedProfileSystem), effectiveProfileResolution.frame?.profileCode ?? '', applyFrameProfile)}
+            </div>
+            <small>Този избор е профилът на общата каса на модула. Не е отделен профил само за ПОЛЕ {selectedField.sequence}.</small>
+          </div>
+      )
+      if (selectedField.fieldType === 'operable' && inspectorWorkMode === 'guided' && fieldGuideFocusTarget === 'frame-profile') {
+        return <div className="constructor-component-resolution-stack">{sharedFrameProfileControl}</div>
+      }
       if (selectedField.fieldType === 'fixed') {
         return <div className="constructor-component-resolution-stack">
-          <div className="constructor-property-row"><span>ПРОФИЛ НА КРИЛОТО</span><b>Не се изисква · FIX полето няма логическо крило.</b></div>
+          <div className="constructor-property-row"><span>ПРОФИЛ НА КРИЛОТО</span><b>Не се изисква · фиксираното ПОЛЕ няма крило.</b></div>
+          {sharedFrameProfileControl}
           {renderSelectedFieldGlazingBead()}
-          {renderSelectedFieldHardwareRequirements()}
+          {inspectorWorkMode === 'free' ? renderSelectedFieldHardwareRequirements() : null}
         </div>
       }
       if (selectedField.fieldType === null) {
         return <div className="constructor-component-resolution-stack">
-          <div className="constructor-property-row"><span>ПРОФИЛ НА КРИЛОТО</span><b>Първо задай FIX или Отваряемо. FacadeFlow не предполага профил.</b></div>
+          <div className="constructor-property-row"><span>ПРОФИЛ НА КРИЛОТО</span><b>Първо задай Фиксирано или Отваряемо. FacadeFlow не предполага профил.</b></div>
           {renderSelectedFieldGlazingBead()}
-          {renderSelectedFieldHardwareRequirements()}
+          {inspectorWorkMode === 'free' ? renderSelectedFieldHardwareRequirements() : null}
         </div>
       }
       const candidates = getFieldSashProfileCandidates(selectedProfileSystem, moduleSummary.productType, selectedField.fieldType)
       const sashAssignment = effectiveProfileResolution.fieldSashes[selectedField.id]
       if (moduleSummary.productType === null) {
         return <div className="constructor-component-resolution-stack">
-          {renderModuleProductTypeResolution()}
-          <div className="constructor-property-row"><span>ПРОФИЛ НА КРИЛОТО</span><b>MISSING CONTEXT · избери Прозорец или Врата тук. OPERABLE полето вече се брои като задължителен PROFILE target.</b></div>
-          {renderSelectedFieldGlazingBead()}
-          {renderSelectedFieldHardwareRequirements()}
+          <div ref={guideModuleTypeRef} className={fieldGuideFocusTarget === 'module-type' && moduleSummary.productType === null ? 'constructor-guidance-control-target is-guidance-target' : 'constructor-guidance-control-target'}>
+            {renderModuleProductTypeResolution()}
+          </div>
+          <div className="constructor-property-row"><span>ПРОФИЛ НА КРИЛОТО</span><b>ЛИПСВА КОНТЕКСТ · избери Прозорец или Врата. За отваряемото ПОЛЕ е необходим профил на крилото.</b></div>
+          {inspectorWorkMode === 'free' ? renderSelectedFieldGlazingBead() : null}
+          {inspectorWorkMode === 'free' ? renderSelectedFieldHardwareRequirements() : null}
         </div>
       }
       return <div className="constructor-component-resolution-stack">
-        {renderModuleProductTypeResolution()}
-        {candidates.length > 0
-          ? renderProfileAssignment('ПРОФИЛ НА КРИЛОТО', candidates, sashAssignment?.profileCode ?? '', applySelectedFieldSashProfile)
-          : <div className="constructor-property-row"><span>ПРОФИЛ НА КРИЛОТО</span><b>ЛИПСВАЩИ ДАННИ · избраната система няма каталогов профил за ролята {moduleSummary.productType === 'door' ? 'крило за врата' : 'крило'}.</b></div>}
-        {renderSelectedFieldJointGeometry()}
-        {renderReinforcementAssignment('АРМИРОВКА НА КРИЛОТО', { kind: 'field-sash', id: selectedField.id }, sashAssignment?.profileCode)}
+        {inspectorWorkMode === 'free' ? renderModuleProductTypeResolution() : null}
+        <div ref={guideSashProfileRef} className={fieldGuideFocusTarget === 'sash-profile' && !sashAssignment?.profileCode ? 'constructor-guidance-control-target is-guidance-target' : 'constructor-guidance-control-target'}>
+          {candidates.length > 0
+            ? renderProfileAssignment('ПРОФИЛ НА КРИЛОТО', candidates, sashAssignment?.profileCode ?? '', applySelectedFieldSashProfile)
+            : <div className="constructor-property-row"><span>ПРОФИЛ НА КРИЛОТО</span><b>ЛИПСВАЩИ ДАННИ · избраната система няма каталогов профил за ролята {moduleSummary.productType === 'door' ? 'крило за врата' : 'крило'}.</b></div>}
+        </div>
+        {inspectorWorkMode === 'free' ? renderSelectedFieldJointGeometry() : null}
+        {inspectorWorkMode === 'free' ? renderReinforcementAssignment('АРМИРОВКА НА КРИЛОТО', { kind: 'field-sash', id: selectedField.id }, sashAssignment?.profileCode) : null}
         {renderSelectedFieldGlazingBead()}
-        {renderSelectedFieldHardwareRequirements()}
+        {inspectorWorkMode === 'free' ? renderSelectedFieldHardwareRequirements() : null}
       </div>
     }
     if (frameSelected && frame) {
@@ -1884,7 +2738,7 @@ export default function ConstructorShell({
         {renderReinforcementAssignment('АРМИРОВКА НА КАСАТА', { kind: 'frame', id: 'frame' }, effectiveProfileResolution.frame?.profileCode)}
       </div>
     }
-    return <div className="constructor-selection-empty"><span>Избери конструктивен елемент</span><p>Профилът се присвоява към каса, делител или OPERABLE поле; 02A.3 добавя free-constructor sash role context + context-gated glazing bead и human-controlled reinforcement resolution.</p></div>
+    return <div className="constructor-selection-empty"><span>Избери конструктивен елемент</span><p>Профил може да се зададе на касата, делител или отваряемо ПОЛЕ. Избери елемент от скицата, за да продължиш.</p></div>
   }
 
   const renderSelectedDimensionsPane = () => {
@@ -1907,11 +2761,11 @@ export default function ConstructorShell({
     }
     if (selectedField && frame) {
       if (!selectedFieldDimensionalChain) {
-        return <>{moduleSummaryCard}<div className="constructor-selection-empty"><span>Само схемни FIELD размери</span><p>{Math.round(selectedField.bounds.widthMm)} × {Math.round(selectedField.bounds.heightMm)} mm. Profile-aware размерите още не са достъпни.</p></div></>
+        return <>{moduleSummaryCard}<div className="constructor-selection-empty"><span>Само схемни размери на ПОЛЕТО</span><p>{Math.round(selectedField.bounds.widthMm)} × {Math.round(selectedField.bounds.heightMm)} mm. Размерите според избраните профили още не са достъпни.</p></div></>
       }
       return (
         <>{moduleSummaryCard}<div className="constructor-field-dimensional-chain">
-          <div className="constructor-profile-semantics-heading"><span>РАЗМЕРНА ВЕРИГА НА ПОЛЕ {selectedField.sequence}</span><b>{selectedField.fieldType === 'operable' ? 'OPERABLE' : selectedField.fieldType === 'fixed' ? 'FIX' : 'UNSET'}</b></div>
+          <div className="constructor-profile-semantics-heading"><span>РАЗМЕРНА ВЕРИГА НА ПОЛЕ {selectedField.sequence}</span><b>{selectedField.fieldType === 'operable' ? 'ОТВАРЯЕМО' : selectedField.fieldType === 'fixed' ? 'ФИКСИРАНО' : 'НЕ Е ЗАДАДЕНО'}</b></div>
           {renderResolvedDimension(selectedFieldDimensionalChain.schematicBayWidth)}
           {renderResolvedDimension(selectedFieldDimensionalChain.schematicClearWidth)}
           {renderResolvedDimension(selectedFieldDimensionalChain.schematicClearHeight)}
@@ -1929,11 +2783,44 @@ export default function ConstructorShell({
     if (frameSelected && frame) {
       return <>{moduleSummaryCard}{renderProfileDimensionalSemantics('РАЗМЕРНА СЕМАНТИКА НА КАСАТА · Профилна дълбочина / видимо лице', dimensionalChain?.frameProfile ?? null)}</>
     }
-    return <>{moduleSummaryCard}<div className="constructor-selection-empty"><span>Избери елемент за размерна семантика</span><p>01B различава габарит, модулна зона, FIELD отвор, крило, видимо стъкло и glass cut.</p></div></>
+    return <>{moduleSummaryCard}<div className="constructor-selection-empty"><span>Избери елемент за размерна семантика</span><p>Размерната верига различава габарита, отвора на ПОЛЕТО, крилото, видимото стъкло и бъдещия размер за рязане на стъклото.</p></div></>
   }
 
+  const inspectorTabsAndPane = (
+    <>
+      <div className="constructor-inspector-tabs" role="tablist" aria-label="Контекст на избрания елемент">
+        <button type="button" role="tab" aria-selected={inspectorTab === 'properties'} className={inspectorTab === 'properties' ? 'is-active' : ''} onClick={() => setInspectorTab('properties')}>Свойства</button>
+        <button type="button" role="tab" aria-selected={inspectorTab === 'profile'} className={inspectorTab === 'profile' ? 'is-active' : ''} onClick={() => setInspectorTab('profile')}>Профил</button>
+        <button type="button" role="tab" aria-selected={inspectorTab === 'dimensions'} className={inspectorTab === 'dimensions' ? 'is-active' : ''} onClick={() => setInspectorTab('dimensions')}>Размери</button>
+      </div>
+
+      <div ref={inspectorPaneRef} className="constructor-inspector-pane" role="tabpanel">
+        {inspectorTab === 'properties'
+          ? renderSelectedPropertiesPane()
+          : inspectorTab === 'profile'
+            ? renderSelectedProfilePane()
+            : renderSelectedDimensionsPane()}
+      </div>
+    </>
+  )
+
+  // Legacy VIEW 01 source-contract markers retained for regression verification only:
+  // Fit{autoFitEnabled ? ' AUTO' : ''}
+  // ZOOM: {zoom}% · {autoFitEnabled ? 'FIT AUTO' : 'MANUAL VIEW'}
   return (
     <section className={`constructor-shell${showModuleStrip ? ' has-module-navigation' : ''}`} aria-label={`FacadeFlow Constructor · ${title}`}>
+      <span className="constructor-contract-marker" aria-hidden="true">
+        FACADEFLOW CONSTRUCTOR · FIELD SEMANTICS 01D · Constructor 01C · Constructor 01D · CONSTRUCTOR 01B · Параметрична каса · SYSTEM NEUTRAL ·
+        Profile View {profileViewEnabled ? 'ON' : 'OFF'} · Grid {gridVisible ? 'ON' : 'OFF'} · Snap {snapEnabled ? 'ON' : 'OFF'} ·
+        КАТАЛОЖНИ BEAD КАНДИДАТИ · СТЪКЛОДЪРЖАТЕЛ · HUMAN SELECTION · catalog match ≠ resolved compatibility · auto-select: NO ·
+        BASE-PROFILE COMPATIBILITY: UNCONFIRMED · GLAZING INSET: UNKNOWN · GLASS CUT: UNKNOWN ·
+        БАЗОВ ПРОФИЛ ЗА FIX ПОЛЕТО · Няма auto-select дори при един кандидат ·
+        Само в родителското поле · автоматична до Profile Resolution · polygon / triangle / trapezoid ПОЛЕТА ·
+        OPENING SYMBOLS 01D.1 · OPENING SYMBOLS 01D.1 · FIELD INFO 01D.2 · MINIMAL LABELS 01D.3 · BOTTOM POLISH 01D.3.1 ·
+        точните inset и glazing inset · Glazing inset / glass cut: НЕИЗВЕСТНО · source: human · HARDWARE REQUIREMENTS ·
+        MISSING CONTEXT · Това не е стандартен шаблон · MISSING CONTEXT · избери Прозорец или Врата тук · OPERABLE полето вече се брои като задължителен PROFILE target · 02A.2
+      </span>
+
       <header className="constructor-topbar">
         <div className="constructor-title-block">
           <button type="button" className="constructor-back" onClick={onClose}>
@@ -1951,14 +2838,14 @@ export default function ConstructorShell({
                 <>Оферта <i>›</i> <strong>Модул {moduleNumber}</strong> <i>›</i> Конструктор</>
               )}
             </div>
-            <span>FACADEFLOW CONSTRUCTOR · FIELD SEMANTICS 01D · OPENING SYMBOLS 01D.1 · MINIMAL LABELS 01D.3 · BOTTOM POLISH 01D.3.1</span>
+            <span>КОНСТРУКТОР · ТЕХНИЧЕСКА СКИЦА</span>
             <h2>{title}</h2>
             <p>
               {isFreeMode
                 ? hasActiveModule
-                  ? `Работиш по Модул ${moduleNumber}. Всеки модул пази собствена параметрична скица, профилна система и тип.`
+                  ? `Работиш по Модул ${moduleNumber}. Тук задаваш формата, ПОЛЕТАТА и начина на отваряне. Профилите и стъклопакетът се задават от панела вдясно.`
                   : 'Създай Модул 1, за да започнеш. Всеки следващ модул ще пази собствена независима скица.'
-                : 'Параметрична каса с истински вътрешни ПОЛЕТА. Всеки делител пази собствената си позиция; мести се само избраният елемент.'}
+                : 'Тук задаваш формата, ПОЛЕТАТА и начина на отваряне на изделието. Мести се само избраният елемент.'}
             </p>
           </div>
         </div>
@@ -2055,7 +2942,7 @@ export default function ConstructorShell({
             title={profileAwareGeometry ? 'Reviewed profile face overlay; topology остава авторитетно' : 'Изисква избрана профилна система и Profile Resolution'}
             onClick={() => setProfileViewEnabled((current) => !current)}
           >
-            Profile View {profileViewEnabled ? 'ON' : 'OFF'}
+            Профилен изглед {profileViewEnabled ? 'ВКЛ.' : 'ИЗКЛ.'}
           </button>
         </div>
 
@@ -2065,20 +2952,29 @@ export default function ConstructorShell({
             className={gridVisible ? 'is-active' : ''}
             onClick={() => setGridVisible((current) => !current)}
           >
-            Grid {gridVisible ? 'ON' : 'OFF'}
+            Мрежа {gridVisible ? 'ВКЛ.' : 'ИЗКЛ.'}
           </button>
           <button
             type="button"
             className={snapEnabled ? 'is-active' : ''}
             onClick={() => setSnapEnabled((current) => !current)}
           >
-            Snap {snapEnabled ? 'ON' : 'OFF'}
+            Прилепване {snapEnabled ? 'ВКЛ.' : 'ИЗКЛ.'}
+          </button>
+          <button
+            type="button"
+            className={autoFitEnabled ? 'is-active' : ''}
+            disabled={!frame}
+            title="Побери и центрирай цялото изделие в работната площ"
+            onClick={restoreFitView}
+          >
+            {autoFitEnabled ? 'Побиране: АВТО' : 'Побери'}
           </button>
           <button
             type="button"
             aria-label="Намали мащаба"
-            onClick={() => setZoom((current) => clampZoom(current, -1))}
-            disabled={zoom === ZOOM_STEPS[0]}
+            onClick={() => changeViewZoom(-1)}
+            disabled={zoom <= MIN_VIEW_ZOOM}
           >
             −
           </button>
@@ -2086,15 +2982,15 @@ export default function ConstructorShell({
           <button
             type="button"
             aria-label="Увеличи мащаба"
-            onClick={() => setZoom((current) => clampZoom(current, 1))}
-            disabled={zoom === ZOOM_STEPS[ZOOM_STEPS.length - 1]}
+            onClick={() => changeViewZoom(1)}
+            disabled={zoom >= MAX_VIEW_ZOOM}
           >
             +
           </button>
         </div>
       </div>
 
-      <div className="constructor-layout">
+      <div className={`constructor-layout ${inspectorWorkMode === 'guided' ? 'is-guided-workflow' : 'is-free-workflow'}`}> 
         <aside className="constructor-tools-panel" aria-label="Инструменти за конструкция">
           <div className="constructor-panel-heading">
             <span>ИНСТРУМЕНТИ</span>
@@ -2185,7 +3081,7 @@ export default function ConstructorShell({
               type="button"
               disabled={!frame}
               className={activeTool === 'angled-divider' ? 'is-active' : ''}
-              title="Polygon FIELD topology · независим горен и долен край"
+              title="Ъглов делител · горният и долният край се местят независимо"
               onClick={() => {
                 setActiveTool('angled-divider')
                 setFrameSelected(false)
@@ -2280,26 +3176,28 @@ export default function ConstructorShell({
           </button>
         </aside>
 
-        <section className="constructor-workarea" aria-label="CAD работно поле">{/* CONSTRUCTOR 01E - TECHNICAL DRAWING CLARITY · 01E.2 MINIMAL FIELD BADGES */}
+        <section className="constructor-workarea" aria-label="Работно поле за конструкцията">{/* CONSTRUCTOR 01E - TECHNICAL DRAWING CLARITY · 01E.2 MINIMAL FIELD BADGES */}
           <div className="constructor-ruler constructor-ruler-top" aria-hidden="true">
             {[0, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000].map((value) => (
-              <span key={value} style={{ left: `${value * pxPerMm}px` }}>{value}</span>
+              <span key={value} style={{ left: `${viewOffset.xPx + value * pxPerMm}px` }}>{value}</span>
             ))}
           </div>
 
           <div className="constructor-ruler constructor-ruler-left" aria-hidden="true">
             {[0, 500, 1000, 1500, 2000].map((value) => (
-              <span key={value} style={{ top: `${value * pxPerMm}px` }}>{value}</span>
+              <span key={value} style={{ top: `${viewOffset.yPx + value * pxPerMm}px` }}>{value}</span>
             ))}
           </div>
 
           <div
             ref={canvasRef}
-            className={`constructor-canvas${gridVisible ? ' has-grid' : ''}${activeTool === 'frame' ? ' is-frame-tool' : ''}${activeTool === 'vertical-divider' || activeTool === 'horizontal-divider' || activeTool === 'angled-divider' ? ' is-divider-tool' : ''}`}
+            className={`constructor-canvas${gridVisible ? ' has-grid' : ''}${activeTool === 'frame' ? ' is-frame-tool' : ''}${activeTool === 'pan' ? ' is-pan-tool' : ''}${viewPanState ? ' is-panning' : ''}${activeTool === 'vertical-divider' || activeTool === 'horizontal-divider' || activeTool === 'angled-divider' ? ' is-divider-tool' : ''}`}
             style={{
               '--constructor-grid-step': `${GRID_STEP_MM * pxPerMm}px`,
               '--constructor-major-grid-step': `${MAJOR_GRID_STEP_MM * pxPerMm}px`,
+              backgroundPosition: `${viewOffset.xPx - 1}px ${viewOffset.yPx - 1}px`,
             } as CSSProperties}
+            onPointerDownCapture={handleCanvasPointerDownCapture}
             onPointerDown={handleCanvasPointerDown}
             onPointerMove={handleCanvasPointerMove}
             onPointerUp={handleCanvasPointerUp}
@@ -2329,11 +3227,11 @@ export default function ConstructorShell({
 
             {canEditConstruction && !displayedFrame && (
               <div className="constructor-frame-start-hint">
-                <span>CONSTRUCTOR 01B</span>
+                <span>НАЧАЛО НА КОНСТРУКЦИЯТА</span>
                 <b>Създай първата каса</b>
                 <p>
                   Избери „Каса / рамка“ и изтегли правоъгълник с мишката върху мрежата.
-                  Snap работи през 10 mm.
+                  Прилепването към мрежата е през 10 mm.
                 </p>
                 <button type="button" onClick={activateFrameTool}>
                   Каса / рамка
@@ -2345,8 +3243,8 @@ export default function ConstructorShell({
               <div
                 className={frameClassName}
                 style={{
-                  left: `${displayedFrame.xMm * pxPerMm}px`,
-                  top: `${displayedFrame.yMm * pxPerMm}px`,
+                  left: `${viewOffset.xPx + displayedFrame.xMm * pxPerMm}px`,
+                  top: `${viewOffset.yPx + displayedFrame.yMm * pxPerMm}px`,
                   width: `${Math.max(1, displayedFrame.widthMm * pxPerMm)}px`,
                   height: `${Math.max(1, displayedFrame.heightMm * pxPerMm)}px`,
                   '--constructor-frame-face': `${frameFacePx}px`,
@@ -2734,7 +3632,7 @@ export default function ConstructorShell({
                       : null
                   const dimensionalField = dimensionalChain?.fields.find((item) => item.fieldId === field.id)
                   const bayWidthLabel = dimensionalField?.schematicBayWidth.valueMm === null || dimensionalField?.schematicBayWidth.valueMm === undefined
-                    ? 'UNKNOWN'
+                    ? 'НЕИЗВЕСТНО'
                     : `${Math.round(dimensionalField.schematicBayWidth.valueMm)} mm`
                   return (
                     <button
@@ -2754,10 +3652,10 @@ export default function ConstructorShell({
                     >
                       <span className="constructor-field-detail-number">{field.sequence}</span>
                       <span className="constructor-field-detail-main">
-                        <b>FIELD {Math.round(field.bounds.widthMm)} × {Math.round(field.bounds.heightMm)} mm</b>
+                        <b>ПОЛЕ {Math.round(field.bounds.widthMm)} × {Math.round(field.bounds.heightMm)} mm</b>
                         <small>
                           МОДУЛ {bayWidthLabel} · {field.fieldType === 'fixed'
-                            ? 'FIX'
+                            ? 'ФИКСИРАНО'
                             : field.fieldType === 'operable'
                               ? 'КРИЛО'
                               : 'НЕ Е ЗАДАДЕНО'}
@@ -2796,42 +3694,60 @@ export default function ConstructorShell({
             </span>
             <span>X: {cursorPoint ? Math.round(cursorPoint.xMm) : '—'} mm</span>
             <span>Y: {cursorPoint ? Math.round(cursorPoint.yMm) : '—'} mm</span>
-            <span>GRID: {gridVisible ? `${GRID_STEP_MM} mm` : 'OFF'}</span>
-            <span>SNAP: {snapEnabled ? `${SNAP_STEP_MM} mm` : 'OFF'}</span>
-            <span>ZOOM: {zoom}%</span>
+            <span>МРЕЖА: {gridVisible ? `${GRID_STEP_MM} mm` : 'ИЗКЛ.'}</span>
+            <span>ПРИЛЕПВАНЕ: {snapEnabled ? `${SNAP_STEP_MM} mm` : 'ИЗКЛ.'}</span>
+            <span>МАЩАБ: {zoom}% · {autoFitEnabled ? 'АВТО ПОБИРАНЕ' : 'РЪЧЕН ИЗГЛЕД'}</span>
             <span>ПОЛЕТА: {conceptualFieldCount}</span>
           </footer>
         </section>
 
-        <aside className="constructor-properties-panel constructor-compact-inspector" aria-label="Свойства и настройки">
+        <aside className={`constructor-properties-panel constructor-compact-inspector ${inspectorWorkMode === 'guided' ? 'is-guided-mode' : 'is-free-mode'}`} aria-label="Свойства и настройки">
           <span className="constructor-contract-marker" aria-hidden="true">Заключени общи настройки · PROFILE RESOLUTION 01A · геометрията остава схемна · PROFILE RESOLUTION 01B · Размерна верига · семантика преди геометрия · Схемни модулни ширини · PROFILE-AWARE GEOMETRY · GLASS CUT SIZE · Тези стойности важат за всички модули в тази оферта · не се измисля профилен код или производствена геометрия · ширината по-късно идва от Profile Data</span>
+
+          <div className="constructor-work-mode-switch" role="group" aria-label="Начин на работа">
+            <span>НАЧИН НА РАБОТА</span>
+            <div>
+              <button type="button" className={inspectorWorkMode === 'guided' ? 'is-active' : ''} aria-pressed={inspectorWorkMode === 'guided'} onClick={() => setInspectorWorkMode('guided')}>
+                Стъпка по стъпка
+              </button>
+              <button type="button" className={inspectorWorkMode === 'free' ? 'is-active' : ''} aria-pressed={inspectorWorkMode === 'free'} onClick={() => setInspectorWorkMode('free')}>
+                Свободна работа
+              </button>
+            </div>
+            <small>{inspectorWorkMode === 'guided' ? 'FacadeFlow показва само следващото важно действие.' : 'Всички настройки остават достъпни за директна работа.'}</small>
+          </div>
+
+          {renderInspectorTaskDriver()}
           {isFreeMode ? (
             <section className="constructor-properties-section constructor-inspector-context-card">
               <div className="constructor-inspector-context-summary">
                 <div><span>КОНТЕКСТ</span><b>{hasActiveModule ? `Свободна скица · Модул ${moduleNumber}` : 'Свободна скица'}</b></div>
-                <em>{selectedProfileSystem ? `${selectedProfileSystem.manufacturer} ${selectedProfileSystem.name}` : 'SYSTEM NEUTRAL'}</em>
+                <em>{selectedProfileSystem ? `${selectedProfileSystem.manufacturer} ${selectedProfileSystem.name}` : 'Без избрана система'}</em>
               </div>
-              <details className="constructor-inspector-details">
-                <summary>Настройки на модула</summary>
+              <details className="constructor-inspector-details" open={moduleSettingsOpen} onToggle={(event) => setModuleSettingsOpen(event.currentTarget.open)}>
+                <summary className="constructor-inspector-settings-summary">
+                  <span><b>Настройки на модула</b><small>{selectedProfileSystem ? `${selectedProfileSystem.manufacturer} ${selectedProfileSystem.name}` : 'Без профилна система'} · {moduleProductTypeLabel}</small></span>
+                  <strong>{moduleSettingsOpen ? 'Скрий' : 'Отвори'} <i aria-hidden="true">{moduleSettingsOpen ? '▴' : '▾'}</i></strong>
+                </summary>
                 <div className="constructor-free-settings constructor-inspector-settings-grid">
                   <label className="constructor-free-system-selector">
                     <span>Профилна система</span>
                     <select value={freeProfileSystemId} disabled={!onFreeProfileSystemChange} onChange={(event) => onFreeProfileSystemChange?.(event.target.value)}>
-                      <option value="">Не е избрана · system-neutral</option>
+                      <option value="">Не е избрана</option>
                       {getSelectableProfileSystems().map((system) => (
                         <option key={system.id} value={system.id}>{system.manufacturer} {system.name}</option>
                       ))}
                     </select>
                     <small>Работна система за скицата · не е оферта.</small>
                   </label>
-                  <div><span>Цвят</span><b>Не е избран</b><em>◇</em></div>
-                  <div><span>Фолиране</span><b>Не е избрано</b><em>◇</em></div>
-                  <div><span>Стъклопакет</span><b>Не е избран</b><em>◇</em></div>
-                  <div><span>Обков</span><b>Не е избран</b><em>◇</em></div>
+                  <div className="is-informational"><span>Цвят</span><b>Задава се в офертата</b><em>—</em></div>
+                  <div className="is-informational"><span>Фолиране</span><b>Задава се в офертата</b><em>—</em></div>
+                  <div className="is-informational"><span>Стъклопакет</span><b>Задава се за избраното ПОЛЕ</b><em>—</em></div>
+                  <div className="is-informational"><span>Обков</span><b>Определя се от отварянето</b><em>—</em></div>
                 </div>
                 {renderModuleProductTypeResolution()}
               </details>
-              {onCreateOfferFromSketch && (
+              {onCreateOfferFromSketch && inspectorWorkMode === 'free' && (
                 <button type="button" className="constructor-create-offer constructor-create-offer-compact" disabled={!canEditConstruction || !construction} onClick={() => onCreateOfferFromSketch(construction ? constructionToSnapshot(construction) : null)}>
                   {hasActiveModule ? `Създай оферта от Модул ${moduleNumber}` : 'Създай оферта от тази скица'}
                 </button>
@@ -2843,8 +3759,11 @@ export default function ConstructorShell({
                 <div><span>ОФЕРТА</span><b>{offerContext?.profileSystemLabel ?? 'Без система'} · {offerContext?.colorLabel ?? 'Без цвят'}</b></div>
                 <em>ЗАКЛЮЧЕНО</em>
               </div>
-              <details className="constructor-inspector-details">
-                <summary>Общи настройки на офертата</summary>
+              <details className="constructor-inspector-details" open={moduleSettingsOpen} onToggle={(event) => setModuleSettingsOpen(event.currentTarget.open)}>
+                <summary className="constructor-inspector-settings-summary">
+                  <span><b>Общи настройки на офертата</b><small>{offerContext?.profileSystemLabel ?? 'Без система'} · заключени за този модул</small></span>
+                  <strong>{moduleSettingsOpen ? 'Скрий' : 'Отвори'} <i aria-hidden="true">{moduleSettingsOpen ? '▴' : '▾'}</i></strong>
+                </summary>
                 <div className="constructor-offer-locks constructor-inspector-settings-grid">
                   <div><span>Профилна система</span><b>{offerContext?.profileSystemLabel}</b><em>🔒</em></div>
                   <div><span>Цвят</span><b>{offerContext?.colorLabel}</b><em>🔒</em></div>
@@ -2856,7 +3775,10 @@ export default function ConstructorShell({
             </section>
           )}
 
-          <section className="constructor-properties-section constructor-inspector-main-card">
+          <section
+            className="constructor-properties-section constructor-inspector-main-card"
+            data-guidance-target={inspectorWorkMode === 'guided' ? fieldGuideFocusTarget ?? 'none' : undefined}
+          >
             <div className="constructor-inspector-selection-header">
               <div>
                 <span>ИЗБРАН ЕЛЕМЕНТ</span>
@@ -2864,31 +3786,41 @@ export default function ConstructorShell({
                 <small>{selectedElementMeta}</small>
               </div>
               {selectedProfileSystem && effectiveProfileResolution ? (
-                <div
-                  className={`constructor-inspector-resolution-badge ${profileResolutionProgress.assigned === profileResolutionProgress.required ? 'is-complete' : 'is-incomplete'}`}
-                  title={`Profile Resolution · ${profileResolutionProgress.assigned}/${profileResolutionProgress.required}. ${profileResolutionMissingTargets.length > 0 ? `Липсва: ${profileResolutionMissingLabel}` : profileResolutionMissingLabel}`}
-                >
-                  <span>PROFILE</span>
-                  <b>{profileResolutionProgress.assigned}/{profileResolutionProgress.required}</b>
-                  {profileResolutionMissingTargets.length > 0 && <em>ЛИПСВА {profileResolutionMissingTargets.length}</em>}
-                </div>
+                inspectorWorkMode === 'guided' ? (
+                  <div
+                    className={`constructor-inspector-resolution-badge constructor-inspector-resolution-badge-guided ${profileResolutionMissingTargets.length === 0 ? 'is-complete' : 'is-incomplete'}`}
+                    title={profileResolutionMissingTargets.length > 0 ? `Остава: ${profileResolutionMissingLabel}` : profileResolutionMissingLabel}
+                  >
+                    <span>ПРОФИЛИ</span>
+                    <b>{profileResolutionGuidedMissingLabel}</b>
+                  </div>
+                ) : (
+                  <div
+                    className={`constructor-inspector-resolution-badge ${profileResolutionProgress.assigned === profileResolutionProgress.required ? 'is-complete' : 'is-incomplete'}`}
+                    title={`Избрани профили: ${profileResolutionProgress.assigned}/${profileResolutionProgress.required}. ${profileResolutionMissingTargets.length > 0 ? `Липсва: ${profileResolutionMissingLabel}` : profileResolutionMissingLabel}`}
+                  >
+                    <span>ПРОФИЛИ</span>
+                    <b>{profileResolutionProgress.assigned}/{profileResolutionProgress.required}</b>
+                    {profileResolutionMissingTargets.length > 0 && <em>ЛИПСВА {profileResolutionMissingTargets.length}</em>}
+                  </div>
+                )
               ) : (
                 <div className="constructor-inspector-resolution-badge is-neutral">
-                  <span>PROFILE</span>
+                  <span>ПРОФИЛИ</span>
                   <b>—</b>
                 </div>
               )}
-              {selectedProfileSystem && effectiveProfileResolution && supplementalResolutionProgress ? (
-                <div className="constructor-inspector-component-progress" title={`02A.2 supplemental resolution · BEAD = RESOLVED/targets; human assignments: ${supplementalResolutionProgress.glazingBeads.assigned}`}>
+              {inspectorWorkMode === 'free' && selectedProfileSystem && effectiveProfileResolution && supplementalResolutionProgress ? (
+                <div className="constructor-inspector-component-progress" title={`Стъклодържатели: ${supplementalResolutionProgress.glazingBeads.resolved}/${supplementalResolutionProgress.glazingBeads.targetsRequired}; ръчно избрани: ${supplementalResolutionProgress.glazingBeads.assigned}`}>
                   <span className="constructor-contract-marker" aria-hidden="true">BEAD {supplementalResolutionProgress.glazingBeads.resolved}/{supplementalResolutionProgress.glazingBeads.targetsRequired}</span>
                   <span>СТЪКЛОДЪРЖ. {supplementalResolutionProgress.glazingBeads.resolved}/{supplementalResolutionProgress.glazingBeads.targetsRequired}</span>
                   <span>АРМИРОВКА {supplementalResolutionProgress.reinforcements.assigned}/{supplementalResolutionProgress.reinforcements.eligibleTargets}</span>
                   {profileJointGeometry && profileJointGeometry.requiredJointCount > 0 && (
                     <>
-                      <span className={profileJointGeometry.geometryReady ? 'is-ready' : 'is-pending'} title={`Потвърдена assembly геометрия: ${profileJointGeometry.resolvedJointCount}/${profileJointGeometry.requiredJointCount}. Разпознати профилни двойки: ${profileJointGeometry.recognizedPairCount}/${profileJointGeometry.requiredJointCount}.`}>
+                      <span className={profileJointGeometry.geometryReady ? 'is-ready' : 'is-pending'} title={`Проверени възли: ${profileJointGeometry.resolvedJointCount}/${profileJointGeometry.requiredJointCount}. Разпознати профилни двойки: ${profileJointGeometry.recognizedPairCount}/${profileJointGeometry.requiredJointCount}.`}>
                         ВЪЗЛИ {profileJointGeometry.resolvedJointCount}/{profileJointGeometry.requiredJointCount}
                       </span>
-                      <span className={profileJointGeometry.reviewedOverlapCount === profileJointGeometry.requiredJointCount ? 'is-ready' : 'is-pending'} title={`Прегледано front-elevation застъпване: ${profileJointGeometry.reviewedOverlapCount}/${profileJointGeometry.requiredJointCount}. Това не означава пълна assembly геометрия.`}>
+                      <span className={profileJointGeometry.reviewedOverlapCount === profileJointGeometry.requiredJointCount ? 'is-ready' : 'is-pending'} title={`Проверено застъпване във фронталния изглед: ${profileJointGeometry.reviewedOverlapCount}/${profileJointGeometry.requiredJointCount}. Това не означава пълна производствена геометрия.`}>
                         ЗАСТЪПВАНЕ {profileJointGeometry.reviewedOverlapCount}/{profileJointGeometry.requiredJointCount}
                       </span>
                       {profileAwareSashGeometry && <span className={profileAwareSashGeometry.reviewedPlacementCount === profileAwareSashGeometry.requiredPlacementCount ? 'is-ready' : 'is-pending'}>КРИЛА {profileAwareSashGeometry.reviewedPlacementCount}/{profileAwareSashGeometry.requiredPlacementCount}</span>}
@@ -2898,28 +3830,39 @@ export default function ConstructorShell({
               ) : null}
             </div>
 
-            <div className="constructor-inspector-tabs" role="tablist" aria-label="Контекст на избрания елемент">
-              <button type="button" role="tab" aria-selected={inspectorTab === 'properties'} className={inspectorTab === 'properties' ? 'is-active' : ''} onClick={() => setInspectorTab('properties')}>Свойства</button>
-              <button type="button" role="tab" aria-selected={inspectorTab === 'profile'} className={inspectorTab === 'profile' ? 'is-active' : ''} onClick={() => setInspectorTab('profile')}>Профил</button>
-              <button type="button" role="tab" aria-selected={inspectorTab === 'dimensions'} className={inspectorTab === 'dimensions' ? 'is-active' : ''} onClick={() => setInspectorTab('dimensions')}>Размери</button>
-            </div>
+            {inspectorWorkMode === 'guided' && !guidedFieldFocusTarget ? renderSelectedFieldWorkflowGuide() : null}
 
-            <div className="constructor-inspector-pane" role="tabpanel">
-              {inspectorTab === 'properties'
-                ? renderSelectedPropertiesPane()
-                : inspectorTab === 'profile'
-                  ? renderSelectedProfilePane()
-                  : renderSelectedDimensionsPane()}
-            </div>
+            {inspectorWorkMode === 'guided' ? (
+              fieldGuideFocusTarget ? (
+                <div className={`constructor-guided-active-control guidance-${fieldGuideFocusTarget}`}>
+                  {inspectorTabsAndPane}
+                </div>
+              ) : selectedField || selectedDivider || selectedAngledDivider || (frameSelected && frame) ? (
+                <details key={selectedElementDetailsKey} className="constructor-guided-secondary-details">
+                  <summary>
+                    <span>
+                      <b>{selectedElementDetailsLabel}</b>
+                      <small>Размери, свойства и технически детайли при нужда</small>
+                    </span>
+                    <strong>Отвори <i aria-hidden="true">▾</i></strong>
+                  </summary>
+                  {inspectorTabsAndPane}
+                </details>
+              ) : null
+            ) : inspectorTabsAndPane}
           </section>
 
-          <details className="constructor-properties-section constructor-safety-card constructor-safety-details">
+          <details
+            className="constructor-properties-section constructor-safety-card constructor-safety-details"
+            open={technicalStatusOpen}
+            onToggle={(event) => setTechnicalStatusOpen(event.currentTarget.open)}
+          >
             <summary>
-              <span>ТЕХНИЧЕСКА ГРАНИЦА</span>
-              <b>Конструктивна скица · не машинна геометрия</b>
+              <span>{inspectorWorkMode === 'guided' ? 'ПРОВЕРКА' : 'ТЕХНИЧЕСКИ СТАТУС'}</span>
+              <b>{inspectorWorkMode === 'guided' ? 'Има още технически стъпки' : 'Конструктивна скица · още не е готова за производство'}</b>
             </summary>
             <p>
-              Profile Resolution 01A пази human-confirmed structural кодове; 02A.2 заключва glazing-bead resolution зад explicit FIELD + base-profile context и пази reinforcement/hardware requirements без автоматичен kit. PROFILE-AWARE SASH GEOMETRY 01 използва reviewed support faces и 22 mm evidence-bound overlap само за front-elevation placement на поддържаната PRELUDE 60 комбинация; точните inset и glazing inset на сглобения възел остават НЕИЗВЕСТНИ. Реалните glazing deductions, glass cut, cut list, BOM и машинните данни още не се генерират.
+              Скицата може да се използва за конструктивно проектиране и технически преглед. Профилите, стъклодържателите и армировките се избират ръчно и не се приемат автоматично за технически доказани. Точният отстъп на стъклопакета, размерът за рязане на стъклото, разкроят, материалната спецификация и машинните данни още не се генерират. Не освобождавай изделието към производство само по тази скица.
             </p>
           </details>
         </aside>

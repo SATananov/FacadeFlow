@@ -1,0 +1,208 @@
+.project-current-summary,
+.project-open-trigger,
+.project-new-trigger {
+  min-height: 38px;
+}
+.project-current-summary {
+  display: grid;
+  align-content: center;
+  gap: 1px;
+  min-width: 190px;
+  padding: 5px 10px;
+  border: 1px solid #cbd5e1;
+  border-bottom: 2px solid #13abc1;
+  border-radius: 6px;
+  background: #fff;
+  text-align: left;
+}
+.project-manager-trigger-kicker {
+  color: #6b8290;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+.project-current-summary strong {
+  overflow: hidden;
+  max-width: 260px;
+  color: #334155;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.project-open-trigger {
+  border-color: #159eb2 !important;
+  background: #eefbfd !important;
+  color: #08798b !important;
+  font-weight: 800;
+}
+.project-open-trigger:hover {
+  background: #dff8fb !important;
+}
+.project-open-trigger:focus-visible {
+  outline: 3px solid rgba(19, 171, 193, .22);
+  outline-offset: 2px;
+}
+.project-new-trigger {
+  font-weight: 700;
+}
+.project-manager-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  background: rgba(5, 25, 33, .58);
+  backdrop-filter: blur(3px);
+}
+.project-manager-dialog {
+  overflow: hidden;
+  width: min(760px, 100%);
+  max-height: min(760px, calc(100vh - 56px));
+  border: 1px solid #b9ced8;
+  border-radius: 14px;
+  background: #f6fafc;
+  box-shadow: 0 28px 70px rgba(6, 29, 38, .34);
+}
+.project-manager-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 22px 24px 19px;
+  border-bottom: 3px solid #18adbf;
+  background: #0d3742;
+  color: #fff;
+}
+.project-manager-header h2 {
+  margin: 3px 0 4px;
+  font-size: 24px;
+  font-weight: 600;
+}
+.project-manager-header p {
+  margin: 0;
+  color: #c6dce4;
+  font-size: 13px;
+}
+.project-manager-kicker {
+  color: #61d7e7;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.project-manager-close {
+  flex: 0 0 36px !important;
+  width: 36px !important;
+  height: 36px !important;
+  padding: 0 !important;
+  border: 1px solid #5f8590 !important;
+  border-radius: 8px !important;
+  background: #0a2932 !important;
+  color: #fff !important;
+  font-size: 23px;
+  line-height: 1;
+}
+.project-manager-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 20px;
+  border-bottom: 1px solid #d7e3e9;
+  background: #fff;
+  color: #617987;
+  font-size: 12px;
+}
+.project-manager-toolbar button {
+  padding: 8px 13px;
+  border: 1px solid #139eb2;
+  border-radius: 7px;
+  background: #eefbfd;
+  color: #08798b;
+  font-weight: 700;
+}
+.project-manager-list {
+  display: grid;
+  gap: 10px;
+  overflow-y: auto;
+  max-height: 520px;
+  padding: 16px 20px 22px;
+}
+.project-manager-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px;
+  border: 1px solid #cbdce4;
+  border-radius: 10px;
+  background: #fff;
+}
+.project-manager-card.is-current {
+  border-color: #47b9c8;
+  box-shadow: inset 3px 0 0 #17aabe;
+}
+.project-manager-card.is-unavailable {
+  border-color: #e5c2b0;
+  background: #fffaf7;
+}
+.project-manager-card-main { min-width: 0; }
+.project-manager-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.project-manager-card h3 {
+  overflow: hidden;
+  margin: 0;
+  color: #163c49;
+  font-size: 17px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.project-manager-current-badge {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #ddf7f9;
+  color: #087c8c;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+}
+.project-manager-context,
+.project-manager-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 16px;
+  margin: 7px 0 0;
+  color: #607887;
+  font-size: 12px;
+}
+.project-manager-meta { color: #81939d; }
+.project-manager-warning {
+  margin: 8px 0 0;
+  color: #a2572d;
+  font-size: 12px;
+}
+.project-manager-card > button {
+  flex: 0 0 auto;
+  min-width: 88px;
+  padding: 9px 13px;
+  border: 1px solid #179caf;
+  border-radius: 7px;
+  background: #0d91a5;
+  color: white;
+  font-weight: 700;
+}
+.project-manager-card > button:disabled {
+  border-color: #cbd7dc;
+  background: #edf3f5;
+  color: #81939d;
+}
+@media (max-width: 680px) {
+  .project-manager-overlay { padding: 10px; }
+  .project-manager-card { align-items: stretch; flex-direction: column; }
+  .project-manager-card > button { width: 100%; }
+}
