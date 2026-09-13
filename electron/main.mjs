@@ -1,8 +1,10 @@
 import { app, BrowserWindow } from 'electron'
 import { ipcMain, shell } from 'electron'
 import path from 'node:path'
-import { createWriteStream } from 'node:fs'
-import { mkdir, readFile, rename, rm, stat } from 'node:fs/promises'
+import { createReadStream, createWriteStream } from 'node:fs'
+import { spawn } from 'node:child_process'
+import { createHash } from 'node:crypto'
+import { mkdir, open, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { fileURLToPath } from 'node:url'
@@ -58,6 +60,66 @@ function updateAssetName(version) {
 
 function updateDownloadPath(version) {
   return path.join(app.getPath('userData'), 'updates', updateAssetName(version))
+}
+function updateMetadataPath(version) {
+  return `${updateDownloadPath(version)}.json`
+}
+async function sha256File(filePath) {
+  return await new Promise((resolve, reject) => {
+    const hash = createHash('sha256')
+    const stream = createReadStream(filePath)
+    stream.on('error', reject)
+    stream.on('data', (chunk) => hash.update(chunk))
+    stream.on('end', () => resolve(hash.digest('hex')))
+  })
+}
+async function hasWindowsExecutableHeader(filePath) {
+  const handle = await open(filePath, 'r')
+  try {
+    const buffer = Buffer.alloc(2)
+    const result = await handle.read(buffer, 0, 2, 0)
+    return result.bytesRead === 2 && buffer[0] === 0x4d && buffer[1] === 0x5a
+  } finally {
+    await handle.close()
+  }
+}
+function buildUpdateInstallHelperScript() {
+  return String.raw`param(
+  [Parameter(Mandatory=$true)][int]$ParentPid,
+  [Parameter(Mandatory=$true)][string]$InstallerPath,
+  [Parameter(Mandatory=$true)][string]$RelaunchPath,
+  [Parameter(Mandatory=$true)][string]$ExpectedVersion
+)
+$ErrorActionPreference = 'Stop'
+$logPath = Join-Path (Split-Path -Parent $InstallerPath) ("install-" + $ExpectedVersion + ".log")
+function Write-UpdateLog([string]$message) {
+  Add-Content -LiteralPath $logPath -Value ((Get-Date).ToString('s') + ' ' + $message) -Encoding UTF8
+}
+try {
+  Write-UpdateLog ("WAIT PARENT PID " + $ParentPid)
+  $deadline = (Get-Date).AddSeconds(30)
+  while (Get-Process -Id $ParentPid -ErrorAction SilentlyContinue) {
+    if ((Get-Date) -gt $deadline) { throw 'FacadeFlow did not close in time.' }
+    Start-Sleep -Milliseconds 250
+  }
+  if (-not (Test-Path -LiteralPath $InstallerPath)) { throw 'Update installer is missing.' }
+  Write-UpdateLog ("INSTALL " + $InstallerPath)
+  $installer = Start-Process -FilePath $InstallerPath -ArgumentList '/S' -PassThru -Wait
+  if ($installer.ExitCode -ne 0) { throw ("Installer exit code " + $installer.ExitCode) }
+  $deadline = (Get-Date).AddSeconds(45)
+  while (-not (Test-Path -LiteralPath $RelaunchPath)) {
+    if ((Get-Date) -gt $deadline) { throw 'Installed FacadeFlow executable was not found after update.' }
+    Start-Sleep -Milliseconds 250
+  }
+  Write-UpdateLog ("RELAUNCH " + $RelaunchPath)
+  Start-Process -FilePath $RelaunchPath
+  Write-UpdateLog 'PASS'
+  exit 0
+}
+catch {
+  Write-UpdateLog ("FAIL " + $_.Exception.Message)
+  exit 1
+}`
 }
 
 function isTrustedGithubReleaseAsset(urlString, version) {
@@ -151,11 +213,21 @@ async function downloadUpdate(version) {
       }
       await rm(finalPath, { force: true })
       await rename(partialPath, finalPath)
+      const sha256 = await sha256File(finalPath)
+      const metadata = {
+        version,
+        fileName: updateAssetName(version),
+        bytes: result.size,
+        sha256,
+        downloadedAt: new Date().toISOString(),
+      }
+      await writeFile(updateMetadataPath(version), JSON.stringify(metadata, null, 2), 'utf8')
       return {
         ok: true,
         version,
         filePath: finalPath,
         bytes: result.size,
+        sha256,
       }
     } catch (error) {
       await rm(partialPath, { force: true })
@@ -166,6 +238,74 @@ async function downloadUpdate(version) {
     return {
       ok: false,
       message: `Свалянето на обновяването не успя (${detail}).`,
+    }
+  }
+}
+
+async function installDownloadedUpdate(version) {
+  try {
+    if (process.platform !== 'win32' || !app.isPackaged) {
+      throw new Error('Install and restart is available only in the installed Windows app')
+    }
+    if (!isValidVersion(version)) {
+      throw new Error('Invalid update version')
+    }
+    const finalPath = updateDownloadPath(version)
+    const metadataPath = updateMetadataPath(version)
+    const fileInfo = await stat(finalPath)
+    if (!fileInfo.isFile() || fileInfo.size <= 0) {
+      throw new Error('Downloaded update file is invalid')
+    }
+    if (!(await hasWindowsExecutableHeader(finalPath))) {
+      throw new Error('Downloaded update is not a Windows executable')
+    }
+    let metadata
+    try {
+      metadata = JSON.parse(await readFile(metadataPath, 'utf8'))
+    } catch {
+      throw new Error('Update verification metadata is missing; download the update again')
+    }
+    if (
+      metadata?.version !== version ||
+      metadata?.fileName !== updateAssetName(version) ||
+      metadata?.bytes !== fileInfo.size ||
+      typeof metadata?.sha256 !== 'string'
+    ) {
+      throw new Error('Update verification metadata does not match the downloaded file')
+    }
+    const actualSha256 = await sha256File(finalPath)
+    if (actualSha256 !== metadata.sha256) {
+      throw new Error('Downloaded update integrity check failed')
+    }
+    const helperPath = path.join(app.getPath('userData'), 'updates', `install-update-${version}.ps1`)
+    await writeFile(helperPath, buildUpdateInstallHelperScript(), 'utf8')
+    const child = spawn(
+      'powershell.exe',
+      [
+        '-NoProfile',
+        '-ExecutionPolicy',
+        'Bypass',
+        '-File',
+        helperPath,
+        '-ParentPid',
+        String(process.pid),
+        '-InstallerPath',
+        finalPath,
+        '-RelaunchPath',
+        process.execPath,
+        '-ExpectedVersion',
+        version,
+      ],
+      { detached: true, stdio: 'ignore', windowsHide: true },
+    )
+    child.unref()
+    setTimeout(() => app.quit(), 250)
+    return { ok: true, version }
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error)
+    return {
+      ok: false,
+      message: `Инсталирането на обновяването не може да започне (${detail}).`,
     }
   }
 }
@@ -223,6 +363,7 @@ function registerUpdateHandlers() {
   })
 
   ipcMain.handle('facadeflow:download-update', async (_event, version) => downloadUpdate(version))
+  ipcMain.handle('facadeflow:install-downloaded-update', async (_event, version) => installDownloadedUpdate(version))
 
   ipcMain.handle('facadeflow:show-downloaded-update', async (_event, version) => {
     if (!isValidVersion(version)) {

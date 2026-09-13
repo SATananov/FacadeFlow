@@ -295,7 +295,8 @@
   color: #9de8b2;
 }
 
-.empty-home-update[data-state='downloading'] {
+.empty-home-update[data-state='downloading'],
+.empty-home-update[data-state='installing'] {
   color: #f1d994;
 }
 

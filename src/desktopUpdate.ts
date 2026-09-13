@@ -21,10 +21,21 @@ export type DesktopUpdateDownloadResult =
       message: string
     }
 
+export type DesktopUpdateInstallResult =
+  | {
+      ok: true
+      version: string
+    }
+  | {
+      ok: false
+      message: string
+    }
+
 export type DesktopUpdateApi = {
   checkForUpdates: () => Promise<DesktopUpdateCheckResult>
   openUpdatePage: () => Promise<{ ok: boolean; message?: string }>
   downloadUpdate: (version: string) => Promise<DesktopUpdateDownloadResult>
+  installDownloadedUpdate: (version: string) => Promise<DesktopUpdateInstallResult>
   showDownloadedUpdate: (version: string) => Promise<{ ok: boolean; message?: string }>
 }
 

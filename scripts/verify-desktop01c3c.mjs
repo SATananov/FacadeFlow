@@ -1,0 +1,55 @@
+import fs from 'node:fs'
+import path from 'node:path'
+
+const root = process.cwd()
+const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8')
+const fail = (message) => {
+  console.error(`DESKTOP 01C.3C VERIFY FAIL: ${message}`)
+  process.exit(1)
+}
+
+const main = read('electron/main.mjs')
+const preload = read('electron/preload.cjs')
+const api = read('src/desktopUpdate.ts')
+const app = read('src/App.tsx')
+const pkg = JSON.parse(read('package.json'))
+const appVersion = read('src/appVersion.ts')
+
+if (pkg.version !== '0.1.2') fail(`seed version must remain 0.1.2; found ${pkg.version}`)
+if (!appVersion.includes("APP_VERSION = '0.1.2'")) fail('visible seed version must remain 0.1.2')
+if (!main.includes("ipcMain.handle('facadeflow:install-downloaded-update'")) fail('install IPC handler missing')
+if (!main.includes("spawn(\n      'powershell.exe'")) fail('detached Windows install handoff missing')
+if (!main.includes("'-ArgumentList', '/S'") && !main.includes("-ArgumentList '/S'")) {
+  if (!main.includes("-ArgumentList '/S'")) fail('silent installer handoff missing')
+}
+if (!main.includes('setTimeout(() => app.quit(), 250)')) fail('app quit handoff missing')
+if (!main.includes('process.execPath')) fail('relaunch path must use current installed executable')
+if (!main.includes("app.getPath('userData'), 'updates'")) fail('update stays in private user data directory')
+if (!main.includes("createHash('sha256')")) fail('SHA-256 integrity verification missing')
+if (!main.includes('hasWindowsExecutableHeader')) fail('Windows executable header validation missing')
+if (!main.includes('updateMetadataPath(version)')) fail('download verification metadata missing')
+if (!main.includes("metadata?.fileName !== updateAssetName(version)")) fail('metadata canonical file-name validation missing')
+if (!main.includes('actualSha256 !== metadata.sha256')) fail('pre-install integrity recheck missing')
+if (!main.includes("process.platform !== 'win32' || !app.isPackaged")) fail('install must be restricted to packaged Windows app')
+if (!preload.includes("installDownloadedUpdate: (version) => ipcRenderer.invoke('facadeflow:install-downloaded-update', version)")) fail('preload install bridge missing')
+if (!api.includes('installDownloadedUpdate: (version: string) => Promise<DesktopUpdateInstallResult>')) fail('renderer install API type missing')
+if (!app.includes("status: 'installing'")) fail('installing UI state missing')
+if (!app.includes('Обнови и рестартирай')) fail('install-and-restart action missing')
+if (!app.includes('window.confirm(')) fail('human confirmation gate missing')
+if (!app.includes('Увери се, че текущият проект е запазен. Продължаваме ли?')) fail('save reminder missing')
+if (pkg.scripts?.['test:desktop01c3c'] !== 'node scripts/verify-desktop01c3c.mjs') fail('01C.3c verifier command missing')
+if (!pkg.scripts?.['test:contract']?.includes('npm run test:desktop01c3c')) fail('01C.3c not registered in full verify')
+if (pkg.build?.appId !== 'com.facadeflow.desktop') fail('stable appId changed')
+if (pkg.build?.nsis?.deleteAppDataOnUninstall !== false) fail('user data preservation boundary changed')
+if (pkg.build?.nsis?.perMachine !== false) fail('per-user installer boundary changed')
+
+console.log('=== DESKTOP 01C.3C VERIFY PASS ===')
+console.log('SEED APP VERSION: 0.1.2 UNCHANGED')
+console.log('INSTALL + RESTART: HUMAN INITIATED ONLY')
+console.log('DOWNLOADED EXE: CANONICAL USERDATA/UPDATES PATH')
+console.log('PRE-INSTALL INTEGRITY: SHA-256 + SIZE + FILE NAME + MZ HEADER')
+console.log('INSTALL HANDOFF: DETACHED POWERSHELL -> WAIT FOR APP EXIT -> NSIS /S')
+console.log('RELAUNCH: CURRENT INSTALLED process.execPath')
+console.log('USER DATA PRESERVATION: NSIS deleteAppDataOnUninstall=false')
+console.log('AUTO BACKGROUND INSTALL: NO')
+console.log('NEXT TEST TARGET: publish 0.1.3 after locally installing this seed engine')

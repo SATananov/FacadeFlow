@@ -121,6 +121,7 @@ export default function App() {
     | { status: 'available'; latestVersion: string }
     | { status: 'downloading'; latestVersion: string }
     | { status: 'downloaded'; latestVersion: string; filePath: string }
+    | { status: 'installing'; latestVersion: string }
     | { status: 'error'; message: string }
   >({ status: 'idle' })
 
@@ -181,6 +182,26 @@ export default function App() {
         status: 'error',
         message: result.message ?? 'Сваленият update файл не може да бъде показан.',
       })
+    }
+  }
+
+  const installDownloadedUpdate = async (latestVersion: string) => {
+    const api = getDesktopUpdateApi()
+    if (!api) {
+      setUpdateCheck({
+        status: 'error',
+        message: 'Инсталирането е достъпно в инсталирания FacadeFlow.',
+      })
+      return
+    }
+    const confirmed = window.confirm(
+      `FacadeFlow ще се затвори, ще инсталира версия ${latestVersion} и ще се стартира отново.\n\nУвери се, че текущият проект е запазен. Продължаваме ли?`,
+    )
+    if (!confirmed) return
+    setUpdateCheck({ status: 'installing', latestVersion })
+    const result = await api.installDownloadedUpdate(latestVersion)
+    if (!result.ok) {
+      setUpdateCheck({ status: 'error', message: result.message })
     }
   }
 
@@ -987,6 +1008,12 @@ export default function App() {
                     <small>Обновяването {updateCheck.latestVersion} е свалено</small>
                     <button
                       type="button"
+                      onClick={() => void installDownloadedUpdate(updateCheck.latestVersion)}
+                    >
+                      Обнови и рестартирай
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => void showDownloadedUpdate(updateCheck.latestVersion)}
                     >
                       Покажи файла
@@ -994,6 +1021,14 @@ export default function App() {
                   </div>
                 )}
 
+                {updateCheck.status === 'installing' && (
+                  <div className="empty-home-update-available">
+                    <small>Подготвя обновяване до {updateCheck.latestVersion}...</small>
+                    <button type="button" disabled>
+                      Подготвя...
+                    </button>
+                  </div>
+                )}
                 {updateCheck.status === 'error' && (
                   <small className="empty-home-update-error">{updateCheck.message}</small>
                 )}
