@@ -13,7 +13,9 @@ const doc = fs.readFileSync(docPath, 'utf8')
 const startMarker = '/* CONSTRUCTOR TECHNICAL DRAWING 01.1 — canvas & visual hierarchy.'
 const start = css.indexOf(startMarker)
 if (start < 0) throw new Error('TD01.1 CSS marker missing')
-const block = css.slice(start)
+const endMarker = '/* CONSTRUCTOR TECHNICAL DRAWING 01.2 — sash & opening readability.'
+const end = css.indexOf(endMarker, start + startMarker.length)
+const block = css.slice(start, end >= 0 ? end : undefined)
 
 const requiredCss = [
   '.constructor-workarea',

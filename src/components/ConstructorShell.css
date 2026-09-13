@@ -4846,3 +4846,140 @@
 .constructor-field-surface.is-selected .constructor-operable-visual .opening-tilt {
   stroke: rgba(64, 88, 95, .68);
 }
+
+/* CONSTRUCTOR TECHNICAL DRAWING 01.3 — dimensions & manufacturing reading.
+ * Presentation-only dimensional hierarchy. Existing canonical mm values,
+ * field bounds, frame bounds and bay calculations remain unchanged.
+ * Reading priority: BAY / FIELD CHAIN -> OVERALL MODULE WIDTH / HEIGHT.
+ */
+.constructor-frame-dimension,
+.constructor-bay-dimension {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Secondary chain: individual bay / FIELD widths stay close to the product. */
+.constructor-bay-dimension-band {
+  bottom: -32px;
+  height: 24px;
+}
+
+.constructor-bay-dimension {
+  height: 22px;
+  border-top-color: rgba(72, 91, 97, .68);
+  color: #526a71;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: .08px;
+}
+
+.constructor-bay-dimension::before,
+.constructor-bay-dimension::after {
+  top: -6px;
+  height: 12px;
+  border-left-color: rgba(72, 91, 97, .72);
+}
+
+.constructor-bay-dimension span {
+  top: -10px;
+  padding: 1px 5px;
+  border-color: #c6d1d4;
+  background: rgba(255, 255, 255, .97);
+  color: #4b6269;
+  box-shadow: 0 1px 2px rgba(37, 55, 60, .035);
+  line-height: 1.2;
+}
+
+/* Primary chain: overall module size is stronger and farther from the product. */
+.constructor-frame-dimension {
+  color: #29464e;
+  font-size: 10.5px;
+  font-weight: 850;
+  letter-spacing: .12px;
+}
+
+.constructor-frame-dimension span {
+  padding: 1px 7px;
+  border-color: #9fb1b6;
+  background: rgba(255, 255, 255, .99);
+  color: #29464e;
+  box-shadow: 0 1px 2px rgba(37, 55, 60, .045);
+  line-height: 1.2;
+}
+
+.constructor-frame-dimension-width {
+  bottom: -40px;
+  border-top-color: #465e65;
+}
+
+.constructor-parametric-frame.has-bay-dimensions .constructor-frame-dimension-width {
+  bottom: -66px;
+}
+
+.constructor-frame-dimension-width::before,
+.constructor-frame-dimension-width::after {
+  top: -8px;
+  height: 16px;
+  border-left-color: #465e65;
+}
+
+.constructor-frame-dimension-width span {
+  top: -11px;
+}
+
+.constructor-frame-dimension-height {
+  right: -54px;
+  border-left-color: #465e65;
+}
+
+.constructor-frame-dimension-height::before,
+.constructor-frame-dimension-height::after {
+  left: -8px;
+  width: 16px;
+  border-top-color: #465e65;
+}
+
+/* Keep dimensions neutral during selection: selection belongs to geometry,
+ * not to dimensional truth. */
+.constructor-parametric-frame.is-selected .constructor-frame-dimension,
+.constructor-parametric-frame.is-selected .constructor-bay-dimension {
+  color: inherit;
+}
+
+
+/* CONSTRUCTOR TECHNICAL DRAWING 01.3.1 — frame edge selection cleanup.
+ * Keep the generous 16px edge hit-area for interaction, but do not paint it.
+ * Selection feedback is a thin technical line centered on the actual frame edge.
+ * Interaction geometry, drag behavior and canonical dimensions remain unchanged.
+ */
+.constructor-parametric-frame.has-selected-left .edge-left,
+.constructor-parametric-frame.has-selected-right .edge-right,
+.constructor-parametric-frame.has-selected-top .edge-top,
+.constructor-parametric-frame.has-selected-bottom .edge-bottom {
+  background: transparent;
+  box-shadow: none;
+}
+
+.constructor-parametric-frame.has-selected-top .edge-top::after,
+.constructor-parametric-frame.has-selected-bottom .edge-bottom::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 7px;
+  height: 2px;
+  background: rgba(13, 139, 160, .72);
+  pointer-events: none;
+}
+
+.constructor-parametric-frame.has-selected-left .edge-left::after,
+.constructor-parametric-frame.has-selected-right .edge-right::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 7px;
+  width: 2px;
+  background: rgba(13, 139, 160, .72);
+  pointer-events: none;
+}
