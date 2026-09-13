@@ -2,7 +2,7 @@ import { app, BrowserWindow } from 'electron'
 import { ipcMain, shell } from 'electron'
 import path from 'node:path'
 import { createReadStream, createWriteStream } from 'node:fs'
-import { spawn } from 'node:child_process'
+import { prepareWindowsUpdateHandoff } from './updateHandoff.mjs'
 import { createHash } from 'node:crypto'
 import { mkdir, open, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { Readable } from 'node:stream'
@@ -83,47 +83,6 @@ async function hasWindowsExecutableHeader(filePath) {
     await handle.close()
   }
 }
-function buildUpdateInstallHelperScript() {
-  return String.raw`param(
-  [Parameter(Mandatory=$true)][int]$ParentPid,
-  [Parameter(Mandatory=$true)][string]$InstallerPath,
-  [Parameter(Mandatory=$true)][string]$RelaunchPath,
-  [Parameter(Mandatory=$true)][string]$ExpectedVersion,
-  [Parameter(Mandatory=$true)][string]$ReadyPath
-)
-$ErrorActionPreference = 'Stop'
-$logPath = Join-Path (Split-Path -Parent $InstallerPath) ("install-" + $ExpectedVersion + ".log")
-function Write-UpdateLog([string]$message) {
-  Add-Content -LiteralPath $logPath -Value ((Get-Date).ToString('s') + ' ' + $message) -Encoding UTF8
-}
-try {
-  Set-Content -LiteralPath $ReadyPath -Value 'READY' -Encoding ASCII
-  Write-UpdateLog ("WAIT PARENT PID " + $ParentPid)
-  $deadline = (Get-Date).AddSeconds(30)
-  while (Get-Process -Id $ParentPid -ErrorAction SilentlyContinue) {
-    if ((Get-Date) -gt $deadline) { throw 'FacadeFlow did not close in time.' }
-    Start-Sleep -Milliseconds 250
-  }
-  if (-not (Test-Path -LiteralPath $InstallerPath)) { throw 'Update installer is missing.' }
-  Write-UpdateLog ("INSTALL " + $InstallerPath)
-  $installer = Start-Process -FilePath $InstallerPath -ArgumentList '/S' -PassThru -Wait
-  if ($installer.ExitCode -ne 0) { throw ("Installer exit code " + $installer.ExitCode) }
-  $deadline = (Get-Date).AddSeconds(45)
-  while (-not (Test-Path -LiteralPath $RelaunchPath)) {
-    if ((Get-Date) -gt $deadline) { throw 'Installed FacadeFlow executable was not found after update.' }
-    Start-Sleep -Milliseconds 250
-  }
-  Write-UpdateLog ("RELAUNCH " + $RelaunchPath)
-  Start-Process -FilePath $RelaunchPath
-  Write-UpdateLog 'PASS'
-  exit 0
-}
-catch {
-  Write-UpdateLog ("FAIL " + $_.Exception.Message)
-  exit 1
-}`
-}
-
 function isTrustedGithubReleaseAsset(urlString, version) {
   try {
     const url = new URL(urlString)
@@ -244,7 +203,11 @@ async function downloadUpdate(version) {
   }
 }
 
+let installInProgress = false
 async function installDownloadedUpdate(version) {
+  if (installInProgress) return { ok: false, message: 'Обновяването вече се подготвя.' }
+  installInProgress = true
+  let handoff = null
   try {
     if (process.platform !== 'win32' || !app.isPackaged) {
       throw new Error('Install and restart is available only in the installed Windows app')
@@ -280,71 +243,23 @@ async function installDownloadedUpdate(version) {
       throw new Error('Downloaded update integrity check failed')
     }
     const updatesDir = path.join(app.getPath('userData'), 'updates')
-    const helperPath = path.join(updatesDir, `install-update-${version}.ps1`)
-    const readyPath = path.join(updatesDir, `install-ready-${version}.flag`)
-    await rm(readyPath, { force: true })
-    await writeFile(helperPath, buildUpdateInstallHelperScript(), 'utf8')
-
-    const windowsRoot = process.env.SystemRoot || process.env.WINDIR || 'C:\\Windows'
-    const powershellPath = path.join(windowsRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe')
-    const powershellInfo = await stat(powershellPath)
-    if (!powershellInfo.isFile()) {
-      throw new Error('Windows PowerShell executable is unavailable')
-    }
-
-    let spawnFailure = null
-    let helperExit = null
-    const child = spawn(
-      powershellPath,
-      [
-        '-NoProfile',
-        '-ExecutionPolicy',
-        'Bypass',
-        '-File',
-        helperPath,
-        '-ParentPid',
-        String(process.pid),
-        '-InstallerPath',
-        finalPath,
-        '-RelaunchPath',
-        process.execPath,
-        '-ExpectedVersion',
-        version,
-        '-ReadyPath',
-        readyPath,
-      ],
-      { detached: true, stdio: 'ignore', windowsHide: true },
-    )
-    child.once('error', (error) => {
-      spawnFailure = error
+    handoff = await prepareWindowsUpdateHandoff({
+      updatesDir,
+      request: {
+        mode: 'install',
+        installerPath: finalPath,
+        relaunchPath: process.execPath,
+        expectedVersion: version,
+        expectedBytes: metadata.bytes,
+        expectedSha256: metadata.sha256,
+      },
     })
-    child.once('exit', (code, signal) => {
-      helperExit = { code, signal }
-    })
-
-    const readyDeadline = Date.now() + 8000
-    while (true) {
-      if (spawnFailure) {
-        throw new Error(`Update helper failed to start: ${spawnFailure.message}`)
-      }
-      try {
-        await stat(readyPath)
-        break
-      } catch {
-        if (helperExit) {
-          throw new Error(`Update helper exited before readiness (code ${helperExit.code ?? 'null'}, signal ${helperExit.signal ?? 'none'})`)
-        }
-        if (Date.now() > readyDeadline) {
-          throw new Error('Update helper did not acknowledge startup in time')
-        }
-        await new Promise((resolve) => setTimeout(resolve, 100))
-      }
-    }
-
-    child.unref()
+    await handoff.authorize()
     setTimeout(() => app.quit(), 100)
     return { ok: true, version }
   } catch (error) {
+    installInProgress = false
+    await handoff?.cancel().catch(() => {})
     const detail = error instanceof Error ? error.message : String(error)
     return {
       ok: false,

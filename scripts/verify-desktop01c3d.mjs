@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { assertUpdateHandoffContract } from './assert-update-handoff.mjs'
 
 const root = process.cwd()
 const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8')
@@ -11,6 +12,7 @@ const fail = (message) => {
 const pkg = JSON.parse(read('package.json'))
 const appVersion = read('src/appVersion.ts')
 const main = read('electron/main.mjs')
+assertUpdateHandoffContract({ main, read, fail })
 const preload = read('electron/preload.cjs')
 const api = read('src/desktopUpdate.ts')
 const app = read('src/App.tsx')
@@ -35,7 +37,6 @@ if (!main.includes("ipcMain.handle('facadeflow:install-downloaded-update'")) fai
 if (!main.includes("createHash('sha256')")) fail('SHA-256 recheck regression')
 if (!main.includes('hasWindowsExecutableHeader')) fail('Windows executable validation regression')
 if (!main.includes("process.platform !== 'win32' || !app.isPackaged")) fail('packaged Windows install boundary regression')
-if (!main.includes('await stat(readyPath)')) fail('helper readiness acknowledgement regression')
 if (!main.includes('setTimeout(() => app.quit(), 100)')) fail('ready-ack app quit handoff regression')
 if (main.includes('setTimeout(() => app.quit(), 250)')) fail('legacy blind app quit handoff regression')
 if (!main.includes('process.execPath')) fail('installed executable relaunch regression')

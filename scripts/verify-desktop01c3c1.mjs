@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { assertUpdateHandoffContract } from './assert-update-handoff.mjs'
 
 const root = process.cwd()
 const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8')
@@ -9,6 +10,7 @@ const fail = (message) => {
 }
 
 const main = read('electron/main.mjs')
+assertUpdateHandoffContract({ main, read, fail })
 const pkg = JSON.parse(read('package.json'))
 const appVersion = read('src/appVersion.ts')
 const appVersionMatch = appVersion.match(/APP_VERSION = '(\d+\.\d+\.\d+)'/)
@@ -18,19 +20,6 @@ const versionParts = pkg.version.split('.').map(Number)
 if (versionParts.length !== 3 || versionParts.some((value) => !Number.isInteger(value))) fail('package version is not semantic x.y.z')
 if (versionParts[0] !== 0 || versionParts[1] !== 1 || versionParts[2] < 3) fail(`01C.3C.1 requires version >= 0.1.3; found ${pkg.version}`)
 
-if (!main.includes('[Parameter(Mandatory=$true)][string]$ReadyPath')) fail('helper readiness parameter missing')
-if (!main.includes("Set-Content -LiteralPath $ReadyPath -Value 'READY' -Encoding ASCII")) fail('helper readiness signal missing')
-if (!main.includes('`install-ready-${version}.flag`')) fail('ready marker path missing')
-if (!main.includes("process.env.SystemRoot || process.env.WINDIR || 'C:\\\\Windows'")) fail('explicit Windows PowerShell resolution missing')
-if (!main.includes("'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe'")) fail('canonical Windows PowerShell path missing')
-if (!main.includes("child.once('error', (error) =>")) fail('spawn error capture missing')
-if (!main.includes("child.once('exit', (code, signal) =>")) fail('early helper exit capture missing')
-if (!main.includes('Update helper failed to start:')) fail('spawn error surfaced to user missing')
-if (!main.includes('Update helper exited before readiness')) fail('early helper exit surfaced to user missing')
-if (!main.includes("throw new Error('Update helper did not acknowledge startup in time')")) fail('readiness timeout missing')
-if (!main.includes('await stat(readyPath)')) fail('parent does not wait for helper readiness')
-if (!main.includes("'-ReadyPath',")) fail('ready marker not passed to helper')
-if (!main.includes('child.unref()')) fail('detached child unref missing')
 if (!main.includes('setTimeout(() => app.quit(), 100)')) fail('quit must happen only after helper readiness')
 if (main.includes('setTimeout(() => app.quit(), 250)')) fail('old blind 250ms quit race is still present')
 if (!main.includes("createHash('sha256')")) fail('SHA-256 pre-install integrity check missing')

@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { assertUpdateHandoffContract } from './assert-update-handoff.mjs'
 
 const root = process.cwd()
 const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8')
@@ -12,6 +13,7 @@ const pkg = JSON.parse(read('package.json'))
 const lock = JSON.parse(read('package-lock.json'))
 const appVersion = read('src/appVersion.ts')
 const main = read('electron/main.mjs')
+assertUpdateHandoffContract({ main, read, fail })
 const preload = read('electron/preload.cjs')
 const api = read('src/desktopUpdate.ts')
 const app = read('src/App.tsx')
@@ -29,12 +31,6 @@ if (!previousReleaseVerifier.includes("$expected = '0.1.3'") && !previousRelease
 if (!readyAckVerifier.includes('HELPER READY HANDSHAKE BEFORE APP QUIT')) fail('READY-ACK regression verifier missing')
 if (!main.includes("ipcMain.handle('facadeflow:download-update'")) fail('download IPC regression')
 if (!main.includes("ipcMain.handle('facadeflow:install-downloaded-update'")) fail('install IPC regression')
-if (!main.includes("Set-Content -LiteralPath $ReadyPath -Value 'READY' -Encoding ASCII")) fail('helper readiness signal regression')
-if (!main.includes('await stat(readyPath)')) fail('helper readiness wait regression')
-if (!main.includes("process.env.SystemRoot || process.env.WINDIR || 'C:\\\\Windows'")) fail('explicit Windows PowerShell resolution regression')
-if (!main.includes("'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe'")) fail('canonical Windows PowerShell path regression')
-if (!main.includes("child.once('error', (error) =>")) fail('helper spawn error capture regression')
-if (!main.includes("child.once('exit', (code, signal) =>")) fail('helper early-exit capture regression')
 if (!main.includes('setTimeout(() => app.quit(), 100)')) fail('READY-ACK app quit handoff regression')
 if (main.includes('setTimeout(() => app.quit(), 250)')) fail('legacy blind app quit handoff returned')
 if (!main.includes("createHash('sha256')")) fail('SHA-256 recheck regression')

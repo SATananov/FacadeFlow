@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { assertUpdateHandoffContract } from './assert-update-handoff.mjs'
 
 const root = process.cwd()
 const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8')
@@ -9,6 +10,7 @@ const fail = (message) => {
 }
 
 const main = read('electron/main.mjs')
+assertUpdateHandoffContract({ main, read, fail })
 const preload = read('electron/preload.cjs')
 const api = read('src/desktopUpdate.ts')
 const app = read('src/App.tsx')
@@ -21,10 +23,6 @@ const versionParts = pkg.version.split('.').map(Number)
 if (versionParts.length !== 3 || versionParts.some((value) => !Number.isInteger(value))) fail('package version is not semantic x.y.z')
 if (versionParts[0] !== 0 || versionParts[1] !== 1 || versionParts[2] < 2) fail(`01C.3C requires version >= 0.1.2; found ${pkg.version}`)
 if (!main.includes("ipcMain.handle('facadeflow:install-downloaded-update'")) fail('install IPC handler missing')
-if (!main.includes('const child = spawn(') || !main.includes('powershellPath,')) fail('detached Windows install handoff missing')
-if (!main.includes('detached: true')) fail('update helper must remain detached')
-if (!main.includes("-ArgumentList '/S'")) fail('silent installer handoff missing')
-if (!main.includes('await stat(readyPath)')) fail('helper readiness acknowledgement missing')
 if (!main.includes('setTimeout(() => app.quit(), 100)')) fail('app quit must follow helper readiness')
 if (main.includes('setTimeout(() => app.quit(), 250)')) fail('legacy blind 250ms quit handoff remains')
 if (!main.includes('process.execPath')) fail('relaunch path must use current installed executable')
@@ -52,7 +50,7 @@ console.log(`APP VERSION: ${pkg.version}`)
 console.log('INSTALL + RESTART: HUMAN INITIATED ONLY')
 console.log('DOWNLOADED EXE: CANONICAL USERDATA/UPDATES PATH')
 console.log('PRE-INSTALL INTEGRITY: SHA-256 + SIZE + FILE NAME + MZ HEADER')
-console.log('INSTALL HANDOFF: READY-ACK DETACHED POWERSHELL -> WAIT FOR APP EXIT -> NSIS /S')
+console.log('INSTALL HANDOFF: READY-ACK WINDOWS PROVIDER WORKER -> WAIT FOR APP EXIT -> NSIS /S')
 console.log('RELAUNCH: CURRENT INSTALLED process.execPath')
 console.log('USER DATA PRESERVATION: NSIS deleteAppDataOnUninstall=false')
 console.log('AUTO BACKGROUND INSTALL: NO')
