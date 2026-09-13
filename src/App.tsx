@@ -57,6 +57,8 @@ import ConstructorShell, {
 } from './components/ConstructorShell'
 import './App.css'
 
+const nadezhdaLogoUrl = './branding/nadezhda-header.png'
+
 function OfferIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -685,7 +687,7 @@ export default function App() {
         <div className="brand-lockup">
           <img
             className="nadezhda-header-logo"
-            src="/branding/nadezhda-header.png"
+            src={nadezhdaLogoUrl}
             alt="Надежда - алуминиева и PVC дограма"
           />
 
@@ -855,13 +857,13 @@ export default function App() {
         ) : !offerStartOpen ? (
           <section className="empty-home" aria-label="Начален екран">
             <div className="empty-home-watermark" aria-hidden="true">
-              <img src="/branding/nadezhda-header.png" alt="" />
+              <img src={nadezhdaLogoUrl} alt="" />
             </div>
 
             <div className="empty-home-card">
               <img
                 className="nadezhda-hero-logo"
-                src="/branding/nadezhda-header.png"
+                src={nadezhdaLogoUrl}
                 alt="Надежда"
               />
 
@@ -943,7 +945,7 @@ export default function App() {
                 <article className="contractor-card">
                   <div className="contractor-brand">
                     <img
-                      src="/branding/nadezhda-header.png"
+                      src={nadezhdaLogoUrl}
                       alt="Надежда"
                     />
 
