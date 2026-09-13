@@ -119,6 +119,8 @@ export default function App() {
     | { status: 'checking' }
     | { status: 'current'; latestVersion: string }
     | { status: 'available'; latestVersion: string }
+    | { status: 'downloading'; latestVersion: string }
+    | { status: 'downloaded'; latestVersion: string; filePath: string }
     | { status: 'error'; message: string }
   >({ status: 'idle' })
 
@@ -146,14 +148,38 @@ export default function App() {
     )
   }
 
-  const openUpdatePage = async () => {
+  const downloadAvailableUpdate = async (latestVersion: string) => {
+    const api = getDesktopUpdateApi()
+    if (!api) {
+      setUpdateCheck({
+        status: 'error',
+        message: 'Свалянето е достъпно в инсталирания FacadeFlow.',
+      })
+      return
+    }
+
+    setUpdateCheck({ status: 'downloading', latestVersion })
+    const result = await api.downloadUpdate(latestVersion)
+    if (!result.ok) {
+      setUpdateCheck({ status: 'error', message: result.message })
+      return
+    }
+
+    setUpdateCheck({
+      status: 'downloaded',
+      latestVersion: result.version,
+      filePath: result.filePath,
+    })
+  }
+
+  const showDownloadedUpdate = async (latestVersion: string) => {
     const api = getDesktopUpdateApi()
     if (!api) return
-    const result = await api.openUpdatePage()
+    const result = await api.showDownloadedUpdate(latestVersion)
     if (!result.ok) {
       setUpdateCheck({
         status: 'error',
-        message: result.message ?? 'Страницата за обновяване не може да бъде отворена.',
+        message: result.message ?? 'Сваленият update файл не може да бъде показан.',
       })
     }
   }
@@ -938,8 +964,32 @@ export default function App() {
                 {updateCheck.status === 'available' && (
                   <div className="empty-home-update-available">
                     <small>Налична версия {updateCheck.latestVersion}</small>
-                    <button type="button" onClick={() => void openUpdatePage()}>
+                    <button
+                      type="button"
+                      onClick={() => void downloadAvailableUpdate(updateCheck.latestVersion)}
+                    >
                       Свали обновяването
+                    </button>
+                  </div>
+                )}
+
+                {updateCheck.status === 'downloading' && (
+                  <div className="empty-home-update-available">
+                    <small>Сваля версия {updateCheck.latestVersion}...</small>
+                    <button type="button" disabled>
+                      Сваля...
+                    </button>
+                  </div>
+                )}
+
+                {updateCheck.status === 'downloaded' && (
+                  <div className="empty-home-update-available">
+                    <small>Обновяването {updateCheck.latestVersion} е свалено</small>
+                    <button
+                      type="button"
+                      onClick={() => void showDownloadedUpdate(updateCheck.latestVersion)}
+                    >
+                      Покажи файла
                     </button>
                   </div>
                 )}

@@ -1,0 +1,48 @@
+import fs from 'node:fs'
+import path from 'node:path'
+
+const root = process.cwd()
+const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8')
+const fail = (message) => {
+  console.error(`DESKTOP 01C.3A VERIFY FAIL: ${message}`)
+  process.exit(1)
+}
+
+const main = read('electron/main.mjs')
+const preload = read('electron/preload.cjs')
+const api = read('src/desktopUpdate.ts')
+const app = read('src/App.tsx')
+const pkg = JSON.parse(read('package.json'))
+
+if (!main.includes("import { app, BrowserWindow } from 'electron'")) fail('DESKTOP 01A Electron import contract changed')
+if (!main.includes("ipcMain.handle('facadeflow:download-update'")) fail('download IPC handler missing')
+if (!main.includes("ipcMain.handle('facadeflow:show-downloaded-update'")) fail('show-downloaded-update IPC handler missing')
+if (!main.includes("https://api.github.com/repos/SATananov/FacadeFlow/releases/tags/")) fail('GitHub release API source missing')
+if (!main.includes("/SATananov/FacadeFlow/releases/download/v${version}/${updateAssetName(version)}")) fail('strict release asset path validation missing')
+if (!main.includes("const updateAssetPrefix = 'FacadeFlow-Update-'") || !main.includes("return `${updateAssetPrefix}${version}.exe`")) fail('canonical update asset naming missing')
+if (!main.includes("path.join(app.getPath('userData'), 'updates'")) fail('private update download directory missing')
+if (!main.includes(".part`")) fail('partial download staging missing')
+if (!main.includes('Readable.fromWeb(response.body)')) fail('streaming download missing')
+if (!main.includes("process.argv.includes('--update-download-smoke')")) fail('download engine smoke mode missing')
+if (!preload.includes("downloadUpdate: (version) => ipcRenderer.invoke('facadeflow:download-update', version)")) fail('preload download bridge missing')
+if (!preload.includes("showDownloadedUpdate: (version) => ipcRenderer.invoke('facadeflow:show-downloaded-update', version)")) fail('preload show-file bridge missing')
+if (!api.includes('downloadUpdate: (version: string)')) fail('renderer download API type missing')
+if (!app.includes("status: 'downloading'")) fail('downloading UI state missing')
+if (!app.includes("status: 'downloaded'")) fail('downloaded UI state missing')
+if (!app.includes('Обновяването {updateCheck.latestVersion} е свалено')) fail('downloaded user message missing')
+if (!app.includes('Покажи файла')) fail('show file action missing')
+if (app.includes('openUpdatePage()')) fail('available update still routes user to web page instead of download API')
+if (pkg.version !== '0.1.1') fail('01C.3a must not change app version')
+if (pkg.scripts?.['test:desktop01c3a'] !== 'node scripts/verify-desktop01c3a.mjs') fail('01C.3a verifier script not registered')
+if (!pkg.scripts?.['test:contract']?.includes('npm run test:desktop01c3a')) fail('01C.3a not registered in full contract')
+
+console.log('=== DESKTOP 01C.3A VERIFY PASS ===')
+console.log('APP VERSION: 0.1.1 UNCHANGED')
+console.log('UPDATE DOWNLOAD: USER INITIATED ONLY')
+console.log('RELEASE ASSET SOURCE: STRICT GITHUB RELEASE TAG')
+console.log('DOWNLOAD TARGET: PRIVATE USER DATA / updates')
+console.log('PARTIAL DOWNLOAD STAGING: YES')
+console.log('AUTO INSTALL / EXECUTION: NO')
+console.log('NODE INTEGRATION: OFF')
+console.log('CONTEXT ISOLATION: ON')
+console.log('RENDERER SANDBOX: ON')

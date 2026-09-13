@@ -273,7 +273,8 @@
   color: #f0fbfc;
 }
 
-.empty-home-update-check:disabled {
+.empty-home-update-check:disabled,
+.empty-home-update-available button:disabled {
   cursor: wait;
   opacity: .7;
 }
@@ -289,8 +290,13 @@
   gap: 8px;
 }
 
-.empty-home-update[data-state='available'] {
+.empty-home-update[data-state='available'],
+.empty-home-update[data-state='downloaded'] {
   color: #9de8b2;
+}
+
+.empty-home-update[data-state='downloading'] {
+  color: #f1d994;
 }
 
 .empty-home-update-error {

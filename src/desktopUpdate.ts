@@ -9,9 +9,23 @@ export type DesktopUpdateCheckResult =
       message: string
     }
 
+export type DesktopUpdateDownloadResult =
+  | {
+      ok: true
+      version: string
+      filePath: string
+      bytes: number
+    }
+  | {
+      ok: false
+      message: string
+    }
+
 export type DesktopUpdateApi = {
   checkForUpdates: () => Promise<DesktopUpdateCheckResult>
   openUpdatePage: () => Promise<{ ok: boolean; message?: string }>
+  downloadUpdate: (version: string) => Promise<DesktopUpdateDownloadResult>
+  showDownloadedUpdate: (version: string) => Promise<{ ok: boolean; message?: string }>
 }
 
 declare global {
