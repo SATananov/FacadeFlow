@@ -6,6 +6,9 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const isSmokeTest = process.argv.includes('--smoke-test')
 const distIndex = path.resolve(__dirname, '..', 'dist', 'index.html')
+const windowIcon = app.isPackaged
+  ? path.join(process.resourcesPath, 'FacadeFlow.ico')
+  : path.resolve(__dirname, '..', 'build', 'FacadeFlow.ico')
 
 if (isSmokeTest) {
   app.disableHardwareAcceleration()
@@ -38,6 +41,7 @@ function createMainWindow() {
     minWidth: 1180,
     minHeight: 720,
     title: 'FacadeFlow',
+    icon: windowIcon,
     backgroundColor: '#f4f7fb',
     autoHideMenuBar: true,
     show: false,

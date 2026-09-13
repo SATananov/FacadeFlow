@@ -1,4 +1,4 @@
-node_modules/
+﻿node_modules/
 dist/
 .vite/
 coverage/
@@ -11,3 +11,4 @@ coverage/
 .DS_Store
 Thumbs.db
 .facadeflow-patch-backups/
+release/
