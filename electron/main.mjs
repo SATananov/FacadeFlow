@@ -88,7 +88,8 @@ function buildUpdateInstallHelperScript() {
   [Parameter(Mandatory=$true)][int]$ParentPid,
   [Parameter(Mandatory=$true)][string]$InstallerPath,
   [Parameter(Mandatory=$true)][string]$RelaunchPath,
-  [Parameter(Mandatory=$true)][string]$ExpectedVersion
+  [Parameter(Mandatory=$true)][string]$ExpectedVersion,
+  [Parameter(Mandatory=$true)][string]$ReadyPath
 )
 $ErrorActionPreference = 'Stop'
 $logPath = Join-Path (Split-Path -Parent $InstallerPath) ("install-" + $ExpectedVersion + ".log")
@@ -96,6 +97,7 @@ function Write-UpdateLog([string]$message) {
   Add-Content -LiteralPath $logPath -Value ((Get-Date).ToString('s') + ' ' + $message) -Encoding UTF8
 }
 try {
+  Set-Content -LiteralPath $ReadyPath -Value 'READY' -Encoding ASCII
   Write-UpdateLog ("WAIT PARENT PID " + $ParentPid)
   $deadline = (Get-Date).AddSeconds(30)
   while (Get-Process -Id $ParentPid -ErrorAction SilentlyContinue) {
@@ -277,10 +279,23 @@ async function installDownloadedUpdate(version) {
     if (actualSha256 !== metadata.sha256) {
       throw new Error('Downloaded update integrity check failed')
     }
-    const helperPath = path.join(app.getPath('userData'), 'updates', `install-update-${version}.ps1`)
+    const updatesDir = path.join(app.getPath('userData'), 'updates')
+    const helperPath = path.join(updatesDir, `install-update-${version}.ps1`)
+    const readyPath = path.join(updatesDir, `install-ready-${version}.flag`)
+    await rm(readyPath, { force: true })
     await writeFile(helperPath, buildUpdateInstallHelperScript(), 'utf8')
+
+    const windowsRoot = process.env.SystemRoot || process.env.WINDIR || 'C:\\Windows'
+    const powershellPath = path.join(windowsRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe')
+    const powershellInfo = await stat(powershellPath)
+    if (!powershellInfo.isFile()) {
+      throw new Error('Windows PowerShell executable is unavailable')
+    }
+
+    let spawnFailure = null
+    let helperExit = null
     const child = spawn(
-      'powershell.exe',
+      powershellPath,
       [
         '-NoProfile',
         '-ExecutionPolicy',
@@ -295,11 +310,39 @@ async function installDownloadedUpdate(version) {
         process.execPath,
         '-ExpectedVersion',
         version,
+        '-ReadyPath',
+        readyPath,
       ],
       { detached: true, stdio: 'ignore', windowsHide: true },
     )
+    child.once('error', (error) => {
+      spawnFailure = error
+    })
+    child.once('exit', (code, signal) => {
+      helperExit = { code, signal }
+    })
+
+    const readyDeadline = Date.now() + 8000
+    while (true) {
+      if (spawnFailure) {
+        throw new Error(`Update helper failed to start: ${spawnFailure.message}`)
+      }
+      try {
+        await stat(readyPath)
+        break
+      } catch {
+        if (helperExit) {
+          throw new Error(`Update helper exited before readiness (code ${helperExit.code ?? 'null'}, signal ${helperExit.signal ?? 'none'})`)
+        }
+        if (Date.now() > readyDeadline) {
+          throw new Error('Update helper did not acknowledge startup in time')
+        }
+        await new Promise((resolve) => setTimeout(resolve, 100))
+      }
+    }
+
     child.unref()
-    setTimeout(() => app.quit(), 250)
+    setTimeout(() => app.quit(), 100)
     return { ok: true, version }
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error)
