@@ -12,8 +12,10 @@ function assert(condition, message) {
   if (!condition) throw new Error(message)
 }
 
-assert(pkg.version === '0.1.1', 'package version must be 0.1.1')
-assert(appVersion.includes("APP_VERSION = '0.1.1'"), 'visible app version source must be 0.1.1')
+const versionMatch = appVersion.match(/APP_VERSION\s*=\s*'([^']+)'/)
+assert(versionMatch, 'visible APP_VERSION literal is missing')
+assert(pkg.version === versionMatch[1], `package/app version mismatch: ${pkg.version} vs ${versionMatch[1]}`)
+assert(/^0\.1\.(?:[1-9]|\d{2,})$/.test(pkg.version), `version must remain at or beyond 0.1.1 during 01C update development; found ${pkg.version}`)
 assert(app.includes("import { APP_VERSION } from './appVersion'"), 'App must import APP_VERSION')
 assert(app.includes('версия {APP_VERSION}'), 'home screen must show APP_VERSION')
 assert(css.includes('.empty-home-version'), 'version badge styling is missing')
@@ -30,7 +32,7 @@ assert(pkg.scripts?.['test:contract']?.includes('npm run test:desktop01c1'), '01
 assert(fs.existsSync(path.join(root, 'scripts', 'test-desktop01c1-update.ps1')), 'installed-update preservation test is missing')
 
 console.log('=== DESKTOP 01C.1 VERIFY PASS ===')
-console.log('VERSION: 0.1.1')
+console.log(`VERSION: ${pkg.version}`)
 console.log('MANUAL UPDATE PACKAGE: CONFIGURED')
 console.log('APP ID / UPGRADE IDENTITY: STABLE')
 console.log('APP DATA DELETE ON UNINSTALL: FALSE')
