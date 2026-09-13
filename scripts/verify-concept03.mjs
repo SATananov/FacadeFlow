@@ -1,4 +1,4 @@
-﻿import assert from 'node:assert/strict'
+import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
 const app = await readFile(
@@ -55,7 +55,7 @@ assert.match(css, /\.offer-party-summary/)
 
 const primaryHeaderActions = [
   ...app.matchAll(
-    /className="create-offer-action"/g,
+    /product-nav-primary/g,
   ),
 ].length
 

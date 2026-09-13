@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { ProjectSnapshot } from '../domain/project/projectModel'
+import { hasMeaningfulProjectContent, type ProjectSnapshot } from '../domain/project/projectModel'
 import type { HumanActor, HumanConfirmation } from '../domain/assurance/assuranceModel'
 import type { ConfirmationRequest } from '../domain/assurance/assuranceOperations'
 import { inspectableStatements, confirmationFreshness } from '../domain/assurance/assuranceSelectors'
@@ -35,13 +35,13 @@ const parameterLabel: Record<string, string> = {
 const displayParameter = (key: string) => parameterLabel[key] ?? key
 
 type Props = {
-  snapshot: ProjectSnapshot; moduleId: string | null; blocked: boolean
+  snapshot: ProjectSnapshot; moduleId: string | null; projectActive?: boolean; blocked: boolean
   onRecord: (actor: HumanActor) => void
   onInspect: (evidenceId: string) => ConfirmationRequest
   onConfirm: (request: ConfirmationRequest, actor: HumanActor, intent: HumanConfirmation['intent']) => void
 }
 
-export function ProjectAssurancePanel({ snapshot, moduleId, blocked, onRecord, onInspect, onConfirm }: Props) {
+export function ProjectAssurancePanel({ snapshot, moduleId, projectActive = true, blocked, onRecord, onInspect, onConfirm }: Props) {
   const [open, setOpen] = useState(false)
   const [actorId] = useState(() => globalThis.crypto.randomUUID())
   const [name, setName] = useState('')
@@ -74,6 +74,14 @@ export function ProjectAssurancePanel({ snapshot, moduleId, blocked, onRecord, o
   const staleCount = confirmationStates.filter(({ freshness }) => freshness.state !== 'current').length
   const revisionLabel = status.head ? `R${status.head.number}` : 'Без ревизия'
   const draftLabel = status.matches ? 'текущата версия е записана' : 'има незаписани промени'
+  const hasMeaningfulChanges = hasMeaningfulProjectContent(snapshot)
+  const toolbarStatusLabel = !projectActive
+    ? 'Няма промени за проверка'
+    : staleCount > 0
+      ? 'Има проверки за преглед'
+      : !status.matches && (status.head !== null || hasMeaningfulChanges)
+        ? 'Има непроверени промени'
+        : 'Няма промени за проверка'
   const nextRevisionNumber = (status.head?.number ?? 0) + 1
   const revisionActionLabel = status.matches
     ? `${revisionLabel} е актуална`
@@ -96,9 +104,9 @@ export function ProjectAssurancePanel({ snapshot, moduleId, blocked, onRecord, o
       aria-controls="project-assurance-drawer"
       onClick={() => setOpen(true)}
     >
-      <span className="project-assurance-launcher-title">Ревизии и доказателства</span>
+      <span className="project-assurance-launcher-title">РЕВИЗИИ И ПРОВЕРКИ</span>
       <span className="project-assurance-launcher-meta">
-        {revisionLabel} · {draftLabel}{staleCount > 0 ? ` · ${staleCount} за преглед` : ''}
+        {toolbarStatusLabel}
       </span>
     </button>
 
@@ -111,15 +119,15 @@ export function ProjectAssurancePanel({ snapshot, moduleId, blocked, onRecord, o
         className="project-assurance-drawer"
         role="dialog"
         aria-modal="true"
-        aria-label="Ревизии и доказателства"
+        aria-label="Ревизии и проверки"
       >
         <header className="project-assurance-header">
           <div>
             <span className="project-assurance-eyebrow">ИСТОРИЯ НА ПРОЕКТА</span>
-            <h2>Ревизии и доказателства</h2>
+            <h2>Ревизии и проверки</h2>
             <p>{revisionLabel} · {draftLabel}</p>
           </div>
-          <button type="button" className="project-assurance-close" onClick={() => setOpen(false)} aria-label="Затвори ревизии и доказателства">×</button>
+          <button type="button" className="project-assurance-close" onClick={() => setOpen(false)} aria-label="Затвори ревизии и проверки">×</button>
         </header>
 
         <div className="project-assurance-body">

@@ -41,7 +41,7 @@ requireText(preload, "ipcRenderer.invoke('facadeflow:open-update-page')", 'downl
 forbidText(preload, 'require(\'fs\')', 'preload filesystem exposure')
 forbidText(preload, 'require(\'child_process\')', 'preload process exposure')
 
-requireText(app, 'Проверка за обновяване', 'manual check UI')
+requireText(app, 'Провери за обновяване', 'manual check UI')
 requireText(app, 'Свали обновяването', 'controlled download UI')
 requireText(app, "status: 'checking'", 'checking state')
 requireText(app, "status: 'current'", 'current state')

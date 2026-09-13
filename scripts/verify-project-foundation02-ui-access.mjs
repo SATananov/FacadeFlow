@@ -7,7 +7,7 @@ const app = fs.readFileSync('src/App.tsx', 'utf8')
 const appCss = fs.readFileSync('src/App.css', 'utf8')
 
 assert.match(component, /project-assurance-launcher/, 'Persistent assurance launcher must exist')
-assert.match(component, /Ревизии и доказателства/, 'Launcher must name the project-level assurance surface')
+assert.match(component, /Ревизии и проверки/, 'Launcher must name the project-level assurance surface')
 assert.match(component, /aria-controls="project-assurance-drawer"/, 'Launcher must target the drawer explicitly')
 assert.match(component, /role="dialog"/, 'Assurance surface must open as an explicit dialog/drawer')
 assert.match(component, /aria-modal="true"/, 'Drawer must expose modal semantics')

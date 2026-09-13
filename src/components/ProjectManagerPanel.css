@@ -1,18 +1,17 @@
 .project-current-summary,
 .project-open-trigger,
 .project-new-trigger {
-  min-height: 38px;
+  min-height: 30px;
 }
 .project-current-summary {
   display: grid;
   align-content: center;
-  gap: 1px;
-  min-width: 190px;
-  padding: 5px 10px;
-  border: 1px solid #cbd5e1;
-  border-bottom: 2px solid #13abc1;
-  border-radius: 6px;
-  background: #fff;
+  gap: 0;
+  min-width: 142px;
+  max-width: 250px;
+  padding: 1px 4px 1px 0;
+  border: 0;
+  background: transparent;
   text-align: left;
 }
 .project-manager-trigger-kicker {
@@ -25,15 +24,19 @@
 .project-current-summary strong {
   overflow: hidden;
   max-width: 260px;
-  color: #334155;
+  color: #263d4a;
+  font-size: 12px;
+  font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .project-open-trigger {
-  border-color: #159eb2 !important;
-  background: #eefbfd !important;
-  color: #08798b !important;
-  font-weight: 800;
+  padding: 5px 10px !important;
+  border: 1px solid #8ec9d3 !important;
+  border-radius: 6px !important;
+  background: #f4fbfc !important;
+  color: #15758a !important;
+  font-weight: 750;
 }
 .project-open-trigger:hover {
   background: #dff8fb !important;
@@ -43,6 +46,11 @@
   outline-offset: 2px;
 }
 .project-new-trigger {
+  padding: 5px 10px !important;
+  border: 1px solid #c9d4dc !important;
+  border-radius: 6px !important;
+  background: #fff !important;
+  color: #3d5361 !important;
   font-weight: 700;
 }
 .project-manager-overlay {

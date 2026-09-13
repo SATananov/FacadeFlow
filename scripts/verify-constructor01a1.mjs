@@ -8,8 +8,9 @@ const acceptance = fs.readFileSync('docs/CONSTRUCTOR_01A_1_DIRECT_ENTRY_ACCEPTAN
 
 const checks = [
   [app.includes('useProjectWorkspace') && app.includes('setConstructorMode'), 'App has explicit offer/free constructor launch modes'],
-  [app.includes('startFreeConstructor'), 'App exposes direct constructor entry'],
-  [app.includes('Свободна скица · без оферта'), 'Header labels direct entry as free sketch without offer'],
+  [app.includes('openConstructorFromHome'), 'App exposes direct constructor entry through the current product navigation'],
+  [app.includes("hasConstructorWork ? 'Продължи в Конструктора' : 'Започни в Конструктора'"), 'Home labels direct constructor entry according to current project activity'],
+  [app.includes('onClick={openConstructorFromHome}'), 'Header/Home constructor action uses the shared constructor launcher'],
   [app.includes('mode="free"'), 'App launches shared ConstructorShell in free mode'],
   [app.includes('mode="offer"'), 'App preserves offer-mode ConstructorShell route'],
   [app.includes('startOfferFromFreeSketch'), 'Free sketch can continue toward offer creation'],
@@ -17,7 +18,7 @@ const checks = [
   [shell.includes('Не е избрана'), 'Free mode does not invent a profile system'],
   [shell.includes('Създай оферта от тази скица'), 'Free mode exposes offer conversion entry'],
   [/CONSTRUCTOR 01[BC]/.test(shell), 'Constructor lineage advanced through 01B/01C'],
-  [appCss.includes('.constructor-direct-action'), 'Direct constructor action has FacadeFlow styling'],
+  [appCss.includes('.product-nav-item') && appCss.includes('.empty-home-actions'), 'Direct constructor entry has current FacadeFlow product navigation styling'],
   [shellCss.includes('.constructor-free-context'), 'Free sketch context has dedicated styling'],
   [acceptance.includes('No profile system is automatically selected.'), 'Acceptance forbids automatic system selection'],
   [acceptance.includes('PARAMETRIC FRAME: NO'), 'Acceptance keeps geometry boundary'],
@@ -32,8 +33,8 @@ for (const [ok, message] of checks) {
 }
 
 console.log('CONSTRUCTOR 01A.1 DIRECT ENTRY VERIFY PASS')
-console.log('ENTRY: HOME/HEADER -> FREE CONSTRUCTOR')
-console.log('OFFER ROUTE: OFFER -> MODULE 1 -> CONSTRUCTOR')
+console.log('ENTRY: PRODUCT NAVIGATION/HOME -> FREE OR CURRENT CONSTRUCTOR')
+console.log('OFFER ROUTE: OFFER -> MODULE -> CONSTRUCTOR')
 console.log('ENGINE: SHARED CONSTRUCTOR SHELL')
 console.log('FREE MODE: NO CLIENT / NO OBJECT / NO OFFER REQUIRED')
 console.log('FREE MODE SYSTEM: UNSELECTED - NOT INVENTED')

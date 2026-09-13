@@ -27,7 +27,7 @@ export function AssemblyReviewPanel({ snapshot, moduleId }: { snapshot: ProjectS
     return () => { dialog.current?.close(); launcher.current?.focus() }
   }, [open])
   return <>
-    <button ref={launcher} type="button" className="assembly-review-launcher" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>Преглед на сглобката</button>
+    <button ref={launcher} type="button" className="assembly-review-launcher" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)} aria-label="Преглед на сглобката">Сглобка</button>
     {open && createPortal(<dialog ref={dialog} className="assembly-review-dialog" aria-labelledby="assembly-review-title" onCancel={() => setOpen(false)} onClick={(event) => {
       if (event.target === event.currentTarget) {
         const rect = event.currentTarget.getBoundingClientRect()

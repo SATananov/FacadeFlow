@@ -72,7 +72,7 @@ const otherSystem = catalog.getSelectableProfileSystems().find((system) => syste
 assert.ok(otherSystem, 'system-change fixture from central selectable catalogue')
 const renderApp = mount(App)
 let appTree = renderApp()
-button(appTree, 'Свободна скица · без оферта').props.onClick()
+button(appTree, 'Започни в Конструктора').props.onClick()
 function active() {
   appTree = renderApp()
   const shell = nodes(appTree, (node) => node.type === Shell)[0]
@@ -220,21 +220,40 @@ test('reset affects only active sketch, keeps system and clears profile assignme
 })
 for (const systemId of [prelude.id, '']) {
   test(`offer transfer: ${systemId || 'neutral'} only; other commercial selections empty`, () => {
-    active().onFreeProfileSystemChange(systemId)
-    active().onCreateOfferFromSketch(draft)
-    appTree = renderApp()
-    const radios = nodes(appTree, (node) => node.type === 'input' && node.props.name === 'profileSystemId')
+    // The current product navigation intentionally prefers an existing offer constructor
+    // once a free sketch has been copied into an offer. Each transfer scenario therefore
+    // starts from a fresh App runtime instead of depending on the removed legacy
+    // "free sketch" re-entry button.
+    const transferRender = mount(App)
+    let transferTree = transferRender()
+    button(transferTree, 'Започни в Конструктора').props.onClick()
+    transferTree = transferRender()
+
+    let transferShell = nodes(transferTree, (node) => node.type === Shell)[0]
+    assert.ok(transferShell, 'fresh free ConstructorShell mounted for offer-transfer scenario')
+    transferShell.props.onCreateModule()
+    transferTree = transferRender()
+    transferShell = nodes(transferTree, (node) => node.type === Shell)[0]
+    assert.ok(transferShell, 'free module available for offer-transfer scenario')
+
+    transferShell.props.onFreeProfileSystemChange(systemId)
+    transferTree = transferRender()
+    transferShell = nodes(transferTree, (node) => node.type === Shell)[0]
+    assert.ok(transferShell, 'free ConstructorShell remains mounted before transfer')
+    transferShell.props.onCreateOfferFromSketch(draft)
+
+    transferTree = transferRender()
+    const radios = nodes(transferTree, (node) => node.type === 'input' && node.props.name === 'profileSystemId')
     assert.equal(radios.filter((node) => node.props.checked).length, systemId ? 1 : 0)
     if (systemId) assert.equal(radios.find((node) => node.props.checked).props.value, systemId)
     for (const name of ['colorId', 'foilModeId', 'glazingId', 'hardwareStandardId']) {
-      assert.ok(nodes(appTree, (node) => node.type === 'input' && node.props.name === name).every((node) => !node.props.checked))
+      assert.ok(nodes(transferTree, (node) => node.type === 'input' && node.props.name === name).every((node) => !node.props.checked))
     }
     // Inspect real App state as controls can be gated until client/object input.
     const session = host.values.find((value) => value?.snapshot?.schemaVersion === load('src/domain/project/projectModel').PROJECT_SCHEMA_VERSION)
     const offer = load('src/domain/project/projectModel').getOfferForm(session.snapshot)
     assert.equal(offer.profileSystemId, systemId)
     for (const name of ['colorId', 'foilModeId', 'glazingId', 'hardwareStandardId', 'clientName', 'objectName']) assert.equal(offer[name], '')
-    button(appTree, 'Свободна скица · без оферта').props.onClick()
   })
 }
 assert.equal(JSON.stringify(draft), sketchBefore)

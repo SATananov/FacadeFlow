@@ -3,7 +3,7 @@ import { useProjectWorkspace } from './hooks/useProjectWorkspace'
 import { ProjectAssurancePanel } from './components/ProjectAssurancePanel'
 import { AssemblyReviewPanel } from './components/AssemblyReviewPanel'
 import { ProjectManagerPanel } from './components/ProjectManagerPanel'
-import { createStableId, getProjectDisplayName, type OfferDraft, type FreeConstructorModule } from './domain/project/projectModel'
+import { createStableId, getProjectActivity, getProjectDisplayName, type OfferDraft, type FreeConstructorModule } from './domain/project/projectModel'
 import {
   getConfirmedGlazingOptions,
   getConfirmedHardwareStandards,
@@ -61,6 +61,15 @@ import './App.css'
 
 const nadezhdaLogoUrl = './branding/nadezhda-header.png'
 
+type HeaderSection = 'home' | 'completed-projects' | 'catalogs' | 'help'
+
+const HEADER_NAV_ITEMS: ReadonlyArray<{ id: HeaderSection; label: string }> = [
+  { id: 'home', label: 'Начало' },
+  { id: 'completed-projects', label: 'Завършени проекти' },
+  { id: 'catalogs', label: 'Каталози' },
+  { id: 'help', label: 'Помощ' },
+]
+
 function OfferIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -114,6 +123,7 @@ const CONFIRMED_GLAZING_OPTIONS = getConfirmedGlazingOptions()
 const CONFIRMED_HARDWARE_STANDARDS = getConfirmedHardwareStandards()
 
 export default function App() {
+  const [headerSection, setHeaderSection] = useState<HeaderSection>('home')
   const [updateCheck, setUpdateCheck] = useState<
     | { status: 'idle' }
     | { status: 'checking' }
@@ -621,11 +631,25 @@ export default function App() {
     })
   }
 
-  const startNewOffer = workspace.newProject
-
-  const startFreeConstructor = () => {
-    setConstructorMode('free')
+  const openHome = () => {
+    setHeaderSection('home')
+    setConstructorMode(null)
     setOfferStartOpen(false)
+  }
+
+  const openHeaderSection = (section: HeaderSection) => {
+    if (section === 'home') {
+      openHome()
+      return
+    }
+    setHeaderSection(section)
+    setConstructorMode(null)
+    setOfferStartOpen(false)
+  }
+
+  const startNewOffer = () => {
+    setHeaderSection('home')
+    workspace.newProject()
   }
 
   const startOfferFromFreeSketch = (draft: ConstructorDraftSnapshot | null) => {
@@ -774,83 +798,154 @@ export default function App() {
   }
 
 
+
+  const projectActivity = getProjectActivity(workspace.snapshot)
+  const hasFreeConstructorWork = projectActivity.hasFreeWork
+  const hasOfferConstructorWork = modules.length > 0
+  const hasOfferProjectWork = projectActivity.hasOfferWork
+  const projectDisplayName = getProjectDisplayName(workspace.snapshot)
+  const hasNamedProject = projectDisplayName !== 'Нов проект' && projectDisplayName !== 'Свободен проект'
+  const hasActiveProject = projectActivity.kind !== 'empty'
+  const hasConstructorWork = hasFreeConstructorWork || hasOfferConstructorWork
+
+  const toolbarProjectLabel = (() => {
+    if (projectActivity.kind === 'empty') return 'Няма активен проект'
+    if (projectActivity.kind === 'free') return 'Свободен проект'
+    if (hasNamedProject) return projectDisplayName
+    return 'Оферта в подготовка'
+  })()
+
+  const openConstructorFromHome = () => {
+    setHeaderSection('home')
+    setOfferStartOpen(false)
+    if (hasOfferConstructorWork) {
+      setConstructorMode('offer')
+      return
+    }
+    setConstructorMode('free')
+  }
+
+  const openOfferFromHome = () => {
+    setHeaderSection('home')
+    if (hasOfferProjectWork && !hasOfferConstructorWork) {
+      setConstructorMode(null)
+      setOfferStartOpen(true)
+      return
+    }
+    startNewOffer()
+  }
+
   return (
     <div className="app-shell">
       <header className="app-header">
-        <div className="brand-lockup">
-          <img
-            className="nadezhda-header-logo"
-            src={nadezhdaLogoUrl}
-            alt="Надежда - алуминиева и PVC дограма"
-          />
+        <div className="header-primary">
+          <div className="brand-lockup">
+            <img
+              className="nadezhda-header-logo"
+              src={nadezhdaLogoUrl}
+              alt="Надежда - алуминиева и PVC дограма"
+            />
 
-          <div className="brand-copy">
-            <h1>FacadeFlow</h1>
-            <p>Оферти и производствена подготовка</p>
+            <div className="brand-copy">
+              <h1>FacadeFlow</h1>
+              <p>Оферти и производствена подготовка</p>
+            </div>
           </div>
-        </div>
 
-        <div className="header-actions">
-          <button
-            type="button"
-            className="create-offer-action constructor-direct-action"
-            onClick={startFreeConstructor}
-          >
-            <span className="action-icon">
-              <ConstructorIcon />
-            </span>
+          <nav className="product-navigation" aria-label="Основна навигация">
+            <button
+              type="button"
+              className={`product-nav-item${!constructorMode && !offerStartOpen && headerSection === 'home' ? ' is-active' : ''}`}
+              onClick={openHome}
+              aria-current={!constructorMode && !offerStartOpen && headerSection === 'home' ? 'page' : undefined}
+            >
+              Начало
+            </button>
 
-            <span className="action-copy">
-              <b>Конструктор</b>
-              <small>Свободна скица · без оферта</small>
-            </span>
-          </button>
+            <button
+              type="button"
+              className={`product-nav-item product-nav-primary${offerStartOpen ? ' is-active' : ''}`}
+              onClick={startNewOffer}
+              aria-current={offerStartOpen ? 'page' : undefined}
+            >
+              <span className="product-nav-icon"><OfferIcon /></span>
+              Създай оферта
+            </button>
 
-          <button
-            type="button"
-            className="create-offer-action"
-            onClick={startNewOffer}
-            aria-expanded={offerStartOpen}
-          >
-            <span className="action-icon">
-              <OfferIcon />
-            </span>
+            <button
+              type="button"
+              className={`product-nav-item${constructorMode ? ' is-active' : ''}`}
+              onClick={openConstructorFromHome}
+              aria-current={constructorMode ? 'page' : undefined}
+            >
+              <span className="product-nav-icon"><ConstructorIcon /></span>
+              Конструктор
+            </button>
 
-            <span className="action-copy">
-              <b>Създай оферта</b>
-              <small>Нов клиент / обект</small>
-            </span>
-          </button>
+            {HEADER_NAV_ITEMS.filter((item) => item.id !== 'home').map((item) => {
+              const active = !constructorMode && !offerStartOpen && headerSection === item.id
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`product-nav-item${active ? ' is-active' : ''}`}
+                  onClick={() => openHeaderSection(item.id)}
+                  aria-current={active ? 'page' : undefined}
+                >
+                  {item.label}
+                </button>
+              )
+            })}
+          </nav>
         </div>
       </header>
 
       <div className="project-persistence" role="region" aria-label="Текущ проект">
-        <span className="project-persistence-label">Проект</span>
-        <span role="status" className={`project-save-status is-${workspace.persistence.status}`}>
-          {workspace.persistence.status === 'saved' ? 'Запазено локално'
-            : workspace.persistence.status === 'failed' ? 'Записът не е потвърден' : 'Незапазени промени'}
-        </span>
-        <button type="button" onClick={workspace.saveNow} disabled={workspace.persistence.blocked}>Запази локално</button>
-        <ProjectManagerPanel
-          current={{
-            id: workspace.snapshot.project.id,
-            label: getProjectDisplayName(workspace.snapshot),
-            moduleCount: Object.keys(workspace.snapshot.modulesById).length,
-            headRevisionNumber: workspace.snapshot.revisions.headRevisionId
-              ? workspace.snapshot.revisions.revisionsById[workspace.snapshot.revisions.headRevisionId]?.number ?? null
-              : null,
-          }}
-          projects={workspace.projects}
-          blocked={workspace.persistence.blocked}
-          onOpen={workspace.openProject}
-          onNew={workspace.newProject}
-        />
-        <ProjectAssurancePanel key={workspace.snapshot.project.id} snapshot={workspace.snapshot}
-          moduleId={(constructorMode === 'free' ? activeFreeModule?.id : activeModuleId) ?? null}
-          blocked={workspace.persistence.blocked} onRecord={workspace.recordRevision}
-          onInspect={workspace.prepareConfirmation} onConfirm={workspace.confirmStatement} />
-        <AssemblyReviewPanel snapshot={workspace.snapshot}
-          moduleId={(constructorMode === 'free' ? activeFreeModule?.id : activeModuleId) ?? null} />
+        <div className="project-toolbar-main">
+          <ProjectManagerPanel
+            current={{
+              id: workspace.snapshot.project.id,
+              label: toolbarProjectLabel,
+              moduleCount: Object.keys(workspace.snapshot.modulesById).length,
+              headRevisionNumber: workspace.snapshot.revisions.headRevisionId
+                ? workspace.snapshot.revisions.revisionsById[workspace.snapshot.revisions.headRevisionId]?.number ?? null
+                : null,
+            }}
+            projects={workspace.projects}
+            blocked={workspace.persistence.blocked}
+            onOpen={workspace.openProject}
+            onNew={workspace.newProject}
+          />
+          {hasActiveProject && (
+            <>
+              <span role="status" className={`project-save-status is-${workspace.persistence.status}`}>
+                {workspace.persistence.status === 'saved' ? 'Запазено'
+                  : workspace.persistence.status === 'failed' ? 'Проблем със записа' : 'Има незапазени промени'}
+              </span>
+              {workspace.persistence.status !== 'saved' && (
+                <button
+                  type="button"
+                  className="project-save-action"
+                  onClick={workspace.saveNow}
+                  disabled={workspace.persistence.blocked}
+                >
+                  Запази
+                </button>
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="project-toolbar-secondary">
+          <ProjectAssurancePanel key={workspace.snapshot.project.id} snapshot={workspace.snapshot}
+            moduleId={(constructorMode === 'free' ? activeFreeModule?.id : activeModuleId) ?? null}
+            projectActive={hasActiveProject}
+            blocked={workspace.persistence.blocked} onRecord={workspace.recordRevision}
+            onInspect={workspace.prepareConfirmation} onConfirm={workspace.confirmStatement} />
+          <AssemblyReviewPanel snapshot={workspace.snapshot}
+            moduleId={(constructorMode === 'free' ? activeFreeModule?.id : activeModuleId) ?? null} />
+        </div>
+
         {workspace.persistence.error && <span role="alert" className="project-save-error">
           {workspace.persistence.error}
           {workspace.persistence.blocked ? ' Оригиналният запис е запазен. Използвай „Създай оферта“ за нов независим проект.' : ' Работата остава в паметта; опитай записа отново.'}
@@ -947,108 +1042,134 @@ export default function App() {
             onFieldTopologyChange={syncFirstModuleFieldTopology}
             onClose={() => setConstructorMode(null)}
           />
+        ) : headerSection === 'completed-projects' ? (
+          <section className="product-section-page" aria-labelledby="completed-projects-title">
+            <div className="product-section-panel">
+              <span className="product-section-eyebrow">РАБОТНО ПРОСТРАНСТВО</span>
+              <h2 id="completed-projects-title">Завършени проекти</h2>
+              <p>Тук ще подредим приключените оферти и обекти, когато въведем ясен проектен статус и правила за завършване.</p>
+              <div className="product-section-state">Секцията е подготвена за следващия функционален етап.</div>
+            </div>
+          </section>
+        ) : headerSection === 'catalogs' ? (
+          <section className="product-section-page" aria-labelledby="catalogs-title">
+            <div className="product-section-panel">
+              <span className="product-section-eyebrow">ТЕХНИЧЕСКА БАЗА</span>
+              <h2 id="catalogs-title">Каталози</h2>
+              <p>Централното място за профилни системи, сечения, компоненти, съвместимости и оригинални каталожни източници.</p>
+              <div className="product-section-state">Каталожните данни остават непроменени; тук засега изграждаме само продуктовия вход.</div>
+            </div>
+          </section>
+        ) : headerSection === 'help' ? (
+          <section className="product-section-page" aria-labelledby="help-title">
+            <div className="product-section-panel">
+              <span className="product-section-eyebrow">КАК РАБОТИ FACADEFLOW</span>
+              <h2 id="help-title">Помощ</h2>
+              <p>FacadeFlow води работата от клиент и обект през техническа конфигурация и модули до конструктивна и производствена подготовка, без да измисля недоказани производствени правила.</p>
+              <div className="product-section-state">Следващата стъпка тук ще бъде кратко визуално ръководство за първа работа.</div>
+            </div>
+          </section>
         ) : !offerStartOpen ? (
           <section className="empty-home" aria-label="Начален екран">
-            <div className="empty-home-watermark" aria-hidden="true">
-              <img src={nadezhdaLogoUrl} alt="" />
-            </div>
-
             <div className="empty-home-card">
-              <img
-                className="nadezhda-hero-logo"
-                src={nadezhdaLogoUrl}
-                alt="Надежда"
-              />
-
               <span className="empty-home-eyebrow">
-                НАДЕЖДА · ОФЕРТИ И ПРОИЗВОДСТВЕНА ПОДГОТОВКА
+                ОФЕРТИ И ПРОИЗВОДСТВЕНА ПОДГОТОВКА
               </span>
 
               <h2>FacadeFlow</h2>
 
-              <span className="empty-home-version">версия {APP_VERSION}</span>
-
-              <div className="empty-home-update" data-state={updateCheck.status}>
-                <button
-                  type="button"
-                  className="empty-home-update-check"
-                  onClick={() => void checkForUpdates()}
-                  disabled={updateCheck.status === 'checking'}
-                >
-                  {updateCheck.status === 'checking' ? 'Проверява...' : 'Проверка за обновяване'}
-                </button>
-
-                {updateCheck.status === 'current' && (
-                  <small>FacadeFlow е актуален · {updateCheck.latestVersion}</small>
-                )}
-
-                {updateCheck.status === 'available' && (
-                  <div className="empty-home-update-available">
-                    <small>Налична версия {updateCheck.latestVersion}</small>
-                    <button
-                      type="button"
-                      onClick={() => void downloadAvailableUpdate(updateCheck.latestVersion)}
-                    >
-                      Свали обновяването
-                    </button>
-                  </div>
-                )}
-
-                {updateCheck.status === 'downloading' && (
-                  <div className="empty-home-update-available">
-                    <small>Сваля версия {updateCheck.latestVersion}...</small>
-                    <button type="button" disabled>
-                      Сваля...
-                    </button>
-                  </div>
-                )}
-
-                {updateCheck.status === 'downloaded' && (
-                  <div className="empty-home-update-available">
-                    <small>Обновяването {updateCheck.latestVersion} е свалено</small>
-                    <button
-                      type="button"
-                      onClick={() => void installDownloadedUpdate(updateCheck.latestVersion)}
-                    >
-                      Обнови и рестартирай
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void showDownloadedUpdate(updateCheck.latestVersion)}
-                    >
-                      Покажи файла
-                    </button>
-                  </div>
-                )}
-
-                {updateCheck.status === 'installing' && (
-                  <div className="empty-home-update-available">
-                    <small>Подготвя обновяване до {updateCheck.latestVersion}...</small>
-                    <button type="button" disabled>
-                      Подготвя...
-                    </button>
-                  </div>
-                )}
-                {updateCheck.status === 'error' && (
-                  <small className="empty-home-update-error">{updateCheck.message}</small>
-                )}
-              </div>
-
               <p>
-                Започнете по начина, който е удобен за задачата: директно в
-                Конструктора за свободна скица или със създаване на оферта,
-                клиент, обект и техническа конфигурация.
+                {hasOfferProjectWork && !hasOfferConstructorWork
+                  ? 'Продължете започнатата оферта или работете директно в Конструктора.'
+                  : hasConstructorWork
+                    ? 'Създайте оферта или продължете текущата работа в Конструктора.'
+                    : 'Създайте оферта или започнете директно в Конструктора.'}
               </p>
 
               <div className="empty-home-actions">
-                <button type="button" onClick={startFreeConstructor}>
-                  <b>Отвори Конструктор</b>
-                  <small>Чертане без оферта</small>
+                <button type="button" onClick={openConstructorFromHome}>
+                  <b>{hasConstructorWork ? 'Продължи в Конструктора' : 'Започни в Конструктора'}</b>
+                  <small>
+                    {hasOfferConstructorWork
+                      ? toolbarProjectLabel
+                      : hasFreeConstructorWork ? 'Свободен проект' : 'Чертане без оферта'}
+                  </small>
                 </button>
-                <button type="button" onClick={startNewOffer}>
-                  <b>Създай оферта</b>
-                  <small>Клиент → система → модули</small>
+                <button type="button" onClick={openOfferFromHome}>
+                  <b>{hasOfferProjectWork && !hasOfferConstructorWork ? 'Продължи офертата' : 'Създай оферта'}</b>
+                  <small>{hasOfferProjectWork && !hasOfferConstructorWork ? toolbarProjectLabel : 'Клиент → система → модули'}</small>
                 </button>
+              </div>
+
+              <div className="empty-home-meta" aria-label="Версия и обновяване">
+                <span className="empty-home-version">версия {APP_VERSION}</span>
+
+                <div className="empty-home-update" data-state={updateCheck.status}>
+                  <button
+                    type="button"
+                    className="empty-home-update-check"
+                    onClick={() => void checkForUpdates()}
+                    disabled={updateCheck.status === 'checking'}
+                  >
+                    {updateCheck.status === 'checking' ? 'Проверява...' : 'Провери за обновяване'}
+                  </button>
+
+                  {updateCheck.status === 'current' && (
+                    <small>FacadeFlow е актуален · {updateCheck.latestVersion}</small>
+                  )}
+
+                  {updateCheck.status === 'available' && (
+                    <div className="empty-home-update-available">
+                      <small>Налична версия {updateCheck.latestVersion}</small>
+                      <button
+                        type="button"
+                        onClick={() => void downloadAvailableUpdate(updateCheck.latestVersion)}
+                      >
+                        Свали обновяването
+                      </button>
+                    </div>
+                  )}
+
+                  {updateCheck.status === 'downloading' && (
+                    <div className="empty-home-update-available">
+                      <small>Сваля версия {updateCheck.latestVersion}...</small>
+                      <button type="button" disabled>
+                        Сваля...
+                      </button>
+                    </div>
+                  )}
+
+                  {updateCheck.status === 'downloaded' && (
+                    <div className="empty-home-update-available">
+                      <small>Обновяването {updateCheck.latestVersion} е свалено</small>
+                      <button
+                        type="button"
+                        onClick={() => void installDownloadedUpdate(updateCheck.latestVersion)}
+                      >
+                        Обнови и рестартирай
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void showDownloadedUpdate(updateCheck.latestVersion)}
+                      >
+                        Покажи файла
+                      </button>
+                    </div>
+                  )}
+
+                  {updateCheck.status === 'installing' && (
+                    <div className="empty-home-update-available">
+                      <small>Подготвя обновяване до {updateCheck.latestVersion}...</small>
+                      <button type="button" disabled>
+                        Подготвя...
+                      </button>
+                    </div>
+                  )}
+
+                  {updateCheck.status === 'error' && (
+                    <small className="empty-home-update-error">{updateCheck.message}</small>
+                  )}
+                </div>
               </div>
             </div>
           </section>

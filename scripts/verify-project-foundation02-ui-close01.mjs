@@ -5,7 +5,7 @@ const css = fs.readFileSync('src/components/ProjectAssurancePanel.css', 'utf8');
 const tsx = fs.readFileSync('src/components/ProjectAssurancePanel.tsx', 'utf8');
 
 assert.match(tsx, /className="project-assurance-close"/);
-assert.match(tsx, /aria-label="Затвори ревизии и доказателства"/);
+assert.match(tsx, /aria-label="Затвори ревизии и проверки"/);
 
 const genericRuleIndex = css.indexOf('.project-assurance-drawer button,');
 const closeOverrideIndex = css.indexOf('.project-assurance-drawer .project-assurance-close {');
@@ -26,6 +26,7 @@ assert.match(css, /\.project-assurance-drawer \.project-assurance-close:hover/);
 assert.match(css, /\.project-assurance-drawer \.project-assurance-close:focus-visible/);
 
 console.log('=== PROJECT FOUNDATION 02 UI CLOSE 01 VERIFY PASS ===');
+console.log('DRAWER LABEL: REVISIONS + CHECKS');
 console.log('DRAWER CLOSE: 34 x 34 / COMPACT');
 console.log('FULL-WIDTH INHERITANCE: OVERRIDDEN');
 console.log('HOVER + KEYBOARD FOCUS: VISIBLE');

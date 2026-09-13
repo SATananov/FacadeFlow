@@ -75,6 +75,55 @@ export function settingsFromForm(form: OfferDraft): OfferSettingsDraft {
   return { profileSystemId, colorId, foilModeId, glazingId, hardwareStandardId, hardwareManufacturerId }
 }
 
+export type ProjectActivity = {
+  kind: 'empty' | 'free' | 'offer'
+  hasOfferWork: boolean
+  hasFreeWork: boolean
+}
+
+function hasMeaningfulChoice(key: keyof OfferSettingsDraft, value: string): boolean {
+  const normalized = value.trim()
+  if (key === 'hardwareManufacturerId') return normalized.length > 0 && normalized !== 'unspecified'
+  return normalized.length > 0
+}
+
+export function getProjectActivity(snapshot: ProjectSnapshot): ProjectActivity {
+  const hasProjectMetadata = [
+    ...Object.values(snapshot.project.client),
+    ...Object.values(snapshot.project.site),
+  ].some((value) => value.trim().length > 0)
+
+  const offer = snapshot.offersById[snapshot.workspace.offerId]
+  const hasOfferSetup = offer?.entryMode === 'offer' && (
+    Object.entries(offer.settingsDraft).some(([key, value]) => (
+      hasMeaningfulChoice(key as keyof OfferSettingsDraft, String(value))
+    ))
+    || offer.commonConditions.trim().length > 0
+    || offer.setupStage !== 'editing'
+    || offer.fromFreeSketch
+  )
+
+  const hasOfferModules = Object.values(snapshot.modulesById).some(
+    (module) => module.offerId === snapshot.workspace.offerId,
+  )
+  const hasFreeModules = Object.values(snapshot.modulesById).some(
+    (module) => module.offerId === snapshot.workspace.freeOfferId,
+  )
+
+  const hasOfferWork = hasProjectMetadata || Boolean(hasOfferSetup) || hasOfferModules
+  const hasFreeWork = hasFreeModules
+
+  return {
+    kind: hasOfferWork ? 'offer' : hasFreeWork ? 'free' : 'empty',
+    hasOfferWork,
+    hasFreeWork,
+  }
+}
+
+export function hasMeaningfulProjectContent(snapshot: ProjectSnapshot): boolean {
+  return getProjectActivity(snapshot).kind !== 'empty'
+}
+
 export function createProjectSnapshot(idFactory: IdFactory = createStableId): ProjectSnapshot {
   const projectId = idFactory(), offerId = idFactory(), freeOfferId = idFactory()
   if (new Set([projectId, offerId, freeOfferId]).size !== 3) throw new Error('Duplicate project identity')

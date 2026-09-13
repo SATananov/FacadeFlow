@@ -1,3 +1,19 @@
+.assembly-review-launcher {
+  min-height: 34px;
+  padding: 4px 10px !important;
+  border: 1px solid #c7d6df !important;
+  border-radius: 7px !important;
+  background: #fff !important;
+  color: #405866 !important;
+  font-weight: 750;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.assembly-review-launcher:hover {
+  border-color: #9ebbc6 !important;
+  background: #f8fbfc !important;
+}
+
 .assembly-review-dialog { width: min(850px, calc(100vw - 32px)); max-height: 86vh; box-sizing: border-box; border: 1px solid #c7d2d9; border-radius: 14px; padding: 24px; color: #233640; background: #fff; box-shadow: 0 20px 70px #142c4240; }
 .assembly-review-dialog::backdrop { background: #102b4266; }
 .assembly-review-dialog header { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
