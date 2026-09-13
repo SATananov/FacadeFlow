@@ -55,6 +55,7 @@ import ConstructorShell, {
   type ConstructorDraftSnapshot,
   type ConstructorFieldTopologySummary,
 } from './components/ConstructorShell'
+import { APP_VERSION } from './appVersion'
 import './App.css'
 
 const nadezhdaLogoUrl = './branding/nadezhda-header.png'
@@ -872,6 +873,8 @@ export default function App() {
               </span>
 
               <h2>FacadeFlow</h2>
+
+              <span className="empty-home-version">версия {APP_VERSION}</span>
 
               <p>
                 Започнете по начина, който е удобен за задачата: директно в

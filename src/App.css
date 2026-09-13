@@ -229,6 +229,20 @@
   line-height: 1;
 }
 
+.empty-home-version {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 9px;
+  border: 1px solid rgba(128, 210, 223, .28);
+  border-radius: 999px;
+  background: rgba(8, 23, 29, .32);
+  color: #93cbd4;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .45px;
+}
+
 .empty-home p {
   width: min(620px, 100%);
   margin: 0;
