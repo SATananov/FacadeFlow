@@ -1,4 +1,4 @@
-﻿$ErrorActionPreference = 'Stop'
+$ErrorActionPreference = 'Stop'
 
 function Fail([string]$message) {
   Write-Host ''
@@ -33,8 +33,22 @@ gh auth status
 if ($LASTEXITCODE -ne 0) { Fail 'GitHub CLI is not authenticated.' }
 
 $tag = "v$version"
-$existing = gh release view $tag --repo SATananov/FacadeFlow 2>$null
-if ($LASTEXITCODE -eq 0) { Fail "Release $tag already exists. Refusing to overwrite it." }
+
+# Windows PowerShell 5.1 turns stderr from `gh release view <missing-tag>` into
+# NativeCommandError when ErrorActionPreference is Stop. Query the release list
+# instead: a missing tag is a normal empty match, while command failures remain
+# distinguishable by LASTEXITCODE.
+$previousErrorActionPreference = $ErrorActionPreference
+try {
+  $ErrorActionPreference = 'Continue'
+  $existingTags = @(gh release list --repo SATananov/FacadeFlow --limit 100 --json tagName --jq '.[].tagName')
+  $releaseListExit = $LASTEXITCODE
+}
+finally {
+  $ErrorActionPreference = $previousErrorActionPreference
+}
+if ($releaseListExit -ne 0) { Fail 'Could not query existing GitHub releases.' }
+if ($existingTags -contains $tag) { Fail "Release $tag already exists. Refusing to overwrite it." }
 
 Write-Host '=== BUILD UPDATE PACKAGE ===' -ForegroundColor Cyan
 npm run desktop:update
@@ -66,7 +80,7 @@ gh release create $tag $exe $blockmap --repo SATananov/FacadeFlow --title "Facad
 if ($LASTEXITCODE -ne 0) { Fail 'GitHub release creation failed.' }
 
 Write-Host '=== VERIFY RELEASE ASSET ===' -ForegroundColor Cyan
-$assetNames = gh release view $tag --repo SATananov/FacadeFlow --json assets --jq '.assets[].name'
+$assetNames = @(gh release view $tag --repo SATananov/FacadeFlow --json assets --jq '.assets[].name')
 if ($LASTEXITCODE -ne 0) { Fail 'Could not verify release assets.' }
 $expectedAsset = "FacadeFlow-Update-$version.exe"
 if (-not ($assetNames -contains $expectedAsset)) {
