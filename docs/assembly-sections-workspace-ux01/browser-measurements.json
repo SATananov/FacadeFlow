@@ -1,0 +1,152 @@
+[
+  {
+    "case": "1920 overview fit",
+    "metrics": {
+      "height": 810,
+      "left": 0,
+      "overflowX": "auto",
+      "overflowY": "auto",
+      "scrollHeight": 810,
+      "scrollWidth": 1760,
+      "top": 0,
+      "width": 1760
+    }
+  },
+  {
+    "case": "1920 overview 200%",
+    "metrics": {
+      "height": 794,
+      "left": 415.12603759765625,
+      "overflowX": "auto",
+      "overflowY": "auto",
+      "scrollHeight": 1066,
+      "scrollWidth": 2592,
+      "top": 135.57421875,
+      "width": 1760
+    }
+  },
+  {
+    "case": "1920 overview scrolled X and Y",
+    "metrics": {
+      "height": 794,
+      "left": 832.4929809570312,
+      "overflowX": "auto",
+      "overflowY": "auto",
+      "scrollHeight": 1066,
+      "scrollWidth": 2592,
+      "top": 271.1484375,
+      "width": 1760
+    }
+  },
+  {
+    "case": "1920 A–A section proportions",
+    "metrics": {
+      "orientation": 299.9999694824219,
+      "technical": 942.89208984375
+    }
+  },
+  {
+    "case": "sheet-fit-1920",
+    "metrics": {
+      "height": 824,
+      "left": 0,
+      "overflowX": "auto",
+      "overflowY": "auto",
+      "scrollHeight": 824,
+      "scrollWidth": 1712,
+      "top": 0,
+      "width": 1712
+    }
+  },
+  {
+    "case": "sheet-200-1920",
+    "metrics": {
+      "height": 808,
+      "left": 171.98878479003906,
+      "overflowX": "auto",
+      "overflowY": "auto",
+      "scrollHeight": 928,
+      "scrollWidth": 2056,
+      "top": 59.943973541259766,
+      "width": 1712
+    }
+  },
+  {
+    "case": "sheet-200-scrolled-1920",
+    "metrics": {
+      "height": 808,
+      "left": 1211.7646484375,
+      "overflowX": "auto",
+      "overflowY": "auto",
+      "scrollHeight": 1312,
+      "scrollWidth": 2924,
+      "top": 503.6414184570313,
+      "width": 1712
+    }
+  },
+  {
+    "case": "sheet-fit-1280",
+    "metrics": {
+      "height": 583,
+      "left": 0,
+      "overflowX": "auto",
+      "overflowY": "auto",
+      "scrollHeight": 583,
+      "scrollWidth": 1136,
+      "top": 0,
+      "width": 1136
+    }
+  },
+  {
+    "case": "sheet-100-1280",
+    "metrics": {
+      "height": 568,
+      "left": 170.8683319091797,
+      "overflowX": "auto",
+      "overflowY": "auto",
+      "scrollHeight": 672,
+      "scrollWidth": 1478,
+      "top": 52.10083770751953,
+      "width": 1136
+    }
+  },
+  {
+    "case": "sheet-200-scrolled-1280",
+    "metrics": {
+      "height": 568,
+      "left": 1787.6749267578125,
+      "overflowX": "auto",
+      "overflowY": "auto",
+      "scrollHeight": 1312,
+      "scrollWidth": 2924,
+      "top": 743.9775390625,
+      "width": 1136
+    }
+  },
+  {
+    "case": "main-fit-1280",
+    "metrics": {
+      "height": 547,
+      "left": 0,
+      "overflowX": "auto",
+      "overflowY": "auto",
+      "scrollHeight": 547,
+      "scrollWidth": 1158,
+      "top": 0,
+      "width": 1158
+    }
+  },
+  {
+    "case": "main-200-scrolled-1280",
+    "metrics": {
+      "height": 532,
+      "left": 1434.173583984375,
+      "overflowX": "auto",
+      "overflowY": "auto",
+      "scrollHeight": 1066,
+      "scrollWidth": 2592,
+      "top": 534.4537353515625,
+      "width": 1158
+    }
+  }
+]

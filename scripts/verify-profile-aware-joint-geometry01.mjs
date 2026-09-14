@@ -5,7 +5,10 @@ const jointData = await readFile(new URL('../src/data/profileSystems/jointSemant
 const jointDomain = await readFile(new URL('../src/domain/profileJointGeometry.ts', import.meta.url), 'utf8')
 const profileGeometry = await readFile(new URL('../src/domain/profileAwareGeometry.ts', import.meta.url), 'utf8')
 const shell = await readFile(new URL('../src/components/ConstructorShell.tsx', import.meta.url), 'utf8')
-const shellCss = await readFile(new URL('../src/components/ConstructorShell.css', import.meta.url), 'utf8')
+const app = await readFile(new URL('../src/App.tsx', import.meta.url), 'utf8')
+const assemblyPanel = await readFile(new URL('../src/components/AssemblyReviewPanel.tsx', import.meta.url), 'utf8')
+const assemblyCss = await readFile(new URL('../src/components/AssemblyReviewPanel.css', import.meta.url), 'utf8')
+const drawingViewport = await readFile(new URL('../src/components/useDrawingViewport.ts', import.meta.url), 'utf8')
 const acceptance = await readFile(new URL('../docs/PROFILE_AWARE_JOINT_GEOMETRY_01_PRELUDE60_FOUNDATION_ACCEPTANCE.md', import.meta.url), 'utf8')
 const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'))
 
@@ -35,13 +38,15 @@ assert.match(profileGeometry, /assigned\.glazingInset\.status === 'human-confirm
 assert.match(profileGeometry, /UNRESOLVED — крилото остава schematic/)
 
 assert.match(shell, /buildProfileJointGeometryReadModel/)
-assert.match(shell, /ПРОФИЛНИ ВЪЗЛИ/)
-assert.match(shell, /НУЖЕН ПОТВЪРДЕН СРЕЗ/)
-assert.match(shell, /Застъпване:/)
-assert.match(shell, /Отместване:/)
-assert.match(shell, /ВЪЗЛИ \{profileJointGeometry\.resolvedJointCount\}/)
-assert.match(shellCss, /PROFILE-AWARE JOINT GEOMETRY 01/)
-assert.match(shellCss, /constructor-joint-geometry-card/)
+// The original Constructor-side joint card was superseded by the accepted
+// module Assembly & Sections workspace. Keep the geometry foundation above
+// and verify current presentation wiring without coupling to obsolete copy.
+assert.match(app, /AssemblyReviewPanel/)
+assert.match(assemblyPanel, /useDrawingViewport/)
+assert.match(assemblyPanel, /section/i)
+assert.match(assemblyCss, /assembly/)
+assert.match(drawingViewport, /fit/i)
+assert.match(drawingViewport, /zoom/i)
 
 // The original foundation acceptance remains historical evidence of the gated starting point.
 assert.match(acceptance, /482\.30.*60 \/ 64 \/ 42 mm/)

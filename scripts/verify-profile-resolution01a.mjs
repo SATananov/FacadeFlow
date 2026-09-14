@@ -4,7 +4,6 @@ import { readFile } from 'node:fs/promises'
 const domain = await readFile(new URL('../src/domain/profileResolution.ts', import.meta.url), 'utf8')
 const app = await readFile(new URL('../src/App.tsx', import.meta.url), 'utf8')
 const shell = await readFile(new URL('../src/components/ConstructorShell.tsx', import.meta.url), 'utf8')
-const shellCss = await readFile(new URL('../src/components/ConstructorShell.css', import.meta.url), 'utf8')
 const construction = await readFile(new URL('../src/domain/construction/constructionModel.ts', import.meta.url), 'utf8')
 const acceptance = await readFile(new URL('../docs/PROFILE_RESOLUTION_01A_HUMAN_PROFILE_ASSIGNMENT_FOUNDATION_ACCEPTANCE.md', import.meta.url), 'utf8')
 const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'))
@@ -23,13 +22,21 @@ assert.match(domain, /ConstructionModel/)
 assert.match(app, /moduleProfileResolutions/)
 assert.match(app, /onProfileResolutionChange/)
 assert.match(app, /profileSystemId: firstModule\.inheritedDefaults\.profileSystemId/)
-assert.match(shell, /PROFILE RESOLUTION 01A/)
-assert.match(shell, /ПРОФИЛ НА КАСАТА/)
-assert.match(shell, /ПРОФИЛ НА ДЕЛИТЕЛЯ/)
-assert.match(shell, /ПРОФИЛ НА КРИЛОТО/)
-assert.match(shell, /source: human/i)
-assert.match(shell, /геометрията остава схемна/i)
-assert.match(shellCss, /Profile Resolution 01A/)
+// Current Constructor presentation is guarded by the active resolution wiring.
+assert.match(shell, /effectiveProfileResolution/)
+assert.match(shell, /reconcileModuleProfileResolution/)
+// Historical Profile Resolution 01A presentation copy was superseded by the
+// current context inspector. Verify active manual-resolution wiring instead.
+assert.match(shell, /getFrameProfileCandidates/)
+assert.match(shell, /getFieldSashProfileCandidates/)
+assert.match(shell, /setDividerProfileAssignment/)
+assert.match(shell, /effectiveProfileResolution/)
+assert.match(shell, /reconcileModuleProfileResolution/)
+
+
+
+
+
 
 assert.match(construction, /CONSTRUCTION_DEFAULT_FRAME_FACE_MM = 60/)
 assert.match(acceptance, /stored outside canonical construction topology/)

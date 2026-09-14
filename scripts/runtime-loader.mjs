@@ -11,6 +11,11 @@ export function createRuntimeLoader(overrides = {}) {
   function load(filename) {
     let path = resolve(root, filename)
     if (path.endsWith('.css')) return {}
+    // Vite imports catalogue images as URLs; SSR checks still require real files.
+    if (/\.(png|jpe?g|webp|svg)$/.test(path)) {
+      if (!existsSync(path)) throw new Error(`Missing imported asset: ${path}`)
+      return { default: path }
+    }
     if (!/\.tsx?$/.test(path)) path = existsSync(`${path}.ts`) ? `${path}.ts` : existsSync(`${path}.tsx`) ? `${path}.tsx` : join(path, 'index.ts')
     if (cache.has(path)) return cache.get(path).exports
     const module = { exports: {} }

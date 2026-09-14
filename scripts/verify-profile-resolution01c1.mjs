@@ -13,11 +13,18 @@ assert.match(domain, /kind: 'divider'/)
 assert.match(domain, /kind: 'field-sash'/)
 assert.match(domain, /getFieldSashRole\(productType, field\.fieldType\)/)
 
-assert.match(shell, /profileResolutionMissingTargets/)
-assert.match(shell, /profileResolutionMissingLabel/)
-assert.match(shell, /ЛИПСВА \{profileResolutionMissingTargets\.length\}/)
-assert.match(shell, /getProfileResolutionProgress\(\s*effectiveProfileResolution/s)
-assert.match(shell, /getProfileResolutionMissingTargets\(\s*effectiveProfileResolution/s)
+// Canonical progress/missing-target semantics remain in the domain.
+// The accepted canvas-first inspector no longer renders the historical progress block.
+assert.match(domain, /getProfileResolutionProgress/)
+assert.match(domain, /getProfileResolutionMissingTargets/)
+assert.match(shell, /effectiveProfileResolution/)
+assert.match(shell, /reconcileModuleProfileResolution/)
+assert.doesNotMatch(shell, /profileResolutionMissingTargets/)
+assert.doesNotMatch(shell, /profileResolutionMissingLabel/)
+
+
+
+
 assert.doesNotMatch(shell, /constructor-profile-geometry-legend/)
 assert.doesNotMatch(shell, /PROFILE RESOLUTION 01C · REVIEWED 2D/)
 assert.doesNotMatch(css, /constructor-profile-geometry-legend/)

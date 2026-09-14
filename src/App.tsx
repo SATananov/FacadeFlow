@@ -61,11 +61,12 @@ import './App.css'
 
 const nadezhdaLogoUrl = './branding/nadezhda-header.png'
 
-type HeaderSection = 'home' | 'completed-projects' | 'catalogs' | 'help'
+type HeaderSection = 'home' | 'orders' | 'completed-orders' | 'catalogs' | 'help'
 
 const HEADER_NAV_ITEMS: ReadonlyArray<{ id: HeaderSection; label: string }> = [
   { id: 'home', label: 'Начало' },
-  { id: 'completed-projects', label: 'Завършени проекти' },
+  { id: 'orders', label: 'Поръчки' },
+  { id: 'completed-orders', label: 'Завършени поръчки' },
   { id: 'catalogs', label: 'Каталози' },
   { id: 'help', label: 'Помощ' },
 ]
@@ -1042,13 +1043,134 @@ export default function App() {
             onFieldTopologyChange={syncFirstModuleFieldTopology}
             onClose={() => setConstructorMode(null)}
           />
-        ) : headerSection === 'completed-projects' ? (
-          <section className="product-section-page" aria-labelledby="completed-projects-title">
-            <div className="product-section-panel">
-              <span className="product-section-eyebrow">РАБОТНО ПРОСТРАНСТВО</span>
-              <h2 id="completed-projects-title">Завършени проекти</h2>
-              <p>Тук ще подредим приключените оферти и обекти, когато въведем ясен проектен статус и правила за завършване.</p>
-              <div className="product-section-state">Секцията е подготвена за следващия функционален етап.</div>
+        ) : headerSection === 'orders' ? (
+          <section className="product-section-page order-workspace-page" aria-labelledby="orders-title">
+            <div className="product-section-panel order-workspace-panel">
+              <div className="order-workspace-heading">
+                <div>
+                  <span className="product-section-eyebrow">ПРОВЕРКА ПРЕДИ ПРОИЗВОДСТВО</span>
+                  <h2 id="orders-title">Поръчки</h2>
+                  <p>След като офертата и чертежите са готови, от тях се генерира поръчка. Тя остава тук, докато бъде проверена от друг човек и одобрена за следващия етап.</p>
+                </div>
+                <div className="order-queue-summary" aria-label="Състояние на опашката">
+                  <span>АКТИВНИ ПОРЪЧКИ</span>
+                  <b>0</b>
+                  <small>Няма генерирани поръчки</small>
+                </div>
+              </div>
+
+              <div className="order-flow" aria-label="Жизнен цикъл на поръчката">
+                <div className="order-flow-step is-source">
+                  <span>1</span>
+                  <b>Оферта готова</b>
+                  <small>Скици · размери · данни</small>
+                </div>
+                <div className="order-flow-arrow" aria-hidden="true">→</div>
+                <div className="order-flow-step">
+                  <span>2</span>
+                  <b>Генерирана поръчка</b>
+                  <small>Заключена ревизия за проверка</small>
+                </div>
+                <div className="order-flow-arrow" aria-hidden="true">→</div>
+                <div className="order-flow-step is-review">
+                  <span>3</span>
+                  <b>Очаква проверка</b>
+                  <small>Независим преглед от втори човек</small>
+                </div>
+                <div className="order-flow-arrow" aria-hidden="true">→</div>
+                <div className="order-flow-step is-decision">
+                  <span>4</span>
+                  <b>Проверена</b>
+                  <small>Проверяващият взема решение</small>
+                  <div className="order-decision-outcomes" aria-label="Резултат от проверката">
+                    <em className="is-approved">Одобрена</em>
+                    <em className="is-correction">Върната за корекция</em>
+                  </div>
+                </div>
+                <div className="order-flow-arrow" aria-hidden="true">→</div>
+                <div className="order-flow-step is-locked">
+                  <span>5</span>
+                  <b>Предадена към производство</b>
+                  <small>Само след валидно одобрение и доказани производствени правила</small>
+                </div>
+              </div>
+
+              <div className="order-workspace-grid">
+                <div className="order-list-shell" aria-label="Списък с поръчки">
+                  <div className="order-list-head" aria-hidden="true">
+                    <span>Поръчка</span>
+                    <span>Клиент / обект</span>
+                    <span>Автор</span>
+                    <span>Статус</span>
+                    <span>Проверяващ</span>
+                    <span>Дата</span>
+                    <span>Действие</span>
+                  </div>
+                  <div className="order-empty-state">
+                    <span className="order-empty-icon" aria-hidden="true">✓</span>
+                    <div>
+                      <b>Няма поръчки за проверка</b>
+                      <p>Когато от оферта бъде генерирана поръчка, тя ще се появи тук със статус „Очаква проверка“.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="order-review-rules" aria-label="Правила за проверка">
+                  <h3>Правила за одобрение</h3>
+                  <div className="order-rule-list">
+                    <div>
+                      <b>Втори човек проверява</b>
+                      <span>Авторът на офертата не я счита сам за проверена.</span>
+                    </div>
+                    <div>
+                      <b>Промяна = нова проверка</b>
+                      <span>Промяна по размер, профил или технически данни връща поръчката за повторен преглед.</span>
+                    </div>
+                    <div>
+                      <b>Без одобрение няма предаване</b>
+                      <span>Поръчка без валидно одобрение не може да бъде предадена към производство.</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="order-boundary-note">
+                <b>Производствено предаване:</b> заключено до валидиране на производствените правила.
+              </div>
+            </div>
+          </section>
+        ) : headerSection === 'completed-orders' ? (
+          <section className="product-section-page order-workspace-page" aria-labelledby="completed-orders-title">
+            <div className="product-section-panel order-workspace-panel completed-orders-panel">
+              <div className="order-workspace-heading">
+                <div>
+                  <span className="product-section-eyebrow">ПРОСЛЕДИМОСТ И ИСТОРИЯ</span>
+                  <h2 id="completed-orders-title">Завършени поръчки</h2>
+                  <p>Тук ще се пазят поръчките, чиято проверена ревизия е приключила техническата подготовка и е предадена към производствения етап.</p>
+                </div>
+                <div className="order-queue-summary is-completed" aria-label="Завършени поръчки">
+                  <span>ЗАВЪРШЕНИ</span>
+                  <b>0</b>
+                  <small>Историята е празна</small>
+                </div>
+              </div>
+
+              <div className="completed-order-empty">
+                <span className="completed-order-mark" aria-hidden="true">✓</span>
+                <h3>Няма завършени поръчки</h3>
+                <p>След реално одобрение и предаване към производство поръчката ще бъде преместена тук, без да се губи историята на проверките.</p>
+              </div>
+
+              <div className="completed-order-records">
+                <div><span>Ще пазим</span><b>Клиент и обект</b></div>
+                <div><span>Ще пазим</span><b>Одобрена ревизия</b></div>
+                <div><span>Ще пазим</span><b>Проверил / одобрил</b></div>
+                <div><span>Ще пазим</span><b>Дата на предаване</b></div>
+              </div>
+
+              <div className="order-boundary-note">
+                <b>Определение за „завършена“:</b> техническата подготовка е приключила и проверената ревизия е предадена към производство. Проследяване на самото производство ще бъде отделен бъдещ етап.
+              </div>
             </div>
           </section>
         ) : headerSection === 'catalogs' ? (

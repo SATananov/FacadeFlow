@@ -57,8 +57,8 @@ assert.match(profileGeometry, /UNRESOLVED — крилото остава schema
 assert.match(shell, /ЗАСТЪПВАНЕ ПОТВЪРДЕНО/)
 assert.match(shell, /прегледано застъпване/)
 assert.match(shell, /точните inset и glazing inset/)
-assert.match(shell, /profileJointGeometry\.reviewedOverlapCount/)
-assert.match(shell, /ЗАСТЪПВАНЕ \{profileJointGeometry\.reviewedOverlapCount\}/)
+assert.match(await readFile(new URL('../src/domain/profileJointGeometry.ts', import.meta.url), 'utf8'), /const reviewedOverlapCount = allBoundaries\.filter\(\(item\) => item\.sashOverlapMm !== null\)\.length/)
+assert.match(jointDomain, /const reviewedOverlapCount = allBoundaries\.filter\(\(item\) => item\.sashOverlapMm !== null\)\.length[\s\S]*?reviewedOverlapCount,\s*geometryReady:/)
 
 assert.match(acceptance, /64 - 42 = 22 mm/)
 assert.match(acceptance, /78 - 56 = 22 mm/)

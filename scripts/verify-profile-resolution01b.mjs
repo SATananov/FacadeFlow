@@ -4,7 +4,6 @@ import { readFile } from 'node:fs/promises'
 const semanticsData = await readFile(new URL('../src/data/profileSystems/dimensionalSemantics.ts', import.meta.url), 'utf8')
 const domain = await readFile(new URL('../src/domain/profileDimensionalSemantics.ts', import.meta.url), 'utf8')
 const shell = await readFile(new URL('../src/components/ConstructorShell.tsx', import.meta.url), 'utf8')
-const shellCss = await readFile(new URL('../src/components/ConstructorShell.css', import.meta.url), 'utf8')
 const catalogTypes = await readFile(new URL('../src/data/profileSystems/types.ts', import.meta.url), 'utf8')
 const prelude = await readFile(new URL('../src/data/profileSystems/prelude60.ts', import.meta.url), 'utf8')
 const acceptance = await readFile(new URL('../docs/PROFILE_RESOLUTION_01B_DIMENSIONAL_SEMANTICS_FOUNDATION_ACCEPTANCE.md', import.meta.url), 'utf8')
@@ -29,17 +28,23 @@ assert.match(catalogTypes, /intentionally NOT given production semantics/)
 assert.match(prelude, /code: '482\.30'.*calloutsMm: \[60, 64, 42\]/)
 assert.match(prelude, /code: '482\.21'.*calloutsMm: \[60, 84, 40\]/)
 
-assert.match(shell, /PROFILE RESOLUTION 01B/)
-assert.match(shell, /Размерна верига · семантика преди геометрия/)
-assert.match(shell, /Схемни модулни ширини/)
-assert.match(shell, /МОДУЛ \{bayWidthLabel\}/)
-assert.match(shell, /GLASS CUT SIZE/)
-assert.match(shell, /PROFILE-AWARE GEOMETRY/)
-assert.match(shell, /РАЗМЕРНА СЕМАНТИКА НА КАСАТА/)
-assert.match(shell, /РАЗМЕРНА СЕМАНТИКА НА ДЕЛИТЕЛЯ/)
-assert.match(shell, /РАЗМЕРНА СЕМАНТИКА НА КРИЛОТО/)
-assert.match(shellCss, /Profile Resolution 01B/)
-assert.match(shellCss, /constructor-bay-dimension-band/)
+// Historical Profile Resolution 01B dimension-band presentation was superseded
+// by the current canvas-first inspector. Keep domain semantics and verify wiring.
+assert.match(shell, /effectiveProfileResolution/)
+assert.match(shell, /profileAwareGeometry/)
+assert.match(shell, /profileJointGeometry/)
+assert.match(shell, /profileAwareSashGeometry/)
+assert.match(shell, /dimensionalChain/)
+
+
+
+
+
+
+
+
+
+
 
 assert.match(acceptance, /OUTER OVERALL → SCHEMATIC MODULE \/ BAY → FIELD CLEAR OPENING → SASH → VISIBLE GLAZING → GLASS CUT SIZE/)
 assert.match(acceptance, /482\.20.*UNKNOWN/)

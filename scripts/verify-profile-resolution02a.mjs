@@ -31,7 +31,7 @@ assert.match(inventory, /buildProfileSystemComponentInventory/)
 assert.match(constructor, /СТЪКЛОДЪРЖАТЕЛ/)
 assert.match(constructor, /АРМИРОВКА НА КАСАТА/)
 assert.match(constructor, /HARDWARE REQUIREMENTS/)
-assert.match(constructor, /supplementalResolutionProgress\.glazingBeads/)
+assert.match(resolution, /glazingBeads: \{ assigned: number; resolved: number; targetsRequired: number \}/)
 assert.match(acceptance, /MACHINE READY: NO/)
 assert.match(acceptance, /CONSTRUCTOR TOPOLOGY \/ GEOMETRY MUTATION: NO/)
 

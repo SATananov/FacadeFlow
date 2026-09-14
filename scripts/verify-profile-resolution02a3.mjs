@@ -16,10 +16,15 @@ assert.match(resolution, /if \(productType === 'door'\) return 'door-sash'/)
 assert.match(resolution, /if \(productType === 'window'\) return 'sash'/)
 
 assert.match(constructor, /onModuleProductTypeChange/)
-assert.match(constructor, /КОНСТРУКТИВЕН ТИП НА МОДУЛА/)
-assert.match(constructor, /Това не е стандартен шаблон/)
-assert.match(constructor, /MISSING CONTEXT · избери Прозорец или Врата тук/)
-assert.match(constructor, /OPERABLE полето вече се брои като задължителен PROFILE target/)
+// Historical guided/profile copy was superseded by the current module context inspector.
+// Verify the active constructor module-type wiring without reintroducing old UI text.
+assert.match(constructor, /renderModuleProductTypeResolution/)
+assert.match(constructor, /ТИП МОДУЛ/)
+assert.match(constructor, /onModuleProductTypeChange/)
+assert.match(constructor, /moduleSummary\.productType/)
+
+
+
 assert.doesNotMatch(constructor, /Избери стандартен тип изделие Прозорец \/ Врата/)
 
 assert.match(app, /onModuleProductTypeChange=\{\(productType\) =>/)

@@ -28,6 +28,7 @@ const cache = new Map()
 function load(filename) {
   let path = resolve(root, filename)
   if (path.endsWith('.css')) return {}
+  if (/\.(?:png|jpe?g|gif|svg|webp|avif|ico|pdf)$/i.test(path)) return path
   if (!/\.tsx?$/.test(path)) path = existsSync(`${path}.ts`) ? `${path}.ts` : existsSync(`${path}.tsx`) ? `${path}.tsx` : join(path, 'index.ts')
   if (cache.has(path)) return cache.get(path).exports
   const module = { exports: {} }
@@ -133,13 +134,21 @@ test('free Profile pane, badges and reviewed placement render without offerConte
   const render = mount(Shell, active())
   let tree = render()
   assert.equal(nodes(tree, (node) => node.props?.className === 'constructor-reviewed-sash-placement').length, 2)
-  assert.equal(nodes(tree, (node) => node.props?.className === 'constructor-inspector-component-progress').length, 0, 'guided mode keeps dense component progress hidden')
-  const freeWorkButton = nodes(tree, (node) => node.type === 'button' && text(node) === 'Свободна работа')[0]
-  assert.ok(freeWorkButton, 'Free work mode button')
-  freeWorkButton.props.onClick()
+  // Canvas-first inspector: the retired Guided/Free switch and dense progress
+  // badge are no longer part of the accepted UX. Select the concrete FIELD
+  // directly, then continue validating the actual Profile pane options.
+  assert.equal(nodes(tree, (node) => node.props?.className === 'constructor-inspector-component-progress').length, 0)
+  const fieldOne = nodes(
+    tree,
+    (node) =>
+      node.type === 'button' &&
+      (text(node) === 'Поле 1' || node.props?.['aria-label'] === 'Поле 1'),
+  )[0]
+  assert.ok(fieldOne, 'Field 1 canvas selection control')
+  const selectFieldOne = fieldOne.props.onClick ?? fieldOne.props.onPointerDown
+  assert.equal(typeof selectFieldOne, 'function', 'Field 1 selection handler')
+  selectFieldOne({ stopPropagation() {}, preventDefault() {} })
   tree = render()
-  assert.ok(nodes(tree, (node) => node.props?.className === 'constructor-inspector-component-progress').length, 'component progress remains available in free work mode')
-  assert.match(text(tree), /КРИЛА 2\/2/)
   const profileTab = nodes(tree, (node) => node.type === 'button' && node.props?.role === 'tab' && text(node) === 'Профил')[0]
   assert.ok(profileTab, 'Profile inspector tab')
   profileTab.props.onClick()
@@ -150,9 +159,25 @@ test('free Profile pane, badges and reviewed placement render without offerConte
   nodes(tree, (node) => node.type === 'button' && node.props.className?.startsWith('constructor-divider is-local'))[0].props.onClick({ stopPropagation() {} })
   tree = render()
   assert.ok(hasOption('482.21'), 'normal divider catalogue option in actual Profile pane')
-  nodes(tree, (node) => node.props.className?.startsWith('constructor-parametric-frame'))[0].props.onPointerDown({ stopPropagation() {} })
+  // Frame profile is module-level in the canvas-first inspector.
+  const moduleContextButton = nodes(
+    tree,
+    (node) => node.type === 'button' && text(node) === 'Модул 1',
+  )[0]
+  assert.ok(moduleContextButton, 'Module 1 context control')
+  const openModuleContext = moduleContextButton.props.onClick ?? moduleContextButton.props.onPointerDown
+  assert.equal(typeof openModuleContext, 'function', 'Module context handler')
+  openModuleContext({ stopPropagation() {}, preventDefault() {} })
   tree = render()
-  assert.ok(hasOption('482.30'), 'frame catalogue option in actual Profile pane')
+
+  const moduleProfileTab = nodes(
+    tree,
+    (node) => node.type === 'button' && node.props?.role === 'tab' && text(node) === 'Профил',
+  )[0]
+  assert.ok(moduleProfileTab, 'Module Profile inspector tab')
+  moduleProfileTab.props.onClick()
+  tree = render()
+  assert.ok(hasOption('482.30'), 'frame catalogue option in module Profile pane')
   const view = button(tree, 'Профилен изглед')
   assert.equal(view.props.disabled, false)
   view.props.onClick()

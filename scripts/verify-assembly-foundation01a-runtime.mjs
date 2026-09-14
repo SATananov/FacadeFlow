@@ -338,7 +338,7 @@ test('review launcher renders; application wiring has no mutation callbacks', ()
 })
 test('open review renders real blockers and actionable steps without touching the project', () => {
   const f = fixture(true), before = codec.serializeProject(f.s)
-  const uiLoad = createRuntimeLoader({ react: { ...React, useState: () => [true, () => {}] }, 'react-dom': { createPortal: (child) => child } })
+  const uiLoad = createRuntimeLoader({ react: { ...React, useState: (initial) => [initial === false ? true : initial, () => {}] }, 'react-dom': { createPortal: (child) => child } })
   const previousDocument = globalThis.document
   try {
     globalThis.document = { body: {} }

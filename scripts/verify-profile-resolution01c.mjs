@@ -34,7 +34,7 @@ assert.match(css, /Profile Resolution 01C/)
 assert.doesNotMatch(css, /constructor-profile-geometry-legend/)
 assert.match(css, /constructor-profile-frame-face-overlay/)
 assert.match(css, /constructor-profile-divider-face-overlay/)
-assert.match(css, /SASH GEOMETRY · UNKNOWN/)
+assert.match(semantics, /Sash geometry is deliberately unresolved/)
 
 assert.match(acceptance, /482\.30.*42 mm/)
 assert.match(acceptance, /482\.21.*40 mm/)

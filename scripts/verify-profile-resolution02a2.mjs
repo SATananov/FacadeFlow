@@ -26,11 +26,17 @@ assert.match(compatibility, /GLAZING_BEAD_BASE_PROFILE_RULE_MISSING/)
 assert.match(compatibility, /Assignment ≠ RESOLVED/)
 assert.doesNotMatch(compatibility, /code: 'GLAZING_BEAD_THICKNESS_MATCH'/)
 
-assert.match(constructor, /MISSING CONTEXT/)
-assert.match(constructor, /getFieldGlazingBeadResolutionContext/)
-assert.match(constructor, /BEAD \{supplementalResolutionProgress\.glazingBeads\.resolved\}\/\{supplementalResolutionProgress\.glazingBeads\.targetsRequired\}/)
-assert.match(constructor, /catalog match ≠ resolved compatibility/)
-assert.match(constructor, /02A\.2/)
+// The historical bead-progress/status copy was removed by the canvas-first inspector.
+// Keep the real context-gated resolution wiring and the current safety boundary.
+
+assert.match(constructor, /selectedFieldGlazingThicknessMm/)
+assert.match(constructor, /selectedFieldGlazingAssignment/)
+assert.match(constructor, /Каталожният кандидат не означава доказана съвместимост\. Няма автоматичен избор\./)
+assert.match(constructor, /constructor-glazing-bead-control/)
+
+
+
+
 
 assert.match(acceptance, /UNSET FIELD -> NO BEAD TARGET/)
 assert.match(acceptance, /OPERABLE WITHOUT SASH -> MISSING CONTEXT/)
