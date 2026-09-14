@@ -3238,3 +3238,34 @@
     min-height: 168px;
   }
 }
+/* Functional Core 01A - protect configured modules from offer-default changes. */
+.offer-defaults-lock-notice {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid currentColor;
+  border-radius: 10px;
+}
+
+.offer-defaults-lock-notice strong,
+.offer-defaults-lock-notice span {
+  display: block;
+}
+
+/* Functional Core 01A.1: disabled technical choices remain visibly locked. */
+:is(.profile-system-option, .finish-option, .foil-mode-option, .glazing-option, .hardware-option):has(input:disabled),
+.hardware-manufacturer-card:has(select:disabled) {
+  opacity: .65;
+  cursor: not-allowed;
+  transform: none;
+}
+.hardware-manufacturer-card select {
+  width: 100%;
+  min-height: 34px;
+  border: 1px solid #bacbd0;
+  border-radius: 6px;
+  padding: 5px 8px;
+  color: inherit;
+  background: #fff;
+}

@@ -457,7 +457,7 @@ export function AssemblyReviewPanel({ snapshot, moduleId }: { snapshot: ProjectS
   const drawing = useDrawingViewport(`${open}-${moduleId}-${selectedSection}`)
   useEffect(() => { setSelectedSection(null) }, [moduleId])
   const activeModule = moduleId ? snapshot.modulesById[moduleId] ?? null : null
-  const dialog = useRef<HTMLDialogElement>(null)
+  const dialog = useRef<HTMLElement>(null)
   const launcher = useRef<HTMLButtonElement>(null)
   const result = useMemo(() => {
     if (!open || !moduleId) return null
@@ -466,17 +466,45 @@ export function AssemblyReviewPanel({ snapshot, moduleId }: { snapshot: ProjectS
   }, [open, snapshot, moduleId])
   useEffect(() => {
     if (!open) return
-    dialog.current?.showModal()
-    return () => { dialog.current?.close(); launcher.current?.focus() }
+    const root = document.documentElement
+    const body = document.body
+    const previousRootOverflow = root.style.overflow
+    const previousBodyOverflow = body.style.overflow
+    root.style.overflow = 'hidden'
+    body.style.overflow = 'hidden'
+    const focusFrame = window.requestAnimationFrame(() => dialog.current?.focus())
+    return () => {
+      window.cancelAnimationFrame(focusFrame)
+      root.style.overflow = previousRootOverflow
+      body.style.overflow = previousBodyOverflow
+      launcher.current?.focus()
+    }
   }, [open])
   return <>
     <button ref={launcher} type="button" className="assembly-review-launcher" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)} aria-label="Преглед на сглобката">{activeModule ? `Сглобка и сечения · Модул ${activeModule.sequence}` : 'Сглобка и сечения'}</button>
-    {open && createPortal(<dialog ref={dialog} className="assembly-review-dialog" aria-labelledby="assembly-review-title" onCancel={() => setOpen(false)} onClick={(event) => {
-      if (event.target === event.currentTarget) {
-        const rect = event.currentTarget.getBoundingClientRect()
-        if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) setOpen(false)
-      }
-    }}>
+    {open && createPortal(
+      <div
+        className="assembly-review-backdrop"
+        role="presentation"
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setOpen(false)
+        }}
+      >
+        <section
+          ref={dialog}
+          className="assembly-review-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="assembly-review-title"
+          tabIndex={-1}
+          onKeyDown={(event) => {
+            event.stopPropagation()
+            if (event.key === 'Escape') {
+              event.preventDefault()
+              setOpen(false)
+            }
+          }}
+        >
       <header><div><h2 id="assembly-review-title">{activeModule ? `Сглобка на Модул ${activeModule.sequence}` : 'Сглобка на модула'}</h2><p>Технически преглед · схема, сглобка и сечения</p></div><button type="button" onClick={() => setOpen(false)}>Затвори</button></header>
       <p className="assembly-review-boundary">Няма потвърдено производствено сечение. Прегледът не разрешава производство.</p>
       {!result ? <p>Избери модул в Конструктора, за да прегледаш сглобката.</p> : <>
@@ -515,6 +543,9 @@ export function AssemblyReviewPanel({ snapshot, moduleId }: { snapshot: ProjectS
         <h3>Готовност по дейности</h3><ul className="assembly-review-gates">{result.gates.map((g) => <li key={g.gate}><span>{gateLabels[g.gate]}</span><b>Блокирано</b><small>{g.gate === 'ASSEMBLY_RESOLUTION' ? 'Липсват проверени технически правила.' : 'Бъдещ етап — още не е активиран.'}</small></li>)}</ul>
         </div></details>
       </>}
-    </dialog>, document.body)}
+            </section>
+      </div>,
+      document.body,
+    )}
   </>
 }

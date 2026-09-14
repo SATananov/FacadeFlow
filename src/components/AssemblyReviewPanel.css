@@ -294,7 +294,7 @@
 .assembly-review-dialog h2 { font-size: 20px; margin: 0; }
 .assembly-review-dialog > header p { font-size: 11px; margin: 3px 0 0; }
 .assembly-review-boundary { margin: 0; padding: 6px 10px; font-size: 11px; }
-.assembly-review-viewbar { flex: 0 0 auto; position: static; margin: 0; box-shadow: none; }
+.assembly-review-viewbar { flex: 0 0 auto; position: static; margin: 0; box-shadow: none; background: #f9fcfd; backdrop-filter: none; -webkit-backdrop-filter: none; }
 .assembly-review-dialog .assembly-review-drawing-viewport {
   flex: 1 1 0; min-height: 0; height: auto; padding: 0;
 }
@@ -384,4 +384,38 @@
   .assembly-review-dialog[open] { width: 98vw; height: 96vh; max-height: 96vh; padding: 8px; }
   .assembly-profile-sheet-dialog[open] { width: 96vw; height: 92vh; }
   .assembly-profile-sheet-toolbar { flex-wrap: wrap; }
+}
+
+/* ASSEMBLY MODAL STABILITY 02 - main review avoids native dialog top-layer compositing. */
+.assembly-review-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2147482000;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  padding: 10px;
+  overflow: hidden;
+  background: rgba(16, 43, 66, .40);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  isolation: isolate;
+}
+.assembly-review-backdrop > .assembly-review-dialog {
+  position: relative;
+  margin: 0;
+  width: min(1840px, calc(100vw - 20px));
+  height: min(94vh, calc(100vh - 20px));
+  max-width: none;
+  max-height: none;
+  box-sizing: border-box;
+}
+@media (max-width: 800px) {
+  .assembly-review-backdrop { padding: 4px; }
+  .assembly-review-backdrop > .assembly-review-dialog {
+    width: 98vw;
+    height: 96vh;
+    max-height: 96vh;
+    padding: 8px;
+  }
 }

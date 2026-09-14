@@ -3,7 +3,7 @@ import { useProjectWorkspace } from './hooks/useProjectWorkspace'
 import { ProjectAssurancePanel } from './components/ProjectAssurancePanel'
 import { AssemblyReviewPanel } from './components/AssemblyReviewPanel'
 import { ProjectManagerPanel } from './components/ProjectManagerPanel'
-import { createStableId, getProjectActivity, getProjectDisplayName, type OfferDraft, type FreeConstructorModule } from './domain/project/projectModel'
+import { createStableId, getEditingOffer, getProjectActivity, getProjectDisplayName, type OfferDraft, type FreeConstructorModule } from './domain/project/projectModel'
 import {
   getConfirmedGlazingOptions,
   getConfirmedHardwareStandards,
@@ -230,6 +230,10 @@ export default function App() {
     offer.clientName.trim().length > 0 &&
     offer.objectName.trim().length > 0
 
+  // A pending Free → Offer copy keeps its module while shared defaults are completed.
+  // Once finalized, metadata edits must not unlock its technical defaults again.
+  const offerDefaultsLocked = modules.length > 0 && getEditingOffer(workspace.snapshot).pendingCopyModuleId === null
+
   const selectedProfileSystem = getProfileSystemById(
     offer.profileSystemId,
   )
@@ -279,6 +283,10 @@ export default function App() {
     field: K,
     value: OfferDraft[K],
   ) => {
+    if (offerDefaultsLocked && (
+      field === 'profileSystemId' || field === 'colorId' || field === 'foilModeId' ||
+      field === 'glazingId' || field === 'hardwareManufacturerId' || field === 'hardwareStandardId'
+    )) return
     setOffer((current) => ({
       ...current,
       [field]: value,
@@ -291,6 +299,7 @@ export default function App() {
   }
 
   const selectProfileSystem = (profileSystemId: string) => {
+    if (offerDefaultsLocked) return
     setOffer((current) => ({
       ...current,
       profileSystemId,
@@ -305,6 +314,7 @@ export default function App() {
   }
 
   const selectFinish = (colorId: string) => {
+    if (offerDefaultsLocked) return
     setOffer((current) => ({
       ...current,
       colorId,
@@ -315,6 +325,7 @@ export default function App() {
   }
 
   const selectHardwareStandard = (hardwareStandardId: string) => {
+    if (offerDefaultsLocked) return
     setOffer((current) => ({
       ...current,
       hardwareStandardId,
@@ -1561,9 +1572,15 @@ export default function App() {
                   </div>
                 )}
 
+                {offerDefaultsLocked && (
+                  <div className="offer-defaults-lock-notice" role="status">
+                    <strong>Общите настройки са заключени.</strong>
+                    <span>Има създадени модули. Общите настройки не могат да се променят директно, защото това може да промени конструкцията им.</span>
+                  </div>
+                )}
                 <div
                   className={`profile-system-options${
-                    clientObjectReady ? '' : ' is-locked'
+                    clientObjectReady && !offerDefaultsLocked ? '' : ' is-locked'
                   }`}
                 >
                   {SELECTABLE_PROFILE_SYSTEMS.map((system) => {
@@ -1581,7 +1598,7 @@ export default function App() {
                           name="profileSystemId"
                           value={system.id}
                           checked={selected}
-                          disabled={!clientObjectReady}
+                          disabled={!clientObjectReady || offerDefaultsLocked}
                           required
                           onChange={(event) =>
                             selectProfileSystem(event.target.value)
@@ -1669,6 +1686,7 @@ export default function App() {
                                 name="colorId"
                                 value={finish.id}
                                 checked={selected}
+                                disabled={offerDefaultsLocked}
                                 required
                                 onChange={(event) =>
                                   selectFinish(event.target.value)
@@ -1687,7 +1705,7 @@ export default function App() {
 
                     <fieldset
                       className="finish-fieldset foil-fieldset"
-                      disabled={!selectedFinish}
+                      disabled={!selectedFinish || offerDefaultsLocked}
                     >
                       <legend>Фолиране</legend>
 
@@ -1714,6 +1732,7 @@ export default function App() {
                                   name="foilModeId"
                                   value={mode.id}
                                   checked={selected}
+                                  disabled={offerDefaultsLocked}
                                   required
                                   onChange={(event) =>
                                     updateOffer(
@@ -1792,6 +1811,7 @@ export default function App() {
                                 name="glazingId"
                                 value={glazing.id}
                                 checked={selected}
+                                disabled={offerDefaultsLocked}
                                 required
                                 onChange={(event) =>
                                   updateOffer('glazingId', event.target.value)
@@ -1872,6 +1892,7 @@ export default function App() {
                                 name="hardwareStandardId"
                                 value={hardware.id}
                                 checked={selected}
+                                disabled={offerDefaultsLocked}
                                 required
                                 onChange={(event) =>
                                   selectHardwareStandard(event.target.value)
@@ -1888,13 +1909,20 @@ export default function App() {
                       </div>
                     </fieldset>
 
-                    <div className="hardware-manufacturer-card">
+                    <label className="hardware-manufacturer-card">
                       <span>ПРОИЗВОДИТЕЛ / МАРКА</span>
-                      <b>Не е уточнен</b>
+                      <select
+                        name="hardwareManufacturerId"
+                        value={offer.hardwareManufacturerId}
+                        disabled={offerDefaultsLocked}
+                        onChange={() => updateOffer('hardwareManufacturerId', 'unspecified')}
+                      >
+                        <option value="unspecified">Не е уточнен</option>
+                      </select>
                       <small>
                         На този етап конкретна европейска марка не се фиксира.
                       </small>
-                    </div>
+                    </label>
 
                     {selectedHardwareStandard &&
                       selectedHardwareCompatibility && (
