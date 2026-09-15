@@ -12,11 +12,13 @@ import {
   type GlazingBeadStructuralContext,
 } from './componentCompatibility'
 import { resolveHumanGlazingContext } from './glazingContext'
+import { getGlazingOptionById } from '../data/profileSystems/glazingOptions'
 
 export const PROFILE_RESOLUTION_VERSION = 'profile-resolution-01a' as const
 export const PROFILE_COMPONENT_RESOLUTION_VERSION = 'profile-components-02a2' as const
 export const PROFILE_SASH_ROLE_INTEGRITY_VERSION = 'profile-sash-role-02a3' as const
 export const HUMAN_FIELD_GLAZING_VERSION = 'human-field-glazing-01b' as const
+export const FIELD_GLAZING_OWNERSHIP_VERSION = 'field-glazing-ownership-01' as const
 
 export type ProfileAssignmentSource = 'human'
 
@@ -35,6 +37,17 @@ export type ReinforcementAssignment = {
 export type HumanGlazingThicknessAssignment = {
   thicknessMm: number
   source: ProfileAssignmentSource
+}
+
+export type GlazingSpecificationAssignment = {
+  glazingId: string
+  source: ProfileAssignmentSource
+}
+
+export type EffectiveFieldGlazingSpecification = {
+  glazingId: string | null
+  thicknessMm: number | null
+  source: 'field-override' | 'module-override' | 'offer-default' | 'unset'
 }
 
 export type ReinforcementTarget =
@@ -64,6 +77,8 @@ export type ModuleProfileResolution = {
   frame: ProfileAssignment | null
   dividers: Record<string, ProfileAssignment>
   fieldSashes: Record<string, ProfileAssignment>
+  moduleGlazingSpecification: GlazingSpecificationAssignment | null
+  fieldGlazingSpecifications: Record<string, GlazingSpecificationAssignment>
   fieldGlazingThicknesses: Record<string, HumanGlazingThicknessAssignment>
   fieldGlazingBeads: Record<string, ProfileAssignment>
   reinforcements: Record<string, ReinforcementAssignment>
@@ -84,6 +99,8 @@ export function createModuleProfileResolution(
     frame: null,
     dividers: {},
     fieldSashes: {},
+    moduleGlazingSpecification: null,
+    fieldGlazingSpecifications: {},
     fieldGlazingThicknesses: {},
     fieldGlazingBeads: {},
     reinforcements: {},
@@ -96,6 +113,8 @@ function normalizeResolution(
   return {
     ...current,
     componentResolutionVersion: PROFILE_COMPONENT_RESOLUTION_VERSION,
+    moduleGlazingSpecification: current.moduleGlazingSpecification ?? null,
+    fieldGlazingSpecifications: current.fieldGlazingSpecifications ?? {},
     fieldGlazingThicknesses: current.fieldGlazingThicknesses ?? {},
     fieldGlazingBeads: current.fieldGlazingBeads ?? {},
     reinforcements: current.reinforcements ?? {},
@@ -289,6 +308,107 @@ export function getFieldHumanGlazingThicknessMm(
   return resolution?.fieldGlazingThicknesses[fieldId]?.thicknessMm ?? null
 }
 
+
+function isKnownGlazingId(glazingId: string | null | undefined): glazingId is string {
+  return Boolean(glazingId && getGlazingOptionById(glazingId))
+}
+
+export function getEffectiveFieldGlazingSpecification(
+  resolution: ModuleProfileResolution | null | undefined,
+  offerDefaultGlazingId: string | null | undefined,
+  fieldId: string,
+): EffectiveFieldGlazingSpecification {
+  const normalized = resolution ? normalizeResolution(resolution) : null
+  const fieldGlazingId = normalized?.fieldGlazingSpecifications[fieldId]?.glazingId
+  if (isKnownGlazingId(fieldGlazingId)) {
+    const option = getGlazingOptionById(fieldGlazingId)!
+    return { glazingId: option.id, thicknessMm: option.totalThicknessMm, source: 'field-override' }
+  }
+
+  const moduleGlazingId = normalized?.moduleGlazingSpecification?.glazingId
+  if (isKnownGlazingId(moduleGlazingId)) {
+    const option = getGlazingOptionById(moduleGlazingId)!
+    return { glazingId: option.id, thicknessMm: option.totalThicknessMm, source: 'module-override' }
+  }
+
+  if (isKnownGlazingId(offerDefaultGlazingId)) {
+    const option = getGlazingOptionById(offerDefaultGlazingId)!
+    return { glazingId: option.id, thicknessMm: option.totalThicknessMm, source: 'offer-default' }
+  }
+
+  return { glazingId: null, thicknessMm: null, source: 'unset' }
+}
+
+export function getEffectiveFieldGlazingThicknessMm(
+  resolution: ModuleProfileResolution | null | undefined,
+  offerDefaultGlazingId: string | null | undefined,
+  fieldId: string,
+): number | null {
+  return getFieldHumanGlazingThicknessMm(resolution, fieldId)
+    ?? getEffectiveFieldGlazingSpecification(resolution, offerDefaultGlazingId, fieldId).thicknessMm
+}
+
+function beadValidForEffectiveThickness(
+  system: ProfileSystemCatalogEntry,
+  thicknessMm: number | null,
+  profileCode: string,
+): boolean {
+  return thicknessMm !== null &&
+    resolveHumanGlazingContext(system, thicknessMm, profileCode).status === 'HUMAN_BEAD_SELECTION_VALID'
+}
+
+export function setModuleGlazingSpecificationAssignment(
+  current: ModuleProfileResolution | null | undefined,
+  system: ProfileSystemCatalogEntry,
+  offerDefaultGlazingId: string | null | undefined,
+  fields: readonly ProfileResolvableField[],
+  glazingId: string | null,
+): ModuleProfileResolution {
+  const resolution = withSystem(current, system)
+  if (glazingId !== null && !isKnownGlazingId(glazingId)) return resolution
+
+  const next: ModuleProfileResolution = {
+    ...resolution,
+    moduleGlazingSpecification: glazingId ? { glazingId, source: 'human' } : null,
+    fieldGlazingSpecifications: { ...resolution.fieldGlazingSpecifications },
+    fieldGlazingBeads: { ...resolution.fieldGlazingBeads },
+  }
+
+  for (const field of fields) {
+    const bead = next.fieldGlazingBeads[field.id]
+    if (!bead) continue
+    const thicknessMm = getEffectiveFieldGlazingThicknessMm(next, offerDefaultGlazingId, field.id)
+    if (!beadValidForEffectiveThickness(system, thicknessMm, bead.profileCode)) {
+      delete next.fieldGlazingBeads[field.id]
+    }
+  }
+  return next
+}
+
+export function setFieldGlazingSpecificationAssignment(
+  current: ModuleProfileResolution | null | undefined,
+  system: ProfileSystemCatalogEntry,
+  offerDefaultGlazingId: string | null | undefined,
+  field: ProfileResolvableField,
+  glazingId: string | null,
+): ModuleProfileResolution {
+  const resolution = withSystem(current, system)
+  if (glazingId !== null && !isKnownGlazingId(glazingId)) return resolution
+
+  const fieldGlazingSpecifications = { ...resolution.fieldGlazingSpecifications }
+  const fieldGlazingBeads = { ...resolution.fieldGlazingBeads }
+  if (glazingId === null) delete fieldGlazingSpecifications[field.id]
+  else fieldGlazingSpecifications[field.id] = { glazingId, source: 'human' }
+
+  const next = { ...resolution, fieldGlazingSpecifications, fieldGlazingBeads }
+  const bead = fieldGlazingBeads[field.id]
+  if (bead) {
+    const thicknessMm = getEffectiveFieldGlazingThicknessMm(next, offerDefaultGlazingId, field.id)
+    if (!beadValidForEffectiveThickness(system, thicknessMm, bead.profileCode)) delete fieldGlazingBeads[field.id]
+  }
+  return next
+}
+
 /**
  * Stores explicit human glazing thickness outside ConstructionModel.
  * Changing or clearing thickness fails closed by removing a bead assignment
@@ -299,6 +419,7 @@ export function setFieldHumanGlazingThicknessAssignment(
   system: ProfileSystemCatalogEntry,
   field: ProfileResolvableField,
   thicknessMm: number | null,
+  offerDefaultGlazingId: string | null | undefined = null,
 ): ModuleProfileResolution {
   const resolution = withSystem(current, system)
   const fieldGlazingThicknesses = { ...resolution.fieldGlazingThicknesses }
@@ -306,8 +427,13 @@ export function setFieldHumanGlazingThicknessAssignment(
 
   if (thicknessMm === null) {
     delete fieldGlazingThicknesses[field.id]
-    delete fieldGlazingBeads[field.id]
-    return { ...resolution, fieldGlazingThicknesses, fieldGlazingBeads }
+    const next = { ...resolution, fieldGlazingThicknesses, fieldGlazingBeads }
+    const existingBead = fieldGlazingBeads[field.id]
+    const fallbackThicknessMm = getEffectiveFieldGlazingThicknessMm(next, offerDefaultGlazingId, field.id)
+    if (existingBead && !beadValidForEffectiveThickness(system, fallbackThicknessMm, existingBead.profileCode)) {
+      delete fieldGlazingBeads[field.id]
+    }
+    return next
   }
 
   if (!Number.isFinite(thicknessMm) || thicknessMm <= 0) return resolution
@@ -330,6 +456,7 @@ export function setFieldGlazingBeadAssignment(
   field: ProfileResolvableField,
   glazingThicknessMm: number | null | undefined,
   profileCode: string | null,
+  offerDefaultGlazingId: string | null | undefined = null,
 ): ModuleProfileResolution {
   const resolution = withSystem(current, system)
   const fieldGlazingBeads = { ...resolution.fieldGlazingBeads }
@@ -342,7 +469,7 @@ export function setFieldGlazingBeadAssignment(
   const context = getFieldGlazingBeadResolutionContext(resolution, field)
   if (!context.targetRequired || !context.baseProfileCode) return resolution
 
-  const effectiveGlazingThicknessMm = getFieldHumanGlazingThicknessMm(resolution, field.id) ?? glazingThicknessMm
+  const effectiveGlazingThicknessMm = getEffectiveFieldGlazingThicknessMm(resolution, offerDefaultGlazingId, field.id) ?? glazingThicknessMm
   const humanContext = resolveHumanGlazingContext(system, effectiveGlazingThicknessMm, profileCode)
   if (humanContext.status !== 'HUMAN_BEAD_SELECTION_VALID') return resolution
 
@@ -414,6 +541,7 @@ export function reconcileModuleProfileResolution(
   dividerIds: readonly string[],
   fields: readonly ProfileResolvableField[],
   glazingThicknessMm: number | null = null,
+  offerDefaultGlazingId: string | null | undefined = null,
 ): ModuleProfileResolution {
   const resolution = withSystem(current, system)
   const validDividerIds = new Set(dividerIds)
@@ -443,6 +571,12 @@ export function reconcileModuleProfileResolution(
     ? resolution.frame
     : null
 
+  const fieldGlazingSpecifications = Object.fromEntries(
+    Object.entries(resolution.fieldGlazingSpecifications).filter(([fieldId, assignment]) =>
+      fieldsById.has(fieldId) && isKnownGlazingId(assignment.glazingId),
+    ),
+  )
+
   const fieldGlazingThicknesses = Object.fromEntries(
     Object.entries(resolution.fieldGlazingThicknesses).filter(([fieldId, assignment]) =>
       fieldsById.has(fieldId) && Number.isFinite(assignment.thicknessMm) && assignment.thicknessMm > 0,
@@ -454,6 +588,10 @@ export function reconcileModuleProfileResolution(
     frame,
     dividers,
     fieldSashes,
+    moduleGlazingSpecification: resolution.moduleGlazingSpecification && isKnownGlazingId(resolution.moduleGlazingSpecification.glazingId)
+      ? resolution.moduleGlazingSpecification
+      : null,
+    fieldGlazingSpecifications,
     fieldGlazingThicknesses,
     fieldGlazingBeads: {},
     reinforcements: {},
@@ -465,7 +603,7 @@ export function reconcileModuleProfileResolution(
       if (!field) return false
       const context = getFieldGlazingBeadResolutionContext(structuralResolution, field)
       if (!context.targetRequired || !context.baseProfileCode) return false
-      const effectiveGlazingThicknessMm = getFieldHumanGlazingThicknessMm(structuralResolution, fieldId) ?? glazingThicknessMm
+      const effectiveGlazingThicknessMm = getEffectiveFieldGlazingThicknessMm(structuralResolution, offerDefaultGlazingId, fieldId) ?? glazingThicknessMm
       return effectiveGlazingThicknessMm === null || (
         resolveHumanGlazingContext(system, effectiveGlazingThicknessMm, assignment.profileCode).status === 'HUMAN_BEAD_SELECTION_VALID'
       )

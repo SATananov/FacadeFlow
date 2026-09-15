@@ -40,6 +40,8 @@ export type { ConstructorDividerSnapshot, ConstructorDraftSnapshot } from '../do
 import type { ConstructorDraftSnapshot } from '../domain/construction'
 import {
   getDividerProfileCandidates,
+  getEffectiveFieldGlazingSpecification,
+  getEffectiveFieldGlazingThicknessMm,
   getFieldGlazingBeadResolutionContext,
   getFieldHumanGlazingThicknessMm,
   getFieldSashProfileCandidates,
@@ -49,7 +51,9 @@ import {
   reconcileModuleProfileResolution,
   setDividerProfileAssignment,
   setFieldGlazingBeadAssignment,
+  setFieldGlazingSpecificationAssignment,
   setFieldHumanGlazingThicknessAssignment,
+  setModuleGlazingSpecificationAssignment,
   setFieldSashProfileAssignment,
   setFrameProfileAssignment,
   setReinforcementAssignment,
@@ -58,6 +62,7 @@ import {
 } from '../domain/profileResolution'
 import { resolveHumanGlazingContext } from '../domain/glazingContext'
 import {
+  getConfirmedGlazingOptions,
   getGlazingOptionById,
   getProfileSystemById,
   getSelectableProfileSystems,
@@ -487,6 +492,7 @@ export default function ConstructorShell({
           profileResolvableDividerIds,
           fields,
           null,
+          !isFreeMode ? offerContext?.glazingId ?? null : null,
         )
       : null,
     [
@@ -498,8 +504,15 @@ export default function ConstructorShell({
       selectedGlazing?.totalThicknessMm,
     ],
   )
-  const selectedFieldGlazingThicknessMm = selectedField
+  const offerDefaultGlazingId = !isFreeMode ? offerContext?.glazingId ?? null : null
+  const selectedFieldGlazingSpecification = selectedField
+    ? getEffectiveFieldGlazingSpecification(effectiveProfileResolution, offerDefaultGlazingId, selectedField.id)
+    : { glazingId: null, thicknessMm: null, source: 'unset' as const }
+  const selectedFieldExplicitGlazingThicknessMm = selectedField
     ? getFieldHumanGlazingThicknessMm(effectiveProfileResolution, selectedField.id)
+    : null
+  const selectedFieldGlazingThicknessMm = selectedField
+    ? getEffectiveFieldGlazingThicknessMm(effectiveProfileResolution, offerDefaultGlazingId, selectedField.id)
     : null
   const selectedFieldGlazingAssignment = selectedField
     ? effectiveProfileResolution?.fieldGlazingBeads[selectedField.id] ?? null
@@ -1638,6 +1651,32 @@ export default function ConstructorShell({
     )
   }
 
+  const applyModuleGlazingSpecification = (glazingId: string | null) => {
+    if (!selectedProfileSystem) return
+    publishProfileResolution(
+      setModuleGlazingSpecificationAssignment(
+        effectiveProfileResolution,
+        selectedProfileSystem,
+        offerDefaultGlazingId,
+        fields,
+        glazingId,
+      ),
+    )
+  }
+
+  const applySelectedFieldGlazingSpecification = (glazingId: string | null) => {
+    if (!selectedProfileSystem || !selectedField) return
+    publishProfileResolution(
+      setFieldGlazingSpecificationAssignment(
+        effectiveProfileResolution,
+        selectedProfileSystem,
+        offerDefaultGlazingId,
+        selectedField,
+        glazingId,
+      ),
+    )
+  }
+
   const applySelectedFieldGlazingThickness = () => {
     if (!selectedProfileSystem || !selectedField) return
     const normalized = glazingThicknessDraft.trim().replace(',', '.')
@@ -1648,6 +1687,7 @@ export default function ConstructorShell({
           selectedProfileSystem,
           selectedField,
           null,
+          offerDefaultGlazingId,
         ),
       )
       return
@@ -1661,6 +1701,7 @@ export default function ConstructorShell({
         selectedProfileSystem,
         selectedField,
         thicknessMm,
+        offerDefaultGlazingId,
       ),
     )
   }
@@ -1674,6 +1715,7 @@ export default function ConstructorShell({
         selectedField,
         selectedFieldGlazingThicknessMm,
         profileCode,
+        offerDefaultGlazingId,
       ),
     )
   }
@@ -1804,13 +1846,52 @@ export default function ConstructorShell({
     const offerGlazingHint = selectedGlazing
       ? `${selectedGlazing.labelBg} · ${selectedGlazing.totalThicknessMm} mm`
       : null
+    const glazingOptions = getConfirmedGlazingOptions()
+    const moduleGlazingOverrideId = effectiveProfileResolution?.moduleGlazingSpecification?.glazingId ?? ''
+    const fieldGlazingOverrideId = effectiveProfileResolution?.fieldGlazingSpecifications[selectedField.id]?.glazingId ?? ''
+    const glazingSourceLabel = {
+      'field-override': 'ПОЛЕ override',
+      'module-override': 'Модул override',
+      'offer-default': 'Наследено от офертата',
+      unset: 'Не е зададено',
+    }[selectedFieldGlazingSpecification.source]
 
     return (
       <div className="constructor-component-resolution-stack constructor-glazing-context-card">
+        <div className="constructor-profile-resolution-control">
+          <span>СТЪКЛОПАКЕТ · МОДУЛ</span>
+          <select
+            aria-label="Стъклопакет override за модула"
+            value={moduleGlazingOverrideId}
+            onChange={(event) => applyModuleGlazingSpecification(event.target.value || null)}
+          >
+            <option value="">{offerGlazingHint ? `Наследи от офертата · ${offerGlazingHint}` : 'Без модулен override'}</option>
+            {glazingOptions.map((option) => (
+              <option key={option.id} value={option.id}>{option.labelBg} · {option.totalThicknessMm} mm</option>
+            ))}
+          </select>
+          <small>Модулният избор е ръчен override. Ако е празен, модулът наследява избора от офертата.</small>
+        </div>
+
+        <div className="constructor-profile-resolution-control">
+          <span>СТЪКЛОПАКЕТ · ПОЛЕ {selectedField.sequence}</span>
+          <select
+            aria-label="Стъклопакет override за избраното поле"
+            value={fieldGlazingOverrideId}
+            onChange={(event) => applySelectedFieldGlazingSpecification(event.target.value || null)}
+          >
+            <option value="">Наследи от модула / офертата</option>
+            {glazingOptions.map((option) => (
+              <option key={option.id} value={option.id}>{option.labelBg} · {option.totalThicknessMm} mm</option>
+            ))}
+          </select>
+          <small>Ефективно: {selectedFieldGlazingSpecification.glazingId ?? 'няма избран стъклопакет'} · {glazingSourceLabel}.</small>
+        </div>
+
         <div className="constructor-glazing-thickness-control">
           <div>
             <span>СТЪКЛОПАКЕТ · ДЕБЕЛИНА ЗА ПОЛЕ {selectedField.sequence}</span>
-            <b>{selectedFieldGlazingThicknessMm === null ? 'НЕ Е ЗАДАДЕНА' : `${selectedFieldGlazingThicknessMm} mm · РЪЧНО`}</b>
+            <b>{selectedFieldGlazingThicknessMm === null ? 'НЕ Е ЗАДАДЕНА' : `${selectedFieldGlazingThicknessMm} mm${selectedFieldExplicitGlazingThicknessMm !== null ? ' · РЪЧЕН OVERRIDE' : ' · ОТ СТЪКЛОПАКЕТА'}`}</b>
           </div>
           <div className="constructor-glazing-thickness-entry">
             <input
@@ -1841,6 +1922,7 @@ export default function ConstructorShell({
                     selectedProfileSystem,
                     selectedField,
                     null,
+                    offerDefaultGlazingId,
                   ),
                 )
               }}
@@ -1849,8 +1931,8 @@ export default function ConstructorShell({
             </button>
           </div>
           <small>
-            Въведено ръчно · стойността не се извежда автоматично от профила, размера на ПОЛЕТО или стъклодържателя.
-            {offerGlazingHint ? ` В офертата: ${offerGlazingHint}; стойността не се попълва автоматично.` : ''}
+            Дебелината идва от ефективния стъклопакет. Ръчната стойност е FIELD override и има предимство само за техническата дебелина.
+            {offerGlazingHint ? ` Оферта: ${offerGlazingHint}.` : ''}
           </small>
         </div>
 

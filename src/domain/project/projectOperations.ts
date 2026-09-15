@@ -161,6 +161,7 @@ export function completeOfferSetup(snapshot: ProjectSnapshot, idFactory: IdFacto
       next.profileResolutionsByModuleId[module.id] = system ? reconcileModuleProfileResolution(
         next.profileResolutionsByModuleId[module.id], system, module.definition.draft.productType,
         [...(resolved?.dividers ?? []), ...(resolved?.angledDividers ?? [])].map((item) => item.id), resolved?.fields ?? [],
+        null, defaults.glazingId,
       ) : null
       offer.pendingCopyModuleId = null
     } else if (getModules(next, offer.id).length === 0) {

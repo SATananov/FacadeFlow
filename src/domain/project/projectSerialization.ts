@@ -117,11 +117,22 @@ function definition(value: unknown) {
 function profileResolution(value: unknown, topology: ReturnType<typeof construction>, systemId: unknown) {
   if (value === null) return
   const item = keys(value, ['version', 'componentResolutionVersion', 'profileSystemId', 'frame', 'dividers',
-    'fieldSashes', 'fieldGlazingThicknesses', 'fieldGlazingBeads', 'reinforcements'])
+    'fieldSashes', 'fieldGlazingThicknesses', 'fieldGlazingBeads', 'reinforcements'],
+    ['moduleGlazingSpecification', 'fieldGlazingSpecifications'])
   choice(item.version, ['profile-resolution-01a']); choice(item.componentResolutionVersion, ['profile-components-02a2'])
   id(item.profileSystemId); requireThat(item.profileSystemId === systemId, 'profile system ownership mismatch')
   function assignment(value: unknown) { const valueObject = keys(value, ['profileCode', 'source']); id(valueObject.profileCode); choice(valueObject.source, ['human']) }
   if (item.frame !== null) assignment(item.frame)
+  if (item.moduleGlazingSpecification !== undefined && item.moduleGlazingSpecification !== null) {
+    const glazing = keys(item.moduleGlazingSpecification, ['glazingId', 'source'])
+    id(glazing.glazingId); choice(glazing.source, ['human'])
+  }
+  if (item.fieldGlazingSpecifications !== undefined) {
+    for (const [fieldId, value] of Object.entries(object(item.fieldGlazingSpecifications))) {
+      id(fieldId); requireThat(topology && topology.fields.has(fieldId), 'dangling glazing specification target')
+      const glazing = keys(value, ['glazingId', 'source']); id(glazing.glazingId); choice(glazing.source, ['human'])
+    }
+  }
   for (const name of ['dividers', 'fieldSashes', 'fieldGlazingBeads', 'fieldGlazingThicknesses']) {
     for (const [targetId, value] of Object.entries(object(item[name]))) {
       id(targetId)

@@ -23,6 +23,7 @@ function reconcilePayload(snapshot: ProjectSnapshot, moduleId: string) {
   const definition = module.definition
   const systemId = definition.kind === 'free' ? definition.profileSystemId : definition.draft.inheritedDefaults.profileSystemId
   const productType = definition.kind === 'free' ? definition.productType : definition.draft.productType
+  const offerDefaultGlazingId = definition.kind === 'offer' ? definition.draft.inheritedDefaults.glazingId : null
   const system = getProfileSystemById(systemId)
   if (!system) { snapshot.profileResolutionsByModuleId[moduleId] = null; return }
   const topology = snapshot.constructionDraftsByModuleId[moduleId]?.topology
@@ -30,6 +31,7 @@ function reconcilePayload(snapshot: ProjectSnapshot, moduleId: string) {
   snapshot.profileResolutionsByModuleId[moduleId] = reconcileModuleProfileResolution(
     snapshot.profileResolutionsByModuleId[moduleId], system, productType,
     [...(resolved?.dividers ?? []), ...(resolved?.angledDividers ?? [])].map((item) => item.id), resolved?.fields ?? [],
+    null, offerDefaultGlazingId,
   )
 }
 
