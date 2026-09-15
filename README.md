@@ -8,31 +8,35 @@ The previous `FacadeFlow-Demo` repository remains a training/reference project. 
 
 `Клиент -> Обект -> Профилна система -> Цвят / фолиране -> Стъклопакет -> Обков -> Модул -> Конструктор`
 
-## Constructor checkpoint
+## Release checkpoint
 
-Current stage: **Constructor 01D.3.1 — Bottom FIELD Details UI Polish**.
+Current release: **FacadeFlow 0.1.8 — final 0.1.8B → 0.1.8E.1 checkpoint**.
 
-Constructor 01D adds canonical FIELD semantics on top of the stable 01C.3.7 geometry:
-- FIXED / OPERABLE field type;
-- OPERABLE means one logical sash in the FIELD;
-- opening mode: side-hinged / tilt / tilt-turn;
-- optional human-entered left/right working handing where relevant;
-- working opening symbols for side-hinged left/right, tilt, and tilt-turn left/right, following the Nadezhda/SkyGlazing-style shop convention;
-- constructor semantics synchronize back to the offer module by canonical FIELD identity;
-- profile resolution and machine geometry remain intentionally disabled.
+Release 0.1.8 closes the current workflow/integration line without changing the production-safety boundaries:
+- **0.1.8B — Atomic Module History 01:** Undo/Redo restores construction, profile resolution and module product type as one technical snapshot; history stays isolated per module during the current app session.
+- **0.1.8C — Form → Constructor Transition 01:** preset FIELD semantics transfer only when canonical identity/count is safe; no divider or geometry is fabricated from form data.
+- **0.1.8D — FIELD Glazing Ownership 01:** FIELD override > module override > offer default; incompatible bead assignments are invalidated, never auto-replaced.
+- **0.1.8E — Integrated Acceptance 01:** two-module isolation, edit/Undo/Redo, Reset/Undo and Save/Reopen are covered together.
+- **0.1.8E.1 — Human Undo Session Hotfix V2:** first-edit Undo and subsequent Redo availability are synchronized before parent callbacks/remounts can lose the session history.
 
+Production boundaries remain explicit:
+- AUTOMATIC GEOMETRY: **NO**
+- AUTOMATIC BEAD SELECTION: **NO**
+- RULES VALIDATED: **NO**
+- MACHINE READY: **NO**
+- SESSION UNDO HISTORY PERSISTED AFTER APP RESTART: **NO**
+
+The Constructor foundation still includes:
 - parametric outer frame;
-- real `ПОЛЕ / FIELD` domain objects;
-- vertical and horizontal `splitField` operations;
-- recursive/local subdivisions (a divider can split only one selected FIELD);
+- canonical `ПОЛЕ / FIELD` domain objects;
+- vertical, horizontal and angled dividers with recursive/local FIELD subdivision;
 - true frame-interior FIELD surfaces with live schematic dimensions;
-- movable and removable local dividers; moving one same-axis divider preserves the absolute position of the others; divider length follows the parent FIELD automatically;
-- sequential `Модул 1 / 2 / 3 ...` drafts with module switching and per-module Constructor state;
-- current-module `Изтрий скицата / започни отначало` with Undo recovery;
+- movable/removable local dividers and independent module drafts;
+- current-module reset with Undo recovery;
 - 10 mm snap, grid, zoom and numeric frame/divider position editing;
-- legacy Constructor 01C draft migration;
-- divider face width is read-only schematic until Profile Resolution; no invented profile, cutting or machine geometry.
-- `Ъглов делител` creates real triangle/trapezoid polygon FIELD topology; vertical and horizontal dividers can re-split those polygon FIELDS and are clipped to the real polygon boundary.
+- polygon triangle/trapezoid FIELD topology and polygon re-split;
+- FIXED / OPERABLE semantics and working opening symbols;
+- human profile/glazing context without invented cutting or machine geometry.
 
 The construction domain lives in `src/domain/construction/`. React renders this model; it is not the source of truth for topology.
 
@@ -41,6 +45,7 @@ The construction domain lives in `src/domain/construction/`. React renders this 
 ```powershell
 npm install
 npm run verify
+npm run verify:release018
 npm run dev
 ```
 

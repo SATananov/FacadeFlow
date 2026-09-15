@@ -808,11 +808,36 @@ export default function ConstructorShell({
     second: ModuleProfileResolution | null,
   ) => JSON.stringify(first) === JSON.stringify(second)
 
+  // FACADEFLOW 0.1.8E.1 HUMAN UNDO SESSION HOTFIX V2:
+  // persist the new history stack synchronously before parent callbacks can re-render/remount.
+  const writeHistoryStacks = (
+    nextUndo: readonly ConstructorHistoryEntry[],
+    nextRedo: readonly ConstructorHistoryEntry[],
+  ) => {
+    const clonedUndo = nextUndo.map(cloneHistoryEntry)
+    const clonedRedo = nextRedo.map(cloneHistoryEntry)
+
+    undoStackRef.current = clonedUndo
+    redoStackRef.current = clonedRedo
+    setUndoStack(clonedUndo)
+    setRedoStack(clonedRedo)
+
+    if (historySessionKey) {
+      constructorHistoryByModuleId.set(historySessionKey, {
+        undo: clonedUndo.map(cloneHistoryEntry),
+        redo: clonedRedo.map(cloneHistoryEntry),
+      })
+    }
+  }
+
   const pushUndoEntry = (entry: ConstructorHistoryEntry) => {
-    setUndoStack((current) => [
-      ...current.slice(-59),
-      cloneHistoryEntry(entry),
-    ])
+    writeHistoryStacks(
+      [
+        ...undoStackRef.current.slice(-59),
+        cloneHistoryEntry(entry),
+      ],
+      [],
+    )
   }
 
   const broadcastConstruction = (nextConstruction: ConstructionModel | null) => {
@@ -1109,11 +1134,24 @@ export default function ConstructorShell({
   }
 
   const undoConstruction = () => {
-    const previous = undoStack.at(-1)
+    const previous = undoStackRef.current.at(-1)
     if (previous === undefined) return
 
     // FACADEFLOW 0.1.8B ATOMIC MODULE HISTORY 01: capture the complete current state before any callback mutates refs.
     const currentSnapshot = captureHistoryEntry()
+    const nextUndoRef = undoStackRef.current.slice(0, -1).map(cloneHistoryEntry)
+    const nextRedoRef = [
+      ...redoStackRef.current.slice(-59),
+      cloneHistoryEntry(currentSnapshot),
+    ]
+    undoStackRef.current = nextUndoRef
+    redoStackRef.current = nextRedoRef
+    if (historySessionKey) {
+      constructorHistoryByModuleId.set(historySessionKey, {
+        undo: nextUndoRef.map(cloneHistoryEntry),
+        redo: nextRedoRef.map(cloneHistoryEntry),
+      })
+    }
     setUndoStack((current) => current.slice(0, -1))
     setRedoStack((current) => [
       ...current.slice(-59),
@@ -1123,10 +1161,23 @@ export default function ConstructorShell({
   }
 
   const redoConstruction = () => {
-    const next = redoStack.at(-1)
+    const next = redoStackRef.current.at(-1)
     if (next === undefined) return
 
     const currentSnapshot = captureHistoryEntry()
+    const nextRedoRef = redoStackRef.current.slice(0, -1).map(cloneHistoryEntry)
+    const nextUndoRef = [
+      ...undoStackRef.current.slice(-59),
+      cloneHistoryEntry(currentSnapshot),
+    ]
+    redoStackRef.current = nextRedoRef
+    undoStackRef.current = nextUndoRef
+    if (historySessionKey) {
+      constructorHistoryByModuleId.set(historySessionKey, {
+        undo: nextUndoRef.map(cloneHistoryEntry),
+        redo: nextRedoRef.map(cloneHistoryEntry),
+      })
+    }
     setRedoStack((current) => current.slice(0, -1))
     setUndoStack((current) => [
       ...current.slice(-59),
