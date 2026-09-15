@@ -153,6 +153,35 @@ type ConstructorShellProps = {
   onCreateOfferFromSketch?: (draft: ConstructorDraftSnapshot | null) => void
 }
 
+type ConstructorHistoryEntry = {
+  construction: ConstructionModel | null
+  profileResolution: ModuleProfileResolution | null
+  productType: 'window' | 'door' | null
+}
+
+type ConstructorHistoryStacks = {
+  undo: ConstructorHistoryEntry[]
+  redo: ConstructorHistoryEntry[]
+}
+
+// FACADEFLOW 0.1.8B ATOMIC MODULE HISTORY 01: session-only cache keeps each module's history while switching modules.
+// It is deliberately NOT persisted to project storage and disappears after app reload.
+const constructorHistoryByModuleId = new Map<string, ConstructorHistoryStacks>()
+
+function cloneHistoryProfileResolution(
+  resolution: ModuleProfileResolution | null,
+): ModuleProfileResolution | null {
+  return resolution ? structuredClone(resolution) : null
+}
+
+function cloneHistoryEntry(entry: ConstructorHistoryEntry): ConstructorHistoryEntry {
+  return {
+    construction: entry.construction ? cloneConstructionModel(entry.construction) : null,
+    profileResolution: cloneHistoryProfileResolution(entry.profileResolution),
+    productType: entry.productType,
+  }
+}
+
 type ConstructorTool =
   | 'select'
   | 'pan'
@@ -340,9 +369,23 @@ export default function ConstructorShell({
   const [construction, setConstruction] = useState<ConstructionModel | null>(() =>
     getInitialConstruction(initialDraft, moduleSummary),
   )
-  const [undoStack, setUndoStack] = useState<Array<ConstructionModel | null>>([])
-  const [redoStack, setRedoStack] = useState<Array<ConstructionModel | null>>([])
+  const historySessionKey = activeModuleId ? `${mode}:${activeModuleId}` : null
+  const cachedModuleHistory = historySessionKey
+    ? constructorHistoryByModuleId.get(historySessionKey)
+    : undefined
+  const [undoStack, setUndoStack] = useState<ConstructorHistoryEntry[]>(() =>
+    cachedModuleHistory?.undo.map(cloneHistoryEntry) ?? [],
+  )
+  const [redoStack, setRedoStack] = useState<ConstructorHistoryEntry[]>(() =>
+    cachedModuleHistory?.redo.map(cloneHistoryEntry) ?? [],
+  )
   const constructionRef = useRef<ConstructionModel | null>(construction)
+  const profileResolutionRef = useRef<ModuleProfileResolution | null>(
+    cloneHistoryProfileResolution(profileResolution ?? null),
+  )
+  const productTypeRef = useRef<'window' | 'door' | null>(moduleSummary.productType)
+  const undoStackRef = useRef<ConstructorHistoryEntry[]>(undoStack)
+  const redoStackRef = useRef<ConstructorHistoryEntry[]>(redoStack)
   const frame = construction?.frame ?? null
   const resolvedTopology = useMemo(
     () => construction
@@ -559,6 +602,32 @@ export default function ConstructorShell({
   }, [dividers, fields, frame])
 
   useEffect(() => {
+    profileResolutionRef.current = cloneHistoryProfileResolution(profileResolution ?? null)
+  }, [profileResolution])
+
+  useEffect(() => {
+    productTypeRef.current = moduleSummary.productType
+  }, [moduleSummary.productType])
+
+  useEffect(() => {
+    undoStackRef.current = undoStack
+    redoStackRef.current = redoStack
+    if (!historySessionKey) return
+    constructorHistoryByModuleId.set(historySessionKey, {
+      undo: undoStack.map(cloneHistoryEntry),
+      redo: redoStack.map(cloneHistoryEntry),
+    })
+  }, [historySessionKey, undoStack, redoStack])
+
+  useEffect(() => () => {
+    if (!historySessionKey) return
+    constructorHistoryByModuleId.set(historySessionKey, {
+      undo: undoStackRef.current.map(cloneHistoryEntry),
+      redo: redoStackRef.current.map(cloneHistoryEntry),
+    })
+  }, [historySessionKey])
+
+  useEffect(() => {
     setGlazingThicknessDraft(
       selectedFieldGlazingThicknessMm === null ? '' : String(selectedFieldGlazingThicknessMm),
     )
@@ -572,6 +641,7 @@ export default function ConstructorShell({
   useEffect(() => {
     if (!effectiveProfileResolution || !onProfileResolutionChange) return
     if (JSON.stringify(profileResolution) === JSON.stringify(effectiveProfileResolution)) return
+    profileResolutionRef.current = cloneHistoryProfileResolution(effectiveProfileResolution)
     onProfileResolutionChange(effectiveProfileResolution)
   }, [effectiveProfileResolution, onProfileResolutionChange, profileResolution])
 
@@ -684,15 +754,25 @@ export default function ConstructorShell({
     fitViewToFrame(frame)
   }
 
-  const cloneHistoryEntry = (entry: ConstructionModel | null) =>
-    entry ? cloneConstructionModel(entry) : null
+  const captureHistoryEntry = (
+    constructionOverride: ConstructionModel | null = constructionRef.current,
+  ): ConstructorHistoryEntry => ({
+    construction: constructionOverride ? cloneConstructionModel(constructionOverride) : null,
+    profileResolution: cloneHistoryProfileResolution(profileResolutionRef.current),
+    productType: productTypeRef.current,
+  })
 
   const constructionEquals = (
     first: ConstructionModel | null,
     second: ConstructionModel | null,
   ) => JSON.stringify(first) === JSON.stringify(second)
 
-  const pushUndoEntry = (entry: ConstructionModel | null) => {
+  const profileResolutionEquals = (
+    first: ModuleProfileResolution | null,
+    second: ModuleProfileResolution | null,
+  ) => JSON.stringify(first) === JSON.stringify(second)
+
+  const pushUndoEntry = (entry: ConstructorHistoryEntry) => {
     setUndoStack((current) => [
       ...current.slice(-59),
       cloneHistoryEntry(entry),
@@ -735,14 +815,14 @@ export default function ConstructorShell({
   const commitConstruction = (nextConstruction: ConstructionModel | null) => {
     const currentConstruction = constructionRef.current
     if (constructionEquals(currentConstruction, nextConstruction)) return
-    pushUndoEntry(currentConstruction)
+    pushUndoEntry(captureHistoryEntry(currentConstruction))
     setRedoStack([])
     broadcastConstruction(nextConstruction)
   }
 
   const recordDragHistory = (originalConstruction: ConstructionModel) => {
     if (constructionEquals(originalConstruction, constructionRef.current)) return
-    pushUndoEntry(originalConstruction)
+    pushUndoEntry(captureHistoryEntry(originalConstruction))
     setRedoStack([])
   }
 
@@ -962,36 +1042,49 @@ export default function ConstructorShell({
     setHeightDraft(String(Math.round(nextConstruction.frame.heightMm)))
   }
 
+  const restoreHistoryEntry = (entry: ConstructorHistoryEntry) => {
+    const restored = cloneHistoryEntry(entry)
+
+    if (productTypeRef.current !== restored.productType) {
+      productTypeRef.current = restored.productType
+      onModuleProductTypeChange?.(restored.productType)
+    }
+
+    broadcastConstruction(restored.construction)
+
+    profileResolutionRef.current = cloneHistoryProfileResolution(restored.profileResolution)
+    if (restored.profileResolution) {
+      onProfileResolutionChange?.(cloneHistoryProfileResolution(restored.profileResolution)!)
+    }
+
+    restoreHistorySelection(restored.construction)
+  }
+
   const undoConstruction = () => {
     const previous = undoStack.at(-1)
     if (previous === undefined) return
 
-    // Capture before broadcastConstruction updates the ref. React may defer
-    // evaluating the functional stack updater until after this handler returns.
-    const currentSnapshot = cloneHistoryEntry(constructionRef.current)
+    // FACADEFLOW 0.1.8B ATOMIC MODULE HISTORY 01: capture the complete current state before any callback mutates refs.
+    const currentSnapshot = captureHistoryEntry()
     setUndoStack((current) => current.slice(0, -1))
     setRedoStack((current) => [
       ...current.slice(-59),
-      currentSnapshot,
+      cloneHistoryEntry(currentSnapshot),
     ])
-    const restored = cloneHistoryEntry(previous)
-    broadcastConstruction(restored)
-    restoreHistorySelection(restored)
+    restoreHistoryEntry(previous)
   }
 
   const redoConstruction = () => {
     const next = redoStack.at(-1)
     if (next === undefined) return
 
-    const currentSnapshot = cloneHistoryEntry(constructionRef.current)
+    const currentSnapshot = captureHistoryEntry()
     setRedoStack((current) => current.slice(0, -1))
     setUndoStack((current) => [
       ...current.slice(-59),
-      currentSnapshot,
+      cloneHistoryEntry(currentSnapshot),
     ])
-    const restored = cloneHistoryEntry(next)
-    broadcastConstruction(restored)
-    restoreHistorySelection(restored)
+    restoreHistoryEntry(next)
   }
 
   const canUndo = undoStack.length > 0
@@ -1423,6 +1516,12 @@ export default function ConstructorShell({
     .join(' ')
 
   const publishProfileResolution = (next: ModuleProfileResolution) => {
+    const currentResolution = profileResolutionRef.current
+    if (profileResolutionEquals(currentResolution, next)) return
+
+    pushUndoEntry(captureHistoryEntry())
+    setRedoStack([])
+    profileResolutionRef.current = cloneHistoryProfileResolution(next)
     onProfileResolutionChange?.(next)
   }
 
@@ -1450,6 +1549,11 @@ export default function ConstructorShell({
   }
 
   const applyModuleProductTypeFromConstructor = (productType: 'window' | 'door' | null) => {
+    if (productTypeRef.current === productType) return
+
+    pushUndoEntry(captureHistoryEntry())
+    setRedoStack([])
+    productTypeRef.current = productType
     onModuleProductTypeChange?.(productType)
   }
 
