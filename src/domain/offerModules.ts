@@ -388,6 +388,44 @@ export interface OfferModuleTopologyFieldInput {
   openingHanding?: ModuleOpeningHanding | null
 }
 
+function isPendingFieldDescriptionSource(source: ModuleInputSource): boolean {
+  return source === 'preset' || source === 'manual'
+}
+
+/**
+ * A pre-Constructor FIELD description remains pending only while it still
+ * carries form-owned semantics that have not yet become canonical topology.
+ * Constructor-owned and unset values are projections, not pending input.
+ */
+export function hasPendingOfferModuleFieldDescription(
+  field: OfferModuleFieldDraft,
+): boolean {
+  return (
+    isPendingFieldDescriptionSource(field.fieldTypeSource) ||
+    isPendingFieldDescriptionSource(field.openingModeSource) ||
+    isPendingFieldDescriptionSource(field.openingHandingSource)
+  )
+}
+
+function clearConstructorOwnedFieldSemantics(
+  field: OfferModuleFieldDraft,
+): OfferModuleFieldDraft {
+  return {
+    ...field,
+    widthMm: null,
+    widthSource: 'unset',
+    fieldType: field.fieldTypeSource === 'constructor' ? null : field.fieldType,
+    customFieldTypeLabel: field.fieldTypeSource === 'constructor' ? '' : field.customFieldTypeLabel,
+    fieldTypeSource: field.fieldTypeSource === 'constructor' ? 'unset' : field.fieldTypeSource,
+    openingMode: field.openingModeSource === 'constructor' ? null : field.openingMode,
+    customOpeningModeLabel: field.openingModeSource === 'constructor' ? '' : field.customOpeningModeLabel,
+    openingModeSource: field.openingModeSource === 'constructor' ? 'unset' : field.openingModeSource,
+    openingHanding: field.openingHandingSource === 'constructor' ? null : field.openingHanding,
+    customOpeningHandingLabel: field.openingHandingSource === 'constructor' ? '' : field.customOpeningHandingLabel,
+    openingHandingSource: field.openingHandingSource === 'constructor' ? 'unset' : field.openingHandingSource,
+  }
+}
+
 /**
  * Synchronizes the offer-side FIELD drafts with the canonical Constructor
  * topology. Constructor geometry owns field count/order/width from this point.
@@ -404,22 +442,35 @@ export function syncOfferModuleFieldsFromTopology(
       .filter((field) => field.constructionFieldId !== null)
       .map((field) => [field.constructionFieldId as string, field] as const),
   )
+  const bySequence = new Map(current.map((field) => [field.sequence, field] as const))
+  const sequenceHandoffAllowed = current.length === topologyFields.length
 
   return topologyFields.map((topologyField) => {
     const existing = byConstructionId.get(topologyField.id)
+      ?? (sequenceHandoffAllowed ? bySequence.get(topologyField.sequence) : undefined)
     const base = existing
       ? { ...existing }
       : createOfferModuleFieldDraft(topologyField.sequence)
 
     const constructorFieldType = topologyField.fieldType ?? null
+    const pendingFieldType = constructorFieldType === null && hasPendingOfferModuleFieldDescription(base)
+      ? base.fieldType
+      : null
+    const effectiveFieldType = constructorFieldType ?? pendingFieldType
+
     const constructorOpeningMode =
       constructorFieldType === 'operable' ? topologyField.openingMode ?? null : null
+    const pendingOpeningMode =
+      constructorOpeningMode === null && effectiveFieldType === 'operable' && isPendingFieldDescriptionSource(base.openingModeSource)
+        ? base.openingMode
+        : null
+    const effectiveOpeningMode = constructorOpeningMode ?? pendingOpeningMode
+
     const constructorOpeningHanding =
       constructorFieldType === 'operable' &&
       (constructorOpeningMode === 'side-hinged' || constructorOpeningMode === 'tilt-turn')
         ? topologyField.openingHanding ?? null
         : null
-
     return {
       ...base,
       id: `field-${topologyField.sequence}`,
@@ -427,15 +478,50 @@ export function syncOfferModuleFieldsFromTopology(
       constructionFieldId: topologyField.id,
       widthMm: Math.round(topologyField.widthMm),
       widthSource: 'constructor',
-      fieldType: constructorFieldType,
-      customFieldTypeLabel: '',
-      fieldTypeSource: constructorFieldType ? 'constructor' : 'unset',
-      openingMode: constructorOpeningMode,
-      customOpeningModeLabel: '',
-      openingModeSource: constructorOpeningMode ? 'constructor' : 'unset',
-      openingHanding: constructorOpeningHanding,
-      customOpeningHandingLabel: '',
-      openingHandingSource: constructorOpeningHanding ? 'constructor' : 'unset',
+      fieldType: constructorFieldType ?? base.fieldType,
+      customFieldTypeLabel: constructorFieldType ? '' : base.customFieldTypeLabel,
+      fieldTypeSource: constructorFieldType ? 'constructor' : base.fieldTypeSource,
+      openingMode: constructorOpeningMode ?? (effectiveFieldType === 'operable' ? base.openingMode : null),
+      customOpeningModeLabel: constructorOpeningMode ? '' : effectiveFieldType === 'operable' ? base.customOpeningModeLabel : '',
+      openingModeSource: constructorOpeningMode ? 'constructor' : effectiveFieldType === 'operable' ? base.openingModeSource : 'unset',
+      openingHanding: constructorOpeningHanding ?? (
+        effectiveFieldType === 'operable' &&
+        (effectiveOpeningMode === 'side-hinged' || effectiveOpeningMode === 'tilt-turn')
+          ? base.openingHanding
+          : null
+      ),
+      customOpeningHandingLabel: constructorOpeningHanding
+        ? ''
+        : effectiveFieldType === 'operable' &&
+          (effectiveOpeningMode === 'side-hinged' || effectiveOpeningMode === 'tilt-turn')
+          ? base.customOpeningHandingLabel
+          : '',
+      openingHandingSource: constructorOpeningHanding
+        ? 'constructor'
+        : effectiveFieldType === 'operable' &&
+          (effectiveOpeningMode === 'side-hinged' || effectiveOpeningMode === 'tilt-turn')
+          ? base.openingHandingSource
+          : 'unset',
     }
   })
+}
+
+/**
+ * Keeps only unresolved form semantics beside an authoritative topology.
+ * Geometry-derived width/count data never survives here. When topology FIELD
+ * count does not yet match the form FIELD count, every semantic description is
+ * retained without creating dividers or guessing geometry.
+ */
+export function retainPendingOfferModuleFieldDescriptions(
+  current: readonly OfferModuleFieldDraft[],
+  topologyFields: readonly OfferModuleTopologyFieldInput[],
+): OfferModuleFieldDraft[] {
+  if (current.length === 0) return []
+
+  const source = current.length === topologyFields.length
+    ? syncOfferModuleFieldsFromTopology(current, topologyFields)
+    : current.map((field) => ({ ...field }))
+
+  const pending = source.map(clearConstructorOwnedFieldSemantics)
+  return pending.some(hasPendingOfferModuleFieldDescription) ? pending : []
 }

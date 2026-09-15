@@ -175,8 +175,24 @@ export function validatePF01Snapshot(value: unknown): asserts value is PF01Snaps
     profileResolution(profiles[key], topology, systemId)
     if (topology && def.kind === 'offer') {
       const draft = object(def.draft)
-      requireThat(draft.widthMm === null && draft.heightMm === null && draft.fieldCount === null && (draft.fields as unknown[]).length === 0,
-        'duplicate topology-derived definition')
+      requireThat(draft.widthMm === null && draft.heightMm === null && draft.fieldCount === null,
+        'duplicate topology-derived geometry')
+      const transitionFields = draft.fields as unknown[]
+      if (transitionFields.length > 0) {
+        let hasPendingSemantics = false
+        for (const value of transitionFields) {
+          const field = object(value)
+          requireThat(field.widthMm === null && field.widthSource === 'unset', 'transition FIELD cannot own topology geometry')
+          if (field.constructionFieldId !== null) {
+            requireThat(topology.fields.has(field.constructionFieldId as string), 'transition FIELD target missing')
+          }
+          for (const sourceName of ['fieldTypeSource', 'openingModeSource', 'openingHandingSource']) {
+            requireThat(field[sourceName] !== 'constructor', 'transition FIELD cannot duplicate constructor semantics')
+            if (field[sourceName] === 'preset' || field[sourceName] === 'manual') hasPendingSemantics = true
+          }
+        }
+        requireThat(hasPendingSemantics, 'transition FIELD payload without pending semantics')
+      }
     }
   }
   requireThat([...Object.keys(drafts), ...Object.keys(profiles)].every((key) => Object.hasOwn(modules, key)), 'orphan module payload')

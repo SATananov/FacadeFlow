@@ -171,7 +171,7 @@ export function getModuleDraftView(snapshot: ProjectSnapshot, module: ProjectMod
   const fields = resolveConstructionTopology(topology).fields
   return { ...definition, widthMm: topology.frame.widthMm, heightMm: topology.frame.heightMm,
     widthSource: 'constructor', heightSource: 'constructor', fieldCount: fields.length, fieldCountSource: 'constructor',
-    fields: syncOfferModuleFieldsFromTopology([], fields.map((field) => ({ ...field, widthMm: field.bounds.widthMm }))) }
+    fields: syncOfferModuleFieldsFromTopology(definition.fields, fields.map((field) => ({ ...field, widthMm: field.bounds.widthMm }))) }
 }
 export function getFreeModules(snapshot: ProjectSnapshot): FreeConstructorModule[] {
   return getModules(snapshot, snapshot.workspace.freeOfferId).flatMap((module) => module.definition.kind === 'free'

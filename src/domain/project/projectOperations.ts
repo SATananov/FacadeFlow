@@ -1,6 +1,6 @@
 import { getProfileSystemById } from '../../data/profileSystems'
 import { resolveConstructionTopology, type ConstructorDraftSnapshot } from '../construction'
-import { createOfferModule, type OfferModuleDraft } from '../offerModules'
+import { createOfferModule, retainPendingOfferModuleFieldDescriptions, type OfferModuleDraft } from '../offerModules'
 import { buildOfferModuleDefaults } from '../offerModuleDefaults'
 import { createModuleProfileResolution, reconcileModuleProfileResolution } from '../profileResolution'
 import { trackChanges } from '../assurance/changeTracking'
@@ -20,11 +20,33 @@ export const applyUpdate = <T>(current: T, update: Update<T>): T => typeof updat
 export function editProject(snapshot: ProjectSnapshot, edit: (draft: ProjectSnapshot) => void): ProjectSnapshot {
   const next = structuredClone(snapshot)
   edit(next)
-  // Constructor topology owns these values; form projections are rebuilt by selectors.
+  // Constructor topology owns geometry. During the Form -> Constructor handoff,
+  // unresolved form FIELD semantics remain as a semantic-only transition payload
+  // until the topology has matching FIELD identities. No divider geometry is inferred.
   for (const module of Object.values(next.modulesById)) {
-    if (module.definition.kind === 'offer' && next.constructionDraftsByModuleId[module.id]?.topology) {
-      Object.assign(module.definition.draft, { widthMm: null, widthSource: 'unset', heightMm: null,
-        heightSource: 'unset', fieldCount: null, fieldCountSource: 'unset', fields: [] })
+    const topology = next.constructionDraftsByModuleId[module.id]?.topology
+    if (module.definition.kind === 'offer' && topology) {
+      const topologyFields = resolveConstructionTopology(topology).fields.map((field) => ({
+        id: field.id,
+        sequence: field.sequence,
+        widthMm: field.bounds.widthMm,
+        fieldType: field.fieldType,
+        openingMode: field.openingMode,
+        openingHanding: field.openingHanding,
+      }))
+      const pendingFields = retainPendingOfferModuleFieldDescriptions(
+        module.definition.draft.fields,
+        topologyFields,
+      )
+      Object.assign(module.definition.draft, {
+        widthMm: null,
+        widthSource: 'unset',
+        heightMm: null,
+        heightSource: 'unset',
+        fieldCount: null,
+        fieldCountSource: 'unset',
+        fields: pendingFields,
+      })
     }
   }
   assertHistoryPreserved(snapshot, next)

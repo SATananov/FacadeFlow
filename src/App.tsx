@@ -352,6 +352,12 @@ export default function App() {
   const activeModuleSketchDraft = firstModule
     ? moduleSketchDrafts[firstModule.id] ?? null
     : null
+  const activeModuleFormFieldDescriptions = firstModule
+    ? (() => {
+        const module = workspace.snapshot.modulesById[firstModule.id]
+        return module?.definition.kind === 'offer' ? module.definition.draft.fields : []
+      })()
+    : []
   const activeModuleProfileResolution = firstModule
     ? moduleProfileResolutions[firstModule.id] ??
       createModuleProfileResolution(firstModule.inheritedDefaults.profileSystemId)
@@ -1005,6 +1011,16 @@ export default function App() {
             }))}
             activeModuleId={firstModule.id}
             initialDraft={activeModuleSketchDraft}
+            initialFieldDescriptions={activeModuleFormFieldDescriptions.map((field) => ({
+              sequence: field.sequence,
+              constructionFieldId: field.constructionFieldId,
+              fieldType: field.fieldType,
+              fieldTypeSource: field.fieldTypeSource,
+              openingMode: field.openingMode,
+              openingModeSource: field.openingModeSource,
+              openingHanding: field.openingHanding,
+              openingHandingSource: field.openingHandingSource,
+            }))}
             onDraftChange={setActiveModuleDraft}
             profileResolution={activeModuleProfileResolution}
             onProfileResolutionChange={setActiveModuleProfileResolution}

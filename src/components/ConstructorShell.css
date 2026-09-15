@@ -1284,6 +1284,51 @@
   grid-template-rows: auto auto auto minmax(0, 1fr);
 }
 
+.constructor-shell.has-form-field-handoff {
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+}
+
+.constructor-shell.has-module-navigation.has-form-field-handoff {
+  grid-template-rows: auto auto auto auto minmax(0, 1fr);
+}
+
+.constructor-form-field-handoff {
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-bottom: 1px solid #d4b970;
+  background: #fff7df;
+  color: #5f4a16;
+}
+
+.constructor-form-field-handoff > div {
+  min-width: 0;
+}
+
+.constructor-form-field-handoff b,
+.constructor-form-field-handoff span {
+  display: block;
+}
+
+.constructor-form-field-handoff b {
+  margin-bottom: 2px;
+  font-size: 9px;
+  letter-spacing: .65px;
+}
+
+.constructor-form-field-handoff span,
+.constructor-form-field-handoff small {
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.constructor-form-field-handoff small {
+  max-width: 52%;
+  color: #766125;
+}
+
 .constructor-module-strip {
   min-height: 42px;
   padding: 6px 10px;

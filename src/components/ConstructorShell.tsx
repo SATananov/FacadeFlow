@@ -87,6 +87,11 @@ import {
   type ComponentCompatibilityResult,
 } from '../domain/componentCompatibility'
 import { buildFieldHardwareRequirements } from '../domain/hardwareResolution'
+import {
+  isPendingFormFieldDescription,
+  transferFormFieldDescriptionsToConstruction,
+  type FormFieldDescriptionInput,
+} from '../domain/formConstructorTransition'
 import './ConstructorShell.css'
 
 export type ConstructorMode = 'offer' | 'free'
@@ -101,6 +106,8 @@ export type ConstructorFieldTopologySummary = {
   openingMode: ConstructionOpeningMode | null
   openingHanding: ConstructionOpeningHanding | null
 }
+
+export type ConstructorInitialFieldDescription = FormFieldDescriptionInput
 
 type ConstructorOfferContext = {
   profileSystemId: string
@@ -140,6 +147,7 @@ type ConstructorShellProps = {
   onFreeProfileSystemChange?: (profileSystemId: string) => void
   moduleSummary?: ConstructorModuleSummary
   initialDraft?: ConstructorDraftSnapshot | null
+  initialFieldDescriptions?: readonly ConstructorInitialFieldDescription[]
   profileResolution?: ModuleProfileResolution | null
   onDraftChange?: (draft: ConstructorDraftSnapshot | null) => void
   onProfileResolutionChange?: (resolution: ModuleProfileResolution) => void
@@ -319,19 +327,23 @@ function constructionToSnapshot(model: ConstructionModel): ConstructorDraftSnaps
 function getInitialConstruction(
   initialDraft: ConstructorDraftSnapshot | null | undefined,
   moduleSummary: ConstructorModuleSummary,
+  initialFieldDescriptions: readonly ConstructorInitialFieldDescription[],
 ): ConstructionModel | null {
   if (initialDraft?.topology) {
-    return upgradeConstructionModelPhysicalDividers(initialDraft.topology)
+    return transferFormFieldDescriptionsToConstruction(
+      upgradeConstructionModelPhysicalDividers(initialDraft.topology),
+      initialFieldDescriptions,
+    )
   }
 
   const frame = getInitialFrame(initialDraft, moduleSummary)
   if (!frame) return null
 
-  if (initialDraft?.dividers?.length) {
-    return migrateLegacyDividersToTopology(frame, initialDraft.dividers)
-  }
+  const initial = initialDraft?.dividers?.length
+    ? migrateLegacyDividersToTopology(frame, initialDraft.dividers)
+    : createConstructionModel(frame)
 
-  return createConstructionModel(frame)
+  return transferFormFieldDescriptionsToConstruction(initial, initialFieldDescriptions)
 }
 
 export default function ConstructorShell({
@@ -344,6 +356,7 @@ export default function ConstructorShell({
   onFreeProfileSystemChange,
   moduleSummary = FREE_MODULE_SUMMARY,
   initialDraft,
+  initialFieldDescriptions = [],
   profileResolution,
   onDraftChange,
   onProfileResolutionChange,
@@ -367,7 +380,14 @@ export default function ConstructorShell({
   const [profileViewEnabled, setProfileViewEnabled] = useState(true)
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>('properties')
   const [construction, setConstruction] = useState<ConstructionModel | null>(() =>
-    getInitialConstruction(initialDraft, moduleSummary),
+    getInitialConstruction(initialDraft, moduleSummary, initialFieldDescriptions),
+  )
+  const formFieldTransferConsumedRef = useRef(
+    initialFieldDescriptions.length === 0 ||
+    Boolean(
+      construction &&
+      resolveConstructionTopology(construction).fields.length === initialFieldDescriptions.length
+    ),
   )
   const historySessionKey = activeModuleId ? `${mode}:${activeModuleId}` : null
   const cachedModuleHistory = historySessionKey
@@ -442,6 +462,9 @@ export default function ConstructorShell({
     ? fields.find((field) => field.id === selectedFieldId) ?? null
     : null
   const conceptualFieldCount = fields.length
+  const pendingInitialFieldDescriptions = isFreeMode
+    ? []
+    : initialFieldDescriptions.filter(isPendingFormFieldDescription)
   const selectedProfileSystem = getProfileSystemById(
     isFreeMode ? freeProfileSystemId : offerContext?.profileSystemId ?? '',
   )
@@ -780,10 +803,22 @@ export default function ConstructorShell({
   }
 
   const broadcastConstruction = (nextConstruction: ConstructionModel | null) => {
-    constructionRef.current = nextConstruction
-    setConstruction(nextConstruction)
+    let preparedConstruction = nextConstruction
+    if (
+      preparedConstruction &&
+      !isFreeMode &&
+      !formFieldTransferConsumedRef.current &&
+      initialFieldDescriptions.length > 0 &&
+      resolveConstructionTopology(preparedConstruction).fields.length === initialFieldDescriptions.length
+    ) {
+      preparedConstruction = transferFormFieldDescriptionsToConstruction(preparedConstruction, initialFieldDescriptions)
+      formFieldTransferConsumedRef.current = true
+    }
 
-    if (!nextConstruction) {
+    constructionRef.current = preparedConstruction
+    setConstruction(preparedConstruction)
+
+    if (!preparedConstruction) {
       onDraftChange?.(null)
       if (!isFreeMode) {
         onFieldTopologyChange?.([])
@@ -791,15 +826,15 @@ export default function ConstructorShell({
       return
     }
 
-    onDraftChange?.(constructionToSnapshot(nextConstruction))
+    onDraftChange?.(constructionToSnapshot(preparedConstruction))
 
     if (!isFreeMode) {
       onModuleSizeChange?.({
-        widthMm: Math.round(nextConstruction.frame.widthMm),
-        heightMm: Math.round(nextConstruction.frame.heightMm),
+        widthMm: Math.round(preparedConstruction.frame.widthMm),
+        heightMm: Math.round(preparedConstruction.frame.heightMm),
       })
       onFieldTopologyChange?.(
-        resolveConstructionTopology(nextConstruction).fields.map((field) => ({
+        resolveConstructionTopology(preparedConstruction).fields.map((field) => ({
           id: field.id,
           sequence: field.sequence,
           widthMm: Math.round(field.bounds.widthMm),
@@ -2356,7 +2391,7 @@ export default function ConstructorShell({
   // Fit{autoFitEnabled ? ' AUTO' : ''}
   // ZOOM: {zoom}% · {autoFitEnabled ? 'FIT AUTO' : 'MANUAL VIEW'}
   return (
-    <section className={`constructor-shell${showModuleStrip ? ' has-module-navigation' : ''}`} aria-label={`FacadeFlow Конструктор · ${title}`}>
+    <section className={`constructor-shell${showModuleStrip ? ' has-module-navigation' : ''}${pendingInitialFieldDescriptions.length > 0 ? ' has-form-field-handoff' : ''}`} aria-label={`FacadeFlow Конструктор · ${title}`}>
       <span className="constructor-contract-marker" aria-hidden="true">
         FACADEFLOW CONSTRUCTOR · FIELD SEMANTICS 01D · Constructor 01C · Constructor 01D · CONSTRUCTOR 01B · Параметрична каса · SYSTEM NEUTRAL ·
         Profile View {profileViewEnabled ? 'ON' : 'OFF'} · Grid {gridVisible ? 'ON' : 'OFF'} · Snap {snapEnabled ? 'ON' : 'OFF'} ·
@@ -2468,6 +2503,23 @@ export default function ConstructorShell({
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {!isFreeMode && pendingInitialFieldDescriptions.length > 0 && (
+        <div className="constructor-form-field-handoff" role="status">
+          <div>
+            <b>ПРЕХОД ОТ ОПИСАНИЕТО КЪМ КОНСТРУКТОРА</b>
+            <span>
+              Нерешени описания: {pendingInitialFieldDescriptions.length} ·
+              очаквани ПОЛЕТА: {initialFieldDescriptions.length} · текуща конструкция: {conceptualFieldCount}.
+            </span>
+          </div>
+          <small>
+            {conceptualFieldCount === initialFieldDescriptions.length
+              ? 'Съвместимите FIXED / OPERABLE, начин на отваряне и посока се прехвърлят по FIELD номер. Свободните текстови описания остават за ръчно решение.'
+              : 'Данните се пазят. FacadeFlow няма да създава делители или геометрия автоматично; създай нужните ПОЛЕТА ръчно.'}
+          </small>
         </div>
       )}
 
