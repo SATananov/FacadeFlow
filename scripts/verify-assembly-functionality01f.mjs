@@ -1,0 +1,41 @@
+import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+
+const model = await readFile(new URL('../src/domain/systemDrivenProductModel.ts', import.meta.url), 'utf8')
+const panel = await readFile(new URL('../src/components/AssemblyReviewPanel.tsx', import.meta.url), 'utf8')
+const css = await readFile(new URL('../src/components/AssemblyReviewPanel.css', import.meta.url), 'utf8')
+const acceptance = await readFile(new URL('../docs/ASSEMBLY_FUNCTIONALITY_01F_GLAZING_EVIDENCE_GAP_REGISTRY.md', import.meta.url), 'utf8')
+
+assert(model.includes("ASSEMBLY_GLAZING_EVIDENCE_GAP_VERSION = 'assembly-functionality-01f'"), '01F version missing')
+assert(model.includes('SystemDrivenGlazingEvidenceGapReadModel'), '01F gap read model missing')
+assert(model.includes("'field-input'"), '01F field input gap missing')
+assert(model.includes("'catalogue-bead-thickness'"), '01F catalogue gap missing')
+assert(model.includes("'bead-base-compatibility'"), '01F compatibility gap missing')
+assert(model.includes("'placement-evidence'"), '01F placement gap missing')
+assert(model.includes("'glass-cut-rule'"), '01F glass cut gap missing')
+assert(model.includes('buildGlazingEvidenceGaps'), '01F gap builder missing')
+assert(model.includes('occurrenceCount'), '01F affected occurrence count missing')
+assert(model.includes('requiredEvidenceBg'), '01F required evidence text missing')
+assert(model.includes('automaticGeometryAllowed: false'), '01F automatic geometry gate missing')
+assert(model.includes('glazingEvidenceOpenGapCount'), '01F aggregate gap count missing')
+
+assert(panel.includes('function GlazingEvidenceGapPanel'), '01F panel missing')
+assert(panel.includes('ЛИПСВАЩИ ДОКАЗАТЕЛСТВА · 01F'), '01F heading missing')
+assert(panel.includes('<GlazingEvidenceGapPanel model={moduleModel} />'), '01F panel not wired')
+assert(panel.includes('Осeм еднакви възела') || panel.includes('Осем еднакви възела'), '01F deduplication explanation missing')
+assert(panel.includes('01F не попълва липсващото знание'), '01F safety copy missing')
+assert(css.includes('ASSEMBLY FUNCTIONALITY 01F'), '01F CSS marker missing')
+assert(css.includes('.assembly-glazing-gap-grid'), '01F grid styling missing')
+
+assert(acceptance.includes('Turn the 01E evidence status into an actionable, deduplicated queue'), '01F acceptance goal missing')
+assert(acceptance.includes('AUTOMATIC GEOMETRY = NO'), '01F automatic geometry safety boundary missing')
+assert(acceptance.includes('RULES VALIDATED = NO'), '01F rules validated boundary missing')
+assert(acceptance.includes('MACHINE READY = NO'), '01F machine ready boundary missing')
+
+console.log('=== ASSEMBLY FUNCTIONALITY 01F VERIFY PASS ===')
+console.log('EVIDENCE GAPS: DEDUPLICATED BY MISSING RULE IDENTITY')
+console.log('REPEATED JOINT OCCURRENCES: AGGREGATED / NOT DUPLICATED AS RULES')
+console.log('MISSING INPUT / COMPATIBILITY / PLACEMENT / GLASS CUT: EXPLICIT')
+console.log('AUTOMATIC GEOMETRY: NO')
+console.log('RULES VALIDATED: NO')
+console.log('MACHINE READY: NO')

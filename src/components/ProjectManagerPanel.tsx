@@ -8,6 +8,7 @@ type CurrentProjectSummary = {
   label: string
   moduleCount: number
   headRevisionNumber: number | null
+  active: boolean
 }
 
 type Props = {
@@ -15,6 +16,7 @@ type Props = {
   projects: StoredProjectSummary[]
   blocked: boolean
   onOpen: (id: string) => void
+  onDelete: (id: string) => void
   onNew: () => void
 }
 
@@ -22,18 +24,25 @@ function moduleLabel(count: number) {
   return count === 1 ? '1 модул' : `${count} модула`
 }
 
-export function ProjectManagerPanel({ current, projects, blocked, onOpen, onNew }: Props) {
+export function ProjectManagerPanel({ current, projects, blocked, onOpen, onDelete, onNew }: Props) {
   const [open, setOpen] = useState(false)
   const available = useMemo(() => {
     const map = new Map<string, StoredProjectSummary>()
     for (const project of projects) map.set(project.id, project)
-    if (!map.has(current.id)) {
+    // The open project is authoritative in memory. Always replace a potentially
+    // stale persisted summary so module count/name changes are visible instantly.
+    if (current.active) {
       map.set(current.id, {
-        ...current,
+        id: current.id,
+        label: current.label,
+        moduleCount: current.moduleCount,
+        headRevisionNumber: current.headRevisionNumber,
         openable: true,
-        clientName: '',
-        objectName: '',
+        clientName: map.get(current.id)?.clientName ?? '',
+        objectName: map.get(current.id)?.objectName ?? '',
       })
+    } else {
+      map.delete(current.id)
     }
     return [...map.values()].sort((a, b) => {
       if (a.id === current.id) return -1
@@ -53,6 +62,16 @@ export function ProjectManagerPanel({ current, projects, blocked, onOpen, onNew 
       return
     }
     onOpen(id)
+    setOpen(false)
+  }
+
+  const deleteProject = (project: StoredProjectSummary) => {
+    const moduleText = moduleLabel(project.moduleCount)
+    const confirmed = window.confirm(
+      `Ще изтриете проекта „${project.label}“ и ${moduleText}.\n\nДействието не може да бъде отменено.\n\nДа се изтрие ли проектът?`,
+    )
+    if (!confirmed) return
+    onDelete(project.id)
     setOpen(false)
   }
 
@@ -96,6 +115,12 @@ export function ProjectManagerPanel({ current, projects, blocked, onOpen, onNew 
             </div>
 
             <div className="project-manager-list">
+              {available.length === 0 && (
+                <div className="project-manager-empty" role="status">
+                  <b>Няма запазени проекти.</b>
+                  <span>Създай нов проект, когато си готов да започнеш.</span>
+                </div>
+              )}
               {available.map((project) => {
                 const isCurrent = project.id === current.id
                 return (
@@ -117,9 +142,25 @@ export function ProjectManagerPanel({ current, projects, blocked, onOpen, onNew 
                       </p>
                       {!project.openable && <p className="project-manager-warning">Записът не може да се отвори безопасно. FacadeFlow няма да го презапише.</p>}
                     </div>
-                    <button type="button" disabled={!project.openable || isCurrent} onClick={() => openProject(project.id)}>
-                      {isCurrent ? 'Отворен' : project.openable ? 'Отвори' : 'Недостъпен'}
-                    </button>
+                    <div className="project-manager-card-actions">
+                      <button
+                        type="button"
+                        className="project-manager-card-action project-manager-card-open"
+                        disabled={!project.openable || isCurrent}
+                        onClick={() => openProject(project.id)}
+                      >
+                        {isCurrent ? 'Отворен' : project.openable ? 'Отвори' : 'Недостъпен'}
+                      </button>
+                      <button
+                        type="button"
+                        className="project-manager-card-action project-manager-card-delete"
+                        disabled={blocked || !project.openable}
+                        onClick={() => deleteProject(project)}
+                        aria-label={`Изтрий проект ${project.label}`}
+                      >
+                        Изтрий
+                      </button>
+                    </div>
                   </article>
                 )
               })}

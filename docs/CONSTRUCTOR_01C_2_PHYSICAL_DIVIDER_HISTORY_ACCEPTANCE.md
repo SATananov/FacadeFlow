@@ -4,7 +4,7 @@
 
 Constructor 01C.2 keeps the canonical **ПОЛЕ / FIELD** topology from 01C.1 and fixes the next real construction problem: a divider must consume visible construction space instead of behaving geometrically like a zero-width CAD line.
 
-The FacadeFlow visual identity remains unchanged. This stage improves construction behavior, field dimensions, local joints and correction workflow; it does not copy the legacy SkyGlazing interface.
+The FacadeFlow visual identity remains unchanged. This stage improves construction behavior, field dimensions, local joints and correction workflow; it does not copy the legacy reference interface.
 
 ## Physical divider semantics
 

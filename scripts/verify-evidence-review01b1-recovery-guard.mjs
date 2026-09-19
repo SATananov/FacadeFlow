@@ -1,0 +1,25 @@
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+
+const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
+const validation = read('src/domain/assurance/assuranceValidation.ts')
+const adapter = read('src/domain/assurance/legacyEvidenceAdapter.ts')
+const serialization = read('src/domain/project/projectSerialization.ts')
+const panel = read('src/components/ProjectAssurancePanel.tsx')
+
+assert(validation.includes("official-sectional-bead-base-pairing"))
+assert(validation.includes("official-sectional-bead-placement"))
+assert(validation.includes('allowHistoricalAdditiveReviewGaps'))
+assert(validation.includes("p.kind === 'catalog'"))
+assert(adapter.includes('backfillAdditiveReviewEvidence'))
+assert(adapter.includes('Historical revisions are never rewritten'))
+assert(serialization.includes('backfillAdditiveReviewEvidence(snapshot as ProjectSnapshot)'))
+assert(panel.includes('if (!projectActive) return null'))
+console.log('=== EVIDENCE REVIEW 01B.1 RECOVERY GUARD VERIFY PASS ===')
+console.log('PRE-01B CURRENT DRAFT: ADDITIVE REVIEW EVIDENCE BACKFILL WIRED')
+console.log('HISTORICAL REVISION BINDINGS: BACKWARD-COMPATIBLE / NOT REWRITTEN')
+console.log('OFFICIAL SECTIONAL CANDIDATES: SOURCE-BOUND CATALOG PROVENANCE')
+console.log('NO ACTIVE PROJECT: ASSURANCE LAUNCHER HIDDEN')
+console.log('RULE PROMOTION: NO')
+console.log('AUTOMATIC GEOMETRY: NO')
+console.log('MACHINE READY: NO')

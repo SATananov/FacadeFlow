@@ -5,8 +5,8 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
 
-// Execute the actual TS domain and TSX render expressions in memory. No emitted
-// files, browser state, new dependencies or changes to ConstructionModel.
+// PREDEPLOY_019_04C_VERIFIER_COMPAT runtime: execute the actual TS domains and prove
+// that 04C pairing truth stays fail-closed for unresolved or unsupported boundaries.
 const root = fileURLToPath(new URL('../', import.meta.url))
 const require = createRequire(import.meta.url)
 const cache = new Map()
@@ -40,13 +40,14 @@ const { buildModuleDimensionalChain } = load('src/domain/profileDimensionalSeman
 const { createConstructionModel, resolveConstructionTopology, splitField, setConstructionFieldType } = construction
 const frame = { xMm: 0, yMm: 0, widthMm: 1800, heightMm: 1600 }
 const assignment = (profileCode) => ({ profileCode, source: 'human' })
-function fixture(model = createConstructionModel(frame)) {
+
+function fixture(model = createConstructionModel(frame), sashProfileCode = '482.05') {
   for (const field of resolveConstructionTopology(model).fields) model = setConstructionFieldType(model, field.id, 'operable')
   const topology = resolveConstructionTopology(model)
   const resolution = createModuleProfileResolution(system.id)
   resolution.frame = assignment('482.30')
   for (const divider of topology.dividers) resolution.dividers[divider.id] = assignment('482.21')
-  for (const field of topology.fields) resolution.fieldSashes[field.id] = assignment('482.05')
+  for (const field of topology.fields) resolution.fieldSashes[field.id] = assignment(sashProfileCode)
   return { model, ...topology, resolution }
 }
 function freeze(value) {
@@ -63,23 +64,12 @@ function geometry(input) {
   const joints = buildProfileJointGeometryReadModel(args)
   const result = buildProfileAwareSashGeometryReadModel({ ...args, joints })
   assert.equal(JSON.stringify(input), before, 'construction, fields, dividers and assignments must not mutate')
+  assert.equal(joints.machineReady, false)
   assert.equal(result.machineReady, false)
   const dimensions = buildModuleDimensionalChain(args)
   for (const field of dimensions.fields) {
     assert.equal(field.glassCutWidth.valueMm, null)
     assert.equal(field.glassCutHeight.valueMm, null)
-  }
-  for (const field of Object.values(result.fields)) {
-    assert.equal(field.glazingInsetMm, null)
-    assert.equal(field.machineReady, false)
-    if (!field.placementReady) continue
-    assert.equal(field.sashVisibleFaceMm, 56)
-    assert.deepEqual(field.overlapByEdgeMm, { left: 22, right: 22, top: 22, bottom: 22 })
-    const outer = field.outerBoundsMm
-    assert.deepEqual(field.innerProfileBoundsMm, {
-      xMm: outer.xMm + 56, yMm: outer.yMm + 56,
-      widthMm: outer.widthMm - 112, heightMm: outer.heightMm - 112,
-    })
   }
   return { joints, result }
 }
@@ -89,36 +79,81 @@ function test(name, run) {
   passed += 1
   console.log(`PASS ${name}`)
 }
-function threeFields(axis) {
+function threeFields(axis, sashProfileCode = '482.05') {
   let model = splitField(createConstructionModel(frame), 'field-1', axis, 450)
   model = splitField(model, 'field-3', axis, 450)
-  return fixture(model)
+  return fixture(model, sashProfileCode)
 }
 
-test('frame/frame: reviewed bounds and exact 56 mm inner contour; immutable inputs', () => {
-  const { result } = geometry(fixture())
-  assert.equal(result.reviewedPlacementCount, 1)
-  assert.deepEqual(result.fields['field-1'].outerBoundsMm, { xMm: 42, yMm: 42, widthMm: 1716, heightMm: 1516 })
+function assertUnresolvedPlacement(field) {
+  assert.equal(field.placementReady, false)
+  assert.equal(field.status, 'missing-reviewed-overlap')
+  assert.equal(field.outerBoundsMm, null)
+  assert.equal(field.innerProfileBoundsMm, null)
+  assert.equal(field.glazingInsetMm, null)
+  assert.equal(field.machineReady, false)
+}
+
+function assertFrameBoundaryUninterpreted(boundary) {
+  assert.equal(boundary.supportKind, 'frame')
+  assert.equal(boundary.status, 'assembly-evidence-required')
+  assert.equal(boundary.sashOverlapMm, null)
+  assert.equal(boundary.sashInsetMm, null)
+  assert.equal(boundary.glazingInsetMm, null)
+  assert.ok(boundary.evidenceRule)
+  assert.equal(boundary.evidenceRule.assemblyEvidenceStatus, 'sectional-drawing-uninterpreted')
+}
+
+function assert48205DividerBoundaryBlocked(boundary) {
+  assert.equal(boundary.supportKind, 'divider')
+  assert.equal(boundary.supportProfileCode, '482.21')
+  assert.equal(boundary.sashProfileCode, '482.05')
+  assert.equal(boundary.status, 'unsupported-pair')
+  assert.equal(boundary.evidenceRule, null)
+  assert.equal(boundary.sashOverlapMm, null)
+}
+
+test('single operable 482.05 field: frame pair is recognized but sectional geometry remains uninterpreted', () => {
+  const input = fixture()
+  const { joints, result } = geometry(input)
+  assert.equal(joints.recognizedPairCount, 4)
+  assert.equal(joints.reviewedOverlapCount, 0)
+  assert.equal(joints.resolvedJointCount, 0)
+  assert.equal(joints.geometryReady, false)
+  assert.equal(joints.fields['field-1'].boundaries.length, 4)
+  for (const boundary of joints.fields['field-1'].boundaries) assertFrameBoundaryUninterpreted(boundary)
+  assert.equal(result.requiredPlacementCount, 1)
+  assert.equal(result.reviewedPlacementCount, 0)
+  assertUnresolvedPlacement(result.fields['field-1'])
 })
+
 for (const axis of ['vertical', 'horizontal']) {
-  test(`three ${axis} fields: frame/mullion, mullion/mullion, mullion/frame`, () => {
+  test(`three ${axis} 482.05 fields: frame boundaries stay uninterpreted and divider boundaries are blocked`, () => {
     const input = threeFields(axis)
-    const { result } = geometry(input)
-    assert.equal(result.reviewedPlacementCount, 3)
-    const bounds = input.fields.map((field) => result.fields[field.id].outerBoundsMm)
-    assert.deepEqual(bounds, axis === 'vertical' ? [
-      { xMm: 42, yMm: 42, widthMm: 468, heightMm: 1516 },
-      { xMm: 550, yMm: 42, widthMm: 450, heightMm: 1516 },
-      { xMm: 1040, yMm: 42, widthMm: 718, heightMm: 1516 },
-    ] : [
-      { xMm: 42, yMm: 42, widthMm: 1716, heightMm: 468 },
-      { xMm: 42, yMm: 550, widthMm: 1716, heightMm: 450 },
-      { xMm: 42, yMm: 1040, widthMm: 1716, heightMm: 518 },
-    ])
+    const { joints, result } = geometry(input)
+    assert.equal(result.requiredPlacementCount, 3)
+    assert.equal(result.reviewedPlacementCount, 0)
+    let sawFrame = false
+    let sawDivider = false
+    for (const field of input.fields) {
+      for (const boundary of joints.fields[field.id].boundaries) {
+        if (boundary.supportKind === 'frame') {
+          sawFrame = true
+          assertFrameBoundaryUninterpreted(boundary)
+        } else if (boundary.supportKind === 'divider') {
+          sawDivider = true
+          assert48205DividerBoundaryBlocked(boundary)
+        }
+      }
+      assertUnresolvedPlacement(result.fields[field.id])
+    }
+    assert.equal(sawFrame, true)
+    assert.equal(sawDivider, true)
   })
 }
+
 for (const fieldType of ['fixed', null]) {
-  test(`${fieldType ?? 'UNSET'} field has no sash placement`, () => {
+  test(`${fieldType ?? 'UNSET'} field requires no sash placement`, () => {
     const input = fixture()
     input.fields[0].fieldType = fieldType
     const { result } = geometry(input)
@@ -127,131 +162,83 @@ for (const fieldType of ['fixed', null]) {
     assert.equal(result.fields['field-1'].outerBoundsMm, null)
   })
 }
-for (const scenario of ['missing sash', 'missing frame', 'wrong sash role', 'unsupported support pair', 'polygon']) {
-  test(`${scenario}: fail closed`, () => {
-    const input = fixture()
-    if (scenario === 'missing sash') input.resolution.fieldSashes = {}
-    if (scenario === 'missing frame') input.resolution.frame = null
-    if (scenario === 'wrong sash role') input.resolution.fieldSashes['field-1'] = assignment('482.30')
-    if (scenario === 'unsupported support pair') input.resolution.frame = assignment('482.21')
-    if (scenario === 'polygon') input.fields[0].polygon = [{ xMm: 60, yMm: 60 }, { xMm: 1740, yMm: 60 }, { xMm: 60, yMm: 1540 }]
-    const { result } = geometry(input)
-    assert.equal(result.reviewedPlacementCount, 0)
-    assert.equal(result.fields['field-1'].outerBoundsMm, null)
-    if (scenario === 'polygon') assert.equal(result.fields['field-1'].status, 'unsupported-topology')
-  })
-}
-test('missing divider assignment blocks only adjacent fields', () => {
+
+test('missing sash assignment fails closed', () => {
+  const input = fixture()
+  input.resolution.fieldSashes = {}
+  const { joints, result } = geometry(input)
+  assert.ok(joints.fields['field-1'].boundaries.every((boundary) => boundary.status === 'missing-profile-assignment'))
+  assert.equal(result.reviewedPlacementCount, 0)
+  assert.equal(result.fields['field-1'].placementReady, false)
+})
+
+test('unsupported sash/support pair fails closed', () => {
+  const input = fixture()
+  input.resolution.fieldSashes['field-1'] = assignment('482.30')
+  const { joints, result } = geometry(input)
+  assert.ok(joints.fields['field-1'].boundaries.every((boundary) => boundary.status === 'unsupported-pair'))
+  assert.equal(result.reviewedPlacementCount, 0)
+  assert.equal(result.fields['field-1'].placementReady, false)
+})
+
+test('catalogue mullion pair 482.21 + 482.18 is recognized on divider edges but still cannot unlock placement', () => {
+  const input = threeFields('vertical', '482.18')
+  const { joints, result } = geometry(input)
+  let recognizedDivider = 0
+  for (const field of input.fields) {
+    for (const boundary of joints.fields[field.id].boundaries) {
+      if (boundary.supportKind === 'divider') {
+        assert.equal(boundary.supportProfileCode, '482.21')
+        assert.equal(boundary.sashProfileCode, '482.18')
+        assert.equal(boundary.status, 'assembly-evidence-required')
+        assert.ok(boundary.evidenceRule)
+        assert.equal(boundary.evidenceRule.assemblyEvidenceStatus, 'sectional-drawing-uninterpreted')
+        assert.equal(boundary.sashOverlapMm, null)
+        recognizedDivider += 1
+      } else if (boundary.supportKind === 'frame') {
+        // 482.30 + 482.18 is not a catalogue-confirmed pair in 04C.
+        assert.equal(boundary.status, 'unsupported-pair')
+        assert.equal(boundary.evidenceRule, null)
+      }
+    }
+    assertUnresolvedPlacement(result.fields[field.id])
+  }
+  assert.ok(recognizedDivider > 0)
+  assert.equal(result.reviewedPlacementCount, 0)
+})
+
+test('polygon field remains unsupported', () => {
+  const input = fixture()
+  input.fields[0].polygon = [{ xMm: 60, yMm: 60 }, { xMm: 1740, yMm: 60 }, { xMm: 60, yMm: 1540 }]
+  const { joints, result } = geometry(input)
+  assert.equal(joints.fields['field-1'].boundaries[0].status, 'unsupported-topology')
+  assert.equal(result.fields['field-1'].status, 'unsupported-topology')
+  assert.equal(result.reviewedPlacementCount, 0)
+})
+
+test('missing divider assignment blocks adjacent fields without inventing overlap', () => {
   const input = threeFields('vertical')
   delete input.resolution.dividers['divider-1']
-  const { result } = geometry(input)
-  assert.deepEqual(input.fields.map((field) => result.fields[field.id].placementReady), [false, false, true])
+  const { joints, result } = geometry(input)
+  assert.ok(joints.fields[input.fields[0].id].boundaries.some((boundary) => boundary.status === 'missing-profile-assignment'))
+  assert.ok(joints.fields[input.fields[1].id].boundaries.some((boundary) => boundary.status === 'missing-profile-assignment'))
+  assert.equal(result.reviewedPlacementCount, 0)
 })
+
 for (const axis of ['vertical', 'horizontal']) {
-  test(`local ${axis} dividers at same coordinate: no evidence borrowed from other span`, () => {
-    const parentAxis = axis === 'vertical' ? 'horizontal' : 'vertical'
-    let model = splitField(createConstructionModel(frame), 'field-1', parentAxis, 650)
-    model = splitField(model, 'field-2', axis, 650)
-    model = splitField(model, 'field-3', axis, 650)
-    const input = fixture(model)
-    delete input.resolution.dividers['divider-3']
-    const { joints, result } = geometry(input)
-    const edges = axis === 'vertical' ? ['right', 'left'] : ['bottom', 'top']
-    for (const [index, id] of ['field-6', 'field-7'].entries()) {
-      const boundary = joints.fields[id].boundaries.find((item) => item.edge === edges[index])
-      assert.equal(boundary.supportId, 'divider-3')
-      assert.equal(boundary.status, 'missing-profile-assignment')
-      assert.equal(result.fields[id].placementReady, false)
-    }
-    assert.equal(result.fields['field-4'].placementReady, true)
-    assert.equal(result.fields['field-5'].placementReady, true)
-  })
-  test(`${axis} ambiguity: two covering candidates fail closed on both sides`, () => {
+  test(`${axis} ambiguous support fails closed`, () => {
     const input = threeFields(axis)
     input.dividers.push({ ...input.dividers[0], id: 'duplicate' })
     input.resolution.dividers.duplicate = assignment('482.21')
     const { joints, result } = geometry(input)
-    for (const field of input.fields.slice(0, 2)) {
-      assert.equal(result.fields[field.id].placementReady, false)
-      assert.ok(joints.fields[field.id].boundaries.some((boundary) => boundary.status === 'unresolved-adjacency'))
-    }
+    assert.ok(Object.values(joints.fields).some((field) => field.boundaries.some((boundary) => boundary.status === 'unresolved-adjacency')))
+    assert.equal(result.reviewedPlacementCount, 0)
   })
-  for (const shortfall of [0.04, 0.06]) {
-    test(`${axis} span endpoints use EPSILON_MM: ${shortfall} mm shortfall`, () => {
-      const input = threeFields(axis)
-      input.dividers[0].startMm += shortfall
-      input.dividers[0].endMm -= shortfall
-      const { result } = geometry(input)
-      assert.equal(result.fields[input.fields[0].id].placementReady, shortfall < 0.05)
-    })
-  }
 }
 
-// Execute the real fields.map callbacks from ConstructorShell, rather than a
-// duplicate of the mapping formulas. Event handlers are created but not invoked.
-const shellPath = join(root, 'src/components/ConstructorShell.tsx')
-const shellSource = ts.createSourceFile(shellPath, readFileSync(shellPath, 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)
-function renderCallback(marker) {
-  const matches = []
-  function visit(node) {
-    if (ts.isCallExpression(node) && node.expression.getText(shellSource) === 'fields.map') {
-      const callback = node.arguments[0]
-      if (callback.getText(shellSource).includes(marker)) matches.push(callback.getText(shellSource))
-    }
-    ts.forEachChild(node, visit)
-  }
-  visit(shellSource)
-  assert.equal(matches.length, 1, `one actual renderer for ${marker}`)
-  return (field, scope) => evaluate(`export const render = ${matches[0]}`, 'render.tsx', scope).render(field)
-}
-const renderField = renderCallback('constructor-field-surface')
-const renderSash = renderCallback('key={`reviewed-sash-')
-function findElement(element, predicate) {
-  if (!element || typeof element !== 'object') return undefined
-  if (predicate(element)) return element
-  for (const child of [element.props?.children].flat(Infinity)) {
-    const found = findElement(child, predicate)
-    if (found) return found
-  }
-  return undefined
-}
-for (const scale of [0.14, 0.28, 0.56]) {
-  test(`actual JSX aligns symbol and inner contour with domain at ${scale} px/mm`, () => {
-    const input = threeFields('vertical')
-    const { result } = geometry(input)
-    for (const field of input.fields) {
-      const scope = { profileViewActive: true, profileAwareSashGeometry: result, profileAwareGeometry: null, selectedFieldId: field.id, pxPerMm: scale }
-      const rendered = renderField(field, scope)
-      assert.match(rendered.props.className, /has-reviewed-sash-placement/)
-      assert.doesNotMatch(rendered.props.className, /has-unresolved-sash-geometry/)
-      const { outerBoundsMm: outer, innerProfileBoundsMm: inner } = result.fields[field.id]
-      const svg = findElement(rendered, (node) => node.type === 'svg')
-      assert.deepEqual(svg.props.style, { inset: 'auto', left: `${(inner.xMm - field.bounds.xMm) * scale}px`, top: `${(inner.yMm - field.bounds.yMm) * scale}px`, width: `${inner.widthMm * scale}px`, height: `${inner.heightMm * scale}px` })
-      const sash = renderSash(field, scope)
-      const contour = findElement(sash, (node) => node.props?.className === 'constructor-reviewed-sash-inner-face')
-      assert.deepEqual(contour.props.style, { left: `${(inner.xMm - outer.xMm) * scale}px`, top: `${(inner.yMm - outer.yMm) * scale}px`, width: `${inner.widthMm * scale}px`, height: `${inner.heightMm * scale}px` })
-      assert.equal(sash.props.style.left, `${outer.xMm * scale}px`)
-      assert.equal(sash.props.style.top, `${outer.yMm * scale}px`)
-    }
-  })
-}
-for (const profileViewActive of [false, true]) {
-  test(`${profileViewActive ? 'unresolved ON' : 'Profile View OFF'} retains schematic SVG positioning`, () => {
-    const input = fixture()
-    if (profileViewActive) input.resolution.fieldSashes = {}
-    const { result } = geometry(input)
-    const rendered = renderField(input.fields[0], { profileViewActive, profileAwareSashGeometry: result, profileAwareGeometry: null, selectedFieldId: null, pxPerMm: 0.28 })
-    assert.equal(findElement(rendered, (node) => node.type === 'svg').props.style, undefined)
-    assert.doesNotMatch(rendered.props.className, /has-reviewed-sash-placement/)
-  })
-}
-test('CSS strokes do not alter reviewed containing blocks; schematic 11px remains', () => {
-  const css = readFileSync(join(root, 'src/components/ConstructorShell.css'), 'utf8')
-  for (const name of ['constructor-reviewed-sash-placement', 'constructor-reviewed-sash-inner-face']) {
-    const block = css.match(new RegExp(`\\.${name} \\{([^}]+)\\}`))[1]
-    assert.doesNotMatch(block, /(?:^|[;\n])\s*(?:border(?:-width)?|padding|inset)\s*:/)
-    assert.match(block, /outline:/)
-  }
-  assert.match(css, /\.constructor-operable-visual \{\s*inset: 11px;/)
-})
-console.log(`PROFILE-AWARE SASH GEOMETRY 01.1 RUNTIME PASS: ${passed} cases`)
+console.log(`PROFILE-AWARE SASH GEOMETRY 01 RUNTIME PASS: ${passed} cases`)
+console.log('04C FRAME PAIR 482.30 + 482.05: UNINTERPRETED SECTION / FAIL-CLOSED')
+console.log('04C MULLION PAIR 482.21 + 482.18: UNINTERPRETED SECTION / FAIL-CLOSED')
+console.log('OLD 482.21 + 482.05 MULLION PAIR: UNSUPPORTED')
+console.log('REVIEWED SASH PLACEMENT: NOT UNLOCKED')
+console.log('MACHINE READY: NO')

@@ -4,7 +4,11 @@ import { fingerprint, freezeDeep } from './canonical'
 import { statementKey } from './predicateRegistry'
 import { moduleDependencies } from './changeTracking'
 import { getProfileSystemById } from '../../data/profileSystems'
-import { getPrelude60GlazingBeadEvidenceByCode } from '../../data/profileSystems/glazingEvidence'
+import {
+  findPrelude60SectionalEvidenceCandidate,
+  getPrelude60GlazingBeadEvidenceByCode,
+  type Prelude60SectionalEvidenceCandidate,
+} from '../../data/profileSystems/glazingEvidence'
 import { profileDimensionalSemantics } from '../../data/profileSystems/dimensionalSemantics'
 import { profileJointEvidenceRules } from '../../data/profileSystems/jointSemantics'
 import type { CatalogEvidence } from '../../data/profileSystems/types'
@@ -28,6 +32,29 @@ export function sourceReference(systemId: string, item: string, source: CatalogE
 export function sourceDigest(source: SourceReference): string {
   const { id: _id, capturedRecordDigest: _digest, ...data } = source
   return fingerprint(data)
+}
+
+function sectionalEvidenceSourceReference(candidate: Prelude60SectionalEvidenceCandidate): SourceReference {
+  const data = {
+    documentId: `external:${fingerprint({ url: candidate.sourceUrl, publisher: candidate.sourcePublisher })}`,
+    documentTitle: 'ALTEST /series 60mm/ technical PDF',
+    documentVersion: { state: 'unknown' as const, reason: 'External PDF edition/revision is not stated in the captured candidate.' },
+    sourceSystemId: 'altest-official-technical-pdf',
+    profileSystemId: candidate.systemId,
+    locator: {
+      printedPage: String(candidate.sourcePage),
+      pdfPageIndex: null,
+      section: candidate.sourceSection,
+      table: null,
+      row: null,
+      item: candidate.sourceLocatorBg,
+    },
+    capturedRecordVersion: candidate.version,
+    documentContentDigest: null,
+    note: `${candidate.sourceUrl} · Source-bound review candidate only. Human review does not promote a production rule.`,
+  }
+  const capturedRecordDigest = fingerprint(data)
+  return freezeDeep({ ...data, id: `source:${capturedRecordDigest}`, capturedRecordDigest })
 }
 export function evidenceDigest(record: Omit<EvidenceRecord, 'id'>): string { return `evidence:${fingerprint(record)}` }
 
@@ -99,6 +126,36 @@ export function collectEvidence(snapshot: ProjectSnapshot): {
         if (fact) inputs.push(add(statement(catalog(bead), 'catalog-stated-bead-thickness', { state: 'known', value: fact.nominalGlazingThicknessMm }, 'mm'), { kind: 'catalog' }, [sourceReference(systemId, bead, fact.evidence)]))
         add(statement(target, 'human-selected-bead', { state: 'known', value: bead }, 'none', { profileSystemId: systemId, thicknessMm: thickness, baseProfileCode: base }), human, [], null, inputs)
         add(statement(target, 'bead-base-profile-compatibility', { state: 'unknown', reason: 'BASE-PROFILE COMPATIBILITY: UNCONFIRMED' }, 'none', { profileSystemId: systemId, beadCode: bead, baseProfileCode: base }), { kind: 'unknown', reason: 'No reviewed pairing rule' })
+
+        if (field.fieldType === 'operable') {
+          for (const [kind, predicate] of [
+            ['bead-base-compatibility', 'official-sectional-bead-base-pairing'],
+            ['placement-evidence', 'official-sectional-bead-placement'],
+          ] as const) {
+            const candidate = findPrelude60SectionalEvidenceCandidate({
+              systemId,
+              kind,
+              baseProfileCode: base,
+              beadCode: bead,
+              glazingThicknessMm: thickness,
+            })
+            if (!candidate) continue
+            const source = sectionalEvidenceSourceReference(candidate)
+            add(statement(
+              scope({ kind: 'module' }),
+              predicate,
+              { state: 'known', value: 'показано в официална техническа скица' },
+              'none',
+              {
+                profileSystemId: systemId,
+                baseProfileCode: base,
+                beadCode: bead,
+                thicknessMm: thickness,
+                sourceCandidateId: candidate.id,
+              },
+            ), { kind: 'catalog' }, [source])
+          }
+        }
       }
     }
     for (const entry of profileDimensionalSemantics.filter((entry) => entry.systemId === systemId && entry.visibleFace?.source === 'human-confirmed')) {
@@ -114,6 +171,33 @@ export function collectEvidence(snapshot: ProjectSnapshot): {
   }
   return { sourcesById, evidenceById, currentEvidenceByStatementKey }
 }
+const ADDITIVE_REVIEW_PREDICATES = new Set<Statement['predicate']>([
+  'official-sectional-bead-base-pairing',
+  'official-sectional-bead-placement',
+])
+
+/**
+ * Schema-evolution bridge for persisted PF02 projects created before the
+ * official sectional review candidates existed. Only deterministic,
+ * source-bound review candidates are added to the CURRENT draft evidence
+ * graph. Historical revisions are never rewritten and no rule/authority is
+ * promoted.
+ */
+export function backfillAdditiveReviewEvidence(snapshot: ProjectSnapshot): void {
+  const collected = collectEvidence(snapshot)
+  for (const [key, evidenceId] of Object.entries(collected.currentEvidenceByStatementKey)) {
+    const evidence = collected.evidenceById[evidenceId]
+    if (!evidence || evidence.statement.scope.kind !== 'module' || !ADDITIVE_REVIEW_PREDICATES.has(evidence.statement.predicate)) continue
+    if (Object.hasOwn(snapshot.assurance.currentEvidenceByStatementKey, key)) continue
+    for (const sourceId of evidence.sourceReferenceIds) {
+      const source = collected.sourcesById[sourceId]
+      if (source) snapshot.assurance.sourcesById[sourceId] = source
+    }
+    snapshot.assurance.evidenceById[evidenceId] = evidence
+    snapshot.assurance.currentEvidenceByStatementKey[key] = evidenceId
+  }
+}
+
 function pinnedEvidenceIds(snapshot: ProjectSnapshot): Set<string> {
   const pinned = new Set<string>(Object.values(snapshot.assurance.currentEvidenceByStatementKey))
   for (const revision of Object.values(snapshot.revisions.revisionsById)) {

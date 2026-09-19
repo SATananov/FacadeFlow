@@ -7,6 +7,12 @@ import { dependencyContents } from './changeTracking'
 import { collectEvidence, evidenceDigest, sourceDigest } from './legacyEvidenceAdapter'
 import { validateActor, validateTimestamp } from '../project/revisionOperations'
 
+const ADDITIVE_REVIEW_PREDICATES = new Set([
+  'official-sectional-bead-base-pairing',
+  'official-sectional-bead-placement',
+])
+const isAdditiveReviewPredicate = (predicate: string) => ADDITIVE_REVIEW_PREDICATES.has(predicate)
+
 function map(value: unknown): asserts value is Record<string, unknown> {
   invariant(value && typeof value === 'object' && !Array.isArray(value), 'expected record map')
   for (const key of Object.keys(value)) nonempty(key)
@@ -46,7 +52,7 @@ function validateEvidence(e: EvidenceRecord) {
     if (p.actor !== null) validateActor(p.actor)
     if (p.enteredAt !== null) validateTimestamp(p.enteredAt)
     invariant(e.reviewedRule === null, 'human input cannot grant reviewed authority')
-  } else if (e.statement.predicate.startsWith('catalog-')) {
+  } else if (e.statement.predicate.startsWith('catalog-') || isAdditiveReviewPredicate(e.statement.predicate)) {
     objectKeys(p, ['kind']); invariant(p.kind === 'catalog' && e.sourceReferenceIds.length > 0 && e.reviewedRule === null, 'catalog source required')
   } else if (e.statement.predicate.startsWith('reviewed-')) {
     objectKeys(p, ['kind', 'rule']); invariant(p.kind === 'derived', 'reviewed derivation required')
@@ -75,7 +81,7 @@ function checkGenerations(generations: Record<ChangeKey, number>) {
   map(generations)
   for (const [key, value] of Object.entries(generations)) { invariant(/^(project|offer|module):.+/.test(key), 'invalid generation key'); generation(value) }
 }
-function bindings(snapshot: ProjectSnapshot, graph: RevisionContent | ProjectSnapshot, refs: Record<string, string>, generations: Record<ChangeKey, number>) {
+function bindings(snapshot: ProjectSnapshot, graph: RevisionContent | ProjectSnapshot, refs: Record<string, string>, generations: Record<ChangeKey, number>, allowHistoricalAdditiveReviewGaps = false) {
   map(refs); checkGenerations(generations)
   const contents = dependencyContents(graph)
   for (const key of Object.keys(contents) as ChangeKey[]) generation(generations[key])
@@ -92,7 +98,10 @@ function bindings(snapshot: ProjectSnapshot, graph: RevisionContent | ProjectSna
       for (const d of e.dependencies) invariant(generations[d.key] === d.generation && Object.hasOwn(contents, d.key) && fingerprint(contents[d.key]) === d.digest, 'statement dependency mismatch')
     }
   }
-  for (const e of Object.values(expected.evidenceById)) if (e.statement.scope.kind === 'module') invariant(Object.hasOwn(refs, statementKey(e.statement)), 'missing input/unknown evidence binding')
+  for (const e of Object.values(expected.evidenceById)) if (e.statement.scope.kind === 'module') {
+    const present = Object.hasOwn(refs, statementKey(e.statement))
+    invariant(present || (allowHistoricalAdditiveReviewGaps && isAdditiveReviewPredicate(e.statement.predicate)), 'missing input/unknown evidence binding')
+  }
 }
 
 /** Strict persisted contract validation; never promotes or repairs technical status. */
@@ -141,7 +150,7 @@ export function validateAssuranceSnapshot(snapshot: ProjectSnapshot, validateGra
     map(content.offersById)
     for (const offer of Object.values(content.offersById)) objectKeys(offer, offer.entryMode === 'free' ? ['id', 'projectId', 'entryMode'] : ['id', 'projectId', 'entryMode', 'settingsDraft', 'commonConditions'])
     validateGraph(graphForRevision(content))
-    bindings(snapshot, content, content.evidenceByStatementKey, content.changeGenerations)
+    bindings(snapshot, content, content.evidenceByStatementKey, content.changeGenerations, true)
     for (const [key, value] of Object.entries(previousGenerations)) invariant(content.changeGenerations[key as ChangeKey] >= value, 'revision generations moved backwards')
     previousGenerations = content.changeGenerations
     parent = revision.id

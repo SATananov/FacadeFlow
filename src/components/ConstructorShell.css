@@ -1559,7 +1559,7 @@
   overflow: hidden;
 }
 
-/* Constructor 01D.1 — canonical FIELD semantics + Nadezhda/SkyGlazing-style opening symbols */
+/* Constructor 01D.1 — canonical FIELD semantics + Nadezhda/system-driven opening symbols */
 .constructor-field-surface.is-fixed {
   background: linear-gradient(180deg, rgba(234, 242, 244, .96), rgba(224, 236, 239, .94));
 }
@@ -2949,7 +2949,7 @@
 }
 
 
-/* Constructor 01E.1 — visual comparison polish after direct SkyGlazing side-by-side review */
+/* Constructor 01E.1 — visual comparison polish after direct technical-drawing side-by-side review */
 .constructor-field-details-panel .constructor-field-detail-number {
   width: 20px;
   height: 20px;
@@ -3106,7 +3106,7 @@
 
 
 /* Constructor 01E.5.3 — profile line hierarchy & selection cleanup.
- * Goal: closer SkyGlazing-like reading by reducing non-structural parallel lines.
+ * Goal: closer technical-drawing reading by reducing non-structural parallel lines.
  * FRAME / DIVIDER / SASH / GLAZING hierarchy stays visual only; geometry is unchanged.
  */
 .constructor-frame-visual {
@@ -5099,3 +5099,69 @@
   display: none !important;
   content: none !important;
 }
+
+.constructor-delete-module {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 6px;
+  padding: 7px 9px;
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  border: 1px solid #c98276;
+  border-radius: 6px;
+  background: #fff8f6;
+  color: #9d3f31;
+}
+
+.constructor-delete-module span {
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.constructor-delete-module small {
+  color: #9b6d65;
+  font-size: 8px;
+}
+
+.constructor-delete-module:hover {
+  border-color: #b75f50;
+  background: #ffebe7;
+}
+
+/* SYSTEM-DRIVEN PRODUCT MODEL 01 */
+.constructor-system-model {
+  margin: 10px 0 12px;
+  padding: 12px;
+  border: 1px solid var(--line, #d7dde4);
+  border-radius: 10px;
+  background: rgba(248, 250, 252, .86);
+}
+
+.constructor-system-model > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.constructor-system-model > header div { display: grid; gap: 2px; }
+.constructor-system-model > header span,
+.constructor-system-model-facts span {
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #68717c;
+}
+.constructor-system-model > header b { font-size: 13px; }
+.constructor-system-model > header strong { white-space: nowrap; font-size: 11px; }
+.constructor-system-model > p,
+.constructor-system-model-boundary { margin: 0; color: #55606c; font-size: 11px; line-height: 1.45; }
+.constructor-system-model-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin: 10px 0; }
+.constructor-system-model-facts > div { display: grid; gap: 2px; min-width: 0; padding: 8px; border: 1px solid rgba(148, 163, 184, .28); border-radius: 8px; background: #fff; }
+.constructor-system-model-facts b { overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
+.constructor-system-model-facts small { color: #68717c; font-size: 10px; line-height: 1.35; }
+.constructor-system-model-warning { display: grid; gap: 2px; margin: 8px 0; padding: 8px 9px; border: 1px solid rgba(180, 83, 9, .28); border-radius: 8px; background: rgba(255, 247, 237, .72); font-size: 11px; }
+.constructor-system-model-warning span { color: #7c4a18; line-height: 1.35; }
+@media (max-width: 1180px) { .constructor-system-model-facts { grid-template-columns: 1fr; } }

@@ -817,6 +817,28 @@ export default function App() {
 
 
 
+  const deleteActiveFreeModule = () => {
+    if (!activeFreeModule) return
+    const remaining = freeModules.filter((module) => module.id !== activeFreeModule.id)
+    const nextActive = remaining.find((module) => module.sequence > activeFreeModule.sequence)
+      ?? remaining[remaining.length - 1]
+      ?? null
+    setFreeModules(remaining)
+    setActiveFreeModuleId(nextActive?.id ?? null)
+  }
+
+  const deleteActiveModule = () => {
+    if (!firstModule) return
+    const remaining = modules.filter((module) => module.id !== firstModule.id)
+    const nextActive = remaining.find((module) => module.sequence > firstModule.sequence)
+      ?? remaining[remaining.length - 1]
+      ?? null
+    setModules(remaining)
+    setActiveModuleId(nextActive?.id ?? null)
+    if (remaining.length === 0) setOfferStartOpen(true)
+  }
+
+
   const projectActivity = getProjectActivity(workspace.snapshot)
   const hasFreeConstructorWork = projectActivity.hasFreeWork
   const hasOfferConstructorWork = modules.length > 0
@@ -928,10 +950,12 @@ export default function App() {
               headRevisionNumber: workspace.snapshot.revisions.headRevisionId
                 ? workspace.snapshot.revisions.revisionsById[workspace.snapshot.revisions.headRevisionId]?.number ?? null
                 : null,
+              active: workspace.persistence.attached,
             }}
             projects={workspace.projects}
             blocked={workspace.persistence.blocked}
             onOpen={workspace.openProject}
+            onDelete={workspace.deleteProject}
             onNew={workspace.newProject}
           />
           {hasActiveProject && (
@@ -955,13 +979,18 @@ export default function App() {
         </div>
 
         <div className="project-toolbar-secondary">
-          <ProjectAssurancePanel key={workspace.snapshot.project.id} snapshot={workspace.snapshot}
-            moduleId={(constructorMode === 'free' ? activeFreeModule?.id : activeModuleId) ?? null}
-            projectActive={hasActiveProject}
-            blocked={workspace.persistence.blocked} onRecord={workspace.recordRevision}
-            onInspect={workspace.prepareConfirmation} onConfirm={workspace.confirmStatement} />
           <AssemblyReviewPanel snapshot={workspace.snapshot}
             moduleId={(constructorMode === 'free' ? activeFreeModule?.id : activeModuleId) ?? null} />
+          <details className="project-technical-tools">
+            <summary>Техническа администрация</summary>
+            <div className="project-technical-tools-content">
+              <ProjectAssurancePanel key={workspace.snapshot.project.id} snapshot={workspace.snapshot}
+                moduleId={(constructorMode === 'free' ? activeFreeModule?.id : activeModuleId) ?? null}
+                projectActive={hasActiveProject}
+                blocked={workspace.persistence.blocked} onRecord={workspace.recordRevision}
+                onInspect={workspace.prepareConfirmation} onConfirm={workspace.confirmStatement} />
+            </div>
+          </details>
         </div>
 
         {workspace.persistence.error && <span role="alert" className="project-save-error">
@@ -997,6 +1026,7 @@ export default function App() {
             onSelectModule={selectFreeModule}
             onCreateModule={createNextFreeModule}
             onResetModule={resetActiveFreeModuleDraft}
+            onDeleteModule={deleteActiveFreeModule}
             onClose={() => setConstructorMode(null)}
             onCreateOfferFromSketch={startOfferFromFreeSketch}
           />
@@ -1027,6 +1057,7 @@ export default function App() {
             onSelectModule={selectModule}
             onCreateModule={createNextModule}
             onResetModule={resetActiveModuleDraft}
+            onDeleteModule={deleteActiveModule}
             offerContext={{
               profileSystemId: firstModule.inheritedDefaults.profileSystemId,
               profileSystemLabel: selectedProfileSystem
@@ -1354,6 +1385,10 @@ export default function App() {
             </div>
 
             <form className="offer-form" onSubmit={submitOffer}>
+              <div className="offer-required-legend" role="note">
+                <span><b>*</b> Задължително поле</span>
+                <small>Фирма / име, Наименование на обекта и Профилна система са нужни за проекта. Цвят / фолиране, Стъклопакет и Обков са задължителни преди преминаване към модулите.</small>
+              </div>
 
               {/* CONCEPT 02 continuity: Клиент и обект */}
 
@@ -1439,7 +1474,7 @@ export default function App() {
 
                 <div className="form-grid client-grid">
                   <label className="field">
-                    <span>Фирма / име</span>
+                    <span>Фирма / име <b className="required-mark" aria-hidden="true">*</b></span>
 
                     <input
                       required
@@ -1536,7 +1571,7 @@ export default function App() {
 
                 <div className="form-grid two-columns">
                   <label className="field">
-                    <span>Наименование на обекта</span>
+                    <span>Наименование на обекта <b className="required-mark" aria-hidden="true">*</b></span>
 
                     <input
                       required
@@ -1571,7 +1606,7 @@ export default function App() {
 
                   <div>
                     <h3 id="profile-system-title">
-                      Профилна система
+                      Профилна система <b className="required-mark" aria-hidden="true">*</b>
                     </h3>
 
                     <p>
@@ -1659,7 +1694,7 @@ export default function App() {
                   <span className="section-number">05</span>
 
                   <div>
-                    <h3 id="finish-title">Цвят и фолиране</h3>
+                    <h3 id="finish-title">Цвят и фолиране <b className="required-mark" aria-hidden="true">*</b></h3>
                     <p>
                       След избора на профилна система задаваме цвета
                       и начина на фолиране за офертата.
@@ -1791,7 +1826,7 @@ export default function App() {
                   <span className="section-number">06</span>
 
                   <div>
-                    <h3 id="glazing-title">Стъклопакет</h3>
+                    <h3 id="glazing-title">Стъклопакет <b className="required-mark" aria-hidden="true">*</b></h3>
                     <p>
                       След цвета и фолирането избираме потвърдената
                       конфигурация на стъклопакета за офертата.
@@ -1871,7 +1906,7 @@ export default function App() {
                   <span className="section-number">07</span>
 
                   <div>
-                    <h3 id="hardware-title">Обков</h3>
+                    <h3 id="hardware-title">Обков <b className="required-mark" aria-hidden="true">*</b></h3>
                     <p>
                       Общият стандарт на обкова се задава на ниво оферта
                       и после се наследява от модулите.

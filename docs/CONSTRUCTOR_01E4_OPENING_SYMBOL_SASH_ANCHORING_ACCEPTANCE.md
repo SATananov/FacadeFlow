@@ -2,7 +2,7 @@
 
 ## Goal
 The opening symbol must visually belong to the sash, not float inside it.
-This follows the technical drawing grammar visible in the supplied SkyGlazing reference without copying its UI.
+This follows the technical drawing grammar visible in the supplied technical reference without copying its UI.
 
 ## Visual contract
 - The OPERABLE sash remains the visual boundary for the opening symbol.

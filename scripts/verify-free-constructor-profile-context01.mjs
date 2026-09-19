@@ -130,10 +130,10 @@ test('frame, divider, WINDOW sash candidates and assignments use existing engine
   assert.equal(Object.keys(active().profileResolution.fieldSashes).length, 2)
 })
 const approvedResolution = active().profileResolution
-test('free Profile pane, badges and reviewed placement render without offerContext; OFF falls back', () => {
+test('free Profile pane remains usable without offerContext while unsupported reviewed placement stays gated; OFF falls back', () => {
   const render = mount(Shell, active())
   let tree = render()
-  assert.equal(nodes(tree, (node) => node.props?.className === 'constructor-reviewed-sash-placement').length, 2)
+  assert.equal(nodes(tree, (node) => node.props?.className === 'constructor-reviewed-sash-placement').length, 0, '04C catalog-truth gating suppresses reviewed sash placement when a required joint pair is unsupported')
   // Canvas-first inspector: the retired Guided/Free switch and dense progress
   // badge are no longer part of the accepted UX. Select the concrete FIELD
   // directly, then continue validating the actual Profile pane options.

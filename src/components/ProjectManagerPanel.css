@@ -194,23 +194,67 @@
   color: #a2572d;
   font-size: 12px;
 }
-.project-manager-card > button {
+.project-manager-card-actions {
+  display: flex;
   flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+.project-manager-card-action {
   min-width: 88px;
   padding: 9px 13px;
-  border: 1px solid #179caf;
   border-radius: 7px;
-  background: #0d91a5;
-  color: white;
   font-weight: 700;
 }
-.project-manager-card > button:disabled {
+.project-manager-card-open {
+  border: 1px solid #179caf;
+  background: #0d91a5;
+  color: white;
+}
+.project-manager-card-open:disabled {
   border-color: #cbd7dc;
   background: #edf3f5;
   color: #81939d;
 }
+.project-manager-card-delete {
+  min-width: 74px;
+  border: 1px solid #d9a89e;
+  background: #fff7f5;
+  color: #a13d2f;
+}
+.project-manager-card-delete:hover:not(:disabled) {
+  border-color: #c97969;
+  background: #ffebe7;
+}
+.project-manager-card-delete:disabled {
+  border-color: #d8e0e4;
+  background: #f3f6f7;
+  color: #98a6ad;
+}
 @media (max-width: 680px) {
   .project-manager-overlay { padding: 10px; }
   .project-manager-card { align-items: stretch; flex-direction: column; }
-  .project-manager-card > button { width: 100%; }
+  .project-manager-card-actions { width: 100%; }
+  .project-manager-card-action { flex: 1 1 0; }
+}
+
+.project-manager-empty {
+  min-height: 120px;
+  display: grid;
+  place-content: center;
+  gap: 6px;
+  text-align: center;
+  border: 1px dashed #b8cbd2;
+  border-radius: 10px;
+  background: #f7fafb;
+  color: #47636d;
+}
+
+.project-manager-empty b {
+  font-size: 14px;
+}
+
+.project-manager-empty span {
+  color: #7b9098;
+  font-size: 11px;
 }

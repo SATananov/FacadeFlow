@@ -1,7 +1,7 @@
 # CONSTRUCTOR 01E.5.3 — PROFILE LINE HIERARCHY & SELECTION CLEANUP
 
 ## Purpose
-Move the FacadeFlow constructor drawing closer to the supplied SkyGlazing visual reading by reducing redundant parallel lines and keeping only the lines that explain the construction.
+Move the FacadeFlow constructor drawing closer to the reviewed technical-drawing visual reading by reducing redundant parallel lines and keeping only the lines that explain the construction.
 
 ## Visual contract
 - The drawing must read in the hierarchy FRAME -> DIVIDER -> SASH -> GLAZING.

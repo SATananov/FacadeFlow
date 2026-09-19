@@ -19,6 +19,8 @@ const predicateLabel: Record<string, string> = {
   'reviewed-operational-policy': 'Проверено правило за избор',
   'glazing-inset': 'Отстъп на стъклопакета',
   'glass-cut-width': 'Размер за рязане на стъклото',
+  'official-sectional-bead-base-pairing': 'Официална скица: стъклодържател ↔ базов профил',
+  'official-sectional-bead-placement': 'Официална скица: позиция на стъклодържателя',
 }
 const displayPredicate = (predicate: string) => predicateLabel[predicate] ?? 'Техническо твърдение'
 const displayValue = (value: { state: 'known'; value: unknown } | { state: 'unknown'; reason: string }) =>
@@ -31,8 +33,17 @@ const parameterLabel: Record<string, string> = {
   beadCode: 'Стъклодържател',
   supportProfileCode: 'Опорен профил',
   category: 'Категория',
+  sourceCandidateId: 'Източник-кандидат',
 }
 const displayParameter = (key: string) => parameterLabel[key] ?? key
+const targetLabel = (target: { kind: string }) => target.kind === 'module' ? 'МОДУЛ'
+  : target.kind === 'field' ? 'ПОЛЕ'
+    : target.kind === 'divider' ? 'ДЕЛИТЕЛ' : 'КАСА'
+const confirmationBoundary = (predicate: string) => predicate === 'official-sectional-bead-base-pairing'
+  ? <>Потвърждението означава само, че посочената официална техническа скица показва тази bead/base двойка в записания 24 mm контекст.<br />Не се създава универсално правило за съвместимост, монтажен размер или production geometry.</>
+  : predicate === 'official-sectional-bead-placement'
+    ? <>Потвърждението означава само, че посочената официална техническа скица показва относителната позиция на стъклодържателя и крилото в записания контекст.<br />Не се извличат автоматично inset, seat, координати или glass-cut размери.</>
+    : <>Потвърждението важи само за показаното решение.<br />Съвместимостта с базовия профил остава непотвърдена. Отстъпът на стъклопакета и размерът за рязане на стъклото остават неизвестни.<br />Това не означава готовност за производство или за машина.</>
 
 type Props = {
   snapshot: ProjectSnapshot; moduleId: string | null; projectActive?: boolean; blocked: boolean
@@ -95,6 +106,8 @@ export function ProjectAssurancePanel({ snapshot, moduleId, projectActive = true
     globalThis.addEventListener('keydown', onKeyDown)
     return () => globalThis.removeEventListener('keydown', onKeyDown)
   }, [open])
+
+  if (!projectActive) return null
 
   return <>
     <button
@@ -174,11 +187,9 @@ export function ProjectAssurancePanel({ snapshot, moduleId, projectActive = true
                   {statements.map((evidence) => {
                     const statementScope = evidence.statement.scope
                     const module = statementScope.kind === 'module' ? snapshot.modulesById[statementScope.moduleId] : null
-                    const targetLabel = statementScope.kind !== 'module' ? ''
-                      : statementScope.target.kind === 'field' ? 'ПОЛЕ'
-                        : statementScope.target.kind === 'divider' ? 'ДЕЛИТЕЛ' : 'КАСА'
+                    const scopeTargetLabel = statementScope.kind === 'module' ? targetLabel(statementScope.target) : ''
                     return <option key={evidence.id} value={evidence.id}>
-                      {displayPredicate(evidence.statement.predicate)} · {module ? `Модул ${module.sequence}` : ''}{targetLabel ? ` · ${targetLabel}` : ''} · {displayValue(evidence.statement.value)}
+                      {displayPredicate(evidence.statement.predicate)} · {module ? `Модул ${module.sequence}` : ''}{scopeTargetLabel ? ` · ${scopeTargetLabel}` : ''} · {displayValue(evidence.statement.value)}
                     </option>
                   })}
                 </select>
@@ -195,14 +206,10 @@ export function ProjectAssurancePanel({ snapshot, moduleId, projectActive = true
             <span className="project-assurance-exact-badge">КОНКРЕТНО РЕШЕНИЕ</span>
             <p><b>{displayPredicate(displayed.statement.predicate)}</b>: {displayValue(displayed.statement.value)} {displayed.statement.unit === 'mm' ? 'mm' : ''}</p>
             <p>Ревизия: {snapshot.revisions.revisionsById[displayed.projectRevisionId] ? `R${snapshot.revisions.revisionsById[displayed.projectRevisionId].number}` : 'неизвестна'}</p>
-            {scope?.kind === 'module' && <p>Контекст: Модул {snapshot.modulesById[scope.moduleId]?.sequence ?? '—'} · {scope.target.kind === 'field' ? 'ПОЛЕ' : scope.target.kind === 'divider' ? 'ДЕЛИТЕЛ' : 'КАСА'}</p>}
+            {scope?.kind === 'module' && <p>Контекст: Модул {snapshot.modulesById[scope.moduleId]?.sequence ?? '—'} · {targetLabel(scope.target)}</p>}
             <dl>{Object.entries(displayed.statement.parameters).map(([key, value]) => <div key={key}><dt>{displayParameter(key)}</dt><dd>{key === 'thicknessMm' ? `${value} mm` : value}</dd></div>)}</dl>
-            {displayed.sources.length ? <ul>{displayed.sources.map((source) => <li key={source.id}>{source.documentTitle} · стр. {source.locator.printedPage ?? 'неизвестна'} · {source.locator.section} · издание: {source.documentVersion.state === 'known' ? source.documentVersion.value : 'неизвестно'} · запис: {source.capturedRecordVersion}</li>)}</ul> : <p>Няма документен източник. Това е човешко въвеждане или изрично неизвестно твърдение.</p>}
-            <div className="project-assurance-boundary">
-              Потвърждението важи само за показаното решение.<br />
-              Съвместимостта с базовия профил остава непотвърдена. Отстъпът на стъклопакета и размерът за рязане на стъклото остават неизвестни.<br />
-              Това не означава готовност за производство или за машина.
-            </div>
+            {displayed.sources.length ? <ul>{displayed.sources.map((source) => <li key={source.id}>{source.documentTitle} · стр. {source.locator.printedPage ?? 'неизвестна'} · {source.locator.section} · издание: {source.documentVersion.state === 'known' ? source.documentVersion.value : 'неизвестно'} · запис: {source.capturedRecordVersion}{source.note ? <><br /><small>{source.note}</small></> : null}</li>)}</ul> : <p>Няма документен източник. Това е човешко въвеждане или изрично неизвестно твърдение.</p>}
+            <div className="project-assurance-boundary">{confirmationBoundary(displayed.statement.predicate)}</div>
             <button type="button" className="project-assurance-primary" disabled={blocked || !name.trim()} onClick={() => perform(() => {
               const predicate = displayed.statement.predicate
               onConfirm(displayed, actor(), predicate.startsWith('human-selected-') ? 'selection-attestation' : predicate === 'human-glazing-thickness' ? 'input-attestation' : 'technical-review-attestation')

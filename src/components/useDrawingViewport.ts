@@ -1,12 +1,12 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 
 /** Visual coordinates only. The scaled page reserves its full scrollable area. */
-export function useDrawingViewport(viewKey: string) {
+export function useDrawingViewport(viewKey: string, initialMode: 'fit' | 'actual' = 'fit') {
   const viewportRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ width: 1, height: 1, viewportWidth: 1, viewportHeight: 1 })
   const [manualZoom, setManualZoom] = useState(100)
-  const [fit, setFit] = useState(true)
+  const [fit, setFit] = useState(initialMode === 'fit')
   const center = useRef<{ x: number; y: number } | null>(null)
   const fitScale = Math.min((size.viewportWidth - 32) / size.width, (size.viewportHeight - 32) / size.height, 1)
   const scale = fit ? Math.max(0.1, fitScale) : manualZoom / 100
@@ -28,7 +28,11 @@ export function useDrawingViewport(viewKey: string) {
     return () => observer.disconnect()
   }, [viewKey])
 
-  useLayoutEffect(() => { center.current = null; setFit(true) }, [viewKey])
+  useLayoutEffect(() => {
+    center.current = null
+    setManualZoom(100)
+    setFit(initialMode === 'fit')
+  }, [viewKey, initialMode])
   useLayoutEffect(() => {
     const viewport = viewportRef.current
     if (!viewport) return

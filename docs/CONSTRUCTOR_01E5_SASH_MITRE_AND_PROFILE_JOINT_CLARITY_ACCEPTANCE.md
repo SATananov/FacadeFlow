@@ -1,6 +1,6 @@
 # CONSTRUCTOR 01E.5 — SASH MITRE & PROFILE JOINT CLARITY
 
-01E.5 introduced sash-corner joint readability, but visual review against the supplied SkyGlazing reference rejected the first implementation because the short diagonal strokes appeared to float in the glazing area.
+01E.5 introduced sash-corner joint readability, but visual review against the supplied technical reference rejected the first implementation because the short diagonal strokes appeared to float in the glazing area.
 
 The accepted 01E.5 behavior is therefore the corrected 01E.5.1 representation:
 - an OPERABLE sash reads as a schematic profile ring;

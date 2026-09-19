@@ -1,5 +1,4 @@
 import type { ProfileRole } from './types'
-import { PRELUDE_60_REVIEWED_SASH_OVERLAP } from './jointSemantics'
 
 export type ProfileSemanticSource = 'human-confirmed' | 'system-nominal'
 
@@ -31,9 +30,11 @@ export type ProfileDimensionalSemantics = {
  *   482.30 frame   -> 42 mm visible face
  *   482.21 mullion -> 40 mm visible face
  *
- * Sash geometry is deliberately unresolved. The sash measurement convention
- * was explicitly flagged as special and must be confirmed before overlap,
- * visible sash face or glazing deductions are allowed.
+ * The current PRELUDE 60 system catalogue records 482.05 as
+ * 60 / 78 / 56 mm. The 56 mm visible face is reviewed for the operator sketch;
+ * 482.18 is also reviewed at 60 / 78 / 56 mm for the catalogue-confirmed
+ * 482.21 + 482.18 sectional pairing. 78 - 56 = 22 mm is a profile-side zone, not an automatic joint overlap,
+ * glazing inset, glass cut or machining rule.
  */
 export const profileDimensionalSemantics: readonly ProfileDimensionalSemantics[] = [
   {
@@ -61,14 +62,24 @@ export const profileDimensionalSemantics: readonly ProfileDimensionalSemantics[]
       noteBg: 'Номинална системна дълбочина PRELUDE 60.',
     },
     visibleFace: {
-      valueMm: PRELUDE_60_REVIEWED_SASH_OVERLAP.sashVisibleFaceMm,
+      valueMm: 56,
       source: 'human-confirmed',
-      noteBg: 'Reviewed PRELUDE 60 semantics: видимо лице на крило 482.05 = 56 mm.',
+      noteBg: 'Прегледана работна семантика: 482.05 има 78 mm общ размер и 56 mm видима ширина.',
     },
-    sashOverlap: {
-      valueMm: PRELUDE_60_REVIEWED_SASH_OVERLAP.overlapMm,
+  },
+  {
+    systemId: 'kmg-prelude-60',
+    profileCode: '482.18',
+    role: 'sash',
+    constructionDepth: {
+      valueMm: 60,
+      source: 'system-nominal',
+      noteBg: 'Номинална системна дълбочина PRELUDE 60.',
+    },
+    visibleFace: {
+      valueMm: 56,
       source: 'human-confirmed',
-      noteBg: 'Reviewed front-elevation overlap за 482.05 = 22 mm. Това не определя glazing inset или cut geometry.',
+      noteBg: 'Прегледана работна семантика: 482.18 има 78 mm общ размер и 56 mm видима ширина в актуалния PRELUDE 60 каталог.',
     },
   },
   {

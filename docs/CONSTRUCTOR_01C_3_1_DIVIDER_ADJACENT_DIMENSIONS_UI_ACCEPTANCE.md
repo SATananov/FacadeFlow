@@ -10,7 +10,7 @@ Make the selected-divider properties panel immediately readable without changing
 - The existing numeric input continues to edit the first-side clear size (left for vertical, top for horizontal).
 - Divider body drag still changes position. Divider edge drag still changes thickness.
 - Outer module size remains invariant while divider thickness is resized.
-- The visual language remains FacadeFlow; no SkyGlazing UI is copied.
+- The visual language remains FacadeFlow; no reference UI is copied.
 
 ## Safety boundary
 - PROFILE RESOLUTION: NO

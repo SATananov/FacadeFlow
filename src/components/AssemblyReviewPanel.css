@@ -170,7 +170,7 @@
 .assembly-section-detail-facts div { padding: 6px 7px; border: 1px solid #e0e8eb; border-radius: 6px; background: #fbfdfd; }
 .assembly-section-detail-facts dt { color: #6a818a; font-size: 9px; }
 .assembly-section-detail-facts dd { margin: 2px 0 0; color: #314b54; font-size: 10px; font-weight: 700; }
-.assembly-section-detail-main { display: flex; flex-direction: column; min-height: 390px; }
+.assembly-section-detail-main { display: flex; flex-direction: column; min-height: 520px; }
 .assembly-section-detail-main > header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 10px 12px; border-bottom: 1px solid #e0e8eb; background: #fbfdfd; }
 .assembly-section-detail-main header em { padding: 4px 7px; border: 1px solid #d6aa61; border-radius: 999px; color: #8a641f; background: #fff7e7; font-size: 9px; font-style: normal; font-weight: 800; }
 .assembly-section-detail-canvas { display: grid; place-items: center; flex: 1; min-height: 270px; padding: 18px; background-color: #f9fbfc; background-image: linear-gradient(rgba(74,119,132,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(74,119,132,.07) 1px, transparent 1px); background-size: 20px 20px; }
@@ -403,11 +403,16 @@
 }
 .assembly-review-backdrop > .assembly-review-dialog {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   margin: 0;
-  width: min(1840px, calc(100vw - 20px));
-  height: min(94vh, calc(100vh - 20px));
+  width: calc(100vw - 20px);
+  height: calc(100vh - 20px);
   max-width: none;
   max-height: none;
+  padding: 14px;
+  overflow: hidden;
   box-sizing: border-box;
 }
 @media (max-width: 800px) {
@@ -418,4 +423,5788 @@
     max-height: 96vh;
     padding: 8px;
   }
+}
+
+
+/* TRUE SECTION 01 — focused 482.30 + 482.05 visual joint prototype. */
+.assembly-true-section01 {
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid #d3e1e5;
+  border-radius: 10px;
+  background: #fff;
+}
+.assembly-true-section01-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e0e9ec;
+  background: #f8fbfc;
+}
+.assembly-true-section01-heading span {
+  display: block;
+  color: #5b8793;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+.assembly-true-section01-heading b {
+  display: block;
+  margin-top: 3px;
+  color: #244650;
+  font-size: 14px;
+}
+.assembly-true-section01-heading small {
+  color: #71868d;
+  font-size: 10px;
+}
+.assembly-true-section01-stage {
+  display: grid;
+  place-items: center;
+  min-height: 430px;
+  padding: 18px;
+  background-color: #fff;
+  background-image:
+    linear-gradient(rgba(74,119,132,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(74,119,132,.035) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+.assembly-true-section01-stage img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: min(92%, 780px);
+  max-height: 520px;
+  object-fit: contain;
+}
+.assembly-true-section01-facts {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-top: 1px solid #dbe8eb;
+  background: #eef8fa;
+}
+.assembly-true-section01-facts b {
+  color: #285d69;
+  font-size: 10px;
+}
+.assembly-true-section01-facts span {
+  padding: 4px 7px;
+  border: 1px solid #b8d7de;
+  border-radius: 999px;
+  background: #fff;
+  color: #27606d;
+  font-size: 9px;
+}
+.assembly-true-section01-boundary {
+  margin: 0;
+  padding: 9px 12px;
+  border-top: 1px solid #ead9b6;
+  background: #fff8e8;
+  color: #705d38;
+  font-size: 9px;
+  line-height: 1.45;
+}
+@media (max-width: 900px) {
+  .assembly-true-section01-heading { align-items: flex-start; flex-direction: column; }
+  .assembly-true-section01-stage { min-height: 360px; }
+}
+
+/* LOCAL FIX 14 — system profiles first, assembly on a separate sketch below. */
+.assembly-system-to-joint-flow {
+  display: grid;
+  gap: 14px;
+}
+.assembly-system-profile-sheet,
+.assembly-assembly-sheet {
+  min-width: 0;
+}
+.assembly-system-profile-sheet-heading,
+.assembly-assembly-sheet-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border: 1px solid #dce7ea;
+  border-radius: 9px;
+  background: #f8fbfc;
+}
+.assembly-system-profile-sheet-heading span,
+.assembly-assembly-sheet-heading span {
+  display: block;
+  color: #5b8793;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+.assembly-system-profile-sheet-heading b,
+.assembly-assembly-sheet-heading b {
+  display: block;
+  margin-top: 3px;
+  color: #244650;
+  font-size: 14px;
+}
+.assembly-system-profile-sheet-heading small,
+.assembly-assembly-sheet-heading small {
+  color: #71868d;
+  font-size: 10px;
+  text-align: right;
+}
+.assembly-system-profile-sheet .assembly-section-source-profiles {
+  margin-bottom: 0;
+}
+.assembly-system-flow-arrow {
+  display: grid;
+  place-items: center;
+  min-height: 28px;
+}
+.assembly-system-flow-arrow span {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #bdd5db;
+  border-radius: 999px;
+  background: #eef8fa;
+  color: #31717f;
+  font-size: 17px;
+  font-weight: 900;
+}
+.assembly-assembly-sheet > .assembly-true-section01 {
+  margin-top: 0;
+}
+@media (max-width: 900px) {
+  .assembly-system-profile-sheet-heading,
+  .assembly-assembly-sheet-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .assembly-system-profile-sheet-heading small,
+  .assembly-assembly-sheet-heading small {
+    text-align: left;
+  }
+}
+
+
+/* LOCAL FIX 15 — add window marker + visible element scaffold around TRUE SECTION 01. */
+.assembly-true-section01-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  padding: 12px;
+  border-top: 1px solid #dbe8eb;
+  background: #fcfefe;
+}
+.assembly-true-section01-card {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #d8e5e9;
+  border-radius: 10px;
+  background: #fff;
+}
+.assembly-true-section01-card > header {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 10px;
+}
+.assembly-true-section01-card > header span {
+  color: #5b8793;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+.assembly-true-section01-card > header b {
+  color: #244650;
+  font-size: 13px;
+}
+.assembly-true-section01-card p {
+  margin: 8px 0 0;
+  color: #587079;
+  font-size: 10px;
+  line-height: 1.45;
+}
+.assembly-window-marker {
+  display: grid;
+  place-items: center;
+  width: 100px;
+  height: 100px;
+  border: 1px solid #d7e6ea;
+  border-radius: 10px;
+  background: #fbfdfe;
+}
+.assembly-window-marker svg {
+  width: 78px;
+  height: 78px;
+  overflow: visible;
+}
+.assembly-window-marker rect,
+.assembly-window-marker line {
+  fill: none;
+  stroke: #7ea8b2;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.assembly-true-section01-list {
+  margin: 0;
+  padding-left: 18px;
+  color: #35505a;
+  font-size: 10px;
+  line-height: 1.55;
+}
+.assembly-true-section01-list li + li {
+  margin-top: 4px;
+}
+.assembly-dim-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.assembly-dim-chip-list span {
+  padding: 5px 8px;
+  border: 1px solid #b8d7de;
+  border-radius: 999px;
+  background: #eef8fa;
+  color: #27606d;
+  font-size: 9px;
+  font-weight: 700;
+}
+@media (max-width: 1080px) {
+  .assembly-true-section01-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* LOCAL FIX 16 - technical layout with inline window marker and dimension callouts. */
+.assembly-technical-layout01 {
+  display: grid;
+  gap: 12px;
+}
+.assembly-technical-stage {
+  position: relative;
+  padding: 38px 18px 10px;
+  border-top: 1px solid #dbe8eb;
+  background: linear-gradient(180deg, #fbfdfe 0%, #f6fbfc 100%);
+}
+.assembly-technical-stage-chip {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  padding: 5px 9px;
+  border: 1px solid #bdd7de;
+  border-radius: 999px;
+  background: #eef8fa;
+  color: #2a6671;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+.assembly-technical-stage-marker {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 122px;
+  padding: 8px;
+  border: 1px solid #d9e8ec;
+  border-radius: 10px;
+  background: rgba(255,255,255,.96);
+  box-shadow: 0 8px 18px rgba(28,72,84,.06);
+}
+.assembly-technical-stage-marker > span {
+  color: #5e8995;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-align: center;
+}
+.assembly-technical-stage-marker > small {
+  color: #56717a;
+  font-size: 9px;
+  line-height: 1.35;
+  text-align: center;
+}
+.assembly-technical-stage .assembly-window-marker {
+  width: 82px;
+  height: 82px;
+}
+.assembly-technical-stage .assembly-window-marker svg {
+  width: 62px;
+  height: 62px;
+}
+.assembly-technical-stage .assembly-true-section01-stage {
+  min-height: 380px;
+  padding-top: 26px;
+}
+.assembly-technical-stage-dim {
+  position: absolute;
+  z-index: 2;
+  padding: 4px 8px;
+  border: 1px solid #b8d7de;
+  border-radius: 999px;
+  background: rgba(238,248,250,.96);
+  color: #27606d;
+  font-size: 9px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.assembly-technical-stage-dim.is-left {
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%) rotate(-90deg);
+  transform-origin: center;
+}
+.assembly-technical-stage-dim.is-bottom {
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+}
+.assembly-technical-stage-dim.is-right {
+  right: 148px;
+  top: 50%;
+  transform: translateY(-50%) rotate(-90deg);
+  transform-origin: center;
+}
+.assembly-technical-stage-dim.is-overlap {
+  left: 50%;
+  top: 52%;
+  transform: translate(-50%, -50%);
+  background: rgba(255,244,219,.98);
+  border-color: #efd49a;
+  color: #956d1f;
+}
+.assembly-technical-notes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0 12px 12px;
+  background: #fcfefe;
+}
+.assembly-technical-note-card {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #d8e5e9;
+  border-radius: 10px;
+  background: #fff;
+}
+.assembly-technical-note-card > header {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 10px;
+}
+.assembly-technical-note-card > header span {
+  color: #5b8793;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+.assembly-technical-note-card > header b {
+  color: #244650;
+  font-size: 13px;
+}
+.assembly-technical-note-card p {
+  margin: 8px 0 0;
+  color: #587079;
+  font-size: 10px;
+  line-height: 1.45;
+}
+.assembly-technical-note-list {
+  margin: 0;
+  padding-left: 18px;
+  color: #35505a;
+  font-size: 10px;
+  line-height: 1.55;
+}
+.assembly-technical-note-list li + li {
+  margin-top: 4px;
+}
+@media (max-width: 1080px) {
+  .assembly-technical-notes-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 820px) {
+  .assembly-technical-stage-marker {
+    position: static;
+    margin: 0 auto 12px;
+  }
+  .assembly-technical-stage .assembly-true-section01-stage {
+    min-height: 320px;
+    padding-top: 0;
+  }
+  .assembly-technical-stage-dim.is-right {
+    right: 14px;
+  }
+}
+
+/* FIX 17 — TECHNICAL DRAWING 02 */
+.assembly-technical-layout02 {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #fcfefe;
+}
+.assembly-technical-stage.is-large {
+  position: relative;
+  margin: 0 12px;
+  padding: 18px 18px 18px;
+  border: 1px solid #dce9ed;
+  border-radius: 12px;
+  background: #ffffff;
+  overflow: hidden;
+}
+.assembly-technical-stage.is-large .assembly-true-section01-stage {
+  min-height: 520px;
+  padding: 18px 120px 56px 96px;
+  align-items: center;
+  justify-content: center;
+}
+.assembly-technical-stage.is-large .assembly-true-section01-stage img {
+  width: min(100%, 640px);
+  max-height: 430px;
+  object-fit: contain;
+}
+.assembly-technical-stage.is-large .assembly-technical-stage-marker {
+  top: 16px;
+  right: 16px;
+}
+.assembly-technical-dimension {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3b5d67;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .02em;
+}
+.assembly-technical-dimension-line {
+  position: absolute;
+  background: #8fb0b9;
+}
+.assembly-technical-dimension.is-left {
+  left: 28px;
+  top: 146px;
+  width: 28px;
+  height: 220px;
+}
+.assembly-technical-dimension.is-left .assembly-technical-dimension-line {
+  left: 13px;
+  top: 10px;
+  width: 2px;
+  height: 200px;
+}
+.assembly-technical-dimension.is-left::before,
+.assembly-technical-dimension.is-left::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  width: 16px;
+  height: 2px;
+  background: #8fb0b9;
+}
+.assembly-technical-dimension.is-left::before { top: 10px; }
+.assembly-technical-dimension.is-left::after { bottom: 10px; }
+.assembly-technical-dimension.is-left span {
+  transform: rotate(-90deg);
+}
+.assembly-technical-dimension.is-right {
+  right: 136px;
+  top: 162px;
+  width: 28px;
+  height: 196px;
+}
+.assembly-technical-dimension.is-right .assembly-technical-dimension-line {
+  left: 13px;
+  top: 10px;
+  width: 2px;
+  height: 176px;
+}
+.assembly-technical-dimension.is-right::before,
+.assembly-technical-dimension.is-right::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  width: 16px;
+  height: 2px;
+  background: #8fb0b9;
+}
+.assembly-technical-dimension.is-right::before { top: 10px; }
+.assembly-technical-dimension.is-right::after { bottom: 10px; }
+.assembly-technical-dimension.is-right span {
+  transform: rotate(-90deg);
+}
+.assembly-technical-dimension.is-bottom {
+  left: 50%;
+  bottom: 18px;
+  width: 250px;
+  height: 24px;
+  transform: translateX(-50%);
+}
+.assembly-technical-dimension.is-bottom .assembly-technical-dimension-line {
+  left: 18px;
+  top: 11px;
+  width: 214px;
+  height: 2px;
+}
+.assembly-technical-dimension.is-bottom::before,
+.assembly-technical-dimension.is-bottom::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  width: 2px;
+  height: 16px;
+  background: #8fb0b9;
+}
+.assembly-technical-dimension.is-bottom::before { left: 18px; }
+.assembly-technical-dimension.is-bottom::after { right: 18px; }
+.assembly-technical-dimension.is-bottom span {
+  position: relative;
+  padding: 0 8px;
+  background: #fff;
+}
+.assembly-technical-overlap {
+  position: absolute;
+  left: 50%;
+  top: 290px;
+  transform: translateX(-10%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid #eed18e;
+  border-radius: 999px;
+  background: rgba(255,245,222,.98);
+  color: #91681e;
+  font-size: 10px;
+  font-weight: 800;
+}
+.assembly-technical-overlap-line {
+  width: 30px;
+  height: 2px;
+  background: #d8b15f;
+}
+.assembly-technical-legend {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 0 12px 12px;
+}
+.assembly-technical-legend-item {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #d8e5e9;
+  border-radius: 10px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.assembly-technical-legend-item b {
+  color: #335662;
+  font-size: 10px;
+}
+.assembly-technical-legend-item span {
+  color: #56717a;
+  font-size: 10px;
+  line-height: 1.45;
+}
+@media (max-width: 1080px) {
+  .assembly-technical-legend {
+    grid-template-columns: 1fr;
+  }
+  .assembly-technical-stage.is-large .assembly-true-section01-stage {
+    padding-left: 68px;
+    padding-right: 88px;
+  }
+}
+@media (max-width: 820px) {
+  .assembly-technical-stage.is-large .assembly-true-section01-stage {
+    min-height: 380px;
+    padding: 56px 28px 44px;
+  }
+  .assembly-technical-dimension.is-right {
+    right: 18px;
+  }
+  .assembly-technical-stage.is-large .assembly-technical-stage-marker {
+    position: static;
+    margin: 0 auto 12px;
+  }
+}
+
+
+/* FIX 18 — GLAZING ASSEMBLY 01 */
+.assembly-technical-layout02 .assembly-technical-legend {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.assembly-technical-overlap {
+  left: 50%;
+  top: 258px;
+  transform: translateX(-2%);
+  gap: 8px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #8d6722;
+}
+.assembly-technical-overlap::before,
+.assembly-technical-overlap::after {
+  content: "";
+  display: block;
+  width: 2px;
+  height: 22px;
+  background: #cba353;
+}
+.assembly-technical-overlap-line {
+  width: 42px;
+  height: 2px;
+  background: #cba353;
+}
+.assembly-technical-overlap span {
+  padding: 2px 8px;
+  border: 1px solid #eed18e;
+  border-radius: 999px;
+  background: rgba(255,245,222,.98);
+}
+.assembly-true-section01-figure {
+  position: relative;
+  width: min(100%, 720px);
+  margin: 0 auto;
+}
+.assembly-true-section01-figure > img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.assembly-glazing-overlay,
+.assembly-bead-overlay,
+.assembly-seal-overlay {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+}
+.assembly-glazing-overlay {
+  left: 60.8%;
+  top: 7%;
+  width: 11.5%;
+  height: 43%;
+}
+.assembly-glazing-overlay-pane {
+  position: absolute;
+  inset: 0;
+  border: 2px solid #7cc0ee;
+  background: rgba(160, 220, 255, .28);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.6);
+}
+.assembly-glazing-overlay-dim {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 6px;
+  border: 1px solid #7cc0ee;
+  border-radius: 6px;
+  background: rgba(239, 251, 255, .96);
+  color: #2c6c8c;
+  font-size: 10px;
+  font-weight: 800;
+}
+.assembly-bead-overlay {
+  left: 54.1%;
+  top: 46.8%;
+  width: 18%;
+  height: 9%;
+}
+.assembly-bead-overlay-bar {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 8px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: rgba(217, 126, 146, .55);
+  border: 1px solid #cc8897;
+}
+.assembly-bead-overlay-label {
+  position: absolute;
+  right: -4px;
+  top: -18px;
+  padding: 2px 6px;
+  border: 1px solid #e5b7c0;
+  border-radius: 999px;
+  background: rgba(255, 242, 246, .96);
+  color: #8f5764;
+  font-size: 9px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.assembly-seal-overlay {
+  padding: 2px 6px;
+  border: 1px solid #f0b8c0;
+  border-radius: 999px;
+  background: rgba(255, 244, 247, .95);
+  color: #a0606f;
+  font-size: 9px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.assembly-seal-overlay.is-upper {
+  left: 47.6%;
+  top: 41.4%;
+}
+.assembly-seal-overlay.is-lower {
+  left: 49.8%;
+  top: 57%;
+}
+@media (max-width: 1080px) {
+  .assembly-technical-layout02 .assembly-technical-legend {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 820px) {
+  .assembly-technical-layout02 .assembly-technical-legend {
+    grid-template-columns: 1fr;
+  }
+  .assembly-glazing-overlay-dim,
+  .assembly-bead-overlay-label,
+  .assembly-seal-overlay {
+    font-size: 8px;
+  }
+}
+
+
+/* FIX 19 — INTEGRATED GLAZING DETAIL 01 */
+.assembly-technical-layout02 .assembly-true-section01-stage.is-technical-large {
+  overflow: visible;
+}
+.assembly-technical-layout02 .assembly-true-section01-panel {
+  overflow: visible;
+}
+.assembly-technical-layout02 .assembly-technical-overlap {
+  left: 49.5%;
+  top: 252px;
+  transform: none;
+}
+.assembly-technical-layout02 .assembly-glazing-detail,
+.assembly-technical-layout02 .assembly-bead-detail,
+.assembly-technical-layout02 .assembly-seal-detail {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+}
+.assembly-technical-layout02 .assembly-glazing-detail {
+  left: 61%;
+  top: 9%;
+  width: 8.4%;
+  height: 37%;
+}
+.assembly-technical-layout02 .assembly-glazing-detail-pane {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 26%;
+  border: 1px solid rgba(76, 153, 204, .72);
+  background: linear-gradient(180deg, rgba(196, 235, 255, .70), rgba(152, 216, 248, .40));
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.55);
+}
+.assembly-technical-layout02 .assembly-glazing-detail-pane.is-left {
+  left: 0;
+}
+.assembly-technical-layout02 .assembly-glazing-detail-pane.is-right {
+  right: 0;
+}
+.assembly-technical-layout02 .assembly-glazing-detail-spacer {
+  position: absolute;
+  left: 34%;
+  right: 34%;
+  bottom: 14%;
+  height: 10%;
+  border: 1px solid rgba(198, 133, 63, .75);
+  background: repeating-linear-gradient(135deg, rgba(226, 173, 94, .75), rgba(226, 173, 94, .75) 5px, rgba(238, 205, 152, .85) 5px, rgba(238, 205, 152, .85) 10px);
+}
+.assembly-technical-layout02 .assembly-glazing-detail-dimension {
+  position: absolute;
+  left: 50%;
+  top: -4px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.assembly-technical-layout02 .assembly-glazing-detail-dimension-line {
+  width: 38px;
+  height: 0;
+  border-top: 1.5px solid #68a9cf;
+}
+.assembly-technical-layout02 .assembly-glazing-detail-dimension span {
+  padding: 2px 6px;
+  border: 1px solid #8cc5e4;
+  border-radius: 4px;
+  background: rgba(238, 249, 255, .97);
+  color: #35759a;
+  font-size: 10px;
+  font-weight: 700;
+}
+.assembly-technical-layout02 .assembly-bead-detail {
+  left: 56.8%;
+  top: 46.5%;
+  width: 13.5%;
+  height: 6px;
+  border: 1px solid rgba(203, 134, 147, .8);
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(250, 209, 219, .95), rgba(237, 171, 185, .95));
+}
+.assembly-technical-layout02 .assembly-seal-detail {
+  width: 16px;
+  height: 8px;
+  border: 1px solid rgba(217, 128, 143, .85);
+  border-radius: 999px;
+  background: rgba(248, 198, 208, .95);
+}
+.assembly-technical-layout02 .assembly-seal-detail.is-upper {
+  left: 52.8%;
+  top: 39.8%;
+}
+.assembly-technical-layout02 .assembly-seal-detail.is-lower {
+  left: 54.6%;
+  top: 52.8%;
+}
+@media (max-width: 820px) {
+  .assembly-technical-layout02 .assembly-glazing-detail-dimension span {
+    font-size: 8px;
+  }
+  .assembly-technical-layout02 .assembly-seal-detail {
+    width: 12px;
+    height: 6px;
+  }
+}
+
+/* FIX 20 — TRUE TECHNICAL NODE SVG 01 */
+.assembly-true-section20 {
+  background: #fff;
+}
+.assembly-tech20-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(250px, .85fr);
+  gap: 14px;
+  padding: 12px;
+  background: #fbfdfe;
+}
+.assembly-tech20-canvas {
+  position: relative;
+  min-height: 620px;
+  padding: 56px 120px 54px 100px;
+  border: 1px solid #dce9ed;
+  border-radius: 12px;
+  background:
+    linear-gradient(rgba(75, 118, 131, .04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(75, 118, 131, .04) 1px, transparent 1px),
+    #ffffff;
+  background-size: 22px 22px, 22px 22px, auto;
+  overflow: hidden;
+}
+.assembly-tech20-chip {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 5px 9px;
+  border: 1px solid #c1dbe1;
+  border-radius: 999px;
+  background: #eef8fa;
+  color: #2b6873;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+.assembly-tech20-window-card {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 126px;
+  padding: 10px 8px;
+  border: 1px solid #d9e8ec;
+  border-radius: 10px;
+  background: rgba(255,255,255,.98);
+  box-shadow: 0 8px 18px rgba(28,72,84,.06);
+}
+.assembly-tech20-window-card > span {
+  color: #5e8995;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-align: center;
+}
+.assembly-tech20-window-card > small {
+  color: #56717a;
+  font-size: 9px;
+  line-height: 1.35;
+  text-align: center;
+}
+.assembly-tech20-window-card .assembly-window-marker {
+  width: 82px;
+  height: 82px;
+}
+.assembly-tech20-window-card .assembly-window-marker svg {
+  width: 62px;
+  height: 62px;
+}
+.assembly-tech20-figure {
+  position: relative;
+  width: min(100%, 720px);
+  margin: 56px auto 0;
+}
+.assembly-tech20-figure > img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.assembly-tech20-dim {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3b5d67;
+  font-size: 11px;
+  font-weight: 800;
+}
+.assembly-tech20-dim-line {
+  position: absolute;
+  background: #8fb0b9;
+}
+.assembly-tech20-dim.is-left {
+  left: 26px;
+  top: 172px;
+  width: 28px;
+  height: 254px;
+}
+.assembly-tech20-dim.is-left .assembly-tech20-dim-line {
+  left: 13px;
+  top: 12px;
+  width: 2px;
+  height: 230px;
+}
+.assembly-tech20-dim.is-left::before,
+.assembly-tech20-dim.is-left::after,
+.assembly-tech20-dim.is-right::before,
+.assembly-tech20-dim.is-right::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  width: 16px;
+  height: 2px;
+  background: #8fb0b9;
+}
+.assembly-tech20-dim.is-left::before,
+.assembly-tech20-dim.is-right::before { top: 12px; }
+.assembly-tech20-dim.is-left::after,
+.assembly-tech20-dim.is-right::after { bottom: 12px; }
+.assembly-tech20-dim.is-left span,
+.assembly-tech20-dim.is-right span { transform: rotate(-90deg); }
+.assembly-tech20-dim.is-right {
+  right: 146px;
+  top: 184px;
+  width: 28px;
+  height: 226px;
+}
+.assembly-tech20-dim.is-right .assembly-tech20-dim-line {
+  left: 13px;
+  top: 12px;
+  width: 2px;
+  height: 202px;
+}
+.assembly-tech20-dim.is-bottom {
+  left: 50%;
+  bottom: 18px;
+  width: 278px;
+  height: 24px;
+  transform: translateX(-50%);
+}
+.assembly-tech20-dim.is-bottom .assembly-tech20-dim-line {
+  left: 18px;
+  top: 11px;
+  width: 242px;
+  height: 2px;
+}
+.assembly-tech20-dim.is-bottom::before,
+.assembly-tech20-dim.is-bottom::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  width: 2px;
+  height: 16px;
+  background: #8fb0b9;
+}
+.assembly-tech20-dim.is-bottom::before { left: 18px; }
+.assembly-tech20-dim.is-bottom::after { right: 18px; }
+.assembly-tech20-dim.is-bottom span {
+  position: relative;
+  padding: 0 8px;
+  background: #fff;
+}
+.assembly-tech20-overlap {
+  position: absolute;
+  left: 50%;
+  top: 316px;
+  transform: translateX(-4%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.assembly-tech20-overlap::before,
+.assembly-tech20-overlap::after {
+  content: "";
+  width: 2px;
+  height: 22px;
+  background: #cba353;
+}
+.assembly-tech20-overlap-line {
+  width: 42px;
+  height: 2px;
+  background: #cba353;
+}
+.assembly-tech20-overlap span {
+  padding: 2px 8px;
+  border: 1px solid #eed18e;
+  border-radius: 999px;
+  background: rgba(255,245,222,.98);
+  color: #91681e;
+  font-size: 10px;
+  font-weight: 800;
+}
+.assembly-tech20-glass,
+.assembly-tech20-bead,
+.assembly-tech20-seal,
+.assembly-tech20-note {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+}
+.assembly-tech20-glass {
+  left: 61.2%;
+  top: 8.5%;
+  width: 8.5%;
+  height: 37%;
+}
+.assembly-tech20-glass-pane {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 26%;
+  border: 1px solid rgba(76, 153, 204, .72);
+  background: linear-gradient(180deg, rgba(196,235,255,.72), rgba(152,216,248,.42));
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.58);
+}
+.assembly-tech20-glass-pane.is-left { left: 0; }
+.assembly-tech20-glass-pane.is-right { right: 0; }
+.assembly-tech20-glass-spacer {
+  position: absolute;
+  left: 34%;
+  right: 34%;
+  bottom: 14%;
+  height: 10%;
+  border: 1px solid rgba(198,133,63,.75);
+  background: repeating-linear-gradient(135deg, rgba(226,173,94,.75), rgba(226,173,94,.75) 5px, rgba(238,205,152,.85) 5px, rgba(238,205,152,.85) 10px);
+}
+.assembly-tech20-glass-dim {
+  position: absolute;
+  left: 50%;
+  top: -6px;
+  transform: translateX(-50%);
+}
+.assembly-tech20-glass-dim span {
+  padding: 2px 6px;
+  border: 1px solid #8cc5e4;
+  border-radius: 4px;
+  background: rgba(238,249,255,.97);
+  color: #35759a;
+  font-size: 10px;
+  font-weight: 700;
+}
+.assembly-tech20-bead {
+  left: 56.8%;
+  top: 46.5%;
+  width: 13.5%;
+  height: 6px;
+  border: 1px solid rgba(203,134,147,.8);
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(250,209,219,.95), rgba(237,171,185,.95));
+}
+.assembly-tech20-seal {
+  padding: 2px 6px;
+  border: 1px solid rgba(217,128,143,.85);
+  border-radius: 999px;
+  background: rgba(255,244,247,.95);
+  color: #a0606f;
+  font-size: 9px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.assembly-tech20-seal.is-upper { left: 50.6%; top: 39.2%; }
+.assembly-tech20-seal.is-lower { left: 52.4%; top: 53%; }
+.assembly-tech20-note {
+  padding: 3px 8px;
+  border: 1px solid #bfd6dc;
+  border-radius: 999px;
+  background: rgba(255,255,255,.96);
+  color: #355d68;
+  font-size: 9px;
+  font-weight: 800;
+  box-shadow: 0 4px 10px rgba(28,72,84,.06);
+  white-space: nowrap;
+}
+.assembly-tech20-note.is-frame { left: 7%; top: 56%; }
+.assembly-tech20-note.is-sash { left: 36%; top: 18%; }
+.assembly-tech20-note.is-glass { left: 69%; top: 7%; }
+.assembly-tech20-note.is-bead { left: 59%; top: 41%; }
+.assembly-tech20-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.assembly-tech20-panel {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #d8e5e9;
+  border-radius: 10px;
+  background: #fff;
+}
+.assembly-tech20-panel > span {
+  display: block;
+  margin-bottom: 8px;
+  color: #5b8793;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+.assembly-tech20-panel ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #35505a;
+  font-size: 10px;
+  line-height: 1.55;
+}
+.assembly-tech20-panel p {
+  margin: 0;
+  color: #56717a;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.assembly-tech20-panel.is-warning {
+  border-color: #ead7a8;
+  background: #fff8e8;
+}
+.assembly-tech20-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.assembly-tech20-chip-list span {
+  padding: 5px 8px;
+  border: 1px solid #b8d7de;
+  border-radius: 999px;
+  background: #eef8fa;
+  color: #27606d;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.assembly-tech20-reference-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.assembly-tech20-reference-image-wrap {
+  border: 1px solid #dce7ea;
+  border-radius: 8px;
+  background: #fff;
+  padding: 10px;
+}
+.assembly-tech20-reference-image-wrap img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+.assembly-tech20-reference-panel p {
+  margin: 0;
+  color: #56717a;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.assembly-tech20-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 0 12px 12px;
+  background: #fcfefe;
+}
+.assembly-tech20-summary-card {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #d8e5e9;
+  border-radius: 10px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.assembly-tech20-summary-card b {
+  color: #335662;
+  font-size: 10px;
+}
+.assembly-tech20-summary-card span {
+  color: #56717a;
+  font-size: 10px;
+  line-height: 1.45;
+}
+@media (max-width: 1100px) {
+  .assembly-tech20-layout {
+    grid-template-columns: 1fr;
+  }
+  .assembly-tech20-summary {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 820px) {
+  .assembly-tech20-canvas {
+    min-height: 500px;
+    padding: 56px 28px 44px;
+  }
+  .assembly-tech20-window-card {
+    position: static;
+    margin: 0 auto 12px;
+  }
+  .assembly-tech20-figure {
+    margin-top: 0;
+  }
+  .assembly-tech20-dim.is-right {
+    right: 18px;
+  }
+  .assembly-tech20-note,
+  .assembly-tech20-seal,
+  .assembly-tech20-glass-dim span {
+    font-size: 8px;
+  }
+}
+
+/* FIX 22 — RULE-DRIVEN ASSEMBLY PROTOTYPE 01 */
+.assembly-tech22-rule-driven {
+  width: min(100%, 760px);
+  margin-top: 28px;
+}
+.assembly-rule22-shell {
+  display: grid;
+  gap: 10px;
+}
+.assembly-rule22-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid #d7e4e8;
+  border-radius: 10px;
+  background: #fff;
+}
+.assembly-rule22-grid line {
+  stroke: rgba(71, 113, 126, .055);
+  stroke-width: 1;
+}
+.assembly-rule22-title {
+  fill: #325c68;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .06em;
+}
+.assembly-rule22-subtitle {
+  fill: #71868d;
+  font-size: 9px;
+  font-weight: 700;
+}
+.assembly-rule22-glazing rect {
+  fill: rgba(160, 220, 255, .42);
+  stroke: #64a8cf;
+  stroke-width: 1.4;
+}
+.assembly-rule22-glazing .assembly-rule22-spacer {
+  fill: rgba(214, 162, 83, .75);
+  stroke: #bc8136;
+}
+.assembly-rule22-bead {
+  fill: rgba(235, 181, 193, .88);
+  stroke: #b46f7d;
+  stroke-width: 1.4;
+}
+.assembly-rule22-seal {
+  fill: none;
+  stroke: #c57082;
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+.assembly-rule22-dimension line {
+  stroke: #769aa5;
+  stroke-width: 1.25;
+}
+.assembly-rule22-dimension text {
+  fill: #355c67;
+  font-size: 10px;
+  font-weight: 800;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 4px;
+}
+.assembly-rule22-dimension.is-overlap line {
+  stroke: #b98a36;
+}
+.assembly-rule22-dimension.is-overlap text {
+  fill: #8b651f;
+}
+.assembly-rule22-arrow {
+  fill: #769aa5;
+}
+.assembly-rule22-callout line {
+  stroke: #8aa8b0;
+  stroke-width: 1;
+}
+.assembly-rule22-callout text {
+  fill: #3e6570;
+  font-size: 9px;
+  font-weight: 800;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 4px;
+}
+.assembly-rule22-formulas {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.assembly-rule22-formulas > div {
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid #d8e5e9;
+  border-radius: 8px;
+  background: #fff;
+}
+.assembly-rule22-formulas span,
+.assembly-rule22-formulas b {
+  display: block;
+}
+.assembly-rule22-formulas span {
+  color: #68808a;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.assembly-rule22-formulas b {
+  margin-top: 4px;
+  color: #335762;
+  font-size: 10px;
+  line-height: 1.35;
+}
+.assembly-rule22-formulas .is-warning {
+  border-color: #e7d39d;
+  background: #fff8e8;
+}
+.assembly-rule22-formulas .is-warning b {
+  color: #785e2f;
+}
+@media (max-width: 1100px) {
+  .assembly-rule22-formulas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .assembly-rule22-formulas {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* FIX 23 — ANCHOR / MATE RULE 01 */
+.assembly-rule23-anchor-guides line {
+  stroke: #d65d4a;
+  stroke-width: 1.4;
+  stroke-dasharray: 5 4;
+}
+.assembly-rule23-anchor-guides circle {
+  fill: rgba(255,255,255,.92);
+  stroke: #d65d4a;
+  stroke-width: 2;
+}
+.assembly-rule23-anchor-guides circle + circle {
+  fill: #d65d4a;
+  stroke: none;
+}
+.assembly-rule23-anchor-guides text {
+  fill: #a94b3c;
+  font-size: 10px;
+  font-weight: 900;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 4px;
+}
+.assembly-rule23-validation line {
+  fill: none;
+  stroke: #b8892b;
+  stroke-width: 1.4;
+}
+.assembly-rule23-validation text {
+  fill: #8c671d;
+  font-size: 9px;
+  font-weight: 800;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 4px;
+}
+.assembly-rule23-formulas {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.assembly-rule23-formulas > div:nth-child(3) {
+  border-color: #d9b0a8;
+  background: #fff7f5;
+}
+.assembly-rule23-formulas > div:nth-child(3) b {
+  color: #a24b3e;
+}
+@media (max-width: 900px) {
+  .assembly-rule23-formulas {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* FIX 24 — CONTACT LINE / DUAL ANCHOR RULE 01 */
+.assembly-rule24-contact-guides line {
+  stroke: #d65d4a;
+  stroke-width: 2;
+  stroke-dasharray: 7 5;
+}
+.assembly-rule24-contact-guides circle {
+  fill: rgba(255,255,255,.94);
+  stroke: #d65d4a;
+  stroke-width: 2;
+}
+.assembly-rule24-contact-guides circle:nth-of-type(3),
+.assembly-rule24-contact-guides circle:nth-of-type(4) {
+  fill: #d65d4a;
+  stroke: none;
+}
+.assembly-rule24-contact-guides text {
+  fill: #a94b3c;
+  font-size: 9px;
+  font-weight: 900;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 4px;
+}
+.assembly-rule24-formulas {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.assembly-rule24-formulas > div:nth-child(3) {
+  border-color: #d9b0a8;
+  background: #fff7f5;
+}
+.assembly-rule24-formulas > div:nth-child(3) b {
+  color: #a24b3e;
+}
+@media (max-width: 1100px) {
+  .assembly-rule24-formulas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .assembly-rule24-formulas {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* FIX 25 — PROFILE LOCAL COORDINATES / MATE CALIBRATION 01 */
+.assembly-rule25-svg {
+  background: #fff;
+}
+.assembly-rule25-local-envelope rect {
+  fill: none;
+  stroke-width: 1.1;
+  stroke-dasharray: 5 4;
+}
+.assembly-rule25-local-envelope.is-frame rect {
+  stroke: rgba(58, 132, 151, .48);
+}
+.assembly-rule25-local-envelope.is-sash rect {
+  stroke: rgba(170, 112, 71, .50);
+}
+.assembly-rule25-local-envelope text {
+  fill: #69828b;
+  font-size: 7.5px;
+  font-weight: 800;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 3px;
+}
+.assembly-rule25-contact-guides line {
+  stroke-width: 1.7;
+  stroke-dasharray: 5 4;
+}
+.assembly-rule25-contact-guides circle {
+  r: 5px;
+}
+.assembly-rule25-contact-guides text {
+  font-size: 8px;
+}
+.assembly-rule25-axis line {
+  stroke: #7c9ca5;
+  stroke-width: 1.1;
+}
+.assembly-rule25-axis text {
+  fill: #63808a;
+  font-size: 8px;
+  font-weight: 800;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 3px;
+}
+.assembly-rule25-formulas {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.assembly-rule25-formulas > div:nth-child(5),
+.assembly-rule25-formulas > div:nth-child(7) {
+  border-color: #c9dde2;
+  background: #f7fbfc;
+}
+.assembly-rule25-formulas > div:nth-child(5) b,
+.assembly-rule25-formulas > div:nth-child(7) b {
+  color: #315d68;
+}
+@media (max-width: 1080px) {
+  .assembly-rule25-formulas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .assembly-rule25-formulas {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* FIX 26 — CONTOUR CONTACT CALIBRATION 01 */
+.assembly-rule26-svg {
+  min-height: 480px;
+}
+.assembly-rule26-envelope rect {
+  fill: none;
+  stroke: #b8ccd2;
+  stroke-width: 1;
+  stroke-dasharray: 6 5;
+}
+.assembly-rule26-envelope.is-frame rect { stroke: #5aa6b8; }
+.assembly-rule26-envelope.is-sash rect { stroke: #c49c55; }
+.assembly-rule26-envelope text {
+  fill: #6a8189;
+  font-size: 9px;
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 3px;
+}
+.assembly-rule26-contact-gate rect {
+  fill: rgba(224, 121, 92, .10);
+  stroke: #d8795c;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+.assembly-rule26-contact-gate circle {
+  fill: #fff;
+  stroke: #d8795c;
+  stroke-width: 2;
+}
+.assembly-rule26-contact-gate line {
+  stroke: #d8795c;
+  stroke-width: 2;
+}
+.assembly-rule26-contact-gate text,
+.assembly-rule26-reference-transform text {
+  fill: #8d5b4a;
+  font-size: 9px;
+  font-weight: 800;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 3px;
+}
+.assembly-rule26-reference-transform line {
+  stroke: #5f95a3;
+  stroke-width: 1.4;
+  stroke-dasharray: 5 4;
+}
+.assembly-rule26-formulas {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.assembly-rule26-formulas > div:nth-child(3),
+.assembly-rule26-formulas > div:nth-child(4),
+.assembly-rule26-formulas > div:nth-child(7) {
+  border-color: #b7d7de;
+  background: #f2fafb;
+}
+.assembly-rule26-formulas > div:nth-child(3) b,
+.assembly-rule26-formulas > div:nth-child(4) b,
+.assembly-rule26-formulas > div:nth-child(7) b {
+  color: #2d6975;
+}
+@media (max-width: 1050px) {
+  .assembly-rule26-formulas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .assembly-rule26-formulas { grid-template-columns: 1fr; }
+}
+
+
+/* FIX 27 — CONTACT SURFACE FIT / COLLISION RULE 01 */
+.assembly-rule27-svg {
+  min-height: 500px;
+}
+.assembly-rule27-source-envelope rect {
+  fill: none;
+  stroke-width: 1;
+  stroke-dasharray: 5 5;
+  opacity: .55;
+}
+.assembly-rule27-source-envelope.is-frame rect { stroke: #4d9fb2; }
+.assembly-rule27-source-envelope.is-sash rect { stroke: #bd9150; }
+.assembly-rule27-glazing rect {
+  fill: rgba(141, 211, 244, .34);
+  stroke: #65aecd;
+  stroke-width: 1.1;
+}
+.assembly-rule27-glazing .assembly-rule27-spacer {
+  fill: rgba(224, 166, 86, .78);
+  stroke: #c58b3f;
+}
+.assembly-rule27-contact-corridor rect {
+  fill: rgba(80, 170, 134, .07);
+  stroke: #4eaa86;
+  stroke-width: 1.4;
+  stroke-dasharray: 5 4;
+}
+.assembly-rule27-contact-corridor line {
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+.assembly-rule27-contact-corridor line.is-frame { stroke: #26889d; }
+.assembly-rule27-contact-corridor line.is-sash { stroke: #b48743; }
+.assembly-rule27-contact-corridor text,
+.assembly-rule27-collision-probes text {
+  fill: #3c7463;
+  font-size: 8px;
+  font-weight: 800;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 3px;
+}
+.assembly-rule27-collision-probes circle {
+  stroke-width: 2;
+  paint-order: stroke;
+  stroke: #fff;
+}
+.assembly-rule27-collision-probes circle.is-contact {
+  fill: #5aa887;
+  stroke: #347c61;
+}
+.assembly-rule27-collision-probes circle.is-overlap {
+  fill: #dc7c61;
+  stroke: #a9543f;
+}
+.assembly-rule27-review-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+.assembly-rule27-review-strip > div {
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid #d7e5e9;
+  border-radius: 8px;
+  background: #fff;
+}
+.assembly-rule27-review-strip > div > span {
+  display: block;
+  color: #698089;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.assembly-rule27-review-strip > div > b {
+  display: block;
+  margin-top: 4px;
+  color: #35535d;
+  font-size: 9px;
+  line-height: 1.4;
+}
+.assembly-rule27-review-strip > div.is-warning {
+  border-color: #e1c88f;
+  background: #fff7e8;
+}
+.assembly-rule27-review-strip > div.is-warning > b { color: #735a2f; }
+@media (max-width: 1050px) {
+  .assembly-rule27-review-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .assembly-rule27-review-strip { grid-template-columns: 1fr; }
+}
+
+/* FIX 28 — PROFILE SOLID MASK / CONTOUR FIT 01 */
+.assembly-rule28-svg {
+  min-height: 500px;
+}
+.assembly-rule28-envelope rect {
+  fill: none;
+  stroke-width: 1;
+  stroke-dasharray: 5 5;
+  opacity: .42;
+}
+.assembly-rule28-envelope.is-frame rect { stroke: #4d9fb2; }
+.assembly-rule28-envelope.is-sash rect { stroke: #bd9150; }
+.assembly-rule28-mask-layer image {
+  opacity: .36;
+  mix-blend-mode: multiply;
+}
+.assembly-rule28-fit-band rect {
+  fill: rgba(77, 169, 127, .07);
+  stroke: #4aa77e;
+  stroke-width: 1.4;
+  stroke-dasharray: 5 4;
+}
+.assembly-rule28-fit-band text {
+  fill: #3f7864;
+  font-size: 8px;
+  font-weight: 800;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 3px;
+}
+.assembly-rule28-fit-band circle {
+  fill: #5aa887;
+  stroke: #347c61;
+  stroke-width: 2;
+  paint-order: stroke;
+  stroke: #fff;
+}
+.assembly-rule28-review-strip {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.assembly-rule28-review-strip > div:nth-child(1),
+.assembly-rule28-review-strip > div:nth-child(2),
+.assembly-rule28-review-strip > div:nth-child(3),
+.assembly-rule28-review-strip > div:nth-child(4),
+.assembly-rule28-review-strip > div:nth-child(5) {
+  border-color: #bddbe1;
+  background: #f6fbfc;
+}
+@media (max-width: 1150px) {
+  .assembly-rule28-review-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .assembly-rule28-review-strip { grid-template-columns: 1fr; }
+}
+
+
+/* FIX 30 — EVIDENCE-GATED ASSEMBLY 01 */
+.assembly-evidence-gated .assembly-tech20-canvas {
+  min-height: 600px;
+}
+.assembly-evidence-gate-stage {
+  display: grid;
+  place-items: center;
+  min-height: 470px;
+  padding: 10px 0;
+}
+.assembly-evidence-lock {
+  width: min(92%, 520px);
+  padding: 28px 30px;
+  border: 1px solid #cbdde2;
+  border-radius: 14px;
+  background: rgba(255,255,255,.98);
+  box-shadow: 0 14px 34px rgba(32,70,82,.08);
+  text-align: center;
+}
+.assembly-evidence-lock-icon {
+  display: inline-grid;
+  place-items: center;
+  min-width: 72px;
+  height: 28px;
+  margin-bottom: 12px;
+  padding: 0 10px;
+  border: 1px solid #d8bd7b;
+  border-radius: 999px;
+  background: #fff8e6;
+  color: #8b651d;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+.assembly-evidence-lock > span {
+  display: block;
+  color: #6a8790;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .09em;
+}
+.assembly-evidence-lock > b {
+  display: block;
+  margin: 7px auto 0;
+  max-width: 430px;
+  color: #274650;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.assembly-evidence-lock > p {
+  margin: 10px auto 0;
+  max-width: 440px;
+  color: #5b727b;
+  font-size: 10px;
+  line-height: 1.55;
+}
+.assembly-evidence-lock-facts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px;
+  margin: 16px 0;
+}
+.assembly-evidence-lock-facts span {
+  padding: 5px 8px;
+  border: 1px solid #bfd7dd;
+  border-radius: 999px;
+  background: #f2fafb;
+  color: #396670;
+  font-size: 9px;
+  font-weight: 750;
+}
+.assembly-evidence-lock button,
+.assembly-evidence-experiment-head button {
+  min-height: 34px;
+  padding: 6px 11px;
+  border: 1px solid #b8d1d8;
+  border-radius: 7px;
+  background: #fff;
+  color: #315d67;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.assembly-evidence-lock > small {
+  display: block;
+  margin-top: 9px;
+  color: #7a8d93;
+  font-size: 8px;
+}
+.assembly-evidence-experiment {
+  width: min(100%, 760px);
+}
+.assembly-evidence-experiment-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding: 9px 10px;
+  border: 1px solid #ead7a8;
+  border-radius: 8px;
+  background: #fff8e8;
+}
+.assembly-evidence-experiment-head span {
+  display: block;
+  color: #9a7429;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+.assembly-evidence-experiment-head b {
+  display: block;
+  margin-top: 2px;
+  color: #5d4d2f;
+  font-size: 11px;
+}
+.assembly-evidence-experiment > p {
+  margin: 8px 6px 0;
+  color: #6d6048;
+  font-size: 9px;
+  line-height: 1.45;
+  text-align: center;
+}
+@media (max-width: 820px) {
+  .assembly-evidence-lock {
+    width: 100%;
+    padding: 20px 16px;
+  }
+  .assembly-evidence-experiment-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+/* FIX 31 — JOINT EVIDENCE MODEL 01 */
+.assembly-joint-evidence-model {
+  margin: 18px 0 14px;
+  padding: 12px;
+  border: 1px solid #c9dde2;
+  border-radius: 10px;
+  background: #f8fbfc;
+  text-align: left;
+}
+.assembly-joint-evidence-model-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid #dce8eb;
+}
+.assembly-joint-evidence-model-heading span {
+  display: block;
+  color: #5d8792;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .09em;
+}
+.assembly-joint-evidence-model-heading b {
+  display: block;
+  margin-top: 3px;
+  color: #2d515c;
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+.assembly-joint-evidence-model-heading em {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border-radius: 999px;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: .06em;
+}
+.assembly-joint-evidence-model-heading em.is-missing {
+  border: 1px solid #e1c37c;
+  background: #fff7df;
+  color: #8e681d;
+}
+.assembly-joint-evidence-model-heading em.is-reviewed {
+  border: 1px solid #9dcbc0;
+  background: #edf9f5;
+  color: #28715f;
+}
+.assembly-joint-evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin: 10px 0 0;
+}
+.assembly-joint-evidence-grid > div {
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #dde9ec;
+  border-radius: 7px;
+  background: #fff;
+}
+.assembly-joint-evidence-grid dt {
+  color: #748a91;
+  font-size: 8px;
+  font-weight: 750;
+}
+.assembly-joint-evidence-grid dd {
+  margin: 3px 0 0;
+  color: #335761;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.assembly-joint-evidence-model > p {
+  margin: 9px 2px 0;
+  color: #667b83;
+  font-size: 8.5px;
+  line-height: 1.45;
+}
+.assembly-joint-evidence-side p {
+  margin: 4px 0 0;
+  color: #56717a;
+  font-size: 9px;
+  line-height: 1.4;
+}
+.assembly-joint-evidence-side p b {
+  color: #355964;
+}
+@media (max-width: 720px) {
+  .assembly-joint-evidence-grid {
+    grid-template-columns: 1fr;
+  }
+  .assembly-joint-evidence-model-heading {
+    flex-direction: column;
+  }
+}
+
+
+/* FIX 32 — JOINT EVIDENCE CAPTURE 01 */
+.assembly-evidence-capture-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.assembly-evidence-capture-panel > p {
+  margin: 0;
+  color: #56717a;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.assembly-evidence-capture-source {
+  display: grid;
+  gap: 5px;
+}
+.assembly-evidence-capture-source b {
+  color: #385965;
+  font-size: 9px;
+}
+.assembly-evidence-capture-source input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 7px 8px;
+  border: 1px solid #cbdce1;
+  border-radius: 6px;
+  background: #fff;
+  color: #314f59;
+  font: inherit;
+  font-size: 9px;
+}
+.assembly-evidence-capture-rolebar {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.assembly-evidence-capture-rolebar button,
+.assembly-evidence-capture-actions button {
+  min-height: 30px;
+  padding: 5px 7px;
+  border: 1px solid #c7d8dd;
+  border-radius: 6px;
+  background: #fff;
+  color: #36515a;
+  font-size: 9px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.assembly-evidence-capture-rolebar button.is-active {
+  border-color: #50a8ba;
+  background: #edf8fa;
+  color: #226676;
+}
+.assembly-evidence-capture-image {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 8px;
+  overflow: hidden;
+  border: 1px solid #d7e5e9;
+  border-radius: 8px;
+  background: #fff;
+  cursor: crosshair;
+}
+.assembly-evidence-capture-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+}
+.assembly-evidence-capture-image svg {
+  position: absolute;
+  inset: 8px;
+  width: calc(100% - 16px);
+  height: calc(100% - 16px);
+  overflow: visible;
+  pointer-events: none;
+}
+.assembly-evidence-capture-line {
+  fill: none;
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-dasharray: 2 1;
+}
+.assembly-evidence-capture-line.is-frame { stroke: #178ca4; }
+.assembly-evidence-capture-line.is-sash { stroke: #c77c2b; }
+.assembly-evidence-capture-dot {
+  stroke-width: .7;
+}
+.assembly-evidence-capture-dot.is-frame { fill: #e9f8fb; stroke: #178ca4; }
+.assembly-evidence-capture-dot.is-sash { fill: #fff3e4; stroke: #c77c2b; }
+.assembly-evidence-capture-point-label {
+  fill: #314f59;
+  font-size: 4px;
+  font-weight: 900;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 1.6px;
+}
+.assembly-evidence-capture-actions {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px;
+}
+.assembly-evidence-capture-actions button:last-child {
+  border-color: #9fcbd4;
+  background: #eef9fb;
+  color: #285f6b;
+}
+.assembly-evidence-capture-actions button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+.assembly-evidence-capture-status {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.assembly-evidence-capture-status > div {
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid #d9e5e9;
+  border-radius: 7px;
+  background: #fbfdfe;
+}
+.assembly-evidence-capture-status span,
+.assembly-evidence-capture-status b {
+  display: block;
+}
+.assembly-evidence-capture-status span {
+  color: #6a828a;
+  font-size: 8px;
+}
+.assembly-evidence-capture-status b {
+  margin-top: 2px;
+  color: #36515a;
+  font-size: 8px;
+}
+.assembly-evidence-capture-candidate {
+  padding: 9px;
+  border: 1px solid #bbdce3;
+  border-radius: 8px;
+  background: #f1fafc;
+}
+.assembly-evidence-capture-candidate > span {
+  color: #4f7d88;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .06em;
+}
+.assembly-evidence-capture-candidate dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  margin: 7px 0 0;
+}
+.assembly-evidence-capture-candidate dl > div {
+  padding: 5px 6px;
+  border: 1px solid #d3e8ed;
+  border-radius: 6px;
+  background: #fff;
+}
+.assembly-evidence-capture-candidate dt {
+  color: #69838b;
+  font-size: 8px;
+}
+.assembly-evidence-capture-candidate dd {
+  margin: 2px 0 0;
+  color: #2d5965;
+  font-size: 9px;
+  font-weight: 800;
+}
+.assembly-evidence-capture-candidate p,
+.assembly-evidence-capture-hint {
+  margin: 7px 0 0;
+  color: #617780;
+  font-size: 8px;
+  line-height: 1.45;
+}
+.assembly-evidence-capture-draft {
+  padding: 8px 9px;
+  border: 1px solid #e5cf9b;
+  border-radius: 8px;
+  background: #fff8e8;
+}
+.assembly-evidence-capture-draft b,
+.assembly-evidence-capture-draft span {
+  display: block;
+}
+.assembly-evidence-capture-draft b {
+  color: #7b5b20;
+  font-size: 8px;
+}
+.assembly-evidence-capture-draft span {
+  margin-top: 3px;
+  color: #6f603f;
+  font-size: 8px;
+  line-height: 1.45;
+}
+@media (max-width: 1100px) {
+  .assembly-evidence-capture-status,
+  .assembly-evidence-capture-rolebar {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* SYSTEM-DRIVEN PRODUCT LOGIC RESET 01 */
+.assembly-product-dialog {
+  width: min(1280px, calc(100vw - 24px));
+  max-height: 94vh;
+  padding: 0;
+  overflow: hidden;
+}
+
+.assembly-product-dialog-head {
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid #dce5e9;
+  background: #fff;
+}
+
+.assembly-product-dialog-head h2 { margin: 0 0 4px; }
+.assembly-product-dialog-head p { margin: 0 !important; font-size: 12px; }
+
+.assembly-product-body,
+.assembly-joint-detail,
+.assembly-product-empty {
+  max-height: calc(94vh - 82px);
+  overflow: auto;
+  padding: 18px 20px 24px;
+  background: #f7fafb;
+}
+
+.assembly-system-logic {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: stretch;
+  margin-bottom: 14px;
+}
+
+.assembly-system-logic > div {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 8px;
+  padding: 10px;
+  border: 1px solid #d8e3e7;
+  border-radius: 9px;
+  background: #fff;
+}
+
+.assembly-system-logic > div > span {
+  grid-row: 1 / 3;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: #edf7f9;
+  color: #2b7d8e;
+  font-weight: 800;
+}
+
+.assembly-system-logic b { font-size: 11px; }
+.assembly-system-logic small { color: #687b84; font-size: 9px; line-height: 1.35; }
+.assembly-system-logic > i { align-self: center; color: #8da0a8; font-style: normal; }
+
+.assembly-system-summary,
+.assembly-product-section,
+.assembly-joint-detail > section,
+.assembly-joint-locked,
+.assembly-joint-confirmed,
+.assembly-joint-facts {
+  margin-bottom: 14px;
+  border: 1px solid #d8e3e7;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.assembly-system-summary { padding: 14px; }
+.assembly-system-summary > header,
+.assembly-product-section > header,
+.assembly-joint-detail > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.assembly-system-summary > header span,
+.assembly-product-section > header span,
+.assembly-joint-detail > header span,
+.assembly-custom-joint-principle header span {
+  display: block;
+  color: #5d8792;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .09em;
+}
+
+.assembly-system-summary h3,
+.assembly-product-section h3,
+.assembly-joint-detail h3 {
+  margin: 3px 0 0;
+  font-size: 16px;
+}
+
+.assembly-system-summary > header strong {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #eef6f8;
+  color: #3d6974;
+  font-size: 10px;
+}
+
+.assembly-system-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.assembly-system-summary-grid > div {
+  display: grid;
+  gap: 2px;
+  padding: 9px;
+  border: 1px solid #e3eaed;
+  border-radius: 8px;
+  background: #fbfdfd;
+}
+
+.assembly-system-summary-grid span { color: #6a7d85; font-size: 9px; text-transform: uppercase; letter-spacing: .06em; }
+.assembly-system-summary-grid b { font-size: 15px; }
+.assembly-system-summary-grid small { color: #6b7f87; font-size: 9px; line-height: 1.35; }
+.assembly-system-warning { margin: 10px 0 0; padding: 8px 10px; border-left: 3px solid #bd8323; background: #fff7e7; color: #6e5324; font-size: 10px; }
+
+.assembly-product-section { overflow: hidden; }
+.assembly-product-section > header { padding: 12px 14px; border-bottom: 1px solid #e2eaed; background: #fbfdfd; }
+.assembly-product-section > header small { max-width: 410px; color: #657982; font-size: 10px; line-height: 1.4; text-align: right; }
+.assembly-empty-state { margin: 0; padding: 16px; color: #6a7d85; font-size: 11px; }
+
+.assembly-component-table { display: grid; }
+.assembly-component-row {
+  display: grid;
+  grid-template-columns: 1.15fr .9fr .8fr .8fr;
+  gap: 10px;
+  padding: 9px 14px;
+  border-top: 1px solid #edf1f3;
+}
+.assembly-component-row.is-head { border-top: 0; background: #f7fafb; color: #6a7d85; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+.assembly-component-row > span { min-width: 0; }
+.assembly-component-row b, .assembly-component-row small { display: block; overflow-wrap: anywhere; }
+.assembly-component-row b { font-size: 11px; }
+.assembly-component-row small { margin-top: 2px; color: #71858c; font-size: 9px; line-height: 1.35; }
+.assembly-component-row.is-missing { background: #fffbf3; }
+
+.assembly-joint-list { display: grid; gap: 8px; padding: 12px; }
+.assembly-review-dialog .assembly-joint-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid #d8e3e7;
+  border-radius: 8px;
+  background: #fff;
+  text-align: left;
+}
+.assembly-review-dialog .assembly-joint-card:hover { background: #f9fcfd; border-color: #aac7cf; }
+.assembly-joint-card-main { display: grid; gap: 3px; min-width: 0; }
+.assembly-joint-card-main span { color: #5f7b84; font-size: 9px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.assembly-joint-card-main b { font-size: 12px; }
+.assembly-joint-card-main small { color: #687c84; font-size: 9px; line-height: 1.4; }
+.assembly-joint-card > strong,
+.assembly-joint-detail > header > strong {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 9px;
+}
+.assembly-joint-card.is-verified > strong,
+.assembly-joint-detail > header > strong.is-verified { background: #e9f8ef; color: #286840; }
+.assembly-joint-card.is-missing-evidence > strong,
+.assembly-joint-detail > header > strong.is-missing-evidence { background: #fff2d9; color: #855c15; }
+.assembly-joint-card.is-missing-profile > strong,
+.assembly-joint-detail > header > strong.is-missing-profile { background: #f3f4f6; color: #5b6470; }
+
+.assembly-module-connection-list { display: grid; gap: 8px; padding: 12px; }
+.assembly-module-connection-list article { padding: 10px 12px; border: 1px dashed #cbd8dd; border-radius: 8px; background: #fbfdfd; }
+.assembly-module-connection-list article > div { display: flex; gap: 8px; align-items: center; font-size: 11px; font-weight: 800; }
+.assembly-module-connection-list article > b { display: block; margin-top: 5px; color: #8a641f; font-size: 9px; }
+.assembly-module-connection-list article > p { margin: 4px 0 0; color: #687c84; font-size: 9px; line-height: 1.4; }
+
+.assembly-joint-back { margin-bottom: 12px; }
+.assembly-joint-detail > header { margin-bottom: 12px; }
+.assembly-joint-locked,
+.assembly-joint-confirmed { padding: 16px; }
+.assembly-joint-locked { border-left: 4px solid #bd8323; background: #fffaf0; }
+.assembly-joint-confirmed { border-left: 4px solid #4b9a67; background: #f3fbf6; }
+.assembly-joint-locked > span { color: #8a641f; font-size: 9px; font-weight: 800; letter-spacing: .08em; }
+.assembly-joint-locked > b,
+.assembly-joint-confirmed > b { display: block; margin-top: 5px; font-size: 13px; }
+.assembly-joint-locked p,
+.assembly-joint-confirmed p { margin: 7px 0 0; color: #60737b; font-size: 10px; line-height: 1.5; }
+
+.assembly-joint-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; overflow: hidden; }
+.assembly-joint-facts > div { display: grid; gap: 3px; padding: 11px; border-right: 1px solid #e5ebee; }
+.assembly-joint-facts > div:last-child { border-right: 0; }
+.assembly-joint-facts span { color: #71858c; font-size: 9px; text-transform: uppercase; letter-spacing: .06em; }
+.assembly-joint-facts b { font-size: 12px; }
+.assembly-joint-facts small { color: #71858c; font-size: 9px; line-height: 1.35; }
+
+.assembly-custom-joint-principle { padding: 14px; }
+.assembly-custom-joint-principle header b { display: block; margin-top: 3px; font-size: 12px; }
+.assembly-custom-joint-principle p { margin: 7px 0 0; color: #657982; font-size: 10px; line-height: 1.5; }
+
+.assembly-product-technical { margin: 14px 0 !important; padding: 0 12px 10px; border: 1px solid #d8e3e7; border-radius: 10px; background: #fff; }
+.assembly-product-technical > summary { padding: 11px 2px; font-size: 10px; font-weight: 800; }
+.assembly-product-boundary { margin: 14px 0 0; padding: 10px 12px; border-left: 3px solid #6c8f99; border-radius: 6px; background: #eef5f7; color: #4d626a; font-size: 10px; line-height: 1.5; }
+.assembly-product-empty { min-height: 240px; display: grid; place-content: center; text-align: center; }
+.assembly-product-empty p { margin: 6px 0 0; color: #657982; }
+
+@media (max-width: 920px) {
+  .assembly-system-logic { grid-template-columns: 1fr; }
+  .assembly-system-logic > i { display: none; }
+  .assembly-system-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .assembly-component-row { grid-template-columns: 1fr 1fr; }
+  .assembly-component-row.is-head { display: none; }
+  .assembly-joint-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .assembly-joint-facts > div { border-bottom: 1px solid #e5ebee; }
+}
+
+@media (max-width: 620px) {
+  .assembly-product-dialog-head,
+  .assembly-product-body,
+  .assembly-joint-detail { padding-left: 12px; padding-right: 12px; }
+  .assembly-system-summary-grid,
+  .assembly-component-row,
+  .assembly-joint-facts { grid-template-columns: 1fr; }
+  .assembly-joint-card { align-items: flex-start !important; flex-direction: column; }
+  .assembly-product-section > header { display: block; }
+  .assembly-product-section > header small { display: block; margin-top: 5px; text-align: left; }
+}
+
+/* SYSTEM-DRIVEN ASSEMBLY MAP 01 */
+.assembly-map-section { overflow: visible; }
+
+.assembly-map-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.9fr) minmax(320px, .65fr);
+  gap: 14px;
+  padding: 14px;
+}
+
+.assembly-map-canvas {
+  position: relative;
+  min-height: 560px;
+  padding: 14px 14px 36px;
+  border: 1px solid #dbe5e9;
+  border-radius: 10px;
+  background:
+    linear-gradient(#eef3f5 1px, transparent 1px),
+    linear-gradient(90deg, #eef3f5 1px, transparent 1px),
+    #fff;
+  background-size: 20px 20px;
+}
+
+.assembly-map-canvas svg {
+  display: block;
+  width: 100%;
+  height: 520px;
+  overflow: visible;
+}
+
+.assembly-map-frame {
+  fill: #d7e7ec;
+  stroke: #5d7f89;
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.assembly-map-frame-inner {
+  fill: #fff;
+  stroke: #8daab3;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.assembly-map-divider {
+  fill: #c8dce2;
+  stroke: #5f818b;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.assembly-map-divider.is-reviewed { fill: #b9d7df; }
+
+.assembly-map-field rect {
+  fill: rgba(255, 255, 255, .52);
+  stroke: #b6c8ce;
+  stroke-width: 1.25;
+  stroke-dasharray: 5 4;
+  vector-effect: non-scaling-stroke;
+}
+
+.assembly-map-field line {
+  stroke: #9ab1b9;
+  stroke-width: 1.25;
+  vector-effect: non-scaling-stroke;
+}
+
+.assembly-map-field text {
+  fill: #49636c;
+  font-size: 26px;
+  font-weight: 800;
+  pointer-events: none;
+}
+
+.assembly-map-field text.assembly-map-field-type {
+  fill: #71858c;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+
+.assembly-map-joint { cursor: pointer; outline: none; }
+.assembly-map-joint circle {
+  fill: #fff;
+  stroke: #be862b;
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 1px 2px rgba(26, 52, 60, .16));
+}
+.assembly-map-joint text {
+  fill: #795817;
+  font-size: 20px;
+  font-weight: 900;
+  pointer-events: none;
+}
+.assembly-map-joint.is-verified circle { stroke: #4d9464; }
+.assembly-map-joint.is-verified text { fill: #2d6b43; }
+.assembly-map-joint.is-missing-profile circle { stroke: #8c989d; }
+.assembly-map-joint.is-missing-profile text { fill: #5f6b70; }
+.assembly-map-joint.is-invalid-role circle { stroke: #a65555; }
+.assembly-map-joint.is-invalid-role text { fill: #7e3d3d; }
+.assembly-map-joint:hover circle,
+.assembly-map-joint:focus-visible circle { stroke-width: 5; }
+
+.assembly-map-dimensions {
+  position: absolute;
+  inset: auto 14px 9px 14px;
+  display: flex;
+  justify-content: space-between;
+  color: #617780;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.assembly-map-face-note {
+  margin: 8px 0 0;
+  color: #62767e;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.assembly-map-joint-index {
+  align-self: start;
+  overflow: hidden;
+  border: 1px solid #dbe5e9;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.assembly-map-joint-index-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 11px 12px;
+  border-bottom: 1px solid #e6ecef;
+  background: #f8fbfc;
+}
+.assembly-map-joint-index-head b { font-size: 11px; }
+.assembly-map-joint-index-head span { color: #667b83; font-size: 9px; }
+.assembly-map-joint-index > p { margin: 0; padding: 14px; color: #667b83; font-size: 10px; }
+
+.assembly-map-field-group { border-bottom: 1px solid #e5ecef; }
+.assembly-map-field-group:last-child { border-bottom: 0; }
+.assembly-map-field-group > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #f7fafb;
+  color: #526a73;
+}
+.assembly-map-field-group > header b { font-size: 10px; letter-spacing: .03em; }
+.assembly-map-field-group > header span { color: #75878d; font-size: 8px; font-weight: 700; }
+
+.assembly-review-dialog .assembly-map-joint-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 22px;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-bottom: 1px solid #edf1f3;
+  border-radius: 0;
+  background: #fff;
+  text-align: left;
+}
+.assembly-review-dialog .assembly-map-joint-row:last-child { border-bottom: 0; }
+.assembly-review-dialog .assembly-map-joint-row:hover { background: #f8fbfc; }
+.assembly-map-joint-row > strong {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #dfb65f;
+  border-radius: 999px;
+  color: #795817;
+  font-size: 10px;
+}
+.assembly-map-joint-row > span { min-width: 0; }
+.assembly-map-joint-row > span b,
+.assembly-map-joint-row > span small { display: block; }
+.assembly-map-joint-row > span b { font-size: 10px; }
+.assembly-map-joint-row > span b em { color: #315d69; font-style: normal; font-weight: 900; }
+.assembly-map-joint-row > span small { margin-top: 2px; color: #6b7f87; font-size: 9px; }
+.assembly-map-joint-row > i { color: #9a6d1d; font-style: normal; font-weight: 900; text-align: center; }
+.assembly-map-joint-row.is-verified > strong { border-color: #84b993; color: #2d6b43; }
+.assembly-map-joint-row.is-verified > i { color: #2d6b43; }
+.assembly-map-joint-row.is-missing-profile > strong { border-color: #b8c1c5; color: #5f6b70; }
+.assembly-map-joint-row.is-missing-profile > i { color: #68777d; }
+.assembly-map-joint-row.is-invalid-role > strong { border-color: #c78f8f; color: #7e3d3d; }
+.assembly-map-joint-row.is-invalid-role > i { color: #8d4747; }
+
+.assembly-boundary-resolution {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) auto minmax(170px, 1fr) auto minmax(170px, 1fr) auto minmax(180px, 1fr);
+  gap: 8px;
+  align-items: stretch;
+  margin: 14px 0;
+  padding: 10px;
+  border: 1px solid #d9e5e9;
+  border-radius: 10px;
+  background: #f8fbfc;
+}
+.assembly-boundary-resolution > div {
+  min-width: 0;
+  padding: 10px 11px;
+  border: 1px solid #e2eaed;
+  border-radius: 8px;
+  background: #fff;
+}
+.assembly-boundary-resolution > div span,
+.assembly-boundary-resolution > div b,
+.assembly-boundary-resolution > div small { display: block; }
+.assembly-boundary-resolution > div span { color: #71838a; font-size: 8px; font-weight: 800; text-transform: uppercase; }
+.assembly-boundary-resolution > div b { margin-top: 4px; color: #334f58; font-size: 11px; }
+.assembly-boundary-resolution > div small { margin-top: 3px; color: #74868d; font-size: 8px; line-height: 1.35; }
+.assembly-boundary-resolution > i { align-self: center; color: #83969d; font-style: normal; font-weight: 900; }
+
+.assembly-product-disclosure {
+  margin: 0 0 14px;
+  border: 1px solid #d8e3e7;
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+}
+.assembly-product-disclosure > summary {
+  padding: 11px 14px;
+  cursor: pointer;
+  color: #3f5962;
+  font-size: 10px;
+  font-weight: 800;
+  background: #fbfdfd;
+}
+.assembly-product-disclosure[open] > summary { border-bottom: 1px solid #e3eaed; }
+.assembly-product-disclosure > .assembly-product-section {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+@media (max-width: 1100px) {
+  .assembly-map-layout { grid-template-columns: 1fr; }
+  .assembly-map-canvas { min-height: 460px; }
+  .assembly-map-canvas svg { height: 420px; }
+  .assembly-boundary-resolution { grid-template-columns: 1fr 1fr; }
+  .assembly-boundary-resolution > i { display: none; }
+}
+
+@media (max-width: 620px) {
+  .assembly-map-layout { padding: 10px; }
+  .assembly-map-canvas { min-height: 340px; }
+  .assembly-map-canvas svg { height: 300px; }
+  .assembly-boundary-resolution { grid-template-columns: 1fr; }
+}
+
+/* SYSTEM JOINT RULES + LIBRARY RESOLUTION 01 */
+.assembly-system-rule-note {
+  margin: 8px 12px 0;
+  padding: 8px 10px;
+  border: 1px solid #dbe7ea;
+  border-radius: 8px;
+  background: #f9fbfc;
+  color: #5d747d;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.assembly-system-component-rule {
+  margin-top: 3px;
+  font-size: 8px !important;
+  font-weight: 800;
+}
+.assembly-system-component-rule.is-matched { color: #2f6f49 !important; }
+.assembly-system-component-rule.is-different { color: #8a5c17 !important; }
+.assembly-system-component-rule.is-rule-available { color: #315d69 !important; }
+
+.assembly-joint-library {
+  margin-top: 14px;
+}
+.assembly-joint-library-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+  gap: 10px;
+  padding: 12px;
+}
+.assembly-joint-library-card {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #d8e4e8;
+  border-radius: 10px;
+  background: #fff;
+}
+.assembly-joint-library-card.has-rule { border-color: #bfd8d0; }
+.assembly-joint-library-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.assembly-joint-library-title > span {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border: 1px solid #9dbbc3;
+  border-radius: 50%;
+  color: #315d69;
+  font-size: 10px;
+  font-weight: 900;
+}
+.assembly-joint-library-title b,
+.assembly-joint-library-title strong { display: block; }
+.assembly-joint-library-title b { color: #3b5962; font-size: 10px; }
+.assembly-joint-library-title strong { margin-top: 2px; color: #213f49; font-size: 13px; }
+.assembly-joint-library-statuses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.assembly-joint-library-statuses span {
+  padding: 4px 7px;
+  border: 1px solid #d8e2e5;
+  border-radius: 999px;
+  background: #f9fbfc;
+  color: #65787f;
+  font-size: 8px;
+  font-weight: 900;
+}
+.assembly-joint-library-statuses span.is-ready { border-color: #b8d5c0; color: #2f6f49; }
+.assembly-joint-library-statuses span.is-locked { border-color: #ead6a7; color: #825c18; }
+.assembly-joint-library-statuses span.is-missing { border-color: #d8c5c5; color: #7b4d4d; }
+.assembly-joint-library-card > p {
+  margin: 10px 0;
+  color: #5f747c;
+  font-size: 9px;
+  line-height: 1.5;
+}
+.assembly-joint-library-uses {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #e6edef;
+}
+.assembly-joint-library-uses > span { color: #6c7f86; font-size: 8px; }
+.assembly-joint-library-uses > div { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
+.assembly-joint-library-uses b {
+  min-width: 24px;
+  padding: 3px 5px;
+  border: 1px solid #c7d9de;
+  border-radius: 999px;
+  color: #3f6069;
+  font-size: 8px;
+  text-align: center;
+}
+.assembly-joint-library-source {
+  display: block;
+  margin-top: 8px;
+  color: #708188;
+  font-size: 8px;
+  line-height: 1.4;
+}
+.assembly-joint-library-card > button {
+  margin-top: 10px;
+  padding: 7px 10px;
+  border: 1px solid #9bbbc4;
+  border-radius: 7px;
+  background: #f8fbfc;
+  color: #315d69;
+  font-size: 9px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.assembly-joint-library-boundary {
+  margin: 0 12px 12px;
+  padding: 9px 10px;
+  border: 1px solid #ead8b2;
+  border-radius: 8px;
+  background: #fffaf0;
+  color: #6f5c34;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.assembly-system-rule-panel {
+  margin: 14px 0;
+  padding: 12px;
+  border: 1px solid #d9e5e9;
+  border-radius: 10px;
+  background: #fff;
+}
+.assembly-system-rule-panel.is-available { border-color: #bcd8d0; background: #fbfefd; }
+.assembly-system-rule-panel.is-missing { border-color: #e1d1c3; background: #fffaf7; }
+.assembly-system-rule-panel > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.assembly-system-rule-panel > header span,
+.assembly-system-rule-panel > header b { display: block; }
+.assembly-system-rule-panel > header span { color: #71838a; font-size: 8px; font-weight: 900; letter-spacing: .04em; }
+.assembly-system-rule-panel > header b { margin-top: 3px; color: #334f58; font-size: 11px; }
+.assembly-system-rule-panel > header > strong {
+  padding: 4px 7px;
+  border: 1px solid #b8d5c0;
+  border-radius: 999px;
+  color: #2f6f49;
+  font-size: 8px;
+}
+.assembly-system-rule-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+.assembly-system-rule-grid > div {
+  padding: 9px 10px;
+  border: 1px solid #e0e9ec;
+  border-radius: 8px;
+  background: #fff;
+}
+.assembly-system-rule-grid span,
+.assembly-system-rule-grid b,
+.assembly-system-rule-grid small { display: block; }
+.assembly-system-rule-grid span { color: #75868d; font-size: 8px; text-transform: uppercase; }
+.assembly-system-rule-grid b { margin-top: 3px; color: #284b55; font-size: 11px; }
+.assembly-system-rule-grid small { margin-top: 2px; color: #77898f; font-size: 8px; line-height: 1.35; }
+.assembly-system-rule-panel > p {
+  margin: 10px 0 0;
+  color: #5f747c;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+@media (max-width: 720px) {
+  .assembly-joint-library-grid { grid-template-columns: 1fr; }
+  .assembly-joint-library-uses { align-items: flex-start; flex-direction: column; }
+  .assembly-joint-library-uses > div { justify-content: flex-start; }
+}
+
+/* JOINT SOURCE + CUSTOM ASSEMBLY 01 */
+.assembly-joint-library-statuses span.is-draft {
+  border-color: #a7c9d3;
+  background: #f4fbfd;
+  color: #315d69;
+}
+
+.assembly-joint-source-panel {
+  margin: 14px 0;
+  padding: 12px;
+  border: 1px solid #d7e3e7;
+  border-radius: 10px;
+  background: #fbfcfd;
+}
+.assembly-joint-source-panel > header,
+.assembly-custom-workspace-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.assembly-joint-source-panel > header span,
+.assembly-joint-source-panel > header b { display: block; }
+.assembly-joint-source-panel > header span { color: #71838a; font-size: 8px; font-weight: 900; letter-spacing: .04em; }
+.assembly-joint-source-panel > header b { margin-top: 3px; color: #334f58; font-size: 11px; }
+.assembly-joint-source-panel > header > strong {
+  padding: 4px 8px;
+  border: 1px solid #d4dfe3;
+  border-radius: 999px;
+  color: #61767e;
+  font-size: 8px;
+  white-space: nowrap;
+}
+.assembly-joint-source-panel > header > strong.is-custom-draft { border-color: #9fc4cf; color: #315d69; background: #f3fafc; }
+.assembly-joint-source-panel > header > strong.is-factory-verified { border-color: #afd0b7; color: #2f6f49; background: #f5fbf6; }
+
+.assembly-joint-source-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+.assembly-joint-source-grid > div {
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid #e0e8eb;
+  border-radius: 8px;
+  background: #fff;
+}
+.assembly-joint-source-grid > div.is-active { border-color: #b8d3da; background: #f8fcfd; }
+.assembly-joint-source-grid > div.is-draft { border-color: #9fc4cf; }
+.assembly-joint-source-grid > div.is-undefined { border-color: #ead6a7; background: #fffaf0; }
+.assembly-joint-source-grid span,
+.assembly-joint-source-grid b,
+.assembly-joint-source-grid small { display: block; }
+.assembly-joint-source-grid span { color: #74868d; font-size: 8px; text-transform: uppercase; }
+.assembly-joint-source-grid b { margin-top: 4px; color: #334f58; font-size: 10px; }
+.assembly-joint-source-grid small { margin-top: 3px; color: #73858c; font-size: 8px; line-height: 1.4; }
+.assembly-joint-source-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.assembly-joint-source-actions button,
+.assembly-custom-workspace button,
+.assembly-custom-controls button {
+  padding: 7px 10px;
+  border: 1px solid #8fb4bf;
+  border-radius: 7px;
+  background: #f5fafb;
+  color: #294f5a;
+  font-size: 9px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.assembly-joint-source-actions button.is-secondary,
+.assembly-custom-workspace button.is-secondary,
+.assembly-custom-controls button.is-secondary { border-color: #ccdadd; background: #fff; color: #647980; }
+.assembly-joint-source-actions button:disabled { opacity: .55; cursor: not-allowed; }
+.assembly-joint-source-panel > p {
+  margin: 10px 0 0;
+  color: #61757d;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.assembly-custom-workspace {
+  margin: 14px 0;
+  padding: 12px;
+  border: 1px solid #9fc4cf;
+  border-radius: 12px;
+  background: #f8fcfd;
+}
+.assembly-custom-workspace-head h3 { margin: 3px 0 0; color: #284b55; font-size: 13px; }
+.assembly-custom-workspace-head span { color: #557881; font-size: 8px; font-weight: 900; letter-spacing: .04em; }
+.assembly-custom-workspace-head p { margin: 4px 0 0; color: #657a81; font-size: 9px; }
+.assembly-custom-workspace-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 12px;
+  margin-top: 12px;
+}
+.assembly-custom-canvas-wrap {
+  min-width: 0;
+  border: 1px solid #ccdce1;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+.assembly-custom-canvas {
+  display: block;
+  width: 100%;
+  min-height: 480px;
+  touch-action: none;
+  user-select: none;
+}
+.assembly-custom-grid-bg { fill: #fbfdfe; }
+.assembly-custom-canvas pattern path { stroke: #e8eff2; stroke-width: 1; fill: none; }
+.assembly-custom-canvas pattern > path { stroke: #dbe7eb; stroke-width: 1.4; }
+.assembly-custom-axis { stroke: #d3e2e6; stroke-width: 1.5; stroke-dasharray: 8 8; }
+.assembly-custom-profile { cursor: grab; }
+.assembly-custom-profile.is-dragging { cursor: grabbing; }
+.assembly-custom-profile > rect:first-child { fill: rgba(247, 251, 252, .72); stroke: #b7cdd3; stroke-width: 1.5; stroke-dasharray: 6 5; }
+.assembly-custom-profile.is-dragging > rect:first-child { stroke: #5f93a1; stroke-width: 2.5; }
+.assembly-custom-profile image { pointer-events: none; }
+.assembly-custom-profile > line { stroke: #5b7881; stroke-width: 1.5; pointer-events: none; }
+.assembly-custom-profile-label { fill: #355660; font-size: 16px; font-weight: 800; text-anchor: middle; pointer-events: none; }
+.assembly-custom-profile-placeholder rect { fill: #fff; stroke: #9fb8bf; stroke-width: 2; }
+.assembly-custom-profile-placeholder text { fill: #506b73; font-size: 18px; font-weight: 800; text-anchor: middle; }
+.assembly-custom-canvas-note {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-top: 1px solid #dde8eb;
+  background: #fbfdfd;
+  color: #6c7f86;
+  font-size: 8px;
+}
+.assembly-custom-canvas-note b { color: #3f6069; }
+
+.assembly-custom-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.assembly-custom-pose-card,
+.assembly-custom-controls > label,
+.assembly-custom-review-gate {
+  padding: 9px 10px;
+  border: 1px solid #dbe6e9;
+  border-radius: 8px;
+  background: #fff;
+}
+.assembly-custom-pose-card header { display: flex; justify-content: space-between; gap: 8px; }
+.assembly-custom-pose-card header b { color: #365761; font-size: 9px; }
+.assembly-custom-pose-card header span { color: #7b8b91; font-size: 8px; }
+.assembly-custom-pose-card > div { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-top: 7px; }
+.assembly-custom-pose-card button { min-width: 0; padding: 6px 4px; }
+.assembly-custom-controls > label > span { display: block; margin-bottom: 5px; color: #657a81; font-size: 8px; font-weight: 800; text-transform: uppercase; }
+.assembly-custom-controls input,
+.assembly-custom-controls textarea {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid #cbdce0;
+  border-radius: 6px;
+  background: #fff;
+  color: #294b55;
+  font: inherit;
+  font-size: 9px;
+  padding: 7px 8px;
+}
+.assembly-custom-controls textarea { min-height: 62px; resize: vertical; }
+.assembly-custom-controls-actions { display: flex; gap: 7px; flex-wrap: wrap; }
+.assembly-custom-saved { margin: 0; padding: 8px 9px; border: 1px solid #b9d6c0; border-radius: 7px; background: #f5fbf6; color: #2f6f49; font-size: 8px; }
+.assembly-custom-review-gate { border-color: #ead6a7; background: #fffaf0; }
+.assembly-custom-review-gate b { color: #805d1d; font-size: 9px; }
+.assembly-custom-review-gate p { margin: 4px 0 0; color: #705f3d; font-size: 8px; line-height: 1.45; }
+.assembly-custom-joint-principle { margin: 12px 0 0; padding: 9px 10px; border: 1px solid #dbe5e8; border-radius: 8px; color: #60747c; font-size: 9px; line-height: 1.45; background: #fafcfd; }
+
+@media (max-width: 1180px) {
+  .assembly-joint-source-grid { grid-template-columns: 1fr 1fr; }
+  .assembly-custom-workspace-grid { grid-template-columns: 1fr; }
+  .assembly-custom-controls { display: grid; grid-template-columns: 1fr 1fr; }
+  .assembly-custom-controls-actions,
+  .assembly-custom-saved,
+  .assembly-custom-review-gate { grid-column: 1 / -1; }
+}
+
+@media (max-width: 720px) {
+  .assembly-joint-source-grid { grid-template-columns: 1fr; }
+  .assembly-custom-controls { display: flex; }
+  .assembly-custom-canvas { min-height: 360px; }
+  .assembly-custom-workspace-head { flex-direction: column; }
+}
+
+/* AUTOMATIC SYSTEM ASSEMBLY VIEW 01 */
+.assembly-auto-section {
+  margin: 14px 0 12px;
+  padding: 14px;
+  border: 1px solid #bdd3da;
+  border-radius: 12px;
+  background: #fbfdfe;
+}
+.assembly-auto-section.is-unavailable { border-color: #e2d5c7; background: #fffaf6; }
+.assembly-auto-section > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 12px;
+}
+.assembly-auto-section > header span {
+  display: block;
+  color: #668088;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .055em;
+}
+.assembly-auto-section > header h3 { margin: 4px 0 0; color: #244b57; font-size: 16px; }
+.assembly-auto-section > header p { margin: 5px 0 0; color: #62777f; font-size: 9px; line-height: 1.45; }
+.assembly-auto-section > header > strong {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border: 1px solid #d2b67f;
+  border-radius: 999px;
+  background: #fff8e9;
+  color: #7c5b1e;
+  font-size: 8px;
+  letter-spacing: .03em;
+}
+.assembly-auto-section > header > strong.is-verified { border-color: #a9cfb2; background: #f4fbf5; color: #2d7046; }
+.assembly-auto-section-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(260px, .65fr);
+  gap: 12px;
+}
+.assembly-auto-canvas-wrap {
+  position: relative;
+  min-width: 0;
+  border: 1px solid #cbdde2;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+.assembly-auto-canvas-badge {
+  position: absolute;
+  z-index: 2;
+  top: 9px;
+  left: 10px;
+  padding: 5px 7px;
+  border: 1px solid #cadce0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .94);
+  color: #476872;
+  font-size: 8px;
+  font-weight: 800;
+}
+.assembly-auto-canvas {
+  display: block;
+  width: 100%;
+  min-height: 430px;
+  max-height: 560px;
+  color: #e2ecef;
+}
+.assembly-auto-grid-bg { fill: #fcfefe; }
+.assembly-auto-profile-box { fill: rgba(255, 255, 255, .35); stroke-width: .35; stroke-dasharray: 1.7 1.3; }
+.assembly-auto-profile-box.is-support { stroke: #7ca9b4; }
+.assembly-auto-profile-box.is-sash { stroke: #b88f4b; }
+.assembly-auto-profile-image { opacity: .97; }
+.assembly-auto-rule-axis { stroke: #d69a36; stroke-width: .45; stroke-dasharray: 2 1.5; }
+.assembly-auto-canvas-caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-top: 1px solid #dce8eb;
+  background: #fbfdfd;
+  color: #71848b;
+  font-size: 8px;
+}
+.assembly-auto-canvas-caption b { color: #395d68; }
+.assembly-auto-facts {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+}
+.assembly-auto-facts > div {
+  padding: 9px 10px;
+  border: 1px solid #d8e5e8;
+  border-radius: 8px;
+  background: #fff;
+}
+.assembly-auto-facts span,
+.assembly-auto-facts b,
+.assembly-auto-facts small { display: block; }
+.assembly-auto-facts span { color: #74868c; font-size: 7px; font-weight: 900; text-transform: uppercase; letter-spacing: .035em; }
+.assembly-auto-facts b { margin-top: 3px; color: #2c515c; font-size: 10px; }
+.assembly-auto-facts small { margin-top: 3px; color: #76888e; font-size: 8px; line-height: 1.35; }
+.assembly-auto-boundary {
+  margin: 10px 0 0;
+  padding: 9px 10px;
+  border: 1px solid #ead5a4;
+  border-radius: 8px;
+  background: #fffaf0;
+  color: #6d5c3c;
+  font-size: 8px;
+  line-height: 1.45;
+}
+.assembly-auto-boundary.is-verified { border-color: #bdd7c2; background: #f5fbf6; color: #416b4c; }
+.assembly-joint-detail-disclosure {
+  margin: 8px 0;
+  border: 1px solid #d8e5e8;
+  border-radius: 9px;
+  background: #fff;
+  overflow: hidden;
+}
+.assembly-joint-detail-disclosure > summary {
+  cursor: pointer;
+  padding: 9px 11px;
+  color: #48656e;
+  font-size: 9px;
+  font-weight: 800;
+  list-style-position: inside;
+}
+.assembly-joint-detail-disclosure[open] > summary { border-bottom: 1px solid #e3ecef; background: #fafcfd; }
+.assembly-joint-detail-disclosure > .assembly-boundary-resolution,
+.assembly-joint-detail-disclosure > .assembly-system-rule-panel,
+.assembly-joint-detail-disclosure > .assembly-joint-source-panel { margin: 10px; }
+
+@media (max-width: 1000px) {
+  .assembly-auto-section-grid { grid-template-columns: 1fr; }
+  .assembly-auto-facts { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 720px) {
+  .assembly-auto-section > header { flex-direction: column; }
+  .assembly-auto-canvas { min-height: 320px; }
+  .assembly-auto-facts { grid-template-columns: 1fr; }
+  .assembly-auto-canvas-caption { flex-direction: column; }
+}
+.assembly-joint-validation-content { padding: 10px; }
+.assembly-joint-validation-content > .assembly-joint-confirmed,
+.assembly-joint-validation-content > .assembly-joint-locked { margin: 0 0 10px; }
+.assembly-joint-validation-content > .assembly-joint-facts { margin-top: 0; }
+
+/* DIMENSIONED TECHNICAL NODE 01 */
+.assembly-auto-canvas {
+  min-height: 500px;
+  max-height: 650px;
+}
+.assembly-auto-dimension-line,
+.assembly-auto-dimension-extension,
+.assembly-auto-dimension-tick {
+  fill: none;
+  stroke: #2f8f62;
+  vector-effect: non-scaling-stroke;
+}
+.assembly-auto-dimension-line { stroke-width: 1.25; }
+.assembly-auto-dimension-extension { stroke-width: .8; opacity: .86; }
+.assembly-auto-dimension-tick { stroke-width: 1.15; }
+.assembly-auto-dimension-text {
+  fill: #244d3d;
+  font-size: 4.5px;
+  font-weight: 850;
+  paint-order: stroke;
+  stroke: rgba(255, 255, 255, .96);
+  stroke-width: 1.8px;
+  stroke-linejoin: round;
+}
+.assembly-auto-reference-dimension > line,
+.assembly-auto-reference-dimension > circle {
+  stroke: #b77b18;
+  fill: #fff7e8;
+  vector-effect: non-scaling-stroke;
+}
+.assembly-auto-reference-dimension > line { stroke-width: 1.1; }
+.assembly-auto-reference-dimension > circle { stroke-width: 1; }
+.assembly-auto-reference-dimension .assembly-auto-reference-leader {
+  stroke-dasharray: 3 2;
+}
+.assembly-auto-reference-value,
+.assembly-auto-reference-label {
+  fill: #76551d;
+  font-weight: 850;
+  paint-order: stroke;
+  stroke: rgba(255, 255, 255, .97);
+  stroke-width: 1.6px;
+  stroke-linejoin: round;
+}
+.assembly-auto-reference-value { font-size: 4.5px; }
+.assembly-auto-reference-label { font-size: 3.35px; font-weight: 750; }
+.assembly-auto-dimension-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 10px;
+  border-top: 1px solid #e0eaed;
+  background: #fbfdfd;
+}
+.assembly-auto-dimension-legend span {
+  padding: 4px 7px;
+  border: 1px solid #d5e2e6;
+  border-radius: 999px;
+  background: #fff;
+  color: #587079;
+  font-size: 7px;
+  font-weight: 800;
+}
+.assembly-auto-dimension-legend .is-catalog {
+  border-color: #b8d8c6;
+  background: #f5fbf7;
+  color: #356d4d;
+}
+.assembly-auto-dimension-legend .is-reviewed {
+  border-color: #acd3bd;
+  background: #eff9f2;
+  color: #2e7048;
+}
+.assembly-auto-dimension-legend .is-rule {
+  border-color: #e0c692;
+  background: #fff9ec;
+  color: #7a5b21;
+}
+.assembly-auto-dimension-legend .is-unknown {
+  border-color: #dfc8c8;
+  background: #fff7f7;
+  color: #8a5555;
+}
+.assembly-auto-facts > .is-reviewed-fact {
+  border-color: #bbdac5;
+  background: #f6fbf7;
+}
+.assembly-auto-facts > .is-reviewed-fact b { color: #2f6e49; }
+.assembly-auto-facts > .is-unknown-fact {
+  border-color: #e3cece;
+  background: #fff9f9;
+}
+.assembly-auto-facts > .is-unknown-fact b { color: #8a5555; }
+
+@media (max-width: 720px) {
+  .assembly-auto-canvas { min-height: 390px; }
+  .assembly-auto-dimension-legend { align-items: flex-start; }
+}
+
+
+/* CLEAN TECHNICAL NODE 01 */
+.assembly-auto-section {
+  background: #fff;
+  border-color: #c9dbe0;
+  box-shadow: 0 1px 0 rgba(40, 70, 80, .025);
+}
+.assembly-auto-section > header {
+  margin-bottom: 10px;
+}
+.assembly-auto-section > header span {
+  color: #5f7881;
+  letter-spacing: .065em;
+}
+.assembly-auto-section > header h3 {
+  font-size: 17px;
+  font-weight: 760;
+}
+.assembly-auto-section > header p {
+  max-width: 920px;
+  color: #6d8188;
+}
+
+.assembly-auto-profile-strip {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 34px minmax(220px, 1fr) minmax(180px, .72fr);
+  gap: 8px;
+  align-items: stretch;
+  margin: 0 0 10px;
+}
+.assembly-auto-profile-strip article,
+.assembly-auto-profile-strip-context {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  min-height: 72px;
+  padding: 8px 10px;
+  border: 1px solid #d9e5e8;
+  border-radius: 8px;
+  background: #fbfdfd;
+}
+.assembly-auto-profile-strip article {
+  gap: 10px;
+}
+.assembly-auto-profile-strip-image {
+  display: grid;
+  place-items: center;
+  flex: 0 0 58px;
+  width: 58px;
+  height: 54px;
+  border-right: 1px solid #e0e9ec;
+  padding-right: 8px;
+}
+.assembly-auto-profile-strip-image img {
+  display: block;
+  max-width: 48px;
+  max-height: 48px;
+  object-fit: contain;
+  filter: contrast(1.02);
+}
+.assembly-auto-profile-strip span,
+.assembly-auto-profile-strip b,
+.assembly-auto-profile-strip small {
+  display: block;
+}
+.assembly-auto-profile-strip span {
+  color: #72868d;
+  font-size: 7px;
+  font-weight: 850;
+  letter-spacing: .045em;
+}
+.assembly-auto-profile-strip b {
+  margin-top: 3px;
+  color: #294f5a;
+  font-size: 12px;
+}
+.assembly-auto-profile-strip small {
+  margin-top: 3px;
+  color: #778990;
+  font-size: 8px;
+}
+.assembly-auto-profile-strip-joint {
+  display: grid;
+  place-items: center;
+  color: #77929a;
+  font-size: 20px;
+  font-weight: 500;
+}
+.assembly-auto-profile-strip-context {
+  display: block;
+  align-content: center;
+  border-color: #d5e2e5;
+  background: #f8fbfc;
+}
+.assembly-auto-profile-strip-context b {
+  font-size: 10px;
+}
+
+.assembly-auto-section-grid {
+  grid-template-columns: minmax(0, 1.95fr) minmax(250px, .55fr);
+  gap: 10px;
+}
+.assembly-auto-canvas-wrap {
+  border-color: #c8d9de;
+  border-radius: 8px;
+}
+.assembly-auto-canvas {
+  min-height: 540px;
+  max-height: 690px;
+}
+.assembly-auto-grid-bg {
+  color: #eaf1f3;
+  opacity: .52;
+}
+.assembly-auto-profile-box {
+  fill: rgba(255, 255, 255, .06);
+  stroke-width: .18;
+  stroke-dasharray: .95 1.85;
+  opacity: .42;
+}
+.assembly-auto-profile-image {
+  opacity: 1;
+}
+.assembly-auto-rule-axis {
+  stroke: #c9953c;
+  stroke-width: .28;
+  stroke-dasharray: 1.25 2.7;
+  opacity: .36;
+}
+
+.assembly-auto-orientation-glyph {
+  position: absolute;
+  z-index: 3;
+  top: 9px;
+  right: 10px;
+  width: 78px;
+  padding: 7px;
+  border: 1px solid #d4e2e6;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 1px 3px rgba(37, 70, 80, .04);
+}
+.assembly-auto-orientation-frame {
+  position: relative;
+  height: 42px;
+  border: 1px solid #9db7bf;
+  background: #fbfdfe;
+}
+.assembly-auto-orientation-frame > span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #789097;
+  font-size: 6px;
+  font-weight: 800;
+}
+.assembly-auto-orientation-frame > i {
+  position: absolute;
+  display: block;
+  background: #d8e5e8;
+}
+.assembly-auto-orientation-frame > i.is-top,
+.assembly-auto-orientation-frame > i.is-bottom {
+  left: -1px;
+  right: -1px;
+  height: 3px;
+}
+.assembly-auto-orientation-frame > i.is-left,
+.assembly-auto-orientation-frame > i.is-right {
+  top: -1px;
+  bottom: -1px;
+  width: 3px;
+}
+.assembly-auto-orientation-frame > i.is-top { top: -1px; }
+.assembly-auto-orientation-frame > i.is-right { right: -1px; }
+.assembly-auto-orientation-frame > i.is-bottom { bottom: -1px; }
+.assembly-auto-orientation-frame > i.is-left { left: -1px; }
+.assembly-auto-orientation-glyph.is-top .is-top,
+.assembly-auto-orientation-glyph.is-right .is-right,
+.assembly-auto-orientation-glyph.is-bottom .is-bottom,
+.assembly-auto-orientation-glyph.is-left .is-left {
+  background: #c68a2b;
+}
+.assembly-auto-orientation-glyph > small {
+  display: block;
+  margin-top: 4px;
+  color: #617a82;
+  font-size: 6.5px;
+  font-weight: 750;
+  text-align: center;
+}
+
+.assembly-auto-reviewed-chip {
+  position: absolute;
+  z-index: 3;
+  top: 48px;
+  left: 10px;
+  min-width: 118px;
+  padding: 6px 8px;
+  border: 1px solid #bad8c4;
+  border-radius: 6px;
+  background: rgba(247, 252, 248, .96);
+}
+.assembly-auto-reviewed-chip span,
+.assembly-auto-reviewed-chip b {
+  display: block;
+}
+.assembly-auto-reviewed-chip span {
+  color: #557465;
+  font-size: 6.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.assembly-auto-reviewed-chip b {
+  margin-top: 2px;
+  color: #2f704a;
+  font-size: 10px;
+}
+
+.assembly-auto-dimension-line,
+.assembly-auto-dimension-extension,
+.assembly-auto-dimension-tick {
+  stroke: #46866d;
+}
+.assembly-auto-dimension-line { stroke-width: 1.05; }
+.assembly-auto-dimension-extension { stroke-width: .62; opacity: .68; }
+.assembly-auto-dimension-tick { stroke-width: .95; }
+.assembly-auto-dimension-text {
+  fill: #285b47;
+  font-size: 4.15px;
+  font-weight: 800;
+  stroke-width: 1.55px;
+}
+.assembly-auto-reference-dimension > line,
+.assembly-auto-reference-dimension > circle {
+  stroke: #b37b22;
+}
+.assembly-auto-reference-dimension > line {
+  stroke-width: .75;
+  opacity: .72;
+}
+.assembly-auto-reference-dimension .assembly-auto-reference-anchor {
+  fill: #fffdf9;
+  stroke-width: .8;
+  opacity: .78;
+}
+.assembly-auto-reference-dimension .assembly-auto-reference-leader {
+  fill: none;
+  stroke: #b37b22;
+  stroke-width: .75;
+  stroke-dasharray: 1.8 2.2;
+  opacity: .74;
+  vector-effect: non-scaling-stroke;
+}
+.assembly-auto-reference-label-box {
+  fill: rgba(255, 255, 255, .98);
+  stroke: #dec99c;
+  stroke-width: .36;
+}
+.assembly-auto-reference-value { font-size: 4.15px; }
+.assembly-auto-reference-label { font-size: 3.1px; }
+
+.assembly-auto-dimension-legend {
+  gap: 5px;
+  padding: 7px 9px;
+  background: #fcfdfd;
+}
+.assembly-auto-dimension-legend span {
+  border-radius: 5px;
+  padding: 4px 6px;
+  font-size: 6.8px;
+}
+.assembly-auto-canvas-caption {
+  padding: 7px 9px;
+  background: #fff;
+}
+.assembly-auto-canvas-caption span {
+  text-align: right;
+}
+
+.assembly-auto-facts.is-compact {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+.assembly-auto-facts.is-compact > section {
+  overflow: hidden;
+  border: 1px solid #d6e3e7;
+  border-radius: 8px;
+  background: #fff;
+}
+.assembly-auto-facts.is-compact h4 {
+  margin: 0;
+  padding: 7px 9px;
+  border-bottom: 1px solid #e2ebee;
+  background: #f9fbfc;
+  color: #4c6871;
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+.assembly-auto-facts.is-compact dl {
+  margin: 0;
+}
+.assembly-auto-facts.is-compact dl > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: start;
+  padding: 7px 9px;
+  border-top: 1px solid #edf2f4;
+}
+.assembly-auto-facts.is-compact dl > div:first-child {
+  border-top: 0;
+}
+.assembly-auto-facts.is-compact dt {
+  color: #74878d;
+  font-size: 7px;
+}
+.assembly-auto-facts.is-compact dd {
+  margin: 0;
+  color: #2e515b;
+  font-size: 8px;
+  font-weight: 800;
+  text-align: right;
+}
+.assembly-auto-facts.is-compact .is-reviewed-row dd { color: #2f704a; }
+.assembly-auto-facts.is-compact .is-rule-row dd { color: #76551d; }
+.assembly-auto-facts.is-compact .is-unknown-row dd { color: #8a5555; }
+.assembly-auto-facts.is-compact > section > p {
+  margin: 0;
+  padding: 8px 9px;
+  border-top: 1px solid #edf2f4;
+  color: #74868c;
+  font-size: 7px;
+  line-height: 1.45;
+}
+
+.assembly-auto-boundary {
+  margin-top: 8px;
+  padding: 7px 9px;
+  font-size: 7.5px;
+}
+.assembly-auto-canvas-badge {
+  border-radius: 6px;
+  padding: 5px 7px;
+}
+
+@media (max-width: 1120px) {
+  .assembly-auto-profile-strip {
+    grid-template-columns: 1fr 28px 1fr;
+  }
+  .assembly-auto-profile-strip-context {
+    grid-column: 1 / -1;
+    min-height: 54px;
+  }
+}
+
+@media (max-width: 1000px) {
+  .assembly-auto-section-grid { grid-template-columns: 1fr; }
+  .assembly-auto-facts.is-compact { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  .assembly-auto-profile-strip {
+    grid-template-columns: 1fr;
+  }
+  .assembly-auto-profile-strip-joint {
+    height: 20px;
+  }
+  .assembly-auto-profile-strip-context {
+    grid-column: auto;
+  }
+  .assembly-auto-facts.is-compact {
+    grid-template-columns: 1fr;
+  }
+  .assembly-auto-orientation-glyph {
+    display: none;
+  }
+  .assembly-auto-reviewed-chip {
+    top: 43px;
+  }
+}
+
+/* FIX41 · SEPARATED PARTICIPANTS FINAL ASSEMBLY 01 */
+.assembly-auto-participants-block {
+  margin: 0 0 12px;
+  padding: 12px;
+  border: 1px solid #cfdee2;
+  border-radius: 9px;
+  background: #fbfdfd;
+}
+.assembly-auto-participants-head,
+.assembly-auto-final-assembly-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+.assembly-auto-participants-head {
+  margin-bottom: 10px;
+}
+.assembly-auto-participants-head span,
+.assembly-auto-final-assembly-head span {
+  display: block;
+  color: #5f7881;
+  font-size: 7px;
+  font-weight: 850;
+  letter-spacing: .07em;
+}
+.assembly-auto-participants-head h4,
+.assembly-auto-final-assembly-head h4 {
+  margin: 3px 0 0;
+  color: #284f5a;
+  font-size: 13px;
+  font-weight: 800;
+}
+.assembly-auto-participants-head p,
+.assembly-auto-final-assembly-head p {
+  max-width: 760px;
+  margin: 4px 0 0;
+  color: #71858c;
+  font-size: 8px;
+  line-height: 1.45;
+}
+.assembly-auto-participants-context {
+  flex: 0 0 auto;
+  min-width: 150px;
+  padding: 7px 9px;
+  border: 1px solid #d6e3e6;
+  border-radius: 7px;
+  background: #fff;
+  text-align: right;
+}
+.assembly-auto-participants-context span,
+.assembly-auto-participants-context b,
+.assembly-auto-participants-context small {
+  display: block;
+}
+.assembly-auto-participants-context b {
+  margin-top: 2px;
+  color: #345a64;
+  font-size: 9px;
+}
+.assembly-auto-participants-context small {
+  margin-top: 2px;
+  color: #788c92;
+  font-size: 7px;
+}
+
+.assembly-auto-profile-strip.assembly-auto-participant-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+.assembly-auto-profile-strip.assembly-auto-participant-grid .assembly-auto-participant-card {
+  display: grid;
+  grid-template-columns: minmax(150px, .82fr) minmax(150px, 1fr);
+  gap: 14px;
+  align-items: center;
+  min-height: 220px;
+  padding: 12px;
+  border: 1px solid #d4e1e5;
+  border-radius: 8px;
+  background: #fff;
+}
+.assembly-auto-profile-strip.assembly-auto-participant-grid .assembly-auto-participant-image {
+  display: grid;
+  place-items: center;
+  width: auto;
+  height: 190px;
+  padding: 10px;
+  border: 1px solid #e0e9ec;
+  border-radius: 6px;
+  background: #fcfefe;
+}
+.assembly-auto-profile-strip.assembly-auto-participant-grid .assembly-auto-participant-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 190px;
+  max-height: 170px;
+  object-fit: contain;
+  filter: contrast(1.03);
+}
+.assembly-auto-participant-meta span,
+.assembly-auto-participant-meta b,
+.assembly-auto-participant-meta strong,
+.assembly-auto-participant-meta small {
+  display: block;
+}
+.assembly-auto-participant-meta span {
+  color: #71868d;
+  font-size: 7px;
+  font-weight: 850;
+  letter-spacing: .055em;
+}
+.assembly-auto-participant-meta b {
+  margin-top: 6px;
+  color: #244c57;
+  font-size: 21px;
+  line-height: 1;
+}
+.assembly-auto-participant-meta strong {
+  margin-top: 9px;
+  color: #365e68;
+  font-size: 11px;
+  font-weight: 800;
+}
+.assembly-auto-participant-meta small {
+  margin-top: 5px;
+  color: #809198;
+  font-size: 7.5px;
+  line-height: 1.35;
+}
+
+.assembly-auto-final-assembly-head {
+  margin: 0 0 8px;
+  padding: 10px 12px;
+  border: 1px solid #c8dadd;
+  border-left-width: 4px;
+  border-radius: 8px;
+  background: #f9fbfc;
+}
+.assembly-auto-final-assembly-head > strong {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border: 1px solid #d8c59d;
+  border-radius: 999px;
+  background: #fffaf0;
+  color: #76571f;
+  font-size: 7px;
+  letter-spacing: .045em;
+}
+
+@media (max-width: 1120px) {
+  .assembly-auto-profile-strip.assembly-auto-participant-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 820px) {
+  .assembly-auto-profile-strip.assembly-auto-participant-grid {
+    grid-template-columns: 1fr;
+  }
+  .assembly-auto-profile-strip.assembly-auto-participant-grid .assembly-auto-participant-card {
+    min-height: 190px;
+  }
+  .assembly-auto-participants-head,
+  .assembly-auto-final-assembly-head {
+    display: block;
+  }
+  .assembly-auto-participants-context,
+  .assembly-auto-final-assembly-head > strong {
+    margin-top: 9px;
+  }
+  .assembly-auto-participants-context {
+    text-align: left;
+  }
+}
+
+@media (max-width: 560px) {
+  .assembly-auto-profile-strip.assembly-auto-participant-grid .assembly-auto-participant-card {
+    grid-template-columns: 1fr;
+  }
+  .assembly-auto-profile-strip.assembly-auto-participant-grid .assembly-auto-participant-image {
+    height: 170px;
+  }
+}
+
+
+/* FIX43 · PROFILE RENDER NORMALIZATION + FACADEFLOW-NATIVE WORDING 01 */
+.assembly-auto-profile-strip.assembly-auto-participant-grid .assembly-auto-participant-image img {
+  filter: none;
+  opacity: 1;
+}
+.assembly-auto-profile-image {
+  filter: none;
+  opacity: 1;
+}
+
+
+/* FIX45 - in-canvas profile identity callouts. Identity only; no geometry meaning. */
+.assembly-auto-profile-identity-leader {
+  stroke: #789098;
+  stroke-width: .55;
+  stroke-dasharray: 1.4 1.2;
+  opacity: .88;
+}
+.assembly-auto-profile-identity-anchor {
+  fill: #fff;
+  stroke: #657f87;
+  stroke-width: .7;
+}
+.assembly-auto-profile-identity-box {
+  fill: rgba(255, 255, 255, .96);
+  stroke: #b8cbd0;
+  stroke-width: .45;
+}
+.assembly-auto-profile-identity-code {
+  fill: #294a54;
+  font-size: 3.45px;
+  font-weight: 850;
+  paint-order: stroke;
+  stroke: rgba(255,255,255,.92);
+  stroke-width: .7px;
+}
+.assembly-auto-profile-identity-role {
+  fill: #6b8188;
+  font-size: 2.35px;
+  font-weight: 760;
+  letter-spacing: .035em;
+}
+
+/* FIX49 — keep the system correction readable as drafting annotation, not a card. */
+.assembly-auto-reference-dimension .assembly-auto-reference-leader.is-fix49 {
+  stroke-width: .68;
+  stroke-dasharray: none;
+  opacity: .68;
+}
+.assembly-auto-reference-value.is-fix49,
+.assembly-auto-reference-label.is-fix49 {
+  paint-order: stroke;
+  stroke: rgba(255, 255, 255, .98);
+  stroke-linejoin: round;
+}
+.assembly-auto-reference-value.is-fix49 {
+  font-size: 4.05px;
+  stroke-width: 1.45px;
+}
+.assembly-auto-reference-label.is-fix49 {
+  font-size: 2.95px;
+  font-weight: 720;
+  stroke-width: 1.25px;
+}
+
+/* ASSEMBLY FUNCTIONALITY 01B — explicit four-side boundary coverage. */
+.assembly-boundary-coverage > header {
+  align-items: flex-start;
+}
+.assembly-boundary-coverage-fields {
+  display: grid;
+  gap: 10px;
+}
+.assembly-boundary-coverage-field {
+  padding: 11px;
+  border: 1px solid #d7e2e6;
+  border-radius: 9px;
+  background: #fbfdfd;
+}
+.assembly-boundary-coverage-field > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.assembly-boundary-coverage-field > header b {
+  font-size: 12px;
+}
+.assembly-boundary-coverage-field > header span {
+  color: #607980;
+  font-size: 10px;
+  font-weight: 750;
+}
+.assembly-boundary-coverage-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+}
+.assembly-boundary-coverage-item {
+  min-width: 0;
+  min-height: 74px;
+  box-sizing: border-box;
+  padding: 9px 10px;
+  border: 1px solid #d8e3e7;
+  border-radius: 8px;
+  background: #fff;
+  color: #29444d;
+  text-align: left;
+}
+button.assembly-boundary-coverage-item {
+  cursor: pointer;
+}
+button.assembly-boundary-coverage-item:hover {
+  border-color: #9fbac2;
+  background: #f8fbfc;
+}
+.assembly-boundary-coverage-item > span,
+.assembly-boundary-coverage-item > b,
+.assembly-boundary-coverage-item > small,
+.assembly-boundary-coverage-item > em {
+  display: block;
+}
+.assembly-boundary-coverage-item > span {
+  color: #6c8188;
+  font-size: 9px;
+}
+.assembly-boundary-coverage-item > b {
+  margin-top: 4px;
+  font-size: 9px;
+  letter-spacing: .025em;
+}
+.assembly-boundary-coverage-item > small {
+  margin-top: 4px;
+  color: #516a72;
+  font-size: 9px;
+}
+.assembly-boundary-coverage-item > em {
+  margin-top: 5px;
+  color: #87601d;
+  font-size: 9px;
+  font-style: normal;
+}
+.assembly-boundary-coverage-item.is-resolved {
+  border-color: #bfd8cd;
+  background: #f8fcfa;
+}
+.assembly-boundary-coverage-item.is-support-unresolved,
+.assembly-boundary-coverage-item.is-missing-profile,
+.assembly-boundary-coverage-item.is-invalid-role,
+.assembly-boundary-coverage-item.is-missing-technical-section,
+.assembly-boundary-coverage-item.is-missing-system-rule,
+.assembly-boundary-coverage-item.is-blocked {
+  border-color: #e1d2b4;
+  background: #fffaf1;
+}
+.assembly-boundary-coverage-warning,
+.assembly-boundary-coverage-ok {
+  margin: 10px 0 0;
+  padding: 9px 11px;
+  border-radius: 7px;
+  font-size: 10px;
+  line-height: 1.45;
+}
+.assembly-boundary-coverage-warning {
+  border-left: 3px solid #bd8323;
+  background: #fff7e7;
+  color: #72551f;
+}
+.assembly-boundary-coverage-ok {
+  border-left: 3px solid #6d9a86;
+  background: #f5faf7;
+  color: #416757;
+}
+@media (max-width: 920px) {
+  .assembly-boundary-coverage-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 560px) {
+  .assembly-boundary-coverage-grid { grid-template-columns: 1fr; }
+}
+
+/* ASSEMBLY FUNCTIONALITY 01C — FIELD glazing context, context-only / no invented seat geometry. */
+.assembly-field-glazing-context > header {
+  align-items: flex-start;
+}
+.assembly-field-glazing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+.assembly-field-glazing-card {
+  padding: 11px;
+  border: 1px solid #d7e2e6;
+  border-radius: 9px;
+  background: #fbfdfd;
+}
+.assembly-field-glazing-card.is-missing {
+  border-color: #e1d2b4;
+  background: #fffaf1;
+}
+.assembly-field-glazing-card.is-invalid {
+  border-color: #e4c4c0;
+  background: #fff8f7;
+}
+.assembly-field-glazing-card > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.assembly-field-glazing-card > header b {
+  font-size: 12px;
+}
+.assembly-field-glazing-card > header span {
+  color: #607980;
+  font-size: 9px;
+  font-weight: 750;
+}
+.assembly-field-glazing-card > div {
+  padding: 7px 0;
+  border-top: 1px solid #edf2f3;
+}
+.assembly-field-glazing-card > div > span,
+.assembly-field-glazing-card > div > b,
+.assembly-field-glazing-card > div > small {
+  display: block;
+}
+.assembly-field-glazing-card > div > span {
+  color: #71858b;
+  font-size: 8.5px;
+}
+.assembly-field-glazing-card > div > b {
+  margin-top: 2px;
+  color: #29444d;
+  font-size: 10px;
+}
+.assembly-field-glazing-card > div > small {
+  margin-top: 2px;
+  color: #667b82;
+  font-size: 8.5px;
+  line-height: 1.35;
+}
+.assembly-field-glazing-card > p,
+.assembly-field-glazing-boundary {
+  margin: 8px 0 0;
+  color: #667b82;
+  font-size: 9px;
+  line-height: 1.45;
+}
+.assembly-field-glazing-boundary {
+  padding: 9px 11px;
+  border-left: 3px solid #bd8323;
+  border-radius: 7px;
+  background: #fffaf1;
+  color: #72551f;
+}
+.assembly-joint-glazing-context {
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid #d6e1e5;
+  border-radius: 9px;
+  background: #fbfdfd;
+}
+.assembly-joint-glazing-context.is-missing {
+  border-color: #e1d2b4;
+  background: #fffaf1;
+}
+.assembly-joint-glazing-context.is-invalid {
+  border-color: #e4c4c0;
+  background: #fff8f7;
+}
+.assembly-joint-glazing-context > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 9px;
+}
+.assembly-joint-glazing-context > header span {
+  color: #6b7f86;
+  font-size: 9px;
+  letter-spacing: .045em;
+}
+.assembly-joint-glazing-context > header b {
+  color: #29444d;
+  font-size: 10px;
+}
+.assembly-joint-glazing-context-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+}
+.assembly-joint-glazing-context-grid > div {
+  padding: 8px;
+  border: 1px solid #e2eaed;
+  border-radius: 7px;
+  background: #fff;
+}
+.assembly-joint-glazing-context-grid span,
+.assembly-joint-glazing-context-grid b,
+.assembly-joint-glazing-context-grid small {
+  display: block;
+}
+.assembly-joint-glazing-context-grid span {
+  color: #71858b;
+  font-size: 8.5px;
+}
+.assembly-joint-glazing-context-grid b {
+  margin-top: 3px;
+  color: #29444d;
+  font-size: 10px;
+}
+.assembly-joint-glazing-context-grid small {
+  margin-top: 2px;
+  color: #667b82;
+  font-size: 8.5px;
+  line-height: 1.35;
+}
+.assembly-joint-glazing-context > p {
+  margin: 8px 0 0;
+  color: #667b82;
+  font-size: 9px;
+  line-height: 1.45;
+}
+@media (max-width: 980px) {
+  .assembly-field-glazing-grid { grid-template-columns: 1fr 1fr; }
+  .assembly-joint-glazing-context-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+  .assembly-field-glazing-grid,
+  .assembly-joint-glazing-context-grid { grid-template-columns: 1fr; }
+}
+
+/* ASSEMBLY FUNCTIONALITY 01D — JOINT-LEVEL GLAZING LINKAGE */
+.assembly-joint-glazing-linkage {
+  margin-top: 12px;
+}
+.assembly-joint-glazing-linkage-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.assembly-joint-glazing-linkage-card {
+  padding: 11px;
+  border: 1px solid #d6e1e5;
+  border-radius: 9px;
+  background: #fbfdfd;
+}
+.assembly-joint-glazing-linkage-card.is-blocked {
+  border-color: #e1d2b4;
+  background: #fffaf1;
+}
+.assembly-joint-glazing-linkage-card > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+.assembly-joint-glazing-linkage-card > header b {
+  color: #29444d;
+  font-size: 11px;
+}
+.assembly-joint-glazing-linkage-card > header span {
+  color: #607980;
+  font-size: 8.5px;
+  font-weight: 750;
+}
+.assembly-joint-glazing-linkage-card > div {
+  padding: 7px 0;
+  border-top: 1px solid #edf2f3;
+}
+.assembly-joint-glazing-linkage-card > div span,
+.assembly-joint-glazing-linkage-card > div b,
+.assembly-joint-glazing-linkage-card > div small {
+  display: block;
+}
+.assembly-joint-glazing-linkage-card > div span {
+  color: #71858b;
+  font-size: 8.5px;
+}
+.assembly-joint-glazing-linkage-card > div b {
+  margin-top: 2px;
+  color: #29444d;
+  font-size: 10px;
+}
+.assembly-joint-glazing-linkage-card > div small {
+  margin-top: 2px;
+  color: #667b82;
+  font-size: 8.5px;
+}
+.assembly-joint-glazing-linkage-card > p,
+.assembly-joint-glazing-linkage-boundary {
+  margin: 8px 0 0;
+  color: #667b82;
+  font-size: 9px;
+  line-height: 1.45;
+}
+.assembly-joint-glazing-linkage-boundary {
+  padding: 9px 11px;
+  border-left: 3px solid #bd8323;
+  border-radius: 7px;
+  background: #fffaf1;
+  color: #72551f;
+}
+.assembly-joint-glazing-link {
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid #d6e1e5;
+  border-radius: 9px;
+  background: #fbfdfd;
+}
+.assembly-joint-glazing-link.is-blocked {
+  border-color: #e1d2b4;
+  background: #fffaf1;
+}
+.assembly-joint-glazing-link > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 9px;
+}
+.assembly-joint-glazing-link > header span {
+  color: #6b7f86;
+  font-size: 9px;
+  letter-spacing: .045em;
+}
+.assembly-joint-glazing-link > header b {
+  color: #29444d;
+  font-size: 10px;
+}
+.assembly-joint-glazing-link-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+}
+.assembly-joint-glazing-link-grid > div {
+  padding: 8px;
+  border: 1px solid #e2eaed;
+  border-radius: 7px;
+  background: #fff;
+}
+.assembly-joint-glazing-link-grid span,
+.assembly-joint-glazing-link-grid b,
+.assembly-joint-glazing-link-grid small {
+  display: block;
+}
+.assembly-joint-glazing-link-grid span {
+  color: #71858b;
+  font-size: 8.5px;
+}
+.assembly-joint-glazing-link-grid b {
+  margin-top: 3px;
+  color: #29444d;
+  font-size: 10px;
+}
+.assembly-joint-glazing-link-grid small {
+  margin-top: 2px;
+  color: #667b82;
+  font-size: 8.5px;
+  line-height: 1.35;
+}
+.assembly-joint-glazing-link > p {
+  margin: 8px 0 0;
+  color: #667b82;
+  font-size: 9px;
+  line-height: 1.45;
+}
+@media (max-width: 980px) {
+  .assembly-joint-glazing-linkage-grid,
+  .assembly-joint-glazing-link-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+  .assembly-joint-glazing-linkage-grid,
+  .assembly-joint-glazing-link-grid { grid-template-columns: 1fr; }
+}
+
+/* ASSEMBLY FUNCTIONALITY 01E — GLAZING EVIDENCE STATUS */
+.assembly-glazing-evidence-status > header,
+.assembly-joint-glazing-evidence > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.assembly-glazing-evidence-status > header small {
+  max-width: 560px;
+  text-align: right;
+}
+
+.assembly-glazing-evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.assembly-glazing-evidence-card,
+.assembly-joint-glazing-evidence {
+  border: 1px solid var(--ff-border-soft, #d8e3e7);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.assembly-glazing-evidence-card {
+  padding: 14px 16px;
+}
+
+.assembly-glazing-evidence-card.is-blocked {
+  background: #fff8ed;
+  border-color: #e6c487;
+}
+
+.assembly-glazing-evidence-card > header {
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #e7eef0;
+}
+
+.assembly-glazing-evidence-card > div,
+.assembly-joint-glazing-evidence-grid > div {
+  display: grid;
+  gap: 2px;
+  padding: 9px 0;
+  border-bottom: 1px solid #e7eef0;
+}
+
+.assembly-glazing-evidence-card > div:last-of-type,
+.assembly-joint-glazing-evidence-grid > div:last-child {
+  border-bottom: 0;
+}
+
+.assembly-glazing-evidence-card span,
+.assembly-joint-glazing-evidence span {
+  color: #657b84;
+}
+
+.assembly-glazing-evidence-card small,
+.assembly-joint-glazing-evidence small {
+  color: #6f858d;
+}
+
+.assembly-glazing-evidence-boundary {
+  margin-top: 12px;
+  padding: 11px 14px;
+  border-left: 3px solid #c58a20;
+  border-radius: 8px;
+  background: #fff8ed;
+}
+
+.assembly-joint-glazing-evidence {
+  margin-top: 12px;
+  padding: 14px 16px;
+}
+
+.assembly-joint-glazing-evidence.is-blocked {
+  background: #fff8ed;
+  border-color: #e6c487;
+}
+
+.assembly-joint-glazing-evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 18px;
+  margin-top: 10px;
+}
+
+.assembly-joint-glazing-evidence > p {
+  margin: 10px 0 0;
+}
+
+@media (max-width: 900px) {
+  .assembly-glazing-evidence-status > header,
+  .assembly-joint-glazing-evidence > header {
+    display: block;
+  }
+  .assembly-glazing-evidence-status > header small {
+    display: block;
+    max-width: none;
+    margin-top: 6px;
+    text-align: left;
+  }
+  .assembly-joint-glazing-evidence-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ASSEMBLY FUNCTIONALITY 01F — GLAZING EVIDENCE GAP REGISTRY */
+.assembly-glazing-gap-registry > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+.assembly-glazing-gap-registry > header small {
+  max-width: 560px;
+  text-align: right;
+}
+.assembly-glazing-gap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+.assembly-glazing-gap-card {
+  padding: 13px 14px;
+  border: 1px solid #e3cfaa;
+  border-radius: 10px;
+  background: #fffaf2;
+}
+.assembly-glazing-gap-card > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eee3cf;
+}
+.assembly-glazing-gap-card > header b { color: #694f22; font-size: 10px; letter-spacing: .035em; }
+.assembly-glazing-gap-card > header span { color: #7b6c52; font-size: 9px; font-weight: 800; }
+.assembly-glazing-gap-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 5px 10px;
+  padding: 9px 0;
+}
+.assembly-glazing-gap-facts span { color: #7b8588; font-size: 8.5px; }
+.assembly-glazing-gap-facts b { color: #334d55; font-size: 9.5px; }
+.assembly-glazing-gap-card > p { margin: 2px 0 7px; color: #5e7076; font-size: 9px; line-height: 1.45; }
+.assembly-glazing-gap-card > small { display: block; color: #735b2f; font-size: 8.8px; line-height: 1.45; }
+.assembly-glazing-gap-boundary {
+  margin-top: 12px;
+  padding: 10px 13px;
+  border-left: 3px solid #b87d1e;
+  border-radius: 8px;
+  background: #fff8ed;
+  color: #6c5427;
+}
+@media (max-width: 900px) {
+  .assembly-glazing-gap-registry > header { display: block; }
+  .assembly-glazing-gap-registry > header small { display: block; max-width: none; margin-top: 6px; text-align: left; }
+}
+
+/* ASSEMBLY FUNCTIONALITY 01G — GLAZING EVIDENCE REVIEW GATE */
+.assembly-glazing-review-gate {
+  border-color: rgba(144, 108, 40, .24);
+}
+
+.assembly-glazing-review-gate > header {
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.assembly-glazing-review-gate > header small {
+  max-width: 620px;
+  text-align: right;
+  line-height: 1.45;
+}
+
+.assembly-glazing-review-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.assembly-glazing-review-card {
+  display: grid;
+  gap: 13px;
+  padding: 16px;
+  border: 1px solid rgba(88, 119, 128, .2);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .88);
+}
+
+.assembly-glazing-review-card.is-reference-candidate {
+  border-color: rgba(181, 126, 31, .42);
+  background: rgba(255, 249, 237, .92);
+}
+
+.assembly-glazing-review-card > header,
+.assembly-glazing-review-card > footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.assembly-glazing-review-card > header span,
+.assembly-glazing-review-card > footer span,
+.assembly-glazing-review-candidate span,
+.assembly-glazing-review-facts span {
+  color: #6c8088;
+  font-size: .76rem;
+  letter-spacing: .03em;
+}
+
+.assembly-glazing-review-card > header span {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(93, 119, 128, .08);
+  color: #4c666f;
+}
+
+.assembly-glazing-review-card.is-reference-candidate > header span {
+  background: rgba(196, 137, 36, .12);
+  color: #805a17;
+}
+
+.assembly-glazing-review-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 12px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(88, 119, 128, .13);
+  border-bottom: 1px solid rgba(88, 119, 128, .13);
+}
+
+.assembly-glazing-review-facts b {
+  font-weight: 600;
+}
+
+.assembly-glazing-review-candidate {
+  display: grid;
+  gap: 4px;
+  padding: 11px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(181, 126, 31, .28);
+  background: rgba(255, 248, 232, .74);
+}
+
+.assembly-glazing-review-candidate.is-empty {
+  border-color: rgba(88, 119, 128, .14);
+  background: rgba(244, 248, 249, .72);
+}
+
+.assembly-glazing-review-candidate small,
+.assembly-glazing-review-card > p,
+.assembly-glazing-review-card > footer small {
+  line-height: 1.45;
+  color: #64777f;
+}
+
+.assembly-glazing-review-card > footer {
+  flex-wrap: wrap;
+  padding-top: 10px;
+  border-top: 1px solid rgba(88, 119, 128, .13);
+}
+
+.assembly-glazing-review-card > footer b {
+  color: #8a5c18;
+}
+
+.assembly-glazing-review-card > footer small {
+  flex-basis: 100%;
+}
+
+.assembly-glazing-review-boundary {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-left: 3px solid #bd7c19;
+  border-radius: 10px;
+  background: #fff8e9;
+  color: #6f4d18;
+}
+
+@media (max-width: 1180px) {
+  .assembly-glazing-review-grid { grid-template-columns: 1fr; }
+  .assembly-glazing-review-gate > header small { max-width: none; text-align: left; }
+}
+
+/* EVIDENCE ACQUISITION 01A */
+.assembly-evidence-acquisition-note {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line-soft, #d7e2e8);
+  border-radius: 10px;
+  background: rgba(245, 249, 251, 0.78);
+  color: var(--text-muted, #526774);
+  line-height: 1.45;
+}
+
+.assembly-glazing-review-candidate small + small {
+  margin-top: 4px;
+}
+
+/* EVIDENCE REVIEW 01B — HUMAN REVIEW OF OFFICIAL TECHNICAL SKETCHES */
+.assembly-glazing-review-card.is-human-reviewed {
+  border-color: rgba(51, 123, 91, .42);
+  background: rgba(241, 250, 246, .94);
+}
+
+.assembly-glazing-review-card.is-human-reviewed > header span {
+  background: rgba(51, 123, 91, .12);
+  color: #2f6e52;
+}
+
+.assembly-glazing-review-card.is-human-reviewed > footer b {
+  color: #2f6e52;
+}
+
+.assembly-evidence-source-link {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 6px;
+  font-weight: 650;
+  color: #315f72;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.assembly-evidence-review-instruction,
+.assembly-evidence-review-note {
+  display: grid;
+  gap: 5px;
+  padding: 11px 12px;
+  border: 1px solid rgba(60, 105, 123, .2);
+  border-radius: 10px;
+  background: rgba(240, 247, 250, .82);
+  color: #4e6873;
+  line-height: 1.45;
+}
+
+.assembly-evidence-review-note {
+  margin: 10px 0 0;
+}
+
+/* OPERATOR WORKFLOW 01 — sketch-first operator UI. Engineering diagnostics stay available but out of the normal path. */
+.assembly-product-body.is-operator-first { gap: 14px; }
+.assembly-operator-start,
+.assembly-operator-joint-parameters {
+  border: 1px solid #c8d9de;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 6px 20px rgba(18, 60, 72, .06);
+}
+.assembly-operator-start { padding: 16px; }
+.assembly-operator-start > header,
+.assembly-operator-joint-parameters > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.assembly-operator-start > header span,
+.assembly-operator-joint-parameters > header span {
+  display: block;
+  color: #55808c;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .09em;
+}
+.assembly-operator-start > header h3 { margin: 2px 0 0; color: #183f4b; font-size: 20px; }
+.assembly-operator-start > header strong,
+.assembly-operator-joint-parameters > header b {
+  border: 1px solid #bcd4da;
+  border-radius: 999px;
+  padding: 7px 11px;
+  color: #245867;
+  background: #f3fafb;
+  font-size: 12px;
+}
+.assembly-operator-steps {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1.25fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #d8e5e9;
+  border-radius: 10px;
+  background: #f8fbfc;
+}
+.assembly-operator-steps > div { display: grid; grid-template-columns: auto 1fr; column-gap: 8px; align-items: center; min-width: 0; }
+.assembly-operator-steps > div i {
+  grid-row: 1 / 3;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #1d7c91;
+  color: #fff;
+  font-style: normal;
+  font-weight: 900;
+}
+.assembly-operator-steps > div b { color: #234b57; font-size: 12px; }
+.assembly-operator-steps > div small { color: #6b8189; font-size: 10px; white-space: normal; }
+.assembly-operator-steps > span { color: #7f99a1; font-size: 20px; }
+.assembly-operator-summary-grid,
+.assembly-operator-joint-parameter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+.assembly-operator-summary-grid > div,
+.assembly-operator-joint-parameter-grid > div {
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid #d6e3e7;
+  border-radius: 9px;
+  background: #fff;
+}
+.assembly-operator-summary-grid span,
+.assembly-operator-joint-parameter-grid span { display: block; color: #6a828b; font-size: 10px; font-weight: 750; }
+.assembly-operator-summary-grid b,
+.assembly-operator-joint-parameter-grid b { display: block; margin-top: 3px; color: #173f4c; font-size: 14px; }
+.assembly-operator-summary-grid small,
+.assembly-operator-joint-parameter-grid small { display: block; margin-top: 3px; color: #6d8188; font-size: 10px; line-height: 1.35; }
+
+.assembly-operator-glazing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.assembly-operator-glazing-grid article { padding: 12px; border: 1px solid #d3e2e6; border-radius: 10px; background: #fbfdfe; }
+.assembly-operator-glazing-grid article > header { display: flex; justify-content: space-between; gap: 10px; padding-bottom: 8px; border-bottom: 1px solid #e1eaed; }
+.assembly-operator-glazing-grid article > header b { color: #1c4b59; }
+.assembly-operator-glazing-grid article > header span { color: #56808c; font-size: 10px; font-weight: 800; }
+.assembly-operator-glazing-grid article > div { display: flex; justify-content: space-between; gap: 10px; padding-top: 8px; }
+.assembly-operator-glazing-grid article > div span { color: #72868d; font-size: 10px; }
+.assembly-operator-glazing-grid article > div b { color: #274d58; font-size: 12px; }
+
+.assembly-operator-joint-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.assembly-operator-joint-grid article { display: grid; gap: 10px; padding: 14px; border: 1px solid #cddde2; border-radius: 11px; background: #fff; }
+.assembly-operator-joint-title span { display: block; color: #67818a; font-size: 10px; font-weight: 800; }
+.assembly-operator-joint-title b { display: block; margin-top: 2px; color: #173f4c; font-size: 18px; }
+.assembly-operator-joint-title small { display: block; margin-top: 4px; color: #71858c; }
+.assembly-operator-joint-state span { display: inline-flex; padding: 5px 8px; border-radius: 999px; background: #eaf6f3; color: #2a6d5d; font-size: 10px; font-weight: 850; }
+.assembly-operator-joint-grid button { min-height: 38px; border: 1px solid #1d7c91; border-radius: 8px; background: #1d7c91; color: #fff; font-weight: 800; }
+.assembly-operator-joint-grid button:disabled { opacity: .45; cursor: not-allowed; }
+
+.assembly-operator-joint-parameters { padding: 14px; margin-bottom: 12px; }
+.assembly-operator-joint-parameter-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); margin-top: 0; }
+.assembly-operator-joint-parameters > p { margin: 10px 0 0; padding: 9px 10px; border-radius: 8px; background: #f6fafb; color: #526e77; font-size: 11px; }
+
+.assembly-technical-admin { border: 1px solid #d8e2e5; border-radius: 10px; background: #f7fafb; }
+.assembly-technical-admin > summary { cursor: pointer; padding: 11px 13px; color: #526f78; font-size: 12px; font-weight: 800; list-style-position: inside; }
+.assembly-technical-admin[open] > summary { border-bottom: 1px solid #d8e2e5; background: #f2f7f8; }
+.assembly-technical-admin-content { display: grid; gap: 12px; padding: 12px; }
+.assembly-operator-principle { margin: 0; padding: 10px 12px; border: 1px solid #cbe2dc; border-radius: 9px; background: #f2faf7; color: #41685e; font-size: 11px; }
+
+@media (max-width: 1100px) {
+  .assembly-operator-steps { grid-template-columns: 1fr 1fr; }
+  .assembly-operator-steps > span { display: none; }
+  .assembly-operator-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .assembly-operator-joint-parameter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+  .assembly-operator-steps,
+  .assembly-operator-summary-grid,
+  .assembly-operator-joint-parameter-grid { grid-template-columns: 1fr; }
+}
+
+/* FINAL ASSEMBLY SKETCH 02 · profiles + glazing + bead in the operator view */
+.assembly-auto-profile-strip.assembly-auto-participant-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.assembly-auto-participant-card.is-glazing,
+.assembly-auto-participant-card.is-bead {
+  border-color: #c9dde2;
+  background: #fbfefe;
+}
+.assembly-auto-participant-glass-icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 72px;
+  min-width: 72px;
+  height: 72px;
+  border-radius: 9px;
+  background: #f5fbfc;
+  overflow: hidden;
+}
+.assembly-auto-participant-glass-icon i {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 3px;
+  background: #9fcbd4;
+}
+.assembly-auto-participant-glass-icon i:nth-child(1) { left: 25px; }
+.assembly-auto-participant-glass-icon i:nth-child(2) { left: 34px; width: 5px; background: #d6e7eb; }
+.assembly-auto-participant-glass-icon i:nth-child(3) { right: 25px; }
+.assembly-auto-participant-placeholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  color: #8aa0a7;
+  font-size: 24px;
+}
+
+.assembly-auto-glass-unit {
+  fill: rgba(166, 211, 221, .18);
+  stroke: #5f9eaa;
+  stroke-width: .75;
+}
+.assembly-auto-glass-centerline {
+  stroke: #b6d4da;
+  stroke-width: .4;
+  stroke-dasharray: 1.4 1.2;
+}
+.assembly-auto-glazing-dimension {
+  stroke: #2f7464;
+  stroke-width: .7;
+}
+.assembly-auto-glazing-dimension-text {
+  fill: #275f53;
+  font-size: 4px;
+  font-weight: 850;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 1.4px;
+  stroke-linejoin: round;
+}
+.assembly-auto-bead-image {
+  opacity: .98;
+  image-rendering: auto;
+}
+.assembly-auto-bead-callout line,
+.assembly-auto-bead-callout circle {
+  stroke: #607f88;
+  fill: #fff;
+  stroke-width: .65;
+}
+.assembly-auto-bead-callout text {
+  fill: #274f5a;
+  font-size: 3.5px;
+  font-weight: 850;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 1.3px;
+  stroke-linejoin: round;
+}
+.assembly-auto-bead-callout text + text {
+  font-size: 2.65px;
+  font-weight: 700;
+  fill: #667f87;
+}
+.assembly-auto-dimension-legend .is-glazing {
+  border-color: #b9d9df;
+  background: #f1fafb;
+  color: #2d6672;
+}
+.assembly-auto-facts.is-compact > section.is-glazing-section {
+  border-color: #c7dde2;
+  background: #f8fcfd;
+}
+
+@media (max-width: 1380px) {
+  .assembly-auto-profile-strip.assembly-auto-participant-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .assembly-auto-profile-strip.assembly-auto-participant-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ================================================================
+   MANUAL ASSEMBLY PUZZLE 01
+   Human-arranged catalogue sections. Presentation only; never a
+   production coordinate system or machine-ready geometry.
+   ================================================================ */
+.assembly-manual-puzzle-launcher {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 14px;
+  padding: 13px 15px;
+  border: 1px solid #cbdde2;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #fbfefe 0%, #f5fafb 100%);
+}
+.assembly-manual-puzzle-launcher > div { min-width: 0; }
+.assembly-manual-puzzle-launcher span {
+  display: block;
+  color: #587984;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .055em;
+}
+.assembly-manual-puzzle-launcher b {
+  display: block;
+  margin-top: 3px;
+  color: #294f59;
+  font-size: 13px;
+}
+.assembly-manual-puzzle-launcher small {
+  display: block;
+  margin-top: 4px;
+  color: #6d8087;
+  font-size: 9px;
+  line-height: 1.45;
+}
+.assembly-manual-puzzle-launcher button {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 8px 12px;
+  border: 1px solid #79a2ad;
+  border-radius: 7px;
+  background: #eef7f8;
+  color: #315f6b;
+  font-size: 9px;
+  font-weight: 850;
+  cursor: pointer;
+}
+.assembly-manual-puzzle-launcher button:hover { background: #e4f1f3; }
+
+.assembly-manual-puzzle { margin-top: 12px; }
+.assembly-puzzle-toolbar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+  margin: 10px 0;
+}
+.assembly-puzzle-toolbar > div,
+.assembly-puzzle-toolbar > label {
+  min-height: 48px;
+  padding: 8px 10px;
+  border: 1px solid #dbe7ea;
+  border-radius: 8px;
+  background: #fbfdfe;
+}
+.assembly-puzzle-toolbar > div b,
+.assembly-puzzle-toolbar > div span { display: block; }
+.assembly-puzzle-toolbar > div b { color: #315760; font-size: 11px; }
+.assembly-puzzle-toolbar > div span { margin-top: 2px; color: #74868c; font-size: 8px; }
+.assembly-puzzle-toolbar > label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #546f77;
+  font-size: 9px;
+  font-weight: 750;
+}
+.assembly-puzzle-toolbar input { accent-color: #5e8f9b; }
+
+.assembly-puzzle-layout {
+  display: grid;
+  grid-template-columns: minmax(205px, 245px) minmax(0, 1fr) minmax(230px, 270px);
+  gap: 10px;
+  align-items: stretch;
+}
+.assembly-puzzle-palette {
+  display: flex;
+  flex-direction: column;
+  min-height: 520px;
+  max-height: 690px;
+  padding: 9px;
+  border: 1px solid #d5e2e6;
+  border-radius: 9px;
+  background: #f9fcfd;
+  overflow: hidden;
+}
+.assembly-puzzle-palette > header {
+  flex: 0 0 auto;
+  padding: 3px 3px 8px;
+}
+.assembly-puzzle-palette > header span,
+.assembly-puzzle-controls-head span {
+  display: block;
+  color: #688089;
+  font-size: 7.5px;
+  font-weight: 900;
+  letter-spacing: .05em;
+}
+.assembly-puzzle-palette > header b,
+.assembly-puzzle-controls-head b {
+  display: block;
+  margin-top: 2px;
+  color: #31545e;
+  font-size: 11px;
+}
+.assembly-puzzle-palette > header small {
+  display: block;
+  margin-top: 3px;
+  color: #819096;
+  font-size: 7.5px;
+  line-height: 1.35;
+}
+.assembly-puzzle-palette-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+.assembly-puzzle-palette-card {
+  display: grid !important;
+  grid-template-columns: 54px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 64px;
+  padding: 5px 7px !important;
+  border: 1px solid #dbe6e9 !important;
+  border-radius: 7px !important;
+  background: #fff !important;
+  color: #35565f !important;
+  text-align: left;
+  cursor: grab !important;
+}
+.assembly-puzzle-palette-card:hover {
+  border-color: #9ebfc7 !important;
+  background: #f5fafb !important;
+}
+.assembly-puzzle-palette-card:active { cursor: grabbing !important; }
+.assembly-puzzle-palette-thumb {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 52px;
+  border: 1px solid #e2eaed;
+  border-radius: 5px;
+  background: #fff;
+  overflow: hidden;
+}
+.assembly-puzzle-palette-thumb img {
+  display: block;
+  max-width: 48px;
+  max-height: 46px;
+  object-fit: contain;
+}
+.assembly-puzzle-palette-thumb i {
+  color: #7a8d93;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 800;
+}
+.assembly-puzzle-palette-copy { min-width: 0; }
+.assembly-puzzle-palette-copy b,
+.assembly-puzzle-palette-copy small,
+.assembly-puzzle-palette-copy em { display: block; }
+.assembly-puzzle-palette-copy b { color: #31545e; font-size: 9px; }
+.assembly-puzzle-palette-copy small { margin-top: 1px; color: #6f8187; font-size: 7.5px; line-height: 1.25; }
+.assembly-puzzle-palette-copy em { margin-top: 2px; color: #859399; font-size: 7px; font-style: normal; }
+.assembly-puzzle-palette-card > strong {
+  color: #547b85;
+  font-size: 7px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.assembly-puzzle-canvas-wrap { min-width: 0; }
+.assembly-puzzle-canvas {
+  min-height: 520px;
+  touch-action: none;
+  user-select: none;
+}
+.assembly-custom-profile.is-selected > rect:first-child {
+  fill: rgba(239, 249, 251, .82);
+  stroke: #5e96a4;
+  stroke-width: 2.3;
+  stroke-dasharray: 0;
+}
+.assembly-custom-profile.is-locked { cursor: default; opacity: .92; }
+.assembly-custom-profile.is-locked > rect:first-child { stroke-dasharray: 3 4; }
+.assembly-custom-profile-lock {
+  fill: #6b8087;
+  font-size: 9px;
+  font-weight: 900;
+  text-anchor: end;
+  pointer-events: none;
+}
+
+.assembly-puzzle-controls { min-width: 0; }
+.assembly-puzzle-controls-head {
+  padding: 2px 1px 0;
+}
+.assembly-custom-pose-card.is-selected-piece {
+  border-color: #bfd5da;
+  background: #fbfefe;
+}
+.assembly-custom-piece-actions {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 4px !important;
+  margin-top: 5px !important;
+}
+.assembly-custom-piece-actions button { white-space: normal; }
+.assembly-custom-controls button.is-danger {
+  border-color: #e2c7c7;
+  color: #8a5353;
+  background: #fffafa;
+}
+.assembly-custom-controls button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+.assembly-puzzle-empty {
+  margin: 0;
+  padding: 12px;
+  border: 1px dashed #d3e0e4;
+  border-radius: 7px;
+  color: #7b8d93;
+  font-size: 8px;
+  text-align: center;
+}
+
+@media (max-width: 1480px) {
+  .assembly-puzzle-layout { grid-template-columns: 210px minmax(0, 1fr); }
+  .assembly-puzzle-controls { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .assembly-puzzle-controls-head,
+  .assembly-custom-controls-actions,
+  .assembly-custom-saved,
+  .assembly-custom-review-gate { grid-column: 1 / -1; }
+}
+@media (max-width: 980px) {
+  .assembly-puzzle-toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .assembly-puzzle-layout { grid-template-columns: 1fr; }
+  .assembly-puzzle-palette { min-height: auto; max-height: 310px; }
+  .assembly-puzzle-canvas { min-height: 430px; }
+  .assembly-puzzle-controls { display: flex; }
+}
+@media (max-width: 680px) {
+  .assembly-manual-puzzle-launcher { align-items: stretch; flex-direction: column; }
+  .assembly-manual-puzzle-launcher button { width: 100%; }
+  .assembly-puzzle-toolbar { grid-template-columns: 1fr; }
+  .assembly-puzzle-canvas { min-height: 360px; }
+}
+
+/* ================================================================
+   MANUAL ASSEMBLY PUZZLE 01.2
+   Module-context catalogue + shared relative mm scale + work grid.
+   Still CUSTOM DRAFT only; no production geometry is created here.
+   ================================================================ */
+.assembly-puzzle-module-context {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+  margin: 9px 0 6px;
+}
+.assembly-puzzle-module-context > div {
+  min-width: 0;
+  padding: 7px 9px;
+  border: 1px solid #d8e5e8;
+  border-radius: 7px;
+  background: #fbfdfe;
+}
+.assembly-puzzle-module-context span,
+.assembly-puzzle-module-context b,
+.assembly-puzzle-module-context small { display: block; }
+.assembly-puzzle-module-context span {
+  color: #7b8e94;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .055em;
+}
+.assembly-puzzle-module-context b {
+  margin-top: 2px;
+  overflow: hidden;
+  color: #31545e;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.assembly-puzzle-module-context small {
+  margin-top: 2px;
+  overflow: hidden;
+  color: #7a8c92;
+  font-size: 7px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assembly-puzzle-catalog-search {
+  width: 100%;
+  min-height: 30px;
+  margin: 0 0 7px;
+  padding: 6px 8px;
+  border: 1px solid #d5e2e6;
+  border-radius: 6px;
+  background: #fff;
+  color: #35565f;
+  font-size: 8px;
+  outline: none;
+}
+.assembly-puzzle-catalog-search:focus { border-color: #8fb5be; }
+.assembly-puzzle-category-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0 0 7px;
+}
+.assembly-puzzle-category-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  padding: 4px 6px;
+  border: 1px solid #d8e5e8;
+  border-radius: 999px;
+  background: #fff;
+  color: #607981;
+  font-size: 7px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.assembly-puzzle-category-tabs button small {
+  min-width: 15px;
+  padding: 1px 4px;
+  border-radius: 999px;
+  background: #eef4f6;
+  color: #7b8b90;
+  font-size: 6.5px;
+  text-align: center;
+}
+.assembly-puzzle-category-tabs button.is-active {
+  border-color: #77a2ad;
+  background: #edf7f9;
+  color: #2f5d68;
+}
+.assembly-puzzle-category-tabs button.is-active small {
+  background: #dceef2;
+  color: #3d6872;
+}
+.assembly-puzzle-palette-card.is-context-used {
+  border-color: #8db5be !important;
+  box-shadow: inset 3px 0 0 #6c9daa;
+}
+.assembly-puzzle-palette-card.is-catalog-only {
+  cursor: default !important;
+  background: #fbfcfc !important;
+}
+.assembly-puzzle-palette-card.is-catalog-only > strong { color: #9aa8ac; }
+.assembly-puzzle-palette-copy i {
+  display: block;
+  margin-top: 2px;
+  color: #96a4a8;
+  font-size: 6.5px;
+  font-style: normal;
+  line-height: 1.2;
+}
+.assembly-puzzle-palette-thumb .is-glazing-thumb {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 42px;
+  border: 1px solid #99c9df;
+  background: rgba(204, 239, 250, .38);
+  color: #40778d;
+  font-size: 10px;
+}
+.assembly-puzzle-palette-thumb .is-glazing-thumb small {
+  margin-top: 1px;
+  font-size: 6px;
+}
+
+.assembly-puzzle-scale-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 31px;
+  padding: 6px 9px;
+  border: 1px solid #d7e4e8;
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  background: #f8fbfc;
+}
+.assembly-puzzle-scale-strip b {
+  color: #426773;
+  font-size: 7px;
+  letter-spacing: .05em;
+}
+.assembly-puzzle-scale-strip span {
+  color: #7b8e94;
+  font-size: 7px;
+  text-align: right;
+}
+.assembly-puzzle-scale-strip + .assembly-puzzle-canvas {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+.assembly-puzzle-mm-grid { stroke: none; }
+.assembly-puzzle-mm-grid + .assembly-custom-axis,
+.assembly-puzzle-mm-grid ~ .assembly-custom-axis {
+  stroke: rgba(74, 112, 123, .26);
+  stroke-width: 1.1;
+  stroke-dasharray: 6 5;
+}
+.assembly-puzzle-canvas defs + rect { stroke: none; }
+.assembly-puzzle-canvas pattern path { stroke: rgba(74, 112, 123, .09); stroke-width: .65; fill: none; }
+.assembly-puzzle-canvas pattern[id="manualPuzzleMajorGrid012"] > path { stroke: rgba(74, 112, 123, .18); stroke-width: .9; }
+.assembly-puzzle-axis-label {
+  fill: #8ca0a6;
+  font-size: 7px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.assembly-custom-profile.assembly-puzzle-true-scale-object > .assembly-puzzle-selection-box {
+  fill: transparent;
+  stroke: transparent;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 4;
+}
+.assembly-custom-profile.assembly-puzzle-true-scale-object.is-selected > .assembly-puzzle-selection-box,
+.assembly-custom-profile.assembly-puzzle-true-scale-object.is-dragging > .assembly-puzzle-selection-box {
+  fill: rgba(232, 246, 249, .08);
+  stroke: #5e96a4;
+  stroke-width: 1.7;
+  stroke-dasharray: 0;
+}
+.assembly-custom-profile.assembly-puzzle-true-scale-object.is-locked > .assembly-puzzle-selection-box {
+  stroke: #8fa5ab;
+  stroke-dasharray: 3 4;
+}
+.assembly-puzzle-selection-axis {
+  stroke: #5b7881;
+  stroke-width: 1;
+  pointer-events: none;
+}
+.assembly-puzzle-glazing-piece rect {
+  fill: rgba(190, 231, 247, .38);
+  stroke: #6ba9c3;
+  stroke-width: 1.2;
+}
+.assembly-puzzle-glazing-piece line {
+  stroke: #84b9cf;
+  stroke-width: 1;
+}
+.assembly-puzzle-glazing-piece text {
+  fill: #3f7185;
+  font-size: 7px;
+  font-weight: 800;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+@media (max-width: 1480px) {
+  .assembly-puzzle-module-context { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 980px) {
+  .assembly-puzzle-module-context { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .assembly-puzzle-scale-strip { align-items: flex-start; flex-direction: column; }
+  .assembly-puzzle-scale-strip span { text-align: left; }
+}
+@media (max-width: 680px) {
+  .assembly-puzzle-module-context { grid-template-columns: 1fr; }
+}
+
+
+/* ================================================================
+   MANUAL ASSEMBLY PUZZLE 01.2.1
+   Visual workbench cleanup: visible 5/25 mm grid, profile-first render,
+   collapsible catalogue/inspector rails. CUSTOM DRAFT boundaries stay.
+   ================================================================ */
+.assembly-puzzle-canvas pattern path {
+  stroke: rgba(73, 110, 121, .16);
+  stroke-width: .72;
+  vector-effect: non-scaling-stroke;
+}
+.assembly-puzzle-canvas pattern[id="manualPuzzleMajorGrid012"] > path {
+  stroke: rgba(62, 96, 107, .30);
+  stroke-width: 1.05;
+  vector-effect: non-scaling-stroke;
+}
+.assembly-puzzle-profile-image {
+  mix-blend-mode: multiply;
+  opacity: .985;
+  pointer-events: none;
+}
+.assembly-puzzle-side-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 26px;
+  gap: 6px;
+  align-items: start;
+}
+.assembly-puzzle-side-head > div { min-width: 0; }
+.assembly-puzzle-collapse-button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid #cbdde2;
+  border-radius: 6px;
+  background: #fff;
+  color: #476b75;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+}
+.assembly-puzzle-collapse-button:hover {
+  border-color: #8fb5be;
+  background: #f1f8f9;
+}
+.assembly-puzzle-layout.is-palette-collapsed {
+  grid-template-columns: 38px minmax(0, 1fr) minmax(230px, 270px);
+}
+.assembly-puzzle-layout.is-controls-collapsed {
+  grid-template-columns: minmax(205px, 245px) minmax(0, 1fr) 38px;
+}
+.assembly-puzzle-layout.is-palette-collapsed.is-controls-collapsed {
+  grid-template-columns: 38px minmax(0, 1fr) 38px;
+}
+.assembly-puzzle-palette.is-collapsed,
+.assembly-puzzle-controls.is-collapsed {
+  min-width: 0;
+  width: 38px;
+  padding: 5px;
+  overflow: hidden;
+}
+.assembly-puzzle-palette.is-collapsed .assembly-puzzle-side-head,
+.assembly-puzzle-controls.is-collapsed .assembly-puzzle-side-head {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.assembly-puzzle-palette.is-collapsed .assembly-puzzle-side-head > div,
+.assembly-puzzle-controls.is-collapsed .assembly-puzzle-side-head > div {
+  display: none;
+}
+.assembly-puzzle-palette.is-collapsed .assembly-puzzle-collapse-button,
+.assembly-puzzle-controls.is-collapsed .assembly-puzzle-collapse-button {
+  width: 28px;
+  height: 32px;
+}
+.assembly-puzzle-canvas-wrap {
+  min-width: 0;
+  transition: min-width .15s ease;
+}
+@media (max-width: 1480px) {
+  .assembly-puzzle-layout.is-palette-collapsed,
+  .assembly-puzzle-layout.is-controls-collapsed,
+  .assembly-puzzle-layout.is-palette-collapsed.is-controls-collapsed {
+    grid-template-columns: 1fr;
+  }
+  .assembly-puzzle-palette.is-collapsed,
+  .assembly-puzzle-controls.is-collapsed {
+    width: 100%;
+    min-height: 38px;
+    max-height: 38px;
+  }
+}
+
+
+/* ================================================================
+   MANUAL ASSEMBLY PUZZLE 01.2.2
+   Coordinate grid hotfix: visible 5/25 mm grid, centered 0,0 rulers,
+   and snap phase aligned to the same origin. CUSTOM DRAFT only.
+   ================================================================ */
+.assembly-puzzle-grid-surface {
+  fill: url(#manualPuzzleMajorGrid012);
+}
+.assembly-puzzle-canvas .assembly-puzzle-grid-small-line {
+  fill: none;
+  stroke: rgba(77, 113, 124, .24);
+  stroke-width: .62;
+  vector-effect: non-scaling-stroke;
+}
+.assembly-puzzle-canvas .assembly-puzzle-grid-major-line {
+  fill: none;
+  stroke: rgba(66, 103, 114, .48);
+  stroke-width: 1.05;
+  vector-effect: non-scaling-stroke;
+}
+.assembly-puzzle-ruler-band {
+  fill: rgba(248, 251, 252, .94);
+  stroke: none;
+  pointer-events: none;
+}
+.assembly-puzzle-ruler-band.is-top {
+  border-bottom: 1px solid #d7e3e7;
+}
+.assembly-puzzle-coordinate-tick line {
+  stroke: #91aab1;
+  stroke-width: .75;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+.assembly-puzzle-coordinate-tick text {
+  fill: #607b84;
+  font-size: 7px;
+  font-weight: 700;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: rgba(255, 255, 255, .92);
+  stroke-width: 2px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+.assembly-puzzle-coordinate-tick.is-y text {
+  text-anchor: start;
+}
+.assembly-puzzle-origin-dot {
+  fill: #4f7f8b;
+  stroke: #fff;
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+.assembly-puzzle-origin-label,
+.assembly-puzzle-axis-direction {
+  fill: #4f737d;
+  font-size: 7px;
+  font-weight: 900;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 2px;
+  pointer-events: none;
+}
+.assembly-puzzle-canvas .assembly-custom-axis {
+  stroke: rgba(55, 91, 102, .56);
+  stroke-width: 1.15;
+  stroke-dasharray: 6 5;
+  vector-effect: non-scaling-stroke;
+}
+
+
+/* MANUAL ASSEMBLY PUZZLE 01.3 - precision rotation */
+.assembly-custom-pose-card.is-selected-piece > .assembly-puzzle-move-controls,
+.assembly-custom-pose-card.is-selected-piece > .assembly-puzzle-rotation-controls {
+  display: grid;
+  gap: 4px;
+  margin-top: 7px;
+}
+.assembly-custom-pose-card.is-selected-piece > .assembly-puzzle-move-controls {
+  grid-template-columns: minmax(72px, 1.4fr) repeat(4, minmax(32px, .7fr));
+}
+.assembly-custom-pose-card.is-selected-piece > .assembly-puzzle-rotation-controls {
+  grid-template-columns: minmax(72px, 1.4fr) repeat(7, minmax(37px, .72fr));
+  align-items: center;
+}
+.assembly-puzzle-control-label {
+  display: flex;
+  align-items: center;
+  color: #60777e;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+.assembly-puzzle-angle-input {
+  grid-column: 2 / -1;
+  display: grid;
+  grid-template-columns: auto minmax(64px, 1fr) auto;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+  color: #61777e;
+  font-size: 8px;
+}
+.assembly-puzzle-angle-input input {
+  width: 100%;
+  min-width: 0;
+  padding: 5px 7px;
+  border: 1px solid #c5d8dd;
+  border-radius: 6px;
+  background: #fff;
+  color: #2f505a;
+  text-align: right;
+}
+.assembly-puzzle-angle-input em {
+  font-style: normal;
+  font-weight: 800;
+  color: #49656d;
+}
+@media (max-width: 1240px) {
+  .assembly-custom-pose-card.is-selected-piece > .assembly-puzzle-rotation-controls {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .assembly-puzzle-rotation-controls .assembly-puzzle-control-label,
+  .assembly-puzzle-angle-input {
+    grid-column: 1 / -1;
+  }
+}
+
+
+/* MANUAL ASSEMBLY PUZZLE 01.3.1 - undo / redo history */
+.assembly-puzzle-history-actions {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+}
+.assembly-puzzle-history-actions > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  margin-top: 4px;
+}
+.assembly-puzzle-history-actions button {
+  min-width: 0;
+  padding: 5px 6px;
+  border: 1px solid #b9d0d6;
+  border-radius: 6px;
+  background: #f5fbfc;
+  color: #365e68;
+  font: inherit;
+  font-size: 8px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.assembly-puzzle-history-actions button:hover:not(:disabled) {
+  border-color: #78a8b3;
+  background: #eaf6f8;
+}
+.assembly-puzzle-history-actions button:disabled {
+  opacity: .42;
+  cursor: default;
+}
+
+
+/* ================================================================
+   MANUAL ASSEMBLY PUZZLE 01.3.2
+   Empty-by-default manual bench + normalized small-part rendering.
+   ================================================================ */
+.assembly-puzzle-empty-workspace-hint {
+  pointer-events: none;
+  text-anchor: middle;
+  fill: #789099;
+  font-size: 14px;
+  font-weight: 800;
+}
+.assembly-puzzle-empty-workspace-hint .is-secondary {
+  fill: #93a7ad;
+  font-size: 10px;
+  font-weight: 600;
+}
+.assembly-puzzle-profile-image.is-glass-bead {
+  filter: grayscale(1) contrast(2.2) brightness(.42);
+  opacity: 1;
 }

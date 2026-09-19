@@ -64,7 +64,7 @@ Polygon FIELD re-split: vertical and horizontal dividers can split triangle/trap
 
 
 ### Constructor 01D.1
-The universal neutral X is replaced by working opening symbols used in the Nadezhda/SkyGlazing-style shop convention:
+The universal neutral X is replaced by working opening symbols used in the Nadezhda/system-driven shop convention:
 - side-hinged LEFT/RIGHT are mirrored;
 - tilt has its own symbol;
 - tilt-turn combines the side-hinged and tilt marks;

@@ -2,7 +2,7 @@ import type { Predicate } from './predicateRegistry'
 
 export type HumanActor = { id: string; label: string; identityBasis: 'local-self-asserted' }
 export type Known<T> = { state: 'known'; value: T } | { state: 'unknown'; reason: string }
-export type Target = { kind: 'frame' } | { kind: 'field'; fieldId: string } | { kind: 'divider'; dividerId: string }
+export type Target = { kind: 'module' } | { kind: 'frame' } | { kind: 'field'; fieldId: string } | { kind: 'divider'; dividerId: string }
 export type StatementScope =
   | { kind: 'catalog'; profileSystemId: string; itemCode: string }
   | { kind: 'module'; projectId: string; offerId: string; moduleId: string; target: Target }

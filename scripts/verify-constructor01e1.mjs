@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 
 const shell = await readFile(new URL('../src/components/ConstructorShell.tsx', import.meta.url), 'utf8')
 const css = await readFile(new URL('../src/components/ConstructorShell.css', import.meta.url), 'utf8')
-const acceptance = await readFile(new URL('../docs/CONSTRUCTOR_01E1_SKYGLAZING_VISUAL_COMPARISON_POLISH_ACCEPTANCE.md', import.meta.url), 'utf8')
+const acceptance = await readFile(new URL('../docs/CONSTRUCTOR_01E1_TECHNICAL_VISUAL_COMPARISON_POLISH_ACCEPTANCE.md', import.meta.url), 'utf8')
 const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'))
 
 assert.match(shell, /verticalDividers\.map\(\(divider\) => divider\.positionMm \+ divider\.thicknessMm \/ 2\)/)
@@ -16,7 +16,7 @@ assert.match(css, /rgba\(106, 126, 132, \.035\)/)
 assert.match(css, /border: var\(--constructor-frame-face, 18px\) solid #e4e9eb/)
 assert.match(css, /height: 78px/)
 assert.match(css, /flex: 0 0 190px/)
-assert.match(acceptance, /side-by-side comparison/)
+assert.match(acceptance, /side-by-side (?:comparison|review)/)
 assert.match(acceptance, /outer frame edge -> divider centerline/)
 assert.match(acceptance, /No glass cut size is invented/)
 assert.match(acceptance, /Construction geometry and topology algorithms/)

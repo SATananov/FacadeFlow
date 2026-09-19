@@ -7,7 +7,7 @@ import type { ChangeKey } from '../domain/assurance/assuranceModel'
 
 export const PROJECT_KEY_PREFIX = 'facadeflow.project-foundation-01.project.'
 export const ACTIVE_PROJECT_KEY = 'facadeflow.project-foundation-01.active'
-export type ProjectStorage = Pick<Storage, 'getItem' | 'setItem' | 'key' | 'length'>
+export type ProjectStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem' | 'key' | 'length'>
 export type StoredProjectSummary = {
   id: string
   label: string
@@ -19,7 +19,7 @@ export type StoredProjectSummary = {
 }
 export type PersistenceStatus = 'saved' | 'unsaved' | 'failed'
 export type ProjectSession = {
-  snapshot: ProjectSnapshot; hydrated: boolean; blocked: boolean; status: PersistenceStatus; error: string | null
+  snapshot: ProjectSnapshot; hydrated: boolean; blocked: boolean; detached: boolean; status: PersistenceStatus; error: string | null
 }
 export class LocalProjectStorage {
   constructor(private readonly getStorage: () => ProjectStorage) {}
@@ -60,6 +60,16 @@ export class LocalProjectStorage {
       throw error
     }
   }
+  deleteProject(projectId: string): void {
+    const storage = this.getStorage()
+    const key = PROJECT_KEY_PREFIX + projectId
+    if (storage.getItem(key) === null) throw new Error('Проектът не е намерен.')
+    // Clear the startup pointer first. If removing the project itself fails, the
+    // next launch still cannot point at a record that was meant to be deleted.
+    if (storage.getItem(ACTIVE_PROJECT_KEY) === projectId) storage.removeItem(ACTIVE_PROJECT_KEY)
+    storage.removeItem(key)
+    if (storage.getItem(key) !== null) throw new Error('Проектът не можа да бъде изтрит.')
+  }
   list(): StoredProjectSummary[] {
     const storage = this.getStorage()
     const projects: StoredProjectSummary[] = []
@@ -98,14 +108,14 @@ const message = (error: unknown) => error instanceof Error ? error.message : 'Л
 export function hydrateProject(storage: LocalProjectStorage, idFactory?: IdFactory): ProjectSession {
   try {
     const loaded = storage.load()
-    return { snapshot: loaded ?? createProjectSnapshot(idFactory), hydrated: true, blocked: false,
+    return { snapshot: loaded ?? createProjectSnapshot(idFactory), hydrated: true, blocked: false, detached: !loaded,
       status: loaded ? 'saved' : 'unsaved', error: null }
   } catch (error) {
-    return { snapshot: createProjectSnapshot(idFactory), hydrated: true, blocked: true, status: 'failed', error: message(error) }
+    return { snapshot: createProjectSnapshot(idFactory), hydrated: true, blocked: true, detached: true, status: 'failed', error: message(error) }
   }
 }
 export function saveProjectSession(session: ProjectSession, storage: LocalProjectStorage): ProjectSession {
-  if (!session.hydrated || session.blocked) return session
+  if (!session.hydrated || session.blocked || session.detached) return session
   try {
     storage.save(session.snapshot)
     return { ...session, status: 'saved', error: null }

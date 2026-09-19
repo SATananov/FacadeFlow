@@ -5,7 +5,7 @@ import { getProfileSystemById } from '../data/profileSystems'
 import { reconcileModuleProfileResolution, type ModuleProfileResolution } from '../domain/profileResolution'
 import type { OfferModuleDraft } from '../domain/offerModules'
 import {
-  createProjectSnapshot, createStableId, getEditingOffer, getFreeModules, getModules, getOfferForm, getOfferModules,
+  createProjectSnapshot, createStableId, getEditingOffer, getFreeModules, getModules, getOfferForm, getOfferModules, hasMeaningfulProjectContent,
   type FreeConstructorModule, type OfferDraft, type ProjectSnapshot,
 } from '../domain/project/projectModel'
 import {
@@ -46,18 +46,23 @@ export function useProjectWorkspace() {
   const refreshProjects = () => { try { setProjects(storage.list()) } catch { /* save/load exposes the actual error */ } }
 
   useEffect(() => {
-    if (!session.hydrated || session.blocked || lastSaved.current === session.snapshot) return
+    if (!session.hydrated || session.blocked || session.detached || lastSaved.current === session.snapshot) return
     const result = saveProjectSession(session, storage)
     if (result.status === 'saved') lastSaved.current = session.snapshot
     setSession((current) => current.snapshot === session.snapshot ? result : current)
     refreshProjects()
-  }, [session.snapshot, session.hydrated, session.blocked, storage])
+  }, [session.snapshot, session.hydrated, session.blocked, session.detached, storage])
   useEffect(() => { refreshProjects() }, [storage])
 
   const transform = (operation: (snapshot: ProjectSnapshot) => ProjectSnapshot) => setSession((current) => {
     const snapshot = operation(current.snapshot)
     if (canonicalize(snapshot) === canonicalize(current.snapshot)) return current
-    return { ...current, snapshot, status: current.blocked ? 'failed' : 'unsaved' }
+    return {
+      ...current,
+      snapshot,
+      detached: current.detached && !hasMeaningfulProjectContent(snapshot),
+      status: current.blocked ? 'failed' : 'unsaved',
+    }
   })
   const edit = (operation: (snapshot: ProjectSnapshot) => void) => transform((snapshot) => editProject(snapshot, operation))
   const applyAssurance = (operation: (snapshot: ProjectSnapshot) => ProjectSnapshot) => {
@@ -65,7 +70,7 @@ export function useProjectWorkspace() {
     if (current.blocked) throw new Error('PF02: Project storage is blocked')
     const snapshot = operation(current.snapshot)
     if (snapshot === current.snapshot) return
-    const next: ProjectSession = { ...current, snapshot, status: 'unsaved' }
+    const next: ProjectSession = { ...current, snapshot, detached: false, status: 'unsaved' }
     latest.current = next
     setSession(next)
   }
@@ -100,33 +105,57 @@ export function useProjectWorkspace() {
   }
   const newProject = () => {
     // A damaged record stays untouched; the explicit new project uses a new key.
-    if (!latest.current.blocked && saveNow().status !== 'saved') return
+    if (!latest.current.blocked && !latest.current.detached && saveNow().status !== 'saved') return
     const next = createProjectSnapshot()
     next.workspace.screen = 'offer-setup'
-    setSession({ snapshot: next, hydrated: true, blocked: false, status: 'unsaved', error: null })
+    const session: ProjectSession = { snapshot: next, hydrated: true, blocked: false, detached: false, status: 'unsaved', error: null }
+    latest.current = session
+    lastSaved.current = null
+    setSession(session)
   }
   const openProject = (id: string) => {
-    if (!latest.current.blocked && saveNow().status !== 'saved') return
+    if (!latest.current.blocked && !latest.current.detached && saveNow().status !== 'saved') return
     try {
       const loaded = storage.load(id)
       if (!loaded) throw new Error('Проектът не е намерен.')
       // Also update the startup pointer, with failures accurately surfaced.
-      const result = saveProjectSession({ snapshot: loaded, hydrated: true, blocked: false, status: 'unsaved', error: null }, storage)
+      const result = saveProjectSession({ snapshot: loaded, hydrated: true, blocked: false, detached: false, status: 'unsaved', error: null }, storage)
       if (result.status !== 'saved') throw new Error(result.error ?? 'Неуспешно отваряне.')
       lastSaved.current = loaded
+      latest.current = result
       setSession(result)
     } catch (error) {
       setSession((current) => ({ ...current, status: 'failed', error: error instanceof Error ? error.message : 'Неуспешно отваряне.' }))
     }
   }
+  const deleteProject = (id: string) => {
+    try {
+      const deletingCurrent = id === latest.current.snapshot.project.id
+      storage.deleteProject(id)
+      if (deletingCurrent) {
+        const snapshot = createProjectSnapshot()
+        const next: ProjectSession = { snapshot, hydrated: true, blocked: false, detached: true, status: 'unsaved', error: null }
+        lastSaved.current = null
+        latest.current = next
+        setSession(next)
+      }
+      refreshProjects()
+    } catch (error) {
+      setSession((current) => ({
+        ...current, status: 'failed',
+        error: error instanceof Error ? error.message : 'Неуспешно изтриване на проекта.',
+      }))
+    }
+  }
+
 
   return {
     recordRevision: (actor: HumanActor) => applyAssurance((s) => recordProjectRevision(s, actor, new Date().toISOString())),
     prepareConfirmation: (evidenceId: string) => prepareConfirmation(latest.current.snapshot, evidenceId),
     confirmStatement: (request: ConfirmationRequest, actor: HumanActor, intent: HumanConfirmation['intent']) =>
       applyAssurance((s) => confirmStatement(s, request, actor, new Date().toISOString(), intent)),
-    snapshot, persistence: { status: session.status, error: session.error, blocked: session.blocked }, projects,
-    saveNow, newProject, openProject,
+    snapshot, persistence: { status: session.status, error: session.error, blocked: session.blocked, attached: !session.detached }, projects,
+    saveNow, newProject, openProject, deleteProject,
     offer: getOfferForm(snapshot),
     setOffer: (update: Update<OfferDraft>) => edit((s) => writeOfferForm(s, applyUpdate(getOfferForm(s), update))),
     saved: offer.setupStage === 'modules',

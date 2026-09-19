@@ -19,7 +19,7 @@ export type ProfileJointEvidenceRule = {
   componentEvidence: readonly CatalogEvidence[]
   assemblyEvidence?: CatalogEvidence
   assemblyEvidenceStatus: ProfileJointEvidenceStatus
-  /** Reviewed front-elevation overlap may be known before the full joint inset is known. */
+  /** Joint overlap is UNKNOWN until a real assembly rule or section proves it. */
   sashOverlapMm: number | null
   /** Exact profile placement relative to the support reference line. */
   sashInsetMm: number | null
@@ -29,31 +29,28 @@ export type ProfileJointEvidenceRule = {
 }
 
 /**
- * PROFILE-AWARE JOINT GEOMETRY 01A — PRELUDE 60 reviewed overlap evidence.
+ * CATALOG TRUTH RESET 01 — PRELUDE 60.
  *
- * The current KMG /series 60mm/ catalogue and the already reviewed PRELUDE
- * visible-face semantics agree on the same 22 mm side zone:
+ * The official KMG PRELUDE 60 catalogue proves raw component callouts only:
+ * - frame 482.30: 60 / 64 / 42 mm
+ * - sash 482.05: 60 / 78 / 56 mm
+ * - sash 482.18: 60 / 78 / 56 mm
+ * - mullion 482.21: 60 / 84 / 40 mm
+ * - glass bead 482.15: 16.5 / 28.5 / 22 mm and stated glass 24 mm
  *
- * - frame 482.30: 64 - 42 = 22 mm
- * - sash 482.05: 78 - 56 = 22 mm
- * - mullion 482.21: (84 - 40) / 2 = 22 mm per side
- *
- * This is accepted here only as the front-elevation sash/support overlap.
- * It does NOT establish the exact sash reference-line inset, glazing inset,
- * cut deduction, tolerance, reinforcement, hardware, or machine geometry.
+ * It does NOT define 22 mm as frame-sash or mullion-sash overlap.
+ * Arithmetic differences between component callouts are not assembly evidence.
+ * Therefore all PRELUDE 60 sash overlap / inset / glazing inset values remain UNKNOWN.
  */
-export const PRELUDE_60_REVIEWED_SASH_OVERLAP = {
-  frameOverallFaceMm: 64,
-  frameVisibleFaceMm: 42,
-  frameCoveredZoneMm: 22,
-  sashOverallFaceMm: 78,
-  sashVisibleFaceMm: 56,
-  sashOverlapZoneMm: 22,
-  mullionOverallFaceMm: 84,
-  mullionVisibleCenterMm: 40,
-  mullionSideZoneMm: 22,
-  overlapMm: 22,
-  evidenceStatus: 'catalogue-overlap-reviewed' as const,
+export const PRELUDE_60_CATALOG_TRUTH_RESET_01 = {
+  frame48230CalloutsMm: [60, 64, 42] as const,
+  sash48205CalloutsMm: [60, 78, 56] as const,
+  sash48218CalloutsMm: [60, 78, 56] as const,
+  mullion48221CalloutsMm: [60, 84, 40] as const,
+  glassBead48215CalloutsMm: [16.5, 28.5, 22] as const,
+  glassBead48215StatedGlassMm: 24,
+  frameSashOverlapMm: null,
+  mullionSashOverlapMm: null,
   productionGeometryApproved: false as const,
   machineReady: false as const,
 }
@@ -66,49 +63,40 @@ export const profileJointEvidenceRules: readonly ProfileJointEvidenceRule[] = [
     supportRole: 'frame',
     sashProfileCode: '482.05',
     sashRole: 'sash',
-    supportRawCalloutsMm: [60, 64, 42],
-    sashRawCalloutsMm: [60, 78, 56],
+    supportRawCalloutsMm: PRELUDE_60_CATALOG_TRUTH_RESET_01.frame48230CalloutsMm,
+    sashRawCalloutsMm: PRELUDE_60_CATALOG_TRUTH_RESET_01.sash48205CalloutsMm,
     componentEvidence: [
       { documentTitle: 'KMG PVC Profiles Systems', page: 2, section: 'Main profiles · 482.30 frame' },
-      { documentTitle: 'KMG /series 60mm/', page: 1, section: 'Main profiles · 482.05 sash · 78 / 56 reviewed face semantics' },
+      { documentTitle: 'KMG PVC Profiles Systems', page: 2, section: 'Main profiles · 482.05 sash' },
     ],
-    assemblyEvidence: {
-      documentTitle: 'PRELUDE 60 reviewed face semantics',
-      page: 2,
-      section: '482.30 frame 64/42 + 482.05 sash 78/56 -> common 22 mm overlap zone',
-      note: '22 mm is accepted for front-elevation overlap only. Exact sash inset and glazing inset remain unresolved.',
-    },
-    assemblyEvidenceStatus: 'catalogue-overlap-reviewed',
-    sashOverlapMm: PRELUDE_60_REVIEWED_SASH_OVERLAP.overlapMm,
+    assemblyEvidence: { documentTitle: 'Altest PRELUDE 60 · актуален системен каталог', page: 23, section: 'Sectional drawings · 482.30 + 482.05 + 482.15 · 24 mm' },
+    assemblyEvidenceStatus: 'sectional-drawing-uninterpreted',
+    sashOverlapMm: null,
     sashInsetMm: null,
     glazingInsetMm: null,
-    noteBg: 'Каса 482.30 + крило 482.05: застъпването 22 mm е потвърдено от съвпадащи каталогови лицеви зони; точните inset и glazing inset още не са потвърдени.',
+    noteBg: 'Каса 482.30 + крило 482.05: актуалната секционна скица на стр. 23 потвърждава самата двойка и 24 mm остъкляване с 482.15. Точни производствени overlap / inset / glass cut стойности не се създават.',
   },
   {
     systemId: 'kmg-prelude-60',
     jointKind: 'mullion-sash',
     supportProfileCode: '482.21',
     supportRole: 'mullion',
-    sashProfileCode: '482.05',
+    sashProfileCode: '482.18',
     sashRole: 'sash',
-    supportRawCalloutsMm: [60, 84, 40],
-    sashRawCalloutsMm: [60, 78, 56],
+    supportRawCalloutsMm: PRELUDE_60_CATALOG_TRUTH_RESET_01.mullion48221CalloutsMm,
+    sashRawCalloutsMm: PRELUDE_60_CATALOG_TRUTH_RESET_01.sash48218CalloutsMm,
     componentEvidence: [
       { documentTitle: 'KMG PVC Profiles Systems', page: 2, section: 'Main profiles · 482.21 mullion' },
-      { documentTitle: 'KMG /series 60mm/', page: 1, section: 'Main profiles · 482.05 sash · 78 / 56 reviewed face semantics' },
+      { documentTitle: 'KMG PVC Profiles Systems', page: 2, section: 'Main profiles · 482.18 sash' },
     ],
-    assemblyEvidence: {
-      documentTitle: 'PRELUDE 60 reviewed face semantics',
-      page: 2,
-      section: '482.21 mullion 84/40 -> 22 mm side zone + 482.05 sash 78/56 -> 22 mm overlap zone',
-      note: 'Each mullion side contributes one reviewed 22 mm sash overlap zone. Exact sash inset and glazing inset remain unresolved.',
-    },
-    assemblyEvidenceStatus: 'catalogue-overlap-reviewed',
-    sashOverlapMm: PRELUDE_60_REVIEWED_SASH_OVERLAP.overlapMm,
+    assemblyEvidence: { documentTitle: 'Altest PRELUDE 60 · актуален системен каталог', page: 25, section: 'Sectional drawings · 482.21 + 482.18 + 482.15 · 24 mm' },
+    assemblyEvidenceStatus: 'sectional-drawing-uninterpreted',
+    sashOverlapMm: null,
     sashInsetMm: null,
     glazingInsetMm: null,
-    noteBg: 'Делител 482.21 + крило 482.05: застъпването 22 mm на страна е потвърдено от каталоговите лицеви зони; точните inset и glazing inset още не са потвърдени.',
+    noteBg: 'Делител 482.21 + крило 482.18: актуалната секционна скица на стр. 25 потвърждава тази двойка, 24 mm остъкляване и 482.15. 482.21 + 482.05 не се приема за каталожно потвърдена двойка. Точни производствени overlap / inset / glass cut стойности остават неизвестни.',
   },
+
 ]
 
 export function getProfileJointEvidenceRule(args: {

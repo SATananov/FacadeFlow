@@ -2,6 +2,7 @@ import { type ProjectSnapshot, type PF01Snapshot } from './projectModel'
 import { validateAssuranceSnapshot } from '../assurance/assuranceValidation'
 import { migratePF01Snapshot } from './projectMigration'
 import { freezeHistory } from './revisionOperations'
+import { backfillAdditiveReviewEvidence } from '../assurance/legacyEvidenceAdapter'
 
 type Obj = Record<string, unknown>
 function requireThat(value: unknown, message: string): asserts value {
@@ -239,6 +240,10 @@ export function deserializeProject(json: string): ProjectSnapshot {
     validateProjectSnapshot(migrated)
     return freezeHistory(migrated)
   }
+  // PF02 additive review evidence is deterministic and source-bound. Backfill
+  // only the current draft graph so projects saved before EVIDENCE REVIEW 01B
+  // remain openable; immutable historical revisions are never rewritten.
+  backfillAdditiveReviewEvidence(snapshot as ProjectSnapshot)
   validateProjectSnapshot(snapshot)
   return freezeHistory(snapshot)
 }

@@ -72,13 +72,16 @@ test('real FIX: partial/BLOCKED; four positions, one infill, no physical members
   assert.equal(gate(a, f.s).status, 'BLOCKED')
   assert.equal(a.requirements.find((r) => r.kind === 'hardware-kit').satisfaction.status, 'not-applicable')
 })
-test('real OPERABLE: exact configuration; eight positions; overlap only front elevation', () => {
+test('real OPERABLE: exact configuration; eight positions; no unproved overlap requirement', () => {
   const f = fixture(true), a = derive(f.s, f.a)
   assert.equal(a.support.configuration, 'PRELUDE60_OPERABLE_RECT_01')
   assert.equal(a.coverageStatus, 'partial'); assert.equal(a.members.length, 8)
   assert.equal(a.connections.filter((c) => c.kind === 'sash-to-frame').length, 4)
-  const overlap = a.requirements.find((r) => r.kind === 'reviewed-overlap').satisfaction
-  assert.equal(overlap.value, 22); assert.equal(overlap.proof.authority, 'reviewed-front-elevation')
+  assert.equal(
+    a.requirements.find((r) => r.kind === 'reviewed-overlap'),
+    undefined,
+    'current 04C pairing must not manufacture reviewed overlap without current joint evidence',
+  )
   assert.equal(a.requirements.find((r) => r.kind === 'hardware-kit').satisfaction.status, 'unresolved')
   assert.equal(gate(a, f.s).status, 'BLOCKED')
 })
@@ -331,27 +334,40 @@ test('baseline rule bundle has no fabricated technical rules', () => assert.deep
 test('review launcher renders; application wiring has no mutation callbacks', () => {
   const f = fixture(), Panel = load('src/components/AssemblyReviewPanel').AssemblyReviewPanel
   const html = renderToStaticMarkup(React.createElement(Panel,{snapshot:f.s,moduleId:f.a}))
-  assert.match(html,/Преглед на сглобката/); assert.match(html,/aria-haspopup="dialog"/)
+  assert.match(html,/Преглед на сглобките/); assert.match(html,/aria-haspopup="dialog"/)
   const src = readFileSync('src/components/AssemblyReviewPanel.tsx','utf8')
   assert.doesNotMatch(src,/ruleBundle|confirmStatement|saveProject|localStorage|editProject/)
   assert.match(readFileSync('src/App.tsx','utf8'),/<AssemblyReviewPanel snapshot=\{workspace.snapshot\}/)
 })
-test('open review renders real blockers and actionable steps without touching the project', () => {
+test('open review renders current supported coverage and exact fail-closed unsupported coverage without touching the project', () => {
   const f = fixture(true), before = codec.serializeProject(f.s)
   const uiLoad = createRuntimeLoader({ react: { ...React, useState: (initial) => [initial === false ? true : initial, () => {}] }, 'react-dom': { createPortal: (child) => child } })
   const previousDocument = globalThis.document
   try {
     globalThis.document = { body: {} }
     const Panel = uiLoad('src/components/AssemblyReviewPanel').AssemblyReviewPanel
+
     const html = renderToStaticMarkup(React.createElement(Panel,{ snapshot:f.s,moduleId:f.a }))
-    assert.match(html,/Поддържана конфигурация/); assert.match(html,/Частично покритие/)
-    assert.match(html,/Блокирано/); assert.match(html,/уплътнение между крило и каса/)
-    assert.match(html,/Точният отстъп на стъклопакета остава неизвестен/)
-    assert.match(html,/Необходимо е прегледано техническо правило/)
+    assert.match(html,/СИСТЕМЕН ПРЕГЛЕД/)
+    assert.match(html,/Покрити са всички очаквани страни/)
+    assert.match(html,/не производствено потвърждение/)
     assert.match(html,/aria-labelledby="assembly-review-title"/)
     assert.equal(codec.serializeProject(f.s),before)
+
     const unsupported = edit(f,(r) => { r.frame = { profileCode:'482.20',source:'human' } })
-    assert.match(renderToStaticMarkup(React.createElement(Panel,{snapshot:unsupported,moduleId:f.a})),/Неподдържана конфигурация/)
+    const unsupportedAssembly = derive(unsupported, f.a)
+    assert.equal(unsupportedAssembly.support.status, 'unsupported')
+    assert.equal(gate(unsupportedAssembly, unsupported).status, 'BLOCKED')
+
+    const unsupportedHtml = renderToStaticMarkup(React.createElement(Panel,{snapshot:unsupported,moduleId:f.a}))
+    assert.match(unsupportedHtml,/482\.20/)
+    assert.match(unsupportedHtml,/0\/4 граници имат системен технически преглед/)
+    assert.match(unsupportedHtml,/НЯМА ТЕХНИЧЕСКО СЕЧЕНИЕ/)
+    assert.match(unsupportedHtml,/4 граници са блокирани/)
+    assert.match(unsupportedHtml,/не създава заместителна геометрия/)
+    assert.doesNotMatch(unsupportedHtml,/Покрити са всички очаквани страни/)
+    assert.doesNotMatch(unsupportedHtml,/4\/4 граници имат системен технически преглед/)
+
     assert.match(renderToStaticMarkup(React.createElement(Panel,{snapshot:f.s,moduleId:null})),/Избери модул/)
   } finally {
     if (previousDocument === undefined) delete globalThis.document

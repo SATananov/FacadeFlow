@@ -1,7 +1,7 @@
 # CONSTRUCTOR 01E.5.2 — FRAME / DIVIDER / SASH OVERLAP CLARITY
 
 ## Purpose
-Improve technical drawing readability so the assembly hierarchy is visible at a glance, using the supplied SkyGlazing drawing only as a visual reference for clarity.
+Improve technical drawing readability so the assembly hierarchy is visible at a glance, using the supplied technical reference drawing only as a visual reference for clarity.
 
 ## Visual contract
 - The outer frame reads in front of divider endpoints.

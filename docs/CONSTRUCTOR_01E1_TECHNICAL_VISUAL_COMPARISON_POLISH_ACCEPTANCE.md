@@ -1,6 +1,6 @@
-# CONSTRUCTOR 01E.1 — SKYGLAZING VISUAL COMPARISON POLISH ACCEPTANCE
+# CONSTRUCTOR 01E.1 — TECHNICAL VISUAL COMPARISON POLISH ACCEPTANCE
 
-This is a UI/read-model polish pass based on direct side-by-side comparison between the FacadeFlow Constructor drawing and the provided SkyGlazing technical drawing.
+This is a UI/read-model polish pass based on direct side-by-side review of FacadeFlow technical-drawing readability.
 
 ## Observed mismatch corrected
 - FacadeFlow frame/dividers were still visually heavy and UI-like; they now read lighter and more like outlined technical profiles.

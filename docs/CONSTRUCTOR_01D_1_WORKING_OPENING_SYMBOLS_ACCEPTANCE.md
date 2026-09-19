@@ -2,7 +2,7 @@
 
 ## Goal
 
-Replace the universal neutral X with readable working opening symbols that match the shop convention visible in Nadezhda / SkyGlazing references, while keeping FIELD semantics and geometry deterministic.
+Replace the universal neutral X with readable working opening symbols that match the shop convention visible in reviewed shop references, while keeping FIELD semantics and geometry deterministic.
 
 ## Canonical visual mapping
 

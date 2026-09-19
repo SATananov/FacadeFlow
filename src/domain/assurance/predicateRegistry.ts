@@ -15,6 +15,8 @@ export const PREDICATES = freezeDeep({
   'reviewed-operational-policy': { scope: 'catalog', unit: 'none', value: 'code', parameters: ['category'] },
   'glazing-inset': { scope: 'field', unit: 'mm', value: 'unknown', parameters: ['profileSystemId'] },
   'glass-cut-width': { scope: 'field', unit: 'mm', value: 'unknown', parameters: ['profileSystemId'] },
+  'official-sectional-bead-base-pairing': { scope: 'module', unit: 'none', value: 'code', parameters: ['profileSystemId', 'baseProfileCode', 'beadCode', 'thicknessMm', 'sourceCandidateId'] },
+  'official-sectional-bead-placement': { scope: 'module', unit: 'none', value: 'code', parameters: ['profileSystemId', 'baseProfileCode', 'beadCode', 'thicknessMm', 'sourceCandidateId'] },
 } as const)
 export type Predicate = keyof typeof PREDICATES
 export function invariant(condition: unknown, message: string): asserts condition {
@@ -41,10 +43,12 @@ export function validateStatement(value: unknown): asserts value is Statement {
     invariant(scope.kind === 'module', 'module scope required')
     nonempty(scope.projectId); nonempty(scope.offerId); nonempty(scope.moduleId)
     const target = scope.target as Record<string, unknown>
-    invariant(target && ['frame', 'field', 'divider'].includes(String(target.kind)), 'invalid target')
-    objectKeys(target, target.kind === 'frame' ? ['kind'] : ['kind', target.kind === 'field' ? 'fieldId' : 'dividerId'])
-    if (target.kind !== 'frame') nonempty(target[target.kind === 'field' ? 'fieldId' : 'dividerId'])
+    invariant(target && ['module', 'frame', 'field', 'divider'].includes(String(target.kind)), 'invalid target')
+    objectKeys(target, target.kind === 'module' || target.kind === 'frame' ? ['kind'] : ['kind', target.kind === 'field' ? 'fieldId' : 'dividerId'])
+    if (target.kind === 'field') nonempty(target.fieldId)
+    if (target.kind === 'divider') nonempty(target.dividerId)
     if (rule.scope === 'field') invariant(target.kind === 'field', 'FIELD scope required')
+    if (rule.scope === 'module') invariant(target.kind === 'module', 'MODULE scope required')
   }
   invariant(value.unit === rule.unit, 'predicate unit mismatch')
   objectKeys(value.parameters, rule.parameters)

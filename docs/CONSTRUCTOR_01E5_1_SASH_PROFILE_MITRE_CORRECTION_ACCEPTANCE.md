@@ -3,7 +3,7 @@
 This hotfix corrects the rejected 01E.5 visual interpretation.
 
 ## Reference reading
-The supplied SkyGlazing reference does not show four decorative diagonal strokes floating in the glazing area. It shows an operable sash as a profile ring with an outer contour and an inner glazing contour. The 45-degree corner seams live only across that profile band.
+The supplied technical reference does not show four decorative diagonal strokes floating in the glazing area. It shows an operable sash as a profile ring with an outer contour and an inner glazing contour. The 45-degree corner seams live only across that profile band.
 
 ## Acceptance
 - OPERABLE fields render a schematic sash profile ring: outer contour + inner contour.

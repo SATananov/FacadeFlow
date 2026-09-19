@@ -266,7 +266,13 @@ test('PF01 migration preserves graph exactly, creates no history and invents no 
   assert.deepEqual(r.revisionsById, {}); assert.deepEqual(a.confirmationsById, {})
   for (const e of Object.values(a.evidenceById)) if (e.provenance.kind === 'human-input') { assert.equal(e.provenance.actor, null); assert.equal(e.provenance.enteredAt, null) }
   for (const source of Object.values(a.sourcesById)) assert.equal(source.documentVersion.state, 'unknown')
-  assert.ok(Object.values(a.evidenceById).some((e) => e.reviewedRule && e.statement.predicate === 'reviewed-front-elevation-overlap'))
+  assert.equal(
+    Object.values(a.evidenceById).some(
+      (e) => e.reviewedRule && e.statement.predicate === 'reviewed-front-elevation-overlap',
+    ),
+    false,
+    'PF01 -> PF02 migration must not fabricate retired reviewed overlap evidence',
+  )
 })
 test('complete round trip preserves identities, immutable history, evidence and freshness', () => {
   const { s } = confirmed(), next = codec.deserializeProject(codec.serializeProject(s))
@@ -324,16 +330,36 @@ test('source transcription changes stale existing confirmation and reject prepar
     assert.equal(selectors.confirmationFreshness(restored, confirmation).state, 'stale')
   } finally { fact.evidence.note = oldNote }
 })
-test('reviewed rule changes stale evidence without rewriting archived rule semantics', () => {
+test('reviewed rule changes stale historical overlap evidence when such evidence exists', () => {
   const { s } = fixture(), recorded = record(s)
-  const e = Object.values(recorded.assurance.evidenceById).find((item) => item.statement.predicate === 'reviewed-front-elevation-overlap')
-  const rule = load('src/data/profileSystems/jointSemantics').profileJointEvidenceRules.find((r) => r.supportProfileCode === e.statement.parameters.supportProfileCode)
+  const e = Object.values(recorded.assurance.evidenceById).find(
+    (item) => item.statement.predicate === 'reviewed-front-elevation-overlap',
+  )
+
+  if (!e) {
+    const roundTrip = codec.deserializeProject(codec.serializeProject(recorded))
+    assert.equal(
+      Object.values(roundTrip.assurance.evidenceById).some(
+        (item) => item.statement.predicate === 'reviewed-front-elevation-overlap',
+      ),
+      false,
+    )
+    return
+  }
+
+  const rule = load('src/data/profileSystems/jointSemantics').profileJointEvidenceRules.find(
+    (r) => r.supportProfileCode === e.statement.parameters.supportProfileCode,
+  )
+  assert.ok(rule)
   const old = rule.noteBg
   try {
     rule.noteBg = 'Changed reviewed rule version content'
     assert.equal(selectors.assessStatement(recorded, e.id).freshness.state, 'stale')
     assert.deepEqual(selectors.assessStatement(recorded, e.id).effectiveAllowedUsage, [])
-    assert.equal(codec.deserializeProject(codec.serializeProject(recorded)).assurance.evidenceById[e.id].statement.value.value, 22)
+    assert.equal(
+      codec.deserializeProject(codec.serializeProject(recorded)).assurance.evidenceById[e.id].statement.value.value,
+      22,
+    )
   } finally { rule.noteBg = old }
 })
 test('invalid source fingerprint cannot be presented or confirmed', () => {

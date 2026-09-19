@@ -1,7 +1,7 @@
 # PROFILE RESOLUTION 02A — SYSTEM COMPONENT + COMPATIBILITY FOUNDATION
 
 ## Goal
-Extend the clean 01C.1 checkpoint with the first production-domain concepts learned from the SkyGlazing architecture without copying its code/data model and without mutating Constructor topology or enabling machine output.
+Extend the clean 01C.1 checkpoint with the first production-domain concepts learned from the reference-system architecture without copying its code/data model and without mutating Constructor topology or enabling machine output.
 
 ## Accepted architecture
 - `ConstructionModel` remains topology/geometry authority.
@@ -36,5 +36,5 @@ Selected elements expose only data supported by the current catalog:
 - MACHINE READY: NO
 - CONSTRUCTOR TOPOLOGY / GEOMETRY MUTATION: NO
 
-## SkyGlazing lesson retained
+## System-reference lesson retained
 Use separate system data + compatibility + production layers, but keep FacadeFlow's modern separation of topology, resolution, dimensional semantics and future machine adapters.

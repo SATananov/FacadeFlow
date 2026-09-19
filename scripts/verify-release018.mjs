@@ -10,12 +10,47 @@ const readme = await read('README.md')
 const releaseDoc = await read('docs/FACADEFLOW_0_1_8_RELEASE_ACCEPTANCE.md')
 const constructorShell = await read('src/components/ConstructorShell.tsx')
 
-const RELEASE_VERSION = '0.1.8'
+const RELEASE_BASELINE_VERSION = '0.1.8'
 
-assert.equal(packageJson.version, RELEASE_VERSION, 'package.json version must be 0.1.8')
-assert.equal(packageLock.version, RELEASE_VERSION, 'package-lock top-level version must be 0.1.8')
-assert.equal(packageLock.packages?.['']?.version, RELEASE_VERSION, 'package-lock root package version must be 0.1.8')
-assert.match(appVersion, /APP_VERSION\s*=\s*'0\.1\.8'/, 'visible APP_VERSION must be 0.1.8')
+const parseNumericVersion = (version) => {
+  const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(version)
+  assert.ok(match, `version must be numeric x.y.z, received ${String(version)}`)
+  return match.slice(1).map(Number)
+}
+
+const isVersionAtLeast = (version, minimum) => {
+  const current = parseNumericVersion(version)
+  const floor = parseNumericVersion(minimum)
+
+  for (let index = 0; index < 3; index += 1) {
+    if (current[index] > floor[index]) return true
+    if (current[index] < floor[index]) return false
+  }
+
+  return true
+}
+
+assert.ok(
+  isVersionAtLeast(packageJson.version, RELEASE_BASELINE_VERSION),
+  'package.json version must be 0.1.8 or newer',
+)
+assert.equal(
+  packageLock.version,
+  packageJson.version,
+  'package-lock top-level version must match package.json',
+)
+assert.equal(
+  packageLock.packages?.['']?.version,
+  packageJson.version,
+  'package-lock root package version must match package.json',
+)
+
+const escapedCurrentVersion = packageJson.version.replace(/\./g, '\\.')
+assert.match(
+  appVersion,
+  new RegExp(`APP_VERSION\\s*=\\s*'${escapedCurrentVersion}'`),
+  'visible APP_VERSION must match package.json',
+)
 
 assert.equal(packageJson.devDependencies?.electron, '44.3.0', 'Electron release pin changed unexpectedly')
 assert.equal(packageJson.devDependencies?.['electron-builder'], '26.15.3', 'electron-builder release pin changed unexpectedly')
@@ -50,10 +85,11 @@ assert.match(releaseDoc, /MACHINE READY: \*\*NO\*\*/)
 assert.match(constructorShell, /FACADEFLOW 0\.1\.8B ATOMIC MODULE HISTORY 01/)
 assert.match(constructorShell, /FACADEFLOW 0\.1\.8E\.1 HUMAN UNDO SESSION HOTFIX V2/)
 
-console.log('FACADEFLOW 0.1.8 FINAL RELEASE METADATA VERIFY PASS')
-console.log('VERSION: package.json = package-lock = APP_VERSION = 0.1.8')
+console.log('FACADEFLOW 0.1.8 RELEASE BASELINE VERIFY PASS')
+console.log(`CURRENT VERSION: package.json = package-lock = APP_VERSION = ${packageJson.version}`)
+console.log('0.1.8 BASELINE: PRESERVED / FUTURE-VERSION TOLERANT')
 console.log('RELEASE LINE: 0.1.8B -> 0.1.8C -> 0.1.8D -> 0.1.8E -> 0.1.8E.1')
-console.log('DEFAULT npm run verify: INCLUDES 0.1.8 RELEASE GATE')
+console.log('DEFAULT npm run verify: INCLUDES 0.1.8 RELEASE BASELINE GATE')
 console.log('DESKTOP TOOLCHAIN PINS: ELECTRON 44.3.0 / ELECTRON-BUILDER 26.15.3')
 console.log('AUTOMATIC GEOMETRY: NO')
 console.log('AUTOMATIC BEAD SELECTION: NO')

@@ -92,6 +92,7 @@ import {
   type ComponentCompatibilityResult,
 } from '../domain/componentCompatibility'
 import { buildFieldHardwareRequirements } from '../domain/hardwareResolution'
+import { buildSystemDrivenModuleReadModel } from '../domain/systemDrivenProductModel'
 import {
   isPendingFormFieldDescription,
   transferFormFieldDescriptionsToConstruction,
@@ -162,6 +163,7 @@ type ConstructorShellProps = {
   onSelectModule?: (moduleId: string) => void
   onCreateModule?: () => void
   onResetModule?: () => void
+  onDeleteModule?: () => void
   onClose: () => void
   onCreateOfferFromSketch?: (draft: ConstructorDraftSnapshot | null) => void
 }
@@ -371,6 +373,7 @@ export default function ConstructorShell({
   onSelectModule,
   onCreateModule,
   onResetModule,
+  onDeleteModule,
   onClose,
   onCreateOfferFromSketch,
 }: ConstructorShellProps) {
@@ -593,6 +596,17 @@ export default function ConstructorShell({
         })
       : null,
     [frame, dividers, fields, selectedProfileSystem, effectiveProfileResolution, profileJointGeometry],
+  )
+  const systemDrivenModuleModel = useMemo(
+    () => buildSystemDrivenModuleReadModel({
+      moduleId: activeModuleId ?? null,
+      moduleSequence: moduleNumber || null,
+      productType: moduleSummary.productType,
+      system: selectedProfileSystem ?? null,
+      construction,
+      resolution: effectiveProfileResolution,
+    }),
+    [activeModuleId, moduleNumber, moduleSummary.productType, selectedProfileSystem, construction, effectiveProfileResolution],
   )
   const reviewedFrameFacePx = profileAwareGeometry?.frame.reviewed && profileAwareGeometry.frame.visibleFaceMm !== null
     ? Math.max(4, profileAwareGeometry.frame.visibleFaceMm * pxPerMm)
@@ -2444,6 +2458,32 @@ export default function ConstructorShell({
     return <><div className="constructor-selection-empty"><span>Избери елемент за размери</span><p>Размерната верига различава габарита, отвора на ПОЛЕТО, крилото, видимото стъкло и бъдещия размер за рязане на стъклото.</p></div></>
   }
 
+  const renderSystemDrivenModuleSummary = () => {
+    const requiredComponents = systemDrivenModuleModel.components.filter((entry) => entry.status !== 'not-required')
+    const frameComponent = requiredComponents.find((entry) => entry.kind === 'frame') ?? null
+    const dividerComponents = requiredComponents.filter((entry) => entry.kind === 'divider')
+    const sashComponents = requiredComponents.filter((entry) => entry.kind === 'sash')
+    const missingComponents = requiredComponents.filter((entry) => entry.status === 'missing-profile')
+
+    return (
+      <section className="constructor-system-model" aria-label="Системен модел на модула">
+        <header>
+          <div><span>СИСТЕМЕН МОДЕЛ</span><b>{systemDrivenModuleModel.systemLabel}</b></div>
+          <strong>{systemDrivenModuleModel.resolvedComponentCount}/{systemDrivenModuleModel.requiredComponentCount} компонента</strong>
+        </header>
+        <p>Избраната система определя допустимите конструктивни роли. Constructor описва изделието; профилите материализират касата, делителите, крилата и стъклодържателите.</p>
+        <div className="constructor-system-model-facts">
+          <div><span>Каса</span><b>{frameComponent?.profileCode ?? 'Не е избрана'}</b><small>{frameComponent?.visibleFaceReviewed ? `видима част ${frameComponent.visibleFaceMm} mm` : 'видимата част не е потвърдена'}</small></div>
+          <div><span>Делители</span><b>{dividerComponents.length}</b><small>{dividerComponents.length > 0 ? dividerComponents.map((entry) => `${entry.profileCode ?? '—'}${entry.visibleFaceReviewed ? ` · ${entry.visibleFaceMm} mm` : ''}`).join(' · ') : 'няма в модула'}</small></div>
+          <div><span>Крила</span><b>{sashComponents.filter((entry) => entry.status !== 'not-required').length}</b><small>{sashComponents.filter((entry) => entry.status !== 'not-required').map((entry) => entry.profileCode ?? 'не е избрано').join(' · ') || 'няма отваряеми полета'}</small></div>
+          <div><span>Сглобки от границите</span><b>{systemDrivenModuleModel.requiredJointCount}</b><small>{systemDrivenModuleModel.verifiedJointCount} проверени · останалите остават заключени</small></div>
+        </div>
+        {missingComponents.length > 0 && <div className="constructor-system-model-warning"><b>Липсват {missingComponents.length} профилни избора.</b><span>{missingComponents.map((entry) => entry.targetLabelBg).join(' · ')}</span></div>}
+        <small className="constructor-system-model-boundary">Системният модел не измисля монтажна геометрия. Точна сглобка се показва само ако има проверено доказателство за конкретната двойка профили.</small>
+      </section>
+    )
+  }
+
   const renderModuleBasics = () => (
     <div className="constructor-module-basics">
       {isFreeMode ? (
@@ -2456,6 +2496,7 @@ export default function ConstructorShell({
         </label>
       ) : <div className="constructor-property-row"><span>Профилна система</span><b>{offerContext?.profileSystemLabel ?? 'Не е избрана'}</b></div>}
       {renderModuleProductTypeResolution()}
+      {renderSystemDrivenModuleSummary()}
       {frame ? renderSelectedPropertiesPane() : <p className="constructor-context-hint">{canEditConstruction ? 'Избери „Каса“ и начертай модула.' : 'Добави модул, за да започнеш.'}</p>}
       {!isFreeMode && <details className="constructor-context-details"><summary>Общи настройки на офертата</summary>
         <div className="constructor-offer-locks">
@@ -2465,7 +2506,6 @@ export default function ConstructorShell({
           <div><span>Обков</span><b>{offerContext?.hardwareLabel}</b></div>
         </div>
       </details>}
-      {/* Module-only action slot: a future assembly view belongs here. No assembly data is created. */}
       <div className="constructor-module-actions">
         {isFreeMode && onCreateOfferFromSketch && <button type="button" className="constructor-create-offer constructor-create-offer-compact" disabled={!canEditConstruction || !construction} onClick={() => onCreateOfferFromSketch(construction ? constructionToSnapshot(construction) : null)}>Създай оферта от Модул {moduleNumber}</button>}
       </div>
@@ -2917,6 +2957,23 @@ export default function ConstructorShell({
             <span>{hasActiveModule ? `Изчисти Модул ${moduleNumber}` : 'Изтрий скицата'}</span>
             <small>Започни текущия модул отначало</small>
           </button>
+
+          {hasActiveModule && onDeleteModule && (
+            <button
+              type="button"
+              className="constructor-delete-module"
+              onClick={() => {
+                const confirmed = window.confirm(
+                  `Ще изтриете Модул ${moduleNumber} от проекта.\n\nДействието не може да бъде отменено.\n\nДа се изтрие ли модулът?`,
+                )
+                if (confirmed) onDeleteModule()
+              }}
+              title={`Изтрий Модул ${moduleNumber} от проекта`}
+            >
+              <span>Изтрий Модул {moduleNumber}</span>
+              <small>Премахва целия модул от проекта</small>
+            </button>
+          )}
         </aside>
 
         <section className="constructor-workarea" aria-label="Работно поле за конструкцията">{/* CONSTRUCTOR 01E - TECHNICAL DRAWING CLARITY · 01E.2 MINIMAL FIELD BADGES */}
