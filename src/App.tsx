@@ -4,6 +4,7 @@ import { ProjectAssurancePanel } from './components/ProjectAssurancePanel'
 import { AssemblyReviewPanel } from './components/AssemblyReviewPanel'
 import { ProjectManagerPanel } from './components/ProjectManagerPanel'
 import { ModelLibraryPanel } from './components/ModelLibraryPanel'
+import { CompositeModuleStructurePanel } from './components/CompositeModuleStructurePanel'
 import { createStableId, getEditingOffer, getProjectActivity, getProjectDisplayName, type OfferDraft, type FreeConstructorModule } from './domain/project/projectModel'
 import {
   getConfirmedGlazingOptions,
@@ -62,7 +63,7 @@ import './App.css'
 
 const nadezhdaLogoUrl = './branding/nadezhda-header.png'
 
-type HeaderSection = 'home' | 'orders' | 'completed-orders' | 'catalogs' | 'models' | 'help'
+type HeaderSection = 'home' | 'orders' | 'completed-orders' | 'catalogs' | 'models' | 'composite-structure' | 'help'
 
 const HEADER_NAV_ITEMS: ReadonlyArray<{ id: HeaderSection; label: string }> = [
   { id: 'home', label: 'Начало' },
@@ -70,6 +71,7 @@ const HEADER_NAV_ITEMS: ReadonlyArray<{ id: HeaderSection; label: string }> = [
   { id: 'completed-orders', label: 'Завършени поръчки' },
   { id: 'catalogs', label: 'Каталози' },
   { id: 'models', label: 'Модели' },
+  { id: 'composite-structure', label: 'Структура на модул' },
   { id: 'help', label: 'Помощ' },
 ]
 
@@ -1233,6 +1235,8 @@ export default function App() {
               </div>
             </div>
           </section>
+        ) : headerSection === 'composite-structure' ? (
+          <CompositeModuleStructurePanel />
         ) : headerSection === 'models' ? (
           <ModelLibraryPanel />
         ) : headerSection === 'catalogs' ? (
