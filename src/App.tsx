@@ -3,6 +3,7 @@ import { useProjectWorkspace } from './hooks/useProjectWorkspace'
 import { ProjectAssurancePanel } from './components/ProjectAssurancePanel'
 import { AssemblyReviewPanel } from './components/AssemblyReviewPanel'
 import { ProjectManagerPanel } from './components/ProjectManagerPanel'
+import { ModelLibraryPanel } from './components/ModelLibraryPanel'
 import { createStableId, getEditingOffer, getProjectActivity, getProjectDisplayName, type OfferDraft, type FreeConstructorModule } from './domain/project/projectModel'
 import {
   getConfirmedGlazingOptions,
@@ -61,13 +62,14 @@ import './App.css'
 
 const nadezhdaLogoUrl = './branding/nadezhda-header.png'
 
-type HeaderSection = 'home' | 'orders' | 'completed-orders' | 'catalogs' | 'help'
+type HeaderSection = 'home' | 'orders' | 'completed-orders' | 'catalogs' | 'models' | 'help'
 
 const HEADER_NAV_ITEMS: ReadonlyArray<{ id: HeaderSection; label: string }> = [
   { id: 'home', label: 'Начало' },
   { id: 'orders', label: 'Поръчки' },
   { id: 'completed-orders', label: 'Завършени поръчки' },
   { id: 'catalogs', label: 'Каталози' },
+  { id: 'models', label: 'Модели' },
   { id: 'help', label: 'Помощ' },
 ]
 
@@ -1231,6 +1233,8 @@ export default function App() {
               </div>
             </div>
           </section>
+        ) : headerSection === 'models' ? (
+          <ModelLibraryPanel />
         ) : headerSection === 'catalogs' ? (
           <section className="product-section-page" aria-labelledby="catalogs-title">
             <div className="product-section-panel">
