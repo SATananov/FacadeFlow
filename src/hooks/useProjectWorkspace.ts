@@ -10,7 +10,7 @@ import {
 } from '../domain/project/projectModel'
 import {
   applyUpdate, clearConfiguredModules, completeOfferSetup, copyFreeModuleToOffer, editProject,
-  replaceFreeModules, replaceOfferModules, writeOfferForm, type Update,
+  replaceFreeModules, replaceOfferModules, writeOfferForm, createNextProjectModule, createConfirmedCompositeModule, type Update,
 } from '../domain/project/projectOperations'
 import { hydrateProject, LocalProjectStorage, saveProjectSession, type ProjectSession, type StoredProjectSummary } from '../persistence/localProjectStorage'
 import { canonicalize } from '../domain/assurance/canonical'
@@ -20,6 +20,7 @@ import { recordProjectRevision } from '../domain/project/revisionOperations'
 import type { CompositeModuleStructure } from '../domain/compositeModuleStructure'
 import { CompositeModuleBindingError } from '../domain/project/compositeModuleBinding'
 import { saveModuleCompositeStructure } from '../domain/project/projectOperations'
+import type { CompositeModuleCreationRequest } from '../domain/project/compositeModuleGuard'
 
 function reconcilePayload(snapshot: ProjectSnapshot, moduleId: string) {
   const module = snapshot.modulesById[moduleId]
@@ -157,7 +158,34 @@ export function useProjectWorkspace() {
   }
 
 
+  const commitNewModule = (operation: (snapshot: ProjectSnapshot) => { snapshot: ProjectSnapshot; moduleId: string }) => {
+    const current = latest.current
+    try {
+      if (current.blocked) throw new CompositeModuleBindingError('Записът на проекта е блокиран.')
+      const created = operation(current.snapshot)
+      // On a project's first save, establish the original record/pointer before
+      // writing the new module. A failed pointer write must not leave a hidden new module.
+      if (!lastSaved.current && saveProjectSession({ ...current, detached: false }, storage).status !== 'saved') {
+        throw new CompositeModuleBindingError('Проектът не можа да бъде записан. Нов модул не е създаден.')
+      }
+      const result = saveProjectSession({ ...current, snapshot: created.snapshot, detached: false, status: 'unsaved', error: null }, storage)
+      if (result.status !== 'saved') throw new CompositeModuleBindingError('Новият модул не можа да бъде записан. Опитай отново.')
+      latest.current = result
+      lastSaved.current = result.snapshot
+      setSession(result)
+      refreshProjects()
+      return { moduleId: created.moduleId, error: null }
+    } catch (error) {
+      return { moduleId: null, error: error instanceof Error ? error.message : 'Модулът не може да бъде създаден.' }
+    }
+  }
+
   return {
+    createModule: (offerId: string, sourceModuleId: string | null) => {
+      const id = createStableId()
+      transform((s) => createNextProjectModule(s, offerId, sourceModuleId, () => id).snapshot)
+    },
+    confirmCompositeModule: (request: CompositeModuleCreationRequest) => commitNewModule((s) => createConfirmedCompositeModule(s, request)),
     saveCompositeStructure: (projectId: string, moduleId: string, value: CompositeModuleStructure, expected: CompositeModuleStructure | null): string | null => {
       const current = latest.current
       if (current.blocked) return 'Записът на проекта е блокиран. Черновата остава отворена.'

@@ -167,6 +167,10 @@ export function getOfferForm(snapshot: ProjectSnapshot): OfferDraft {
 export function getModules(snapshot: ProjectSnapshot, offerId: string): ProjectModule[] {
   return Object.values(snapshot.modulesById).filter((module) => module.offerId === offerId).sort((a, b) => a.sequence - b.sequence)
 }
+/** Numbering is scoped to the owning offer/workspace, using current persisted modules. */
+export function getNextModuleSequence(snapshot: ProjectSnapshot, offerId: string): number {
+  return getModules(snapshot, offerId).reduce((maximum, module) => Math.max(maximum, module.sequence), 0) + 1
+}
 export function getOfferModules(snapshot: ProjectSnapshot): OfferModuleDraft[] {
   return getModules(snapshot, snapshot.workspace.offerId).flatMap((module) => module.definition.kind === 'offer'
     ? [getModuleDraftView(snapshot, module)] : [])

@@ -130,17 +130,23 @@ test('saving the same input to two modules does not share nested mutable referen
   assert.deepEqual(snapshot.modulesById.B.compositeStructure, input)
   assert.equal(input.frameParts[1].frameSides.bottom, false)
 })
-test('composite save preserves existing split topology, FIELD identities and profile assignments', () => {
+test('editing a historical composite preserves existing split topology, FIELD identities and profile assignments', () => {
   const topology = construction.splitField(construction.createConstructionModel({ xMm: 20, yMm: 40, widthMm: 1800, heightMm: 1400 }), 'field-1', 'vertical', 700)
   const before = ops.editProject(fixture(), (next) => {
     for (const id of ['A', 'B', 'C']) {
+      // Historical coexistence stays editable; 01D.2A separately rejects NEW conflicts.
+      next.modulesById[id].compositeStructure = structure(id)
       next.constructionDraftsByModuleId[id] = { version: 'constructor-01d', frame: structuredClone(topology.frame), topology: structuredClone(topology) }
       next.profileResolutionsByModuleId[id].frame = { profileCode: '482.30', source: 'human' }
     }
   })
   codec.validateProjectSnapshot(before)
   let saved = before
-  for (const id of ['A', 'B', 'C']) saved = save(saved, id, structure(id))
+  for (const id of ['A', 'B', 'C']) {
+    const edited = structure(id); edited.frameParts[0].widthMm = 1550
+    saved = save(saved, id, edited)
+    assert.equal(saved.modulesById[id].compositeStructure.frameParts[0].widthMm, 1550)
+  }
   const restored = codec.deserializeProject(codec.serializeProject(saved))
   assert.deepEqual(restored.constructionDraftsByModuleId, before.constructionDraftsByModuleId)
   assert.deepEqual(restored.profileResolutionsByModuleId, before.profileResolutionsByModuleId)

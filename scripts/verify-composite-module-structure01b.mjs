@@ -201,7 +201,8 @@ test('source contracts: 01A reuse, isolated navigation, no geometry/models/persi
   assert.match(adapter, /validateCompositeModuleStructure\(draft\)/)
   assert.doesNotMatch(app, /id: 'composite-structure'/)
   assert.match(app, /<CompositeModuleStructurePanel key=/)
-  assert.match(app, /Структура на модула · Модул/)
+  assert.match(app, /<CompositeModuleEntry/)
+  assert.match(read('src/components/CompositeModuleEntry.tsx'), /Структура на модула · Модул/)
   for (const source of [panel, adapter]) {
     assert.doesNotMatch(source, /localStorage|sessionStorage|fetch\(|modelId|ConstructorShell|ProjectSnapshot|window\.open/)
     assert.doesNotMatch(source, /(?:type|interface) (?:CompositeModuleStructure|CompositeFramePart|FrameSides|FramePartConnection)\s*[={]/)

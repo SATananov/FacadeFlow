@@ -9,8 +9,9 @@ import { assertHistoryPreserved, freezeHistory } from './revisionOperations'
 import { canonicalize } from '../assurance/canonical'
 import { validateCompositeModuleStructure, type CompositeModuleStructure } from '../compositeModuleStructure'
 import { CompositeModuleBindingError, guardCompositeSystemChange, validateModuleCompositeStructure } from './compositeModuleBinding'
+import { needsCompositeModuleGuard, proposeCompositeModule, type CompositeModuleCreationRequest } from './compositeModuleGuard'
 import {
-  createStableId, getEditingOffer, getModules, settingsFromForm, EMPTY_OFFER,
+  createStableId, getEditingOffer, getModules, getFreeModules, getOfferModules, getNextModuleSequence, getProjectModuleSystemId, settingsFromForm, EMPTY_OFFER,
   type FreeConstructorModule, type IdFactory, type OfferDraft, type ProjectModule, type ProjectSnapshot,
 } from './projectModel'
 
@@ -130,6 +131,39 @@ export function clearConfiguredModules(snapshot: ProjectSnapshot): void {
   if (!offer.pendingCopyModuleId) replaceOfferModules(snapshot, [])
 }
 
+/** Shared normal Add Module flow. Only defaults/system are inherited; all content starts clean. */
+export function createNextProjectModule(
+  snapshot: ProjectSnapshot, offerId: string, sourceModuleId: string | null, idFactory: IdFactory = createStableId,
+): { snapshot: ProjectSnapshot; moduleId: string } {
+  const owner = snapshot.offersById[offerId], source = sourceModuleId ? snapshot.modulesById[sourceModuleId] : undefined
+  if (!owner || (sourceModuleId && (!source || source.offerId !== offerId))) throw new CompositeModuleBindingError('Модулът или проектът е променен. Отвори го отново.')
+  if (offerId !== (owner.entryMode === 'free' ? snapshot.workspace.freeOfferId : snapshot.workspace.offerId)) throw new CompositeModuleBindingError('Офертата е сменена. Отвори модула отново.')
+  const moduleId = idFactory(), sequence = getNextModuleSequence(snapshot, offerId)
+  if (snapshot.modulesById[moduleId]) throw new CompositeModuleBindingError('Модулът вече съществува.')
+  const next = editProject(snapshot, (draft) => {
+    if (owner.entryMode === 'free') {
+      const profileSystemId = source ? getProjectModuleSystemId(source) : ''
+      replaceFreeModules(draft, [...getFreeModules(draft), { id: moduleId, sequence, profileSystemId, productType: null,
+        profileResolution: profileSystemId ? createModuleProfileResolution(profileSystemId) : null }])
+    } else {
+      replaceOfferModules(draft, [...getOfferModules(draft), createOfferModule(buildOfferModuleDefaults(owner.settingsDraft), sequence, moduleId)])
+      draft.workspace.screen = 'offer-constructor'
+    }
+    draft.workspace.activeModuleIdByOffer[offerId] = moduleId
+  })
+  return { snapshot: next, moduleId }
+}
+
+/** Only the explicit dialog action calls this. A stale proposal never creates a differently named module. */
+export function createConfirmedCompositeModule(snapshot: ProjectSnapshot, request: CompositeModuleCreationRequest, idFactory: IdFactory = createStableId) {
+  const current = proposeCompositeModule(snapshot, request.moduleId)
+  if (canonicalize(current) !== canonicalize(request)
+    || snapshot.workspace.activeModuleIdByOffer[request.offerId] !== request.moduleId) {
+    throw new CompositeModuleBindingError('Модулите са променени. Затвори диалога и отвори „Структура на модула“ отново.')
+  }
+  return createNextProjectModule(snapshot, request.offerId, request.moduleId, idFactory)
+}
+
 export function copyFreeModuleToOffer(
   snapshot: ProjectSnapshot, sourceModuleId: string, draft: ConstructorDraftSnapshot | null,
   idFactory: IdFactory = createStableId,
@@ -164,6 +198,7 @@ export function saveModuleCompositeStructure(
 ): ProjectSnapshot {
   const module = snapshot.modulesById[moduleId]
   if (!module) throw new CompositeModuleBindingError('Модулът вече не съществува.')
+  if (needsCompositeModuleGuard(snapshot, moduleId)) throw new CompositeModuleBindingError('Модулът вече съдържа конструкция. Отвори „Структура на модула“, за да създадеш отделен модул.')
   validateCompositeModuleStructure(value)
   if (canonicalize(module.compositeStructure ?? null) !== canonicalize(expected)) {
     throw new CompositeModuleBindingError('Структурата е променена след отварянето. Отвори я отново преди запис.')

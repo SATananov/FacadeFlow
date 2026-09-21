@@ -5,7 +5,8 @@ import { AssemblyReviewPanel } from './components/AssemblyReviewPanel'
 import { ProjectManagerPanel } from './components/ProjectManagerPanel'
 import { ModelLibraryPanel } from './components/ModelLibraryPanel'
 import { CompositeModuleStructurePanel } from './components/CompositeModuleStructurePanel'
-import { createStableId, getEditingOffer, getProjectActivity, getProjectDisplayName, getProjectModuleSystemId, type OfferDraft, type FreeConstructorModule } from './domain/project/projectModel'
+import { CompositeModuleEntry } from './components/CompositeModuleEntry'
+import { getEditingOffer, getProjectActivity, getProjectDisplayName, getProjectModuleSystemId, type OfferDraft, type FreeConstructorModule } from './domain/project/projectModel'
 import {
   getConfirmedGlazingOptions,
   getConfirmedHardwareStandards,
@@ -26,7 +27,6 @@ import {
   type ModuleProfileResolution,
 } from './domain/profileResolution'
 import {
-  createOfferModule,
   areOfferModuleFieldsDescribed,
   getOfferModuleConfiguredFieldCount,
   getOfferModuleConfiguredOpeningCount,
@@ -688,26 +688,7 @@ export default function App() {
   }
 
   const createNextFreeModule = () => {
-    const nextSequence = freeModules.reduce(
-      (maximum, module) => Math.max(maximum, module.sequence),
-      0,
-    ) + 1
-    const created: FreeConstructorModule = {
-      id: createStableId(),
-      sequence: nextSequence,
-      profileSystemId: activeFreeModule?.profileSystemId ?? '',
-      productType: null,
-      profileResolution: activeFreeModule?.profileSystemId
-        ? createModuleProfileResolution(activeFreeModule.profileSystemId)
-        : null,
-    }
-
-    setFreeModules((current) => [...current, created])
-    setActiveFreeModuleId(created.id)
-    setFreeModuleSketchDrafts((current) => ({
-      ...current,
-      [created.id]: null,
-    }))
+    workspace.createModule(workspace.snapshot.workspace.freeOfferId, activeFreeModule?.id ?? null)
   }
 
   const selectFreeModule = (moduleId: string) => {
@@ -771,26 +752,7 @@ export default function App() {
 
   const createNextModule = () => {
     if (!moduleDefaults) return
-
-    const nextSequence = modules.reduce(
-      (maximum, module) => Math.max(maximum, module.sequence),
-      0,
-    ) + 1
-    const created = createOfferModule(moduleDefaults, nextSequence)
-
-    setModules((current) => [...current, created])
-    setActiveModuleId(created.id)
-    setModuleSketchDrafts((current) => ({
-      ...current,
-      [created.id]: null,
-    }))
-    setModuleProfileResolutions((current) => ({
-      ...current,
-      [created.id]: createModuleProfileResolution(
-        created.inheritedDefaults.profileSystemId,
-      ),
-    }))
-    setConstructorMode('offer')
+    workspace.createModule(workspace.snapshot.workspace.offerId, firstModule?.id ?? null)
   }
 
   const resetActiveModuleDraft = () => {
@@ -991,10 +953,10 @@ export default function App() {
         </div>
 
         <div className="project-toolbar-secondary">
-          {compositeOwner && (constructorMode || offerStartOpen) && <button type="button"
-            onClick={() => setCompositeEditor({ projectId: workspace.snapshot.project.id, moduleId: compositeOwner.id })}>
-            Структура на модула · Модул {compositeOwner.sequence}
-          </button>}
+          {compositeOwner && (constructorMode || offerStartOpen) && <CompositeModuleEntry
+            key={`${workspace.snapshot.project.id}:${compositeOwner.id}`} snapshot={workspace.snapshot} moduleId={compositeOwner.id}
+            onCreate={workspace.confirmCompositeModule}
+            onOpen={(moduleId) => setCompositeEditor({ projectId: workspace.snapshot.project.id, moduleId })} />}
           <AssemblyReviewPanel snapshot={workspace.snapshot}
             moduleId={(constructorMode === 'free' ? activeFreeModule?.id : activeModuleId) ?? null} />
           <details className="project-technical-tools">

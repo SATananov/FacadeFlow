@@ -1,0 +1,3 @@
+.composite-guard-dialog { max-width: 560px; padding: 0; }
+.composite-guard-dialog::backdrop { background: rgba(5, 25, 33, .58); }
+.composite-guard-error { margin: 0; padding: 0 24px 16px; color: #9b2929; }
