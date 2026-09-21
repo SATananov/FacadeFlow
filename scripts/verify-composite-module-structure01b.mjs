@@ -218,9 +218,8 @@ test('source contracts: 01A reuse, isolated navigation, no geometry/models/persi
     assert.deepEqual(imports, expected)
   }
 })
-test('01A authority and storage adapters retain approved checkpoint content; 01C covers additive module schema', () => {
+test('storage adapters retain approved checkpoint content; 01A and 01D.1 cover the versioned domain', () => {
   const baseline = {
-    'src/domain/compositeModuleStructure.ts': '8171ba08ce586fc102486b59fae5735a9498c82c56a1b5b0e4b52ccd2ab95435',
     'src/persistence/localProjectStorage.ts': '5f49043f6edc4b068853c6bce85fdbc35799975b5e475bd5bcf731b12ca660e7',
     'src/persistence/localModelLibraryStorage.ts': '62805b3f13cd6a75a0355e0199b1f1ee555d11d6772409e20fe7d4e1cf77643c',
   }
@@ -228,6 +227,7 @@ test('01A authority and storage adapters retain approved checkpoint content; 01C
   assert.deepEqual(domain.COMPOSITE_MODULE_STRUCTURE_SAFETY, {
     automaticGeometry: false, rulesValidated: false, machineReady: false,
     zeroDividerExactGeometry: 'UNKNOWN', frameToFrameCompatibility: 'HUMAN REVIEW', exactCutOverlapInset: 'UNKNOWN',
+    automaticPlacement: false, framePartPlacement: 'HUMAN DEFINED',
   })
 })
 console.log(`COMPOSITE MODULE STRUCTURE 01B PASS: ${passed} cases`)

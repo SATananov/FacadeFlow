@@ -4,7 +4,7 @@ import type { Side } from './assembly/assemblyModel'
 import type { ConstructionFieldDefinition } from './construction/constructionModel'
 import type { ModuleProductType } from './offerModules'
 
-export const COMPOSITE_MODULE_STRUCTURE_SCHEMA_VERSION = 1 as const
+export const COMPOSITE_MODULE_STRUCTURE_SCHEMA_VERSION = 2 as const
 export const COMPOSITE_MODULE_STRUCTURE_SAFETY = {
   automaticGeometry: false,
   rulesValidated: false,
@@ -12,13 +12,20 @@ export const COMPOSITE_MODULE_STRUCTURE_SAFETY = {
   zeroDividerExactGeometry: 'UNKNOWN',
   frameToFrameCompatibility: 'HUMAN REVIEW',
   exactCutOverlapInset: 'UNKNOWN',
+  automaticPlacement: false,
+  framePartPlacement: 'HUMAN DEFINED',
 } as const
 
 export type CompositeFramePartFunction = ModuleProductType | null
 /** All four sides are explicit human/domain input, independent of function. */
 export type FrameSides = Record<Side, boolean>
 
-export type CompositeFramePart = {
+export type FramePartPlacement = {
+  order: number | null
+  verticalAlignment: 'TOP' | 'BOTTOM' | null
+}
+
+type FramePartData = {
   readonly id: string
   function: CompositeFramePartFunction
   widthMm: number
@@ -29,6 +36,9 @@ export type CompositeFramePart = {
   fieldIds: readonly ConstructionFieldDefinition['id'][]
 }
 
+export type LegacyCompositeFramePart = FramePartData & { placement?: never }
+export type CompositeFramePart = FramePartData & { placement: FramePartPlacement }
+
 export type FramePartConnection = {
   readonly id: string
   fromFramePartId: CompositeFramePart['id']
@@ -37,13 +47,19 @@ export type FramePartConnection = {
   kind: 'ZERO_DIVIDER'
 }
 
-export type CompositeModuleStructure = {
-  schemaVersion: typeof COMPOSITE_MODULE_STRUCTURE_SCHEMA_VERSION
+type CompositeStructureData = {
   /** Single authority for every part's catalogue membership. */
   systemId: ProfileSystemId
-  frameParts: readonly CompositeFramePart[]
   connections: readonly FramePartConnection[]
 }
+export type CurrentCompositeModuleStructure = CompositeStructureData & {
+  schemaVersion: typeof COMPOSITE_MODULE_STRUCTURE_SCHEMA_VERSION
+  frameParts: readonly CompositeFramePart[]
+}
+export type CompositeModuleStructure = CurrentCompositeModuleStructure | (CompositeStructureData & {
+  schemaVersion: 1
+  frameParts: readonly LegacyCompositeFramePart[]
+})
 
 type ObjectValue = Record<string, unknown>
 function requireThat(condition: unknown, message: string): asserts condition {
@@ -71,7 +87,7 @@ function requireDimension(value: unknown, path: string): void {
  */
 export function validateCompositeModuleStructure(value: unknown): asserts value is CompositeModuleStructure {
   const structure = objectWithKeys(value, ['schemaVersion', 'systemId', 'frameParts', 'connections'], 'structure')
-  requireThat(structure.schemaVersion === COMPOSITE_MODULE_STRUCTURE_SCHEMA_VERSION, 'unsupported schemaVersion')
+  requireThat(structure.schemaVersion === 1 || structure.schemaVersion === COMPOSITE_MODULE_STRUCTURE_SCHEMA_VERSION, 'unsupported schemaVersion')
   requireThat(typeof structure.systemId === 'string', 'systemId: expected string')
   const system = getProfileSystemById(structure.systemId)
   requireThat(system, 'systemId: system not found')
@@ -80,9 +96,21 @@ export function validateCompositeModuleStructure(value: unknown): asserts value 
 
   const partIds = new Set<string>()
   const fieldIds = new Set<string>()
+  const orders = new Set<number>()
   for (const [index, value] of structure.frameParts.entries()) {
     const path = `frameParts[${index}]`
-    const part = objectWithKeys(value, ['id', 'function', 'widthMm', 'heightMm', 'frameProfileCode', 'frameSides', 'fieldIds'], path)
+    const part = objectWithKeys(value, ['id', 'function', 'widthMm', 'heightMm', 'frameProfileCode', 'frameSides', 'fieldIds',
+      ...(structure.schemaVersion === 2 ? ['placement'] : [])], path)
+    if (structure.schemaVersion === 2) {
+      const placement = objectWithKeys(part.placement, ['order', 'verticalAlignment'], `${path}.placement`)
+      const order = placement.order
+      requireThat(order === null || (typeof order === 'number' && Number.isSafeInteger(order) && order > 0), `${path}.placement.order: expected positive safe integer or null`)
+      requireThat(placement.verticalAlignment === null || placement.verticalAlignment === 'TOP' || placement.verticalAlignment === 'BOTTOM', `${path}.placement.verticalAlignment: unsupported alignment`)
+      if (order !== null) {
+        requireThat(!orders.has(order), `${path}.placement.order: duplicate order`)
+        orders.add(order)
+      }
+    }
     requireId(part.id, `${path}.id`)
     requireThat(!partIds.has(part.id), `${path}: duplicate frame part ID`)
     partIds.add(part.id)
@@ -131,13 +159,22 @@ export function validateCompositeModuleStructure(value: unknown): asserts value 
 
 /** Copies explicit input and preserves caller-supplied stable IDs. No auto layout. */
 export function createCompositeModuleStructure(
-  input: Omit<CompositeModuleStructure, 'schemaVersion'>,
-): CompositeModuleStructure {
+  input: Omit<CurrentCompositeModuleStructure, 'schemaVersion'>,
+): CurrentCompositeModuleStructure {
   const structure = { ...input, schemaVersion: COMPOSITE_MODULE_STRUCTURE_SCHEMA_VERSION }
   validateCompositeModuleStructure(structure)
-  return {
-    ...structure,
-    frameParts: structure.frameParts.map((part) => ({ ...part, frameSides: { ...part.frameSides }, fieldIds: [...part.fieldIds] })),
-    connections: structure.connections.map((connection) => ({ ...connection })),
-  }
+  return structuredClone(structure)
+}
+
+/** Detached editor migration only. Loading a project never rewrites saved data or history. */
+export function upgradeCompositeModuleStructure(value: CompositeModuleStructure): CurrentCompositeModuleStructure {
+  validateCompositeModuleStructure(value)
+  if (value.schemaVersion === 2) return structuredClone(value)
+  return createCompositeModuleStructure({ ...value,
+    frameParts: value.frameParts.map((part) => ({ ...part, placement: { order: null, verticalAlignment: null } })),
+  })
+}
+/** Read-only legacy view: unknown placement is never derived from array position. */
+export function getFramePartPlacement(part: CompositeFramePart | LegacyCompositeFramePart): FramePartPlacement {
+  return part.placement ? { ...part.placement } : { order: null, verticalAlignment: null }
 }

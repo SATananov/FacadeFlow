@@ -42,9 +42,9 @@ function fixture() {
 function structure(prefix = 'A') {
   return domain.createCompositeModuleStructure({ systemId: 'kmg-prelude-60', frameParts: [
     { id: `${prefix}-window`, function: 'window', widthMm: 1500, heightMm: 1500, frameProfileCode: '482.30',
-      frameSides: { top: true, right: true, bottom: true, left: true }, fieldIds: [] },
+      frameSides: { top: true, right: true, bottom: true, left: true }, fieldIds: [], placement: { order: null, verticalAlignment: null } },
     { id: `${prefix}-door`, function: 'door', widthMm: 700, heightMm: 2000, frameProfileCode: '482.20',
-      frameSides: { top: true, right: true, bottom: false, left: true }, fieldIds: [] },
+      frameSides: { top: true, right: true, bottom: false, left: true }, fieldIds: [], placement: { order: null, verticalAlignment: null } },
   ], connections: [{ id: `${prefix}-connection`, fromFramePartId: `${prefix}-window`, toFramePartId: `${prefix}-door`, kind: 'ZERO_DIVIDER' }] })
 }
 const save = (snapshot, id, value) => ops.saveModuleCompositeStructure(snapshot, id, value, snapshot.modulesById[id]?.compositeStructure ?? null)
@@ -82,7 +82,7 @@ test('free/offer structures round-trip losslessly via actual local project stora
   for (const id of ['A', 'B', 'C']) {
     const actual = restored.modulesById[id].compositeStructure
     assert.deepEqual(actual, structure(id))
-    assert.equal(actual.schemaVersion, 1)
+    assert.equal(actual.schemaVersion, domain.COMPOSITE_MODULE_STRUCTURE_SCHEMA_VERSION)
     assert.equal(actual.frameParts[1].frameSides.bottom, false)
     assert.deepEqual(actual.frameParts.map((part) => [part.widthMm, part.heightMm]), [[1500, 1500], [700, 2000]])
     assert.deepEqual(actual.frameParts.map((part) => part.frameProfileCode), ['482.30', '482.20'])

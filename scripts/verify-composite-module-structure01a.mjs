@@ -13,9 +13,9 @@ const frameProfiles = prelude.mainProfiles.filter((profile) => profile.role === 
 assert.ok(frameProfiles.length >= 2, 'Scenario C needs two real catalogue frame profiles')
 const closed = () => ({ top: true, right: true, bottom: true, left: true })
 const windowPart = () => ({ id: 'part-window', function: 'window', widthMm: 1500, heightMm: 1500,
-  frameProfileCode: frameProfiles[0].code, frameSides: closed(), fieldIds: ['field-1'] })
+  frameProfileCode: frameProfiles[0].code, frameSides: closed(), fieldIds: ['field-1'], placement: { order: null, verticalAlignment: null } })
 const doorPart = () => ({ id: 'part-door', function: 'door', widthMm: 700, heightMm: 2000,
-  frameProfileCode: frameProfiles[1].code, frameSides: { ...closed(), bottom: false }, fieldIds: ['field-2'] })
+  frameProfileCode: frameProfiles[1].code, frameSides: { ...closed(), bottom: false }, fieldIds: ['field-2'], placement: { order: null, verticalAlignment: null } })
 const connection = () => ({ id: 'connection-1', fromFramePartId: 'part-window', toFramePartId: 'part-door', kind: 'ZERO_DIVIDER' })
 const composite = () => ({ schemaVersion: version, systemId: prelude.id,
   frameParts: [windowPart(), doorPart()], connections: [connection()] })
@@ -142,7 +142,7 @@ reject('unknown frame function rejected', (s) => { s.frameParts[0].function = 's
 reject('unset function must be explicit null', (s) => { delete s.frameParts[0].function }, /missing explicit property/)
 reject('profile absence must be explicit null', (s) => { delete s.frameParts[0].frameProfileCode }, /missing explicit property/)
 test('unknown versions and malformed envelopes rejected', () => {
-  for (const value of [null, [], 'bad', {}, { ...composite(), schemaVersion: 2 }]) assert.throws(() => validate(value))
+  for (const value of [null, [], 'bad', {}, { ...composite(), schemaVersion: 99 }]) assert.throws(() => validate(value))
 })
 test('connection pair encoding cannot confuse IDs containing delimiters', () => {
   const ids = ['a|b', 'c', 'a', 'b|c']
@@ -177,6 +177,7 @@ test('K: no automatic geometry, layout, model assignment or engineering compatib
   assert.deepEqual(safety, {
     automaticGeometry: false, rulesValidated: false, machineReady: false,
     zeroDividerExactGeometry: 'UNKNOWN', frameToFrameCompatibility: 'HUMAN REVIEW', exactCutOverlapInset: 'UNKNOWN',
+    automaticPlacement: false, framePartPlacement: 'HUMAN DEFINED',
   })
   const source = readFileSync(new URL('../src/domain/compositeModuleStructure.ts', import.meta.url), 'utf8')
   const ast = ts.createSourceFile('compositeModuleStructure.ts', source, ts.ScriptTarget.Latest, true)

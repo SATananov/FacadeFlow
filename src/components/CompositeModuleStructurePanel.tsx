@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { getProfileSystemById } from '../data/profileSystems/catalog'
 import type { CompositeFramePart, CompositeModuleStructure, FrameSides } from '../domain/compositeModuleStructure'
+import type { CurrentCompositeModuleStructure } from '../domain/compositeModuleStructure'
 import {
   addCompositeFramePart, compositeDraftProblem, compositeFrameCandidates,
   connectCompositeParts, emptyCompositeDraft, removeCompositeFramePart,
+  openCompositeDraft, orderedCompositeParts, placeCompositePart, moveCompositePart,
 } from './compositeModuleStructureDraft'
 import './CompositeModuleStructurePanel.css'
 
@@ -24,8 +26,8 @@ export type CompositeModuleStructurePanelProps = {
 
 export function CompositeModuleStructurePanel({ moduleNumber, systemId, initialValue, onSave, onCancel }: CompositeModuleStructurePanelProps) {
   const [baseline] = useState(() => structuredClone(initialValue))
-  const [draft, setDraft] = useState<CompositeModuleStructure>(() => baseline
-    ? structuredClone(baseline) : { ...emptyCompositeDraft(), systemId })
+  const [draft, setDraft] = useState<CurrentCompositeModuleStructure>(() => baseline
+    ? openCompositeDraft(baseline) : { ...emptyCompositeDraft(), systemId })
   const [fromPartId, setFromPartId] = useState('')
   const [toPartId, setToPartId] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -33,9 +35,12 @@ export function CompositeModuleStructurePanel({ moduleNumber, systemId, initialV
   const candidates = compositeFrameCandidates(draft.systemId)
   const problem = draft.systemId !== systemId ? 'Системата на модула е променена. Откажи и отвори структурата отново.' : compositeDraftProblem(draft)
   const partLabel = (id: string) => `Рамкова част ${draft.frameParts.findIndex((part) => part.id === id) + 1}`
+  const orderedParts = orderedCompositeParts(draft)
+  const placementUnresolved = draft.frameParts.some((part) => part.placement.order === null || part.placement.verticalAlignment === null)
+  const alignmentLabel = (part: CompositeFramePart) => part.placement.verticalAlignment === 'TOP' ? 'Горе' : part.placement.verticalAlignment === 'BOTTOM' ? 'Долу' : 'Не е определено'
 
-  const updateDraft = (next: CompositeModuleStructure) => { setDraft(next); setError(null); setNotice('') }
-  const updatePart = (id: string, patch: Partial<Pick<CompositeFramePart, 'function' | 'widthMm' | 'heightMm' | 'frameProfileCode' | 'frameSides'>>) => {
+  const updateDraft = (next: CurrentCompositeModuleStructure) => { setDraft(next); setError(null); setNotice('') }
+  const updatePart = (id: string, patch: Partial<Pick<CompositeFramePart, 'function' | 'widthMm' | 'heightMm' | 'frameProfileCode' | 'frameSides' | 'placement'>>) => {
     updateDraft({ ...draft, frameParts: draft.frameParts.map((part) => part.id === id ? { ...part, ...patch } : part) })
   }
   const removePart = (id: string) => {
@@ -85,6 +90,7 @@ export function CompositeModuleStructurePanel({ moduleNumber, systemId, initialV
         <div className="composite-layout">
           <div className="composite-editor">
             <h3>2. Рамкови части</h3>
+            <p className="composite-hint">Номерът на рамковата част я обозначава, но не определя мястото ѝ. Задай позиция отляво надясно и подравняване отделно. Новите части започват без определено разположение.</p>
             {draft.frameParts.length === 0 && <p>След избора на система добави първата рамкова част.</p>}
             {draft.frameParts.map((part, index) => (
               <fieldset className="composite-part" key={part.id}>
@@ -95,6 +101,32 @@ export function CompositeModuleStructurePanel({ moduleNumber, systemId, initialV
                   <option value="">Избери функция</option>
                   <option value="window">Прозорец</option>
                   <option value="door">Врата</option>
+                </select>
+                <label htmlFor={`composite-position-${part.id}`}>Позиция в модула</label>
+                <select id={`composite-position-${part.id}`} value={part.placement.order === null ? '' : 'current'}
+                  onChange={(event) => {
+                    const value = event.target.value
+                    if (!value) updatePart(part.id, { placement: { ...part.placement, order: null } })
+                    else if (value !== 'current') updateDraft(placeCompositePart(draft, part.id, value === 'end' ? null : value.slice(7)))
+                  }}>
+                  <option value="">Не е определена</option>
+                  {part.placement.order !== null && <option value="current">Ред {part.placement.order} отляво надясно</option>}
+                  {orderedParts.filter((other) => other.id !== part.id).map((other) => <option key={other.id} value={`before:${other.id}`}>Преди {partLabel(other.id)} · {functionLabel(other.function)}</option>)}
+                  <option value="end">{orderedParts.some((other) => other.id !== part.id) ? 'След подредените части' : 'Постави първа'}</option>
+                </select>
+                <div className="composite-editor-actions">
+                  <button type="button" id={`composite-move-left-${part.id}`} disabled={part.placement.order === null || orderedParts[0]?.id === part.id}
+                    onClick={() => updateDraft(moveCompositePart(draft, part.id, 'left'))}>Наляво</button>
+                  <button type="button" id={`composite-move-right-${part.id}`} disabled={part.placement.order === null || orderedParts.at(-1)?.id === part.id}
+                    onClick={() => updateDraft(moveCompositePart(draft, part.id, 'right'))}>Надясно</button>
+                </div>
+                <label htmlFor={`composite-alignment-${part.id}`}>Вертикално подравняване</label>
+                <select id={`composite-alignment-${part.id}`} value={part.placement.verticalAlignment ?? ''}
+                  onChange={(event) => updatePart(part.id, { placement: { ...part.placement,
+                    verticalAlignment: event.target.value === 'TOP' ? 'TOP' : event.target.value === 'BOTTOM' ? 'BOTTOM' : null } })}>
+                  <option value="">Не е определено</option>
+                  <option value="TOP">Горе</option>
+                  <option value="BOTTOM">Долу</option>
                 </select>
                 <div className="composite-dimensions">
                   <div><label htmlFor={`composite-width-${part.id}`}>Ширина, mm</label>
@@ -155,13 +187,15 @@ export function CompositeModuleStructurePanel({ moduleNumber, systemId, initialV
             <h3 id="composite-summary-title">Обобщение</h3>
             <p>Система: <strong>{getProfileSystemById(draft.systemId)?.name ?? 'Не е избрана'}</strong></p>
             <p>Рамкови части: {draft.frameParts.length}</p>
-            <ol>{draft.frameParts.map((part) => <li key={part.id}>
+            <p role="status">{placementUnresolved ? 'Разположението не е напълно определено. Може да запазиш като чернова.' : 'Разположението е зададено от човек.'}</p>
+            <ul>{[...orderedParts, ...draft.frameParts.filter((part) => part.placement.order === null)].map((part) => <li key={part.id}>
               <strong>{functionLabel(part.function)}</strong>
+              <p>{partLabel(part.id)} · Позиция: {part.placement.order ?? 'Не е определена'} · Подравняване: {alignmentLabel(part)}</p>
               <p>{dimensionLabel(part.widthMm)} × {dimensionLabel(part.heightMm)} mm</p>
               <p>Каса: {part.frameProfileCode ?? 'Не е избрана'}</p>
               <p>Страни: {sides.filter((side) => part.frameSides[side.key]).map((side) => side.label.toLowerCase()).join(' / ') || 'Няма включени страни'}</p>
               {!part.frameSides.bottom && <p>Долу: няма каса</p>}
-            </li>)}</ol>
+            </li>)}</ul>
             <h4>Връзки</h4>
             {draft.connections.length === 0 ? <p>Няма добавени връзки.</p> : <ul>{draft.connections.map((connection) => <li key={connection.id}>
               {partLabel(connection.fromFramePartId)} ↔ {partLabel(connection.toFramePartId)}<br />Нулев делител
