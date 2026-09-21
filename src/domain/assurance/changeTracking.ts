@@ -21,6 +21,8 @@ export function dependencyContents(graph: Graph): Record<ChangeKey, unknown> {
   }
   for (const module of Object.values(graph.modulesById)) result[`module:${module.id}`] = {
     id: module.id, offerId: module.offerId, definition: module.definition,
+    // Omit absent/null data to preserve legacy dependency digests and history.
+    ...(module.compositeStructure ? { compositeStructure: module.compositeStructure } : {}),
     construction: graph.constructionDraftsByModuleId[module.id], profiles: graph.profileResolutionsByModuleId[module.id],
   }
   return result

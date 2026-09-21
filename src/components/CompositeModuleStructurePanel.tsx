@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { getProfileSystemById, profileSystemCatalog } from '../data/profileSystems/catalog'
+import { getProfileSystemById } from '../data/profileSystems/catalog'
 import type { CompositeFramePart, CompositeModuleStructure, FrameSides } from '../domain/compositeModuleStructure'
 import {
-  addCompositeFramePart, changeCompositeSystem, compositeDraftProblem, compositeFrameCandidates,
+  addCompositeFramePart, compositeDraftProblem, compositeFrameCandidates,
   connectCompositeParts, emptyCompositeDraft, removeCompositeFramePart,
 } from './compositeModuleStructureDraft'
 import './CompositeModuleStructurePanel.css'
@@ -14,14 +14,24 @@ const sides: readonly { key: keyof FrameSides; label: string }[] = [
 const functionLabel = (value: CompositeFramePart['function']) => value === 'window' ? 'Прозорец' : value === 'door' ? 'Врата' : 'Не е избрана функция'
 const dimensionLabel = (value: number) => Number.isFinite(value) && value > 0 ? String(value) : 'не е въведено'
 
-export function CompositeModuleStructurePanel() {
-  const [draft, setDraft] = useState<CompositeModuleStructure>(emptyCompositeDraft)
+export type CompositeModuleStructurePanelProps = {
+  moduleNumber: number
+  systemId: string
+  initialValue: CompositeModuleStructure | null
+  onSave: (value: CompositeModuleStructure, expected: CompositeModuleStructure | null) => string | null
+  onCancel: () => void
+}
+
+export function CompositeModuleStructurePanel({ moduleNumber, systemId, initialValue, onSave, onCancel }: CompositeModuleStructurePanelProps) {
+  const [baseline] = useState(() => structuredClone(initialValue))
+  const [draft, setDraft] = useState<CompositeModuleStructure>(() => baseline
+    ? structuredClone(baseline) : { ...emptyCompositeDraft(), systemId })
   const [fromPartId, setFromPartId] = useState('')
   const [toPartId, setToPartId] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState('')
   const candidates = compositeFrameCandidates(draft.systemId)
-  const problem = compositeDraftProblem(draft)
+  const problem = draft.systemId !== systemId ? 'Системата на модула е променена. Откажи и отвори структурата отново.' : compositeDraftProblem(draft)
   const partLabel = (id: string) => `Рамкова част ${draft.frameParts.findIndex((part) => part.id === id) + 1}`
 
   const updateDraft = (next: CompositeModuleStructure) => { setDraft(next); setError(null); setNotice('') }
@@ -50,18 +60,26 @@ export function CompositeModuleStructurePanel() {
     <section className="product-section-page composite-structure" aria-labelledby="composite-title">
       <div className="product-section-panel">
         <span className="product-section-eyebrow">РЪЧНО ОПИСАНИЕ</span>
-        <h2 id="composite-title">Структура на модул</h2>
-        <p>Избери система, добави рамкови части и опиши връзките между тях.</p>
-        <p className="composite-draft-note">Временна чернова — не се записва. При напускане на секцията или презареждане въведеното се губи.</p>
+        <h2 id="composite-title">Структура на Модул {moduleNumber}</h2>
+        <p>Редактираш структурата на Модул {moduleNumber}. Добави рамкови части и опиши връзките между тях.</p>
+        <p className="composite-draft-note">Промените се записват в проекта само с „Запази“. „Откажи“ запазва предишната структура.</p>
+        <div className="composite-editor-actions">
+          <button type="button" className="composite-primary" disabled={Boolean(problem)} onClick={() => {
+            const validation = compositeDraftProblem(draft)
+            if (draft.systemId !== systemId || validation) { setError(validation ?? 'Системата на структурата не съвпада с модула.'); return }
+            const failure = onSave(draft, baseline)
+            if (failure) setError(failure)
+            else onCancel()
+          }}>Запази</button>
+          <button type="button" onClick={onCancel}>Откажи</button>
+        </div>
+        {error && <p className="composite-error" role="alert">{error}</p>}
         <p className="composite-boundary">Само структурно описание. Съвместимостта между касите изисква човешка проверка. Точната геометрия на връзката не е определена. Не се изчисляват срезове, застъпвания или отстъпи.</p>
 
         <div className="composite-system">
-          <label htmlFor="composite-system">1. Система</label>
-          <select id="composite-system" value={draft.systemId} onChange={(event) => updateDraft(changeCompositeSystem(draft, event.target.value))}>
-            <option value="">Избери система</option>
-            {profileSystemCatalog.map((system) => <option key={system.id} value={system.id}>{system.name}</option>)}
-          </select>
-          <p>При смяна на системата несъвместимите касови профили се изчистват.</p>
+          <label htmlFor="composite-system">1. Система на модула</label>
+          <input id="composite-system" readOnly value={getProfileSystemById(systemId)?.name ?? 'Не е избрана'} />
+          <p>{systemId ? 'След запис на структура системата на този модул е заключена.' : 'Откажи и избери система чрез съществуващите настройки на модула.'}</p>
         </div>
 
         <div className="composite-layout">
@@ -129,7 +147,6 @@ export function CompositeModuleStructurePanel() {
                 <button type="button" aria-label={`Изтрий връзка: ${partLabel(connection.fromFramePartId)} ↔ ${partLabel(connection.toFramePartId)}`}
                   onClick={() => updateDraft({ ...draft, connections: draft.connections.filter((item) => item.id !== connection.id) })}>Изтрий връзка</button>
               </div>)}
-              {error && <p className="composite-error" role="alert">{error}</p>}
               <p role="status" className="composite-notice">{notice}</p>
             </section>
           </div>

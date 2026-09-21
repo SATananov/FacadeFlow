@@ -5,7 +5,7 @@ import { AssemblyReviewPanel } from './components/AssemblyReviewPanel'
 import { ProjectManagerPanel } from './components/ProjectManagerPanel'
 import { ModelLibraryPanel } from './components/ModelLibraryPanel'
 import { CompositeModuleStructurePanel } from './components/CompositeModuleStructurePanel'
-import { createStableId, getEditingOffer, getProjectActivity, getProjectDisplayName, type OfferDraft, type FreeConstructorModule } from './domain/project/projectModel'
+import { createStableId, getEditingOffer, getProjectActivity, getProjectDisplayName, getProjectModuleSystemId, type OfferDraft, type FreeConstructorModule } from './domain/project/projectModel'
 import {
   getConfirmedGlazingOptions,
   getConfirmedHardwareStandards,
@@ -63,7 +63,7 @@ import './App.css'
 
 const nadezhdaLogoUrl = './branding/nadezhda-header.png'
 
-type HeaderSection = 'home' | 'orders' | 'completed-orders' | 'catalogs' | 'models' | 'composite-structure' | 'help'
+type HeaderSection = 'home' | 'orders' | 'completed-orders' | 'catalogs' | 'models' | 'help'
 
 const HEADER_NAV_ITEMS: ReadonlyArray<{ id: HeaderSection; label: string }> = [
   { id: 'home', label: 'Начало' },
@@ -71,7 +71,6 @@ const HEADER_NAV_ITEMS: ReadonlyArray<{ id: HeaderSection; label: string }> = [
   { id: 'completed-orders', label: 'Завършени поръчки' },
   { id: 'catalogs', label: 'Каталози' },
   { id: 'models', label: 'Модели' },
-  { id: 'composite-structure', label: 'Структура на модул' },
   { id: 'help', label: 'Помощ' },
 ]
 
@@ -129,6 +128,7 @@ const CONFIRMED_HARDWARE_STANDARDS = getConfirmedHardwareStandards()
 
 export default function App() {
   const [headerSection, setHeaderSection] = useState<HeaderSection>('home')
+  const [compositeEditor, setCompositeEditor] = useState<{ projectId: string; moduleId: string } | null>(null)
   const [updateCheck, setUpdateCheck] = useState<
     | { status: 'idle' }
     | { status: 'checking' }
@@ -654,12 +654,14 @@ export default function App() {
   }
 
   const openHome = () => {
+    setCompositeEditor(null)
     setHeaderSection('home')
     setConstructorMode(null)
     setOfferStartOpen(false)
   }
 
   const openHeaderSection = (section: HeaderSection) => {
+    setCompositeEditor(null)
     if (section === 'home') {
       openHome()
       return
@@ -670,6 +672,7 @@ export default function App() {
   }
 
   const startNewOffer = () => {
+    setCompositeEditor(null)
     setHeaderSection('home')
     workspace.newProject()
   }
@@ -844,6 +847,10 @@ export default function App() {
 
 
   const projectActivity = getProjectActivity(workspace.snapshot)
+  const compositeOwnerId = constructorMode === 'free' ? activeFreeModule?.id : firstModule?.id
+  const compositeOwner = compositeOwnerId ? workspace.snapshot.modulesById[compositeOwnerId] : undefined
+  const compositeEditing = compositeOwner && compositeEditor?.projectId === workspace.snapshot.project.id
+    && compositeEditor.moduleId === compositeOwner.id ? compositeOwner : null
   const hasFreeConstructorWork = projectActivity.hasFreeWork
   const hasOfferConstructorWork = modules.length > 0
   const hasOfferProjectWork = projectActivity.hasOfferWork
@@ -860,6 +867,7 @@ export default function App() {
   })()
 
   const openConstructorFromHome = () => {
+    setCompositeEditor(null)
     setHeaderSection('home')
     setOfferStartOpen(false)
     if (hasOfferConstructorWork) {
@@ -983,6 +991,10 @@ export default function App() {
         </div>
 
         <div className="project-toolbar-secondary">
+          {compositeOwner && (constructorMode || offerStartOpen) && <button type="button"
+            onClick={() => setCompositeEditor({ projectId: workspace.snapshot.project.id, moduleId: compositeOwner.id })}>
+            Структура на модула · Модул {compositeOwner.sequence}
+          </button>}
           <AssemblyReviewPanel snapshot={workspace.snapshot}
             moduleId={(constructorMode === 'free' ? activeFreeModule?.id : activeModuleId) ?? null} />
           <details className="project-technical-tools">
@@ -1003,8 +1015,14 @@ export default function App() {
         </span>}
       </div>
 
-      <main className={constructorMode ? 'constructor-host' : 'home-workspace'}>
-        {constructorMode === 'free' ? (
+      <main className={constructorMode && !compositeEditing ? 'constructor-host' : 'home-workspace'}>
+        {compositeEditing ? (
+          <CompositeModuleStructurePanel key={`${workspace.snapshot.project.id}:${compositeEditing.id}`}
+            moduleNumber={compositeEditing.sequence} systemId={getProjectModuleSystemId(compositeEditing)}
+            initialValue={compositeEditing.compositeStructure ?? null}
+            onSave={(value, expected) => workspace.saveCompositeStructure(workspace.snapshot.project.id, compositeEditing.id, value, expected)}
+            onCancel={() => setCompositeEditor(null)} />
+        ) : constructorMode === 'free' ? (
           <ConstructorShell
             key={activeFreeModule?.id ?? 'free-no-module'}
             mode="free"
@@ -1235,8 +1253,6 @@ export default function App() {
               </div>
             </div>
           </section>
-        ) : headerSection === 'composite-structure' ? (
-          <CompositeModuleStructurePanel />
         ) : headerSection === 'models' ? (
           <ModelLibraryPanel />
         ) : headerSection === 'catalogs' ? (

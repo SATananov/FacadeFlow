@@ -3,6 +3,8 @@ import { validateAssuranceSnapshot } from '../assurance/assuranceValidation'
 import { migratePF01Snapshot } from './projectMigration'
 import { freezeHistory } from './revisionOperations'
 import { backfillAdditiveReviewEvidence } from '../assurance/legacyEvidenceAdapter'
+import { validateModuleCompositeStructure } from './compositeModuleBinding'
+import type { ProjectModule } from './projectModel'
 
 type Obj = Record<string, unknown>
 function requireThat(value: unknown, message: string): asserts value {
@@ -152,7 +154,7 @@ function profileResolution(value: unknown, topology: ReturnType<typeof construct
 }
 
 /** Shape/ownership validation only; no catalogue inference or technical approval. */
-export function validatePF01Snapshot(value: unknown): asserts value is PF01Snapshot {
+function validateProjectGraph(value: unknown, allowCompositeStructure: boolean): void {
   const root = keys(value, ['schemaVersion', 'project', 'offersById', 'modulesById', 'constructionDraftsByModuleId', 'profileResolutionsByModuleId', 'workspace'])
   requireThat(root.schemaVersion === 'project-foundation-01', 'unsupported schema version')
   const project = keys(root.project, ['id', 'client', 'site']); id(project.id)
@@ -176,9 +178,15 @@ export function validatePF01Snapshot(value: unknown): asserts value is PF01Snaps
     }
   }
   for (const [key, value] of Object.entries(modules)) {
-    const module = keys(value, ['id', 'offerId', 'sequence', 'definition']); id(module.id); id(module.offerId); sequence(module.sequence)
+    const module = keys(
+      value,
+      ['id', 'offerId', 'sequence', 'definition'],
+      allowCompositeStructure ? ['compositeStructure'] : [],
+    )
+    id(module.id); id(module.offerId); sequence(module.sequence)
     requireThat(key === module.id && !ids.has(key), 'module identity'); ids.add(key)
     const owner = object(offers[module.offerId]); definition(module.definition)
+    validateModuleCompositeStructure(module as ProjectModule)
     requireThat(object(module.definition).kind === owner.entryMode, 'module kind ownership')
     requireThat(Object.hasOwn(drafts, key) && Object.hasOwn(profiles, key), 'missing module payload')
     const topology = construction(drafts[key])
@@ -220,12 +228,22 @@ export function validatePF01Snapshot(value: unknown): asserts value is PF01Snaps
   }
 }
 
+/** Historical input has no opt-in to fields from later project revisions. */
+export function validatePF01Snapshot(value: unknown): asserts value is PF01Snapshot {
+  validateProjectGraph(value, false)
+}
+
 export function validateProjectSnapshot(value: unknown): asserts value is ProjectSnapshot {
   const root = keys(value, ['schemaVersion', 'project', 'offersById', 'modulesById', 'constructionDraftsByModuleId', 'profileResolutionsByModuleId', 'workspace', 'revisions', 'assurance'])
   requireThat(root.schemaVersion === 'project-foundation-02', 'unsupported schema version')
+  // Assurance supplies revision content in a legacy-shaped graph envelope;
+  // these are PF02 revisions, not PF01 input being migrated.
+  function validatePF02Graph(graphValue: unknown): void {
+    validateProjectGraph(graphValue, true)
+  }
   const { revisions: _revisions, assurance: _assurance, ...graph } = root
-  validatePF01Snapshot({ ...graph, schemaVersion: 'project-foundation-01' })
-  validateAssuranceSnapshot(value as ProjectSnapshot, validatePF01Snapshot)
+  validatePF02Graph({ ...graph, schemaVersion: 'project-foundation-01' })
+  validateAssuranceSnapshot(value as ProjectSnapshot, validatePF02Graph)
 }
 
 export function serializeProject(snapshot: ProjectSnapshot): string {

@@ -17,6 +17,9 @@ import { canonicalize } from '../domain/assurance/canonical'
 import type { HumanActor, HumanConfirmation } from '../domain/assurance/assuranceModel'
 import { confirmStatement, prepareConfirmation, type ConfirmationRequest } from '../domain/assurance/assuranceOperations'
 import { recordProjectRevision } from '../domain/project/revisionOperations'
+import type { CompositeModuleStructure } from '../domain/compositeModuleStructure'
+import { CompositeModuleBindingError } from '../domain/project/compositeModuleBinding'
+import { saveModuleCompositeStructure } from '../domain/project/projectOperations'
 
 function reconcilePayload(snapshot: ProjectSnapshot, moduleId: string) {
   const module = snapshot.modulesById[moduleId]
@@ -55,7 +58,12 @@ export function useProjectWorkspace() {
   useEffect(() => { refreshProjects() }, [storage])
 
   const transform = (operation: (snapshot: ProjectSnapshot) => ProjectSnapshot) => setSession((current) => {
-    const snapshot = operation(current.snapshot)
+    let snapshot: ProjectSnapshot
+    try { snapshot = operation(current.snapshot) }
+    catch (error) {
+      if (error instanceof CompositeModuleBindingError) return { ...current, error: error.message }
+      throw error
+    }
     if (canonicalize(snapshot) === canonicalize(current.snapshot)) return current
     return {
       ...current,
@@ -150,6 +158,23 @@ export function useProjectWorkspace() {
 
 
   return {
+    saveCompositeStructure: (projectId: string, moduleId: string, value: CompositeModuleStructure, expected: CompositeModuleStructure | null): string | null => {
+      const current = latest.current
+      if (current.blocked) return 'Записът на проекта е блокиран. Черновата остава отворена.'
+      if (current.snapshot.project.id !== projectId) return 'Проектът е сменен. Отвори структурата от текущия модул.'
+      try {
+        const snapshot = saveModuleCompositeStructure(current.snapshot, moduleId, value, expected)
+        const result = saveProjectSession({ ...current, snapshot, detached: false, status: 'unsaved', error: null }, storage)
+        if (result.status !== 'saved') return 'Структурата не можа да бъде записана в проекта. Черновата е запазена в редактора; опитай отново.'
+        latest.current = result
+        lastSaved.current = snapshot
+        setSession(result)
+        refreshProjects()
+        return null
+      } catch (error) {
+        return error instanceof CompositeModuleBindingError ? error.message : 'Структурата не може да бъде записана. Провери данните и отвори актуалния проект при конфликт.'
+      }
+    },
     recordRevision: (actor: HumanActor) => applyAssurance((s) => recordProjectRevision(s, actor, new Date().toISOString())),
     prepareConfirmation: (evidenceId: string) => prepareConfirmation(latest.current.snapshot, evidenceId),
     confirmStatement: (request: ConfirmationRequest, actor: HumanActor, intent: HumanConfirmation['intent']) =>

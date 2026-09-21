@@ -6,6 +6,7 @@
 .composite-structure .product-section-panel .composite-draft-note { color: #765820; font-weight: 600; }
 .composite-structure h3 { margin: 0 0 12px; font-size: 19px; }
 .composite-system { max-width: 480px; margin: 20px 0; }
+.composite-editor-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .composite-layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(260px, 1fr); gap: 24px; align-items: start; }
 .composite-editor, .composite-summary { min-width: 0; }
 .composite-structure label { display: block; margin: 10px 0 5px; font-weight: 650; }

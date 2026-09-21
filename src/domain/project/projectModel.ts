@@ -6,6 +6,7 @@ import type { OfferModuleDefaults } from '../offerModuleDefaults'
 import type { ModuleProfileResolution } from '../profileResolution'
 import { emptyAssurance, type AssuranceState } from '../assurance/assuranceModel'
 import type { RevisionState } from './revisionModel'
+import type { CompositeModuleStructure } from '../compositeModuleStructure'
 import { trackChanges } from '../assurance/changeTracking'
 
 export const PROJECT_SCHEMA_VERSION = 'project-foundation-02' as const
@@ -36,7 +37,14 @@ export type ProjectOffer = OfferBase & (
 export type ModuleDefinition =
   | { kind: 'offer'; draft: Omit<OfferModuleDraft, 'id' | 'sequence'> }
   | { kind: 'free'; profileSystemId: string; productType: 'window' | 'door' | null }
-export type ProjectModule = { id: string; offerId: string; sequence: number; definition: ModuleDefinition }
+export type ProjectModule = {
+  id: string; offerId: string; sequence: number; definition: ModuleDefinition
+  compositeStructure?: CompositeModuleStructure | null
+}
+/** Existing module definition is the sole system authority, for both workflows. */
+export function getProjectModuleSystemId(module: ProjectModule): string {
+  return module.definition.kind === 'free' ? module.definition.profileSystemId : module.definition.draft.inheritedDefaults.profileSystemId
+}
 export type FreeConstructorModule = {
   id: string; sequence: number; profileSystemId: string; productType: 'window' | 'door' | null
   profileResolution: ModuleProfileResolution | null

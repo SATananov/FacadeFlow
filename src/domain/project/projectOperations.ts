@@ -7,6 +7,8 @@ import { trackChanges } from '../assurance/changeTracking'
 import { synchronizeEvidence } from '../assurance/legacyEvidenceAdapter'
 import { assertHistoryPreserved, freezeHistory } from './revisionOperations'
 import { canonicalize } from '../assurance/canonical'
+import { validateCompositeModuleStructure, type CompositeModuleStructure } from '../compositeModuleStructure'
+import { CompositeModuleBindingError, guardCompositeSystemChange, validateModuleCompositeStructure } from './compositeModuleBinding'
 import {
   createStableId, getEditingOffer, getModules, settingsFromForm, EMPTY_OFFER,
   type FreeConstructorModule, type IdFactory, type OfferDraft, type ProjectModule, type ProjectSnapshot,
@@ -20,6 +22,7 @@ export const applyUpdate = <T>(current: T, update: Update<T>): T => typeof updat
 export function editProject(snapshot: ProjectSnapshot, edit: (draft: ProjectSnapshot) => void): ProjectSnapshot {
   const next = structuredClone(snapshot)
   edit(next)
+  for (const module of Object.values(next.modulesById)) guardCompositeSystemChange(snapshot.modulesById[module.id], module)
   // Constructor topology owns geometry. During the Form -> Constructor handoff,
   // unresolved form FIELD semantics remain as a semantic-only transition payload
   // until the topology has matching FIELD identities. No divider geometry is inferred.
@@ -59,6 +62,10 @@ export function editProject(snapshot: ProjectSnapshot, edit: (draft: ProjectSnap
 }
 
 export function writeOfferForm(snapshot: ProjectSnapshot, form: OfferDraft): void {
+  const owner = getEditingOffer(snapshot)
+  if (owner.settingsDraft.profileSystemId !== form.profileSystemId && getModules(snapshot, owner.id).some((module) => module.compositeStructure)) {
+    throw new CompositeModuleBindingError('Системата е заключена: офертата съдържа модул със запазена структура.')
+  }
   const { clientName, clientEik, clientAddress, clientPhone, clientEmail, clientContactPerson, objectName, objectAddress } = form
   snapshot.project.client = { clientName, clientEik, clientAddress, clientPhone, clientEmail, clientContactPerson }
   snapshot.project.site = { objectName, objectAddress }
@@ -96,7 +103,8 @@ export function replaceOfferModules(snapshot: ProjectSnapshot, modules: OfferMod
   keepOwnedModules(snapshot, offer.id, new Set(modules.map((module) => module.id)))
   for (const { id, sequence, ...draft } of modules) {
     assertModuleOwnership(snapshot, id, offer.id)
-    const module: ProjectModule = { id, offerId: offer.id, sequence, definition: { kind: 'offer', draft } }
+    const module: ProjectModule = { ...snapshot.modulesById[id], id, offerId: offer.id, sequence, definition: { kind: 'offer', draft } }
+    guardCompositeSystemChange(snapshot.modulesById[id], module)
     snapshot.modulesById[id] = module
     initializePayload(snapshot, module)
   }
@@ -107,7 +115,8 @@ export function replaceFreeModules(snapshot: ProjectSnapshot, modules: FreeConst
   keepOwnedModules(snapshot, offerId, new Set(modules.map((module) => module.id)))
   for (const { id, sequence, profileSystemId, productType, profileResolution } of modules) {
     assertModuleOwnership(snapshot, id, offerId)
-    const module: ProjectModule = { id, offerId, sequence, definition: { kind: 'free', profileSystemId, productType } }
+    const module: ProjectModule = { ...snapshot.modulesById[id], id, offerId, sequence, definition: { kind: 'free', profileSystemId, productType } }
+    guardCompositeSystemChange(snapshot.modulesById[id], module)
     snapshot.modulesById[id] = module
     initializePayload(snapshot, module)
     snapshot.profileResolutionsByModuleId[id] = profileResolution
@@ -139,12 +148,28 @@ export function copyFreeModuleToOffer(
     definition.productType = source.definition.productType
     definition.productTypeSource = source.definition.productType ? 'preset' : 'unset'
     next.modulesById[id] = { id, offerId, sequence, definition: { kind: 'offer', draft: definition } }
+    if (source.compositeStructure !== undefined) next.modulesById[id].compositeStructure = structuredClone(source.compositeStructure)
     next.constructionDraftsByModuleId[id] = structuredClone(draft)
     next.profileResolutionsByModuleId[id] = structuredClone(snapshot.profileResolutionsByModuleId[sourceModuleId])
     next.workspace.offerId = offerId
     next.workspace.activeModuleIdByOffer[offerId] = id
     next.workspace.screen = 'offer-setup'
   })
+}
+
+/** Explicit commit of a detached editor draft, never a per-input project mutation. */
+export function saveModuleCompositeStructure(
+  snapshot: ProjectSnapshot, moduleId: string, value: CompositeModuleStructure,
+  expected: CompositeModuleStructure | null,
+): ProjectSnapshot {
+  const module = snapshot.modulesById[moduleId]
+  if (!module) throw new CompositeModuleBindingError('Модулът вече не съществува.')
+  validateCompositeModuleStructure(value)
+  if (canonicalize(module.compositeStructure ?? null) !== canonicalize(expected)) {
+    throw new CompositeModuleBindingError('Структурата е променена след отварянето. Отвори я отново преди запис.')
+  }
+  validateModuleCompositeStructure({ ...module, compositeStructure: value })
+  return editProject(snapshot, (next) => { next.modulesById[moduleId].compositeStructure = structuredClone(value) })
 }
 
 export function completeOfferSetup(snapshot: ProjectSnapshot, idFactory: IdFactory = createStableId): ProjectSnapshot {
