@@ -1,3 +1,4 @@
+import { assertConstructorFeature } from './constructor-source-inspection.mjs'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
@@ -38,7 +39,7 @@ assert.match(topology, /bounds\.heightMm - offsetMm - dividerThicknessMm/)
 assert.match(topology, /upgradeConstructionModelPhysicalDividers/)
 assert.match(topology, /version: 'field-topology-0[23]'/)
 
-assert.match(shell, /(?:FIELD TOPOLOGY 01C\.2|FRAME INTERIOR 01C\.3|FIELD TOPOLOGY 01C\.3\.[234567]|FIELD SEMANTICS 01D)/)
+assertConstructorFeature('topology')
 assert.match(shell, /version: '(?:constructor-01c\.(?:2|3|3\.[234567])|constructor-01d)'/)
 assert.match(shell, /(?:Светъл размер ляво поле|Схемен размер ляво поле)/)
 assert.match(shell, /(?:Светъл размер горно поле|Схемен размер горно поле)/)

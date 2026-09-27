@@ -1,3 +1,4 @@
+import { assertConstructorFeature } from './constructor-source-inspection.mjs'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
@@ -15,9 +16,9 @@ assert.match(topology, /normalizePolygon/)
 assert.match(topology, /const minimumOffset = 0/)
 assert.match(topology, /resolved\.parentBounds\.widthMm/)
 assert.doesNotMatch(topology, /const minimumOffset = CONSTRUCTION_MIN_FIELD_MM \+ CONSTRUCTION_DEFAULT_DIVIDER_FACE_MM[\s\S]{0,300}moveAngledDividerEndpoint/)
-assert.match(shell, /(?:FIELD TOPOLOGY 01C\.3\.[67]|FIELD SEMANTICS 01D)/)
+assertConstructorFeature('topology')
 assert.match(shell, /Закотвяне в ъгъл/)
-assert.match(shell, /polygon \/ triangle \/ trapezoid ПОЛЕТА/)
+assertConstructorFeature('polygons')
 assert.match(acceptance, /exact inner corner/i)
 assert.match(acceptance, /triangles/i)
 assert.match(acceptance, /PROFILE RESOLUTION: NO/)

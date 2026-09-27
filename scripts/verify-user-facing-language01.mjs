@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
+import { readSource, code, assertConstructorFeature } from './constructor-source-inspection.mjs'
 
 const app = await readFile('src/App.tsx', 'utf8')
-const shell = await readFile('src/components/ConstructorShell.tsx', 'utf8')
+const shell = code(readSource('src/components/ConstructorShell.tsx'))
 const assurance = await readFile('src/components/ProjectAssurancePanel.tsx', 'utf8')
 const storage = await readFile('src/persistence/localProjectStorage.ts', 'utf8')
 const manager = await readFile('src/components/ProjectManagerPanel.tsx', 'utf8')
@@ -17,12 +18,12 @@ assert.match(manager, /aria-label="Отвори проект"/)
 assert.match(manager, /Отвори запазен проект/)
 assert.match(manager, /Нов проект/)
 assert.doesNotMatch(storage, /label = `\$\{[^}]+\} · \$\{id\.slice\(0, 8\)\}`/)
-assert.match(storage, /snapshot\.project\.site\.objectName\.trim\(\)/)
-assert.match(storage, /snapshot\.project\.client\.clientName\.trim\(\)/)
+assert.match(storage, /label: getProjectDisplayName\(snapshot\)/)
 
 assert.match(shell, /КОНСТРУКТОР · ТЕХНИЧЕСКА СКИЦА/)
 assert.match(shell, /Профилен изглед \{profileViewEnabled \? 'ВКЛ\.' : 'ИЗКЛ\.'\}/)
-assert.match(shell, /Мрежа \{gridVisible \? 'ВКЛ\.' : 'ИЗКЛ\.'\}/)
+assert.match(shell, /Мрежа \{gridVisible && !isCompositeView \? 'ВКЛ\.' : 'ИЗКЛ\.'\}/)
+assertConstructorFeature('controls')
 assert.match(shell, /Прилепване \{snapEnabled \? 'ВКЛ\.' : 'ИЗКЛ\.'\}/)
 assert.match(shell, /PROFILE_SYSTEM: 'профилна система'/)
 assert.match(shell, /<b>ПОЛЕ \{Math\.round\(field\.bounds\.widthMm\)\}/)

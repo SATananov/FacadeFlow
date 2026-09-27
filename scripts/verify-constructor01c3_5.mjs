@@ -1,3 +1,4 @@
+import { assertConstructorFeature } from './constructor-source-inspection.mjs'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
@@ -18,14 +19,14 @@ assert.match(topology, /moveAngledDividerEndpoint/)
 assert.match(topology, /moveAngledDivider/)
 assert.match(topology, /resolveAngledGeometry/)
 assert.match(topology, /pointInPolygon/)
-assert.match(shell, /(?:FIELD TOPOLOGY 01C\.3\.[567]|FIELD SEMANTICS 01D)/)
+assertConstructorFeature('topology')
 assert.match(shell, /'angled-divider'/)
 assert.match(shell, /Ъглов делител/)
 assert.match(shell, /Горен край/)
 assert.match(shell, /Долен край/)
 assert.match(shell, /startAngledEndpointDrag/)
 assert.match(shell, /startAngledDividerDrag/)
-assert.match(shell, /polygon \/ (?:triangle \/ )?trapezoid ПОЛЕТА/)
+assertConstructorFeature('polygons')
 assert.match(css, /\.constructor-angled-divider/)
 assert.match(css, /\.constructor-angled-grip/)
 assert.match(acceptance, /independent top and bottom endpoints/i)

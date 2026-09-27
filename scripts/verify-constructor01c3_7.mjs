@@ -1,3 +1,4 @@
+import { assertConstructorFeature } from './constructor-source-inspection.mjs'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
@@ -16,7 +17,7 @@ assert.match(topology, /if \(field\.polygon\)/)
 assert.match(topology, /facePolygon: geometry\.facePolygon/)
 assert.match(topology, /geometry\.firstPolygon/)
 assert.match(topology, /geometry\.secondPolygon/)
-assert.match(shell, /(?:FIELD TOPOLOGY 01C\.3\.7|FIELD SEMANTICS 01D)/)
+assertConstructorFeature('topology')
 assert.match(shell, /divider\.facePolygon/)
 assert.match(acceptance, /vertical divider can split a polygon FIELD/i)
 assert.match(acceptance, /horizontal divider can split a polygon FIELD/i)

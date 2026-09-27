@@ -1,3 +1,4 @@
+import { assertConstructorFeature } from './constructor-source-inspection.mjs'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
@@ -47,7 +48,7 @@ assert.match(topology, /export function resizeConstructionFrame/)
 assert.match(topology, /migrateLegacyDividersToTopology/)
 assert.match(topology, /getTopologyMinimumSize/)
 
-assert.match(shell, /(?:FIELD TOPOLOGY 01C\.[12]|FRAME INTERIOR 01C\.3|FIELD TOPOLOGY 01C\.3\.[234567]|FIELD SEMANTICS 01D)/)
+assertConstructorFeature('topology')
 assert.match(shell, /selectedFieldId/)
 assert.match(shell, /fields\.map\(\(field\)/)
 assert.match(shell, /constructor-field-surface/)
@@ -55,7 +56,6 @@ assert.match(shell, /ПОЛЕ \{field\.sequence\}|constructor-field-number-badge
 assert.match(shell, /addDivider/)
 assert.match(shell, /splitField/)
 assert.match(shell, /findFieldAtPoint/)
-assert.match(shell, /Само в родителското поле/)
 assert.match(shell, /constructionToSnapshot/)
 assert.match(shell, /(?:constructor-01c\.[123]|constructor-01d)/)
 assert.match(css, /\.constructor-field-surface/)

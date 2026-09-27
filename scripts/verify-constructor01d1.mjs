@@ -1,3 +1,4 @@
+import { assertConstructorFeature } from './constructor-source-inspection.mjs'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
@@ -6,7 +7,7 @@ const shellCss = await readFile(new URL('../src/components/ConstructorShell.css'
 const acceptance = await readFile(new URL('../docs/CONSTRUCTOR_01D_1_WORKING_OPENING_SYMBOLS_ACCEPTANCE.md', import.meta.url), 'utf8')
 const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'))
 
-assert.match(shell, /OPENING SYMBOLS 01D\.1/)
+assertConstructorFeature('opening')
 assert.match(shell, /mode-\$\{field\.openingMode \?\? 'unset'\}/)
 assert.match(shell, /handing-\$\{field\.openingHanding \?\? 'none'\}/)
 

@@ -1,4 +1,5 @@
 import {
+  Fragment,
   useEffect,
   useMemo,
   useRef,
@@ -12,6 +13,7 @@ import {
   createConstructionModel,
   findFieldAtPoint,
   getConstructionFrameFaceMm,
+  getConstructionFrameEdges,
   getConstructionMinimumFrameSize,
   migrateLegacyDividersToTopology,
   moveDivider,
@@ -23,11 +25,13 @@ import {
   setConstructionFieldOpeningHanding,
   setConstructionFieldOpeningMode,
   setConstructionFieldType,
+  setConstructionFrameEdgeKind,
   splitField,
   splitFieldAngled,
   upgradeConstructionModelPhysicalDividers,
   type ConstructionAxis,
   type ConstructionFrame,
+  type ConstructionFrameEdgeKind,
   type ConstructionModel,
   type ConstructionFieldType,
   type ConstructionOpeningMode,
@@ -99,6 +103,17 @@ import {
   type FormFieldDescriptionInput,
 } from '../domain/formConstructorTransition'
 import './ConstructorShell.css'
+import { CompositeStructuralSketch } from './CompositeStructuralSketch'
+import type { ConstructorView, SketchBounds } from './compositeStructuralSketchProjection'
+import { placeFieldDimensionLabel, SCHEMATIC_OPENING_INSET_PX } from './fieldDimensionLabel'
+import {
+  cadWorldToScreen,
+  frameOriginInCadWorld,
+  screenToCadWorld,
+  screenToConstructionWorld,
+  screenToFrameLocal,
+  type CadViewport,
+} from './constructorCoordinates'
 
 export type ConstructorMode = 'offer' | 'free'
 export type ConstructorDividerAxis = ConstructionAxis
@@ -153,6 +168,7 @@ type ConstructorShellProps = {
   onFreeProfileSystemChange?: (profileSystemId: string) => void
   moduleSummary?: ConstructorModuleSummary
   initialDraft?: ConstructorDraftSnapshot | null
+  constructorView?: ConstructorView
   initialFieldDescriptions?: readonly ConstructorInitialFieldDescription[]
   profileResolution?: ModuleProfileResolution | null
   onDraftChange?: (draft: ConstructorDraftSnapshot | null) => void
@@ -238,6 +254,14 @@ type DragState =
       preview: FrameModel
     }
   | {
+      kind: 'move-frame'
+      pointerId: number
+      startPointer: CanvasPoint
+      originalPlacementOffset: CanvasPoint
+      original: FrameModel
+      originalConstruction: ConstructionModel
+    }
+  | {
       kind: 'resize'
       pointerId: number
       edge: FrameEdge
@@ -270,9 +294,8 @@ type DragState =
       originalConstruction: ConstructionModel
     }
 
-const ZOOM_STEPS = [25, 33, 50, 67, 75, 100, 125, 150, 200] as const
-const MIN_VIEW_ZOOM = ZOOM_STEPS[0]
-const MAX_VIEW_ZOOM = ZOOM_STEPS[ZOOM_STEPS.length - 1]
+const MIN_VIEW_ZOOM = 25
+const MAX_VIEW_ZOOM = 200
 const SNAP_STEP_MM = 10
 const GRID_STEP_MM = 50
 const MAJOR_GRID_STEP_MM = 500
@@ -284,14 +307,6 @@ const FREE_MODULE_SUMMARY: ConstructorModuleSummary = {
   productTypeLabel: 'Свободна скица',
   widthMm: null,
   heightMm: null,
-}
-
-function clampZoom(current: number, direction: -1 | 1) {
-  if (direction < 0) {
-    return [...ZOOM_STEPS].reverse().find((value) => value < current) ?? ZOOM_STEPS[0]
-  }
-
-  return ZOOM_STEPS.find((value) => value > current) ?? ZOOM_STEPS[ZOOM_STEPS.length - 1]
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -353,6 +368,32 @@ function getInitialConstruction(
   return transferFormFieldDescriptionsToConstruction(initial, initialFieldDescriptions)
 }
 
+
+function renderConstructorToolIcon(tool: string) {
+  switch (tool) {
+    case 'select':
+      return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4v13M6 4h13M6 4l6 6"/><circle cx="17.5" cy="17.5" r="2.5" className="icon-fill-current"/></svg>
+    case 'pan':
+      return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M12 3l-2.5 2.5M12 3l2.5 2.5M12 21l-2.5-2.5M12 21l2.5-2.5M3 12l2.5-2.5M3 12l2.5 2.5M21 12l-2.5-2.5M21 12l-2.5 2.5"/></svg>
+    case 'frame':
+      return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16"/><rect x="7" y="7" width="10" height="10" className="icon-stroke-thin"/></svg>
+    case 'vertical-divider':
+      return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" className="icon-stroke-thin"/><path d="M12 5v14"/></svg>
+    case 'horizontal-divider':
+      return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" className="icon-stroke-thin"/><path d="M5 12h14"/></svg>
+    case 'angled-divider':
+      return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" className="icon-stroke-thin"/><path d="M7 17l10-10"/></svg>
+    case 'fixed-field':
+      return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14"/></svg>
+    case 'operable-field':
+      return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14"/><path d="M8 7v10M8 7l8 5-8 5z" className="icon-stroke-thin"/></svg>
+    case 'door':
+      return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 19V5h8v14M7 19h10"/><circle cx="13" cy="12" r="0.9" className="icon-fill-current"/></svg>
+    default:
+      return null
+  }
+}
+
 export default function ConstructorShell({
   mode,
   moduleNumber = 1,
@@ -363,6 +404,7 @@ export default function ConstructorShell({
   onFreeProfileSystemChange,
   moduleSummary = FREE_MODULE_SUMMARY,
   initialDraft,
+  constructorView = { kind: 'legacy', historicalConflict: false },
   initialFieldDescriptions = [],
   profileResolution,
   onDraftChange,
@@ -377,18 +419,24 @@ export default function ConstructorShell({
   onClose,
   onCreateOfferFromSketch,
 }: ConstructorShellProps) {
+  const compositeProjection = constructorView.kind === 'composite' ? constructorView.projection : null
+  const isCompositeView = compositeProjection !== null
   const canvasRef = useRef<HTMLDivElement>(null)
   const [activeTool, setActiveTool] = useState<ConstructorTool>('select')
   const [gridVisible, setGridVisible] = useState(true)
   const [snapEnabled, setSnapEnabled] = useState(true)
   const [zoom, setZoom] = useState<number>(100)
   const [viewOffset, setViewOffset] = useState<ViewOffset>({ xPx: 0, yPx: 0 })
+  const [framePlacementOffsetMm, setFramePlacementOffsetMm] = useState<CanvasPoint>({ xMm: 0, yMm: 0 })
   const [viewPanState, setViewPanState] = useState<ViewPanState | null>(null)
   const [autoFitEnabled, setAutoFitEnabled] = useState(true)
+  const browserDevicePixelRatioRef = useRef(
+    typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1,
+  )
   const [profileViewEnabled, setProfileViewEnabled] = useState(true)
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>('properties')
   const [construction, setConstruction] = useState<ConstructionModel | null>(() =>
-    getInitialConstruction(initialDraft, moduleSummary, initialFieldDescriptions),
+    isCompositeView ? null : getInitialConstruction(initialDraft, moduleSummary, initialFieldDescriptions),
   )
   const formFieldTransferConsumedRef = useRef(
     initialFieldDescriptions.length === 0 ||
@@ -398,7 +446,7 @@ export default function ConstructorShell({
     ),
   )
   const historySessionKey = activeModuleId ? `${mode}:${activeModuleId}` : null
-  const cachedModuleHistory = historySessionKey
+  const cachedModuleHistory = !isCompositeView && historySessionKey
     ? constructorHistoryByModuleId.get(historySessionKey)
     : undefined
   const [undoStack, setUndoStack] = useState<ConstructorHistoryEntry[]>(() =>
@@ -415,6 +463,9 @@ export default function ConstructorShell({
   const undoStackRef = useRef<ConstructorHistoryEntry[]>(undoStack)
   const redoStackRef = useRef<ConstructorHistoryEntry[]>(redoStack)
   const frame = construction?.frame ?? null
+  const viewBounds: SketchBounds | null = compositeProjection
+    ? compositeProjection.status === 'ready' ? compositeProjection.bounds : null
+    : frame ? { x: frame.xMm, y: frame.yMm, width: frame.widthMm, height: frame.heightMm } : null
   const resolvedTopology = useMemo(
     () => construction
       ? resolveConstructionTopology(construction)
@@ -445,14 +496,24 @@ export default function ConstructorShell({
 
   const isFreeMode = mode === 'free'
   const hasActiveModule = Boolean(activeModuleId && moduleItems.some((item) => item.id === activeModuleId))
-  const canEditConstruction = !isFreeMode || hasActiveModule
+  const canEditConstruction = !isCompositeView && (!isFreeMode || hasActiveModule)
   const showModuleStrip = isFreeMode || moduleItems.length > 0
   const pxPerMm = BASE_PX_PER_MM * (zoom / 100)
   const frameFaceMm = construction
     ? getConstructionFrameFaceMm(construction)
     : CONSTRUCTION_DEFAULT_FRAME_FACE_MM
+  const frameEdges = construction ? getConstructionFrameEdges(construction) : null
   const frameFacePx = Math.max(12, frameFaceMm * pxPerMm)
+  const hasNonStandardBottomBoundary = frameEdges !== null && frameEdges.bottom !== 'frame'
   const displayedFrame = dragState?.kind === 'create' ? dragState.preview : frame
+  const canvasViewport: CadViewport = { origin: { xPx: 0, yPx: 0 }, pxPerMm }
+  const displayedFramePosition = displayedFrame
+    ? cadWorldToScreen(frameOriginInCadWorld({
+        frame: displayedFrame,
+        placement: dragState?.kind === 'create' ? { xMm: 0, yMm: 0 } : framePlacementOffsetMm,
+        pan: dragState?.kind === 'create' ? { xPx: 0, yPx: 0 } : viewOffset,
+      }, pxPerMm), canvasViewport)
+    : null
   const moduleSizeLabel = displayedFrame
     ? `${Math.round(displayedFrame.widthMm)} × ${Math.round(displayedFrame.heightMm)} mm`
     : 'Размерите още не са зададени'
@@ -572,7 +633,7 @@ export default function ConstructorShell({
     [selectedProfileSystem, effectiveProfileResolution, dividers, angledDividers.length, fields],
   )
   const profileJointGeometry = useMemo(
-    () => frame && selectedProfileSystem && effectiveProfileResolution
+    () => frame && !hasNonStandardBottomBoundary && selectedProfileSystem && effectiveProfileResolution
       ? buildProfileJointGeometryReadModel({
           frame,
           frameFaceMm,
@@ -582,7 +643,7 @@ export default function ConstructorShell({
           resolution: effectiveProfileResolution,
         })
       : null,
-    [frame, frameFaceMm, dividers, fields, selectedProfileSystem, effectiveProfileResolution],
+    [frame, frameFaceMm, dividers, fields, selectedProfileSystem, effectiveProfileResolution, hasNonStandardBottomBoundary],
   )
   const profileAwareSashGeometry = useMemo(
     () => frame && selectedProfileSystem && effectiveProfileResolution && profileJointGeometry
@@ -609,8 +670,35 @@ export default function ConstructorShell({
     [activeModuleId, moduleNumber, moduleSummary.productType, selectedProfileSystem, construction, effectiveProfileResolution],
   )
   const reviewedFrameFacePx = profileAwareGeometry?.frame.reviewed && profileAwareGeometry.frame.visibleFaceMm !== null
-    ? Math.max(4, profileAwareGeometry.frame.visibleFaceMm * pxPerMm)
+    ? profileAwareGeometry.frame.visibleFaceMm * pxPerMm
     : null
+
+  // CONSTRUCTOR FRAME DIMENSIONS 01A.2 V2
+  // Clear opening dimensions are derived only from the reviewed catalogue
+  // visible face of the assigned frame profile. Raw catalogue callouts are not deductions.
+  const reviewedFrameVisibleFaceMm = profileAwareGeometry?.frame.reviewed
+    ? profileAwareGeometry.frame.visibleFaceMm
+    : null
+  const frameClearDimensions = useMemo(() => {
+    if (!frame || !frameEdges || reviewedFrameVisibleFaceMm === null) {
+      return { widthMm: null as number | null, heightMm: null as number | null }
+    }
+
+    const leftInsetMm = frameEdges.left === 'frame' ? reviewedFrameVisibleFaceMm : 0
+    const rightInsetMm = frameEdges.right === 'frame' ? reviewedFrameVisibleFaceMm : 0
+    const topInsetMm = frameEdges.top === 'frame' ? reviewedFrameVisibleFaceMm : 0
+
+    const widthMm = Math.max(0, frame.widthMm - leftInsetMm - rightInsetMm)
+
+    if (frameEdges.bottom === 'threshold') {
+      return { widthMm, heightMm: null }
+    }
+
+    const bottomInsetMm = frameEdges.bottom === 'frame' ? reviewedFrameVisibleFaceMm : 0
+    const heightMm = Math.max(0, frame.heightMm - topInsetMm - bottomInsetMm)
+
+    return { widthMm, heightMm }
+  }, [frame, frameEdges, reviewedFrameVisibleFaceMm])
   const profileViewActive = Boolean(profileViewEnabled && profileAwareGeometry && frame)
   const selectedFieldDimensionalChain = selectedField
     ? dimensionalChain?.fields.find((field) => field.fieldId === selectedField.id) ?? null
@@ -662,20 +750,20 @@ export default function ConstructorShell({
   useEffect(() => {
     undoStackRef.current = undoStack
     redoStackRef.current = redoStack
-    if (!historySessionKey) return
+    if (isCompositeView || !historySessionKey) return
     constructorHistoryByModuleId.set(historySessionKey, {
       undo: undoStack.map(cloneHistoryEntry),
       redo: redoStack.map(cloneHistoryEntry),
     })
-  }, [historySessionKey, undoStack, redoStack])
+  }, [isCompositeView, historySessionKey, undoStack, redoStack])
 
   useEffect(() => () => {
-    if (!historySessionKey) return
+    if (isCompositeView || !historySessionKey) return
     constructorHistoryByModuleId.set(historySessionKey, {
       undo: undoStackRef.current.map(cloneHistoryEntry),
       redo: redoStackRef.current.map(cloneHistoryEntry),
     })
-  }, [historySessionKey])
+  }, [isCompositeView, historySessionKey])
 
   useEffect(() => {
     setGlazingThicknessDraft(
@@ -689,40 +777,55 @@ export default function ConstructorShell({
   }, [selectedFieldId, selectedDividerId, selectedAngledDividerId, frameSelected])
 
   useEffect(() => {
-    if (!effectiveProfileResolution || !onProfileResolutionChange) return
+    if (isCompositeView || !effectiveProfileResolution || !onProfileResolutionChange) return
     if (JSON.stringify(profileResolution) === JSON.stringify(effectiveProfileResolution)) return
     profileResolutionRef.current = cloneHistoryProfileResolution(effectiveProfileResolution)
     onProfileResolutionChange(effectiveProfileResolution)
-  }, [effectiveProfileResolution, onProfileResolutionChange, profileResolution])
+  }, [isCompositeView, effectiveProfileResolution, onProfileResolutionChange, profileResolution])
 
   useEffect(() => {
     setAutoFitEnabled(true)
+    setFramePlacementOffsetMm({ xMm: 0, yMm: 0 })
   }, [activeModuleId])
 
   useEffect(() => {
-    if (!autoFitEnabled || dragState || viewPanState || !frame) return
-    const requestId = window.requestAnimationFrame(() => fitViewToFrame(frame))
+    if (!autoFitEnabled || dragState || viewPanState || !viewBounds) return
+    const requestId = window.requestAnimationFrame(() => fitViewToFrame(viewBounds))
     return () => window.cancelAnimationFrame(requestId)
   }, [
     autoFitEnabled,
     activeModuleId,
     dragState,
-    frame?.xMm,
-    frame?.yMm,
-    frame?.widthMm,
-    frame?.heightMm,
+    viewBounds?.x,
+    viewBounds?.y,
+    viewBounds?.width,
+    viewBounds?.height,
     viewPanState,
   ])
 
   useEffect(() => {
     const handleResize = () => {
-      if (autoFitEnabled && !dragState && !viewPanState && frame) {
-        fitViewToFrame(frame)
+      const nextDevicePixelRatio = window.devicePixelRatio || 1
+      const previousDevicePixelRatio = browserDevicePixelRatioRef.current
+      const browserZoomChanged =
+        Math.abs(nextDevicePixelRatio - previousDevicePixelRatio) > 0.01
+
+      browserDevicePixelRatioRef.current = nextDevicePixelRatio
+
+      // BROWSER ZOOM ISOLATION 01
+      // Chrome browser zoom fires resize and changes devicePixelRatio.
+      // Do not recalculate FacadeFlow's internal Constructor zoom in that case:
+      // browser zoom must scale UI, grid and construction together.
+      if (browserZoomChanged) return
+
+      if (autoFitEnabled && !dragState && !viewPanState && viewBounds) {
+        fitViewToFrame(viewBounds)
       }
     }
+
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [autoFitEnabled, dragState, frame, viewPanState])
+  }, [autoFitEnabled, dragState, viewBounds, viewPanState])
 
   const snapMm = (value: number) => {
     const safeValue = Number.isFinite(value) ? Math.max(0, value) : 0
@@ -731,78 +834,99 @@ export default function ConstructorShell({
       : Math.round(safeValue)
   }
 
-  const pointFromPointer = (event: ReactPointerEvent<HTMLElement>): CanvasPoint => {
-    const canvas = canvasRef.current
-    if (!canvas) {
-      return { xMm: 0, yMm: 0 }
-    }
-
-    const rect = canvas.getBoundingClientRect()
-    return {
-      xMm: snapMm((event.clientX - rect.left - viewOffset.xPx) / pxPerMm),
-      yMm: snapMm((event.clientY - rect.top - viewOffset.yPx) / pxPerMm),
-    }
+  const pointerViewport = (): CadViewport => {
+    const rect = canvasRef.current?.getBoundingClientRect()
+    return { origin: { xPx: rect?.left ?? 0, yPx: rect?.top ?? 0 }, pxPerMm }
   }
+  const pointerScreenPoint = (event: ReactPointerEvent<HTMLElement>) => ({ xPx: event.clientX, yPx: event.clientY })
+  const frameView = () => ({ frame: frame ?? { xMm: 0, yMm: 0 }, placement: framePlacementOffsetMm, pan: viewOffset })
+  const cadPointFromPointer = (event: ReactPointerEvent<HTMLElement>): CanvasPoint =>
+    screenToCadWorld(pointerScreenPoint(event), pointerViewport())
+  const framePointFromPointer = (event: ReactPointerEvent<HTMLElement>): CanvasPoint =>
+    screenToFrameLocal(pointerScreenPoint(event), pointerViewport(), frameView())
+  const pointFromPointer = (event: ReactPointerEvent<HTMLElement>): CanvasPoint =>
+    screenToConstructionWorld(pointerScreenPoint(event), pointerViewport(), frameView())
+  const snapSignedMm = (value: number) => snapEnabled
+    ? Math.round(value / SNAP_STEP_MM) * SNAP_STEP_MM
+    : Math.round(value)
 
-  const fitViewToFrame = (targetFrame: FrameModel | null = frame) => {
+  const fitViewToFrame = (targetFrame: SketchBounds | null = viewBounds) => {
     const canvas = canvasRef.current
-    if (!canvas || !targetFrame || targetFrame.widthMm <= 0 || targetFrame.heightMm <= 0) {
+    if (!canvas || !targetFrame || targetFrame.width <= 0 || targetFrame.height <= 0) {
       return
     }
 
+    // WORKING VIEW + DIMENSION LAYOUT 01
+    // Fit the complete technical view: construction + external dimensions.
+    // Target roughly 75% of the visible work-area height.
     const rect = canvas.getBoundingClientRect()
-    const horizontalPaddingPx = 72
-    const verticalPaddingPx = 64
-    const dimensionRightPx = 64
-    const dimensionBottomPx = 52
-    const availableWidthPx = Math.max(160, rect.width - horizontalPaddingPx * 2 - dimensionRightPx)
-    const availableHeightPx = Math.max(160, rect.height - verticalPaddingPx * 2 - dimensionBottomPx)
-    const fittedPxPerMm = Math.min(
-      availableWidthPx / targetFrame.widthMm,
-      availableHeightPx / targetFrame.heightMm,
+    const visibleLeftPx = Math.max(rect.left, 0)
+    const visibleTopPx = Math.max(rect.top, 0)
+    const visibleRightPx = Math.min(rect.right, window.innerWidth)
+    const visibleBottomPx = Math.min(rect.bottom, window.innerHeight - 12)
+
+    const visibleWidthPx = visibleRightPx - visibleLeftPx
+    const visibleHeightPx = visibleBottomPx - visibleTopPx
+    if (visibleWidthPx <= 0 || visibleHeightPx <= 0) return
+
+    const outerMarginPx = 48
+    const dimensionRightPx = 82
+    const dimensionBottomPx = 104
+
+    const availableWidthPx = Math.max(
+      1,
+      visibleWidthPx - outerMarginPx * 2 - dimensionRightPx,
     )
-    const fittedZoom = Math.round(clamp(
+
+    // 75% target keeps the construction prominent while leaving room for dimensions.
+    const availableHeightPx = Math.max(
+      1,
+      Math.min(visibleHeightPx * 0.75, visibleHeightPx - outerMarginPx * 2 - dimensionBottomPx),
+    )
+
+    const fittedPxPerMm = Math.min(
+      availableWidthPx / targetFrame.width,
+      availableHeightPx / targetFrame.height,
+    )
+
+    const fittedZoom = Math.floor(clamp(
       (fittedPxPerMm / BASE_PX_PER_MM) * 100,
       MIN_VIEW_ZOOM,
-      MAX_VIEW_ZOOM,
+      Math.min(MAX_VIEW_ZOOM, 110),
     ))
-    const fittedScale = BASE_PX_PER_MM * (fittedZoom / 100)
-    const viewportCenterX = (rect.width - dimensionRightPx) / 2
-    const viewportCenterY = (rect.height - dimensionBottomPx) / 2
-    const frameCenterWorldX = targetFrame.xMm + targetFrame.widthMm / 2
-    const frameCenterWorldY = targetFrame.yMm + targetFrame.heightMm / 2
 
     setZoom(fittedZoom)
-    setViewOffset({
-      xPx: Math.round(viewportCenterX - frameCenterWorldX * fittedScale),
-      yPx: Math.round(viewportCenterY - frameCenterWorldY * fittedScale),
-    })
+    const fittedScale = BASE_PX_PER_MM * (fittedZoom / 100)
+    const startPx = {
+      xPx: visibleLeftPx - rect.left + outerMarginPx,
+      yPx: visibleTopPx - rect.top + outerMarginPx,
+    }
+    if (isCompositeView) {
+      // Projection units are normalized drawing units, never millimetres.
+      setViewOffset({ xPx: startPx.xPx - targetFrame.x * fittedScale, yPx: startPx.yPx - targetFrame.y * fittedScale })
+    } else {
+      setViewOffset({ xPx: 0, yPx: 0 })
+      const startWorld = screenToCadWorld(startPx, { origin: { xPx: 0, yPx: 0 }, pxPerMm: fittedScale })
+      setFramePlacementOffsetMm({ xMm: startWorld.xMm - targetFrame.x, yMm: startWorld.yMm - targetFrame.y })
+    }
   }
 
   const changeViewZoom = (direction: -1 | 1) => {
-    const nextZoom = clampZoom(zoom, direction)
-    if (nextZoom === zoom) return
-
-    const canvas = canvasRef.current
-    if (canvas) {
-      const rect = canvas.getBoundingClientRect()
-      const anchorX = rect.width / 2
-      const anchorY = rect.height / 2
-      const ratio = nextZoom / zoom
-      setViewOffset((current) => ({
-        xPx: Math.round(anchorX - (anchorX - current.xPx) * ratio),
-        yPx: Math.round(anchorY - (anchorY - current.yPx) * ratio),
-      }))
-    }
-
+    // CAD STABLE ZOOM 02.2
+    // Manual +/- changes only the internal drawing scale.
     setAutoFitEnabled(false)
-    setZoom(nextZoom)
+    setZoom((currentZoom) =>
+      clamp(currentZoom + direction, MIN_VIEW_ZOOM, MAX_VIEW_ZOOM),
+    )
   }
 
   const restoreFitView = () => {
     setAutoFitEnabled(true)
-    fitViewToFrame(frame)
+    fitViewToFrame(viewBounds)
   }
+
+
+
 
   const captureHistoryEntry = (
     constructionOverride: ConstructionModel | null = constructionRef.current,
@@ -942,8 +1066,8 @@ export default function ConstructorShell({
     const currentConstruction = constructionRef.current
     if (!frame || !currentConstruction) return
 
-    const xInFrame = point.xMm - frame.xMm
-    const yInFrame = point.yMm - frame.yMm
+    const xInFrame = point.xMm
+    const yInFrame = point.yMm
     const targetField = findFieldAtPoint(currentConstruction, xInFrame, yInFrame)
     if (!targetField) return
 
@@ -974,8 +1098,8 @@ export default function ConstructorShell({
   const addAngledDivider = (point: CanvasPoint) => {
     const currentConstruction = constructionRef.current
     if (!frame || !currentConstruction) return
-    const xInFrame = point.xMm - frame.xMm
-    const yInFrame = point.yMm - frame.yMm
+    const xInFrame = point.xMm
+    const yInFrame = point.yMm
     const targetField = findFieldAtPoint(currentConstruction, xInFrame, yInFrame)
     if (!targetField || targetField.polygon) return
     const nextDividerId = `divider-${currentConstruction.nextDividerId}`
@@ -1205,6 +1329,7 @@ export default function ConstructorShell({
 
   useEffect(() => {
     const handleHistoryKeyDown = (event: KeyboardEvent) => {
+      if (isCompositeView) return
       const target = event.target as HTMLElement | null
       const isEditable = Boolean(
         target && (
@@ -1260,12 +1385,16 @@ export default function ConstructorShell({
   }
 
   const handleCanvasPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (isCompositeView) return
     if (activeTool === 'pan') return
 
-    const point = pointFromPointer(event)
-    setCursorPoint(point)
+    const world = cadPointFromPointer(event)
+    setCursorPoint(world)
 
     if (activeTool === 'frame' && !frame) {
+      const point = { xMm: snapMm(world.xMm), yMm: snapMm(world.yMm) }
+      setViewOffset({ xPx: 0, yPx: 0 })
+      setFramePlacementOffsetMm({ xMm: 0, yMm: 0 })
       event.currentTarget.setPointerCapture(event.pointerId)
       const preview: FrameModel = {
         xMm: point.xMm,
@@ -1297,6 +1426,8 @@ export default function ConstructorShell({
   }
 
   const handleCanvasPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const world = cadPointFromPointer(event)
+    if (!isCompositeView) setCursorPoint(world)
     if (viewPanState?.pointerId === event.pointerId) {
       setViewOffset({
         xPx: Math.round(viewPanState.startOffset.xPx + event.clientX - viewPanState.startClientX),
@@ -1305,14 +1436,12 @@ export default function ConstructorShell({
       return
     }
 
-    const point = pointFromPointer(event)
-    setCursorPoint(point)
-
-    if (!dragState) {
+    if (!dragState || dragState.pointerId !== event.pointerId) {
       return
     }
 
     if (dragState.kind === 'create') {
+      const point = { xMm: snapMm(world.xMm), yMm: snapMm(world.yMm) }
       const xMm = Math.min(dragState.start.xMm, point.xMm)
       const yMm = Math.min(dragState.start.yMm, point.yMm)
       const preview: FrameModel = {
@@ -1331,9 +1460,10 @@ export default function ConstructorShell({
       const currentDivider = resolveConstructionTopology(construction).dividers
         .find((divider) => divider.id === dragState.dividerId)
       if (!currentDivider) return
+      const local = framePointFromPointer(event)
       const rawPointerPosition = dragState.axis === 'vertical'
-        ? point.xMm - frame.xMm
-        : point.yMm - frame.yMm
+        ? local.xMm
+        : local.yMm
       const rawLeadingFace = rawPointerPosition - dragState.grabOffsetMm
       const parentStartMm = currentDivider.positionMm - currentDivider.offsetMm
       updateDividerOffset(dragState.dividerId, rawLeadingFace - parentStartMm)
@@ -1342,8 +1472,8 @@ export default function ConstructorShell({
 
     if (dragState.kind === 'angled-divider') {
       if (!frame || !construction) return
-      const rawDeltaMm = point.xMm - dragState.startPointerXMm
-      const deltaMm = snapEnabled ? Math.round(rawDeltaMm / SNAP_STEP_MM) * SNAP_STEP_MM : Math.round(rawDeltaMm)
+      const rawDeltaMm = framePointFromPointer(event).xMm - dragState.startPointerXMm
+      const deltaMm = snapSignedMm(rawDeltaMm)
       const current = constructionRef.current
       if (!current) return
       const base = dragState.originalConstruction
@@ -1352,9 +1482,20 @@ export default function ConstructorShell({
       return
     }
 
+    if (dragState.kind === 'move-frame') {
+      event.stopPropagation()
+      const deltaX = snapSignedMm(world.xMm - dragState.startPointer.xMm)
+      const deltaY = snapSignedMm(world.yMm - dragState.startPointer.yMm)
+      setFramePlacementOffsetMm({
+        xMm: dragState.originalPlacementOffset.xMm + deltaX,
+        yMm: dragState.originalPlacementOffset.yMm + deltaY,
+      })
+      return
+    }
+
     if (dragState.kind === 'angled-endpoint') {
       if (!frame || !construction) return
-      const localOffsetMm = snapMm(point.xMm - frame.xMm - dragState.parentStartXMm)
+      const localOffsetMm = snapMm(framePointFromPointer(event).xMm - dragState.parentStartXMm)
       const current = constructionRef.current
       if (!current) return
       const next = moveAngledDividerEndpoint(current, dragState.dividerId, dragState.endpoint, localOffsetMm)
@@ -1364,6 +1505,8 @@ export default function ConstructorShell({
 
 
     const { original, edge } = dragState
+    const rawPoint = pointFromPointer(event)
+    const point = { xMm: snapSignedMm(rawPoint.xMm), yMm: snapSignedMm(rawPoint.yMm) }
     let nextFrame = original
 
     if (edge === 'right') {
@@ -1439,6 +1582,7 @@ export default function ConstructorShell({
 
     if (
       dragState.kind === 'resize' ||
+      dragState.kind === 'move-frame' ||
       dragState.kind === 'divider' ||
       dragState.kind === 'angled-divider' ||
       dragState.kind === 'angled-endpoint'
@@ -1463,6 +1607,7 @@ export default function ConstructorShell({
     event.preventDefault()
     event.stopPropagation()
     canvasRef.current?.setPointerCapture(event.pointerId)
+    setAutoFitEnabled(false)
     setFrameSelected(true)
     setSelectedFieldId(null)
     setSelectedDividerId(null)
@@ -1493,10 +1638,10 @@ export default function ConstructorShell({
     setDividerPositionDraft(String(Math.round(divider.offsetMm)))
     setFrameSelected(false)
     setSelectedEdge(null)
-    const point = pointFromPointer(event)
+    const point = framePointFromPointer(event)
     const pointerPositionMm = divider.axis === 'vertical'
-      ? point.xMm - frame.xMm
-      : point.yMm - frame.yMm
+      ? point.xMm
+      : point.yMm
 
     setDragState({
       kind: 'divider',
@@ -1522,7 +1667,7 @@ export default function ConstructorShell({
     setSelectedFieldId(null)
     setFrameSelected(false)
     setSelectedEdge(null)
-    const point = pointFromPointer(event)
+    const point = framePointFromPointer(event)
     setDragState({
       kind: 'angled-divider',
       pointerId: event.pointerId,
@@ -1621,9 +1766,13 @@ export default function ConstructorShell({
     frameSelected ? 'is-selected' : '',
     selectedEdge ? `has-selected-${selectedEdge}` : '',
     dragState?.kind === 'create' ? 'is-preview' : '',
+    dragState?.kind === 'move-frame' ? 'is-moving' : '',
+    activeTool === 'select' ? 'is-frame-movable' : '',
     simpleBayDimensions.length > 0 ? 'has-bay-dimensions' : '',
     profileViewActive ? 'has-profile-view' : '',
     profileViewActive && profileAwareGeometry?.frame.reviewed ? 'has-reviewed-frame-face' : '',
+    frameEdges?.bottom === 'none' ? 'has-open-bottom-frame' : '',
+    frameEdges?.bottom === 'threshold' ? 'has-threshold-bottom' : '',
   ]
     .filter(Boolean)
     .join(' ')
@@ -1668,6 +1817,49 @@ export default function ConstructorShell({
     setRedoStack([])
     productTypeRef.current = productType
     onModuleProductTypeChange?.(productType)
+  }
+
+  const applyBottomFrameEdgeKind = (kind: ConstructionFrameEdgeKind) => {
+    const current = constructionRef.current
+    if (!current) return
+    commitConstruction(setConstructionFrameEdgeKind(current, 'bottom', kind))
+  }
+
+  const renderFrameTopologyResolution = () => {
+    if (!construction || !frameEdges) return null
+
+    return (
+      <div className="constructor-field-semantic-controls constructor-frame-topology-controls">
+        <span>ДОЛЕН КРАЙ НА КАСАТА</span>
+        <div className="constructor-field-semantic-buttons">
+          <button
+            type="button"
+            className={frameEdges.bottom === 'frame' ? 'is-selected' : ''}
+            onClick={() => applyBottomFrameEdgeKind('frame')}
+          >
+            Цяла каса
+          </button>
+          <button
+            type="button"
+            className={frameEdges.bottom === 'none' ? 'is-selected' : ''}
+            onClick={() => applyBottomFrameEdgeKind('none')}
+          >
+            Без долна каса
+          </button>
+          <button
+            type="button"
+            className={frameEdges.bottom === 'threshold' ? 'is-selected' : ''}
+            onClick={() => applyBottomFrameEdgeKind('threshold')}
+          >
+            Праг
+          </button>
+        </div>
+        <small>„Праг“ задава само ролята на долния край. FacadeFlow не измисля праг, профил или размери без потвърдени системни данни.</small>
+        {frameEdges.bottom !== 'frame' && (
+          <small className="constructor-frame-topology-safety">Профилните възли по долния край остават НЕПОТВЪРДЕНИ, докато няма отделно правило/профил за тази граница.</small>
+        )}
+      </div>
+    )
   }
 
   const renderModuleProductTypeResolution = () => (
@@ -2496,6 +2688,7 @@ export default function ConstructorShell({
         </label>
       ) : <div className="constructor-property-row"><span>Профилна система</span><b>{offerContext?.profileSystemLabel ?? 'Не е избрана'}</b></div>}
       {renderModuleProductTypeResolution()}
+      {renderFrameTopologyResolution()}
       {renderSystemDrivenModuleSummary()}
       {frame ? renderSelectedPropertiesPane() : <p className="constructor-context-hint">{canEditConstruction ? 'Избери „Каса“ и начертай модула.' : 'Добави модул, за да започнеш.'}</p>}
       {!isFreeMode && <details className="constructor-context-details"><summary>Общи настройки на офертата</summary>
@@ -2560,23 +2753,8 @@ export default function ConstructorShell({
     </>
   )
 
-  // Legacy VIEW 01 source-contract markers retained for regression verification only:
-  // Fit{autoFitEnabled ? ' AUTO' : ''}
-  // ZOOM: {zoom}% · {autoFitEnabled ? 'FIT AUTO' : 'MANUAL VIEW'}
   return (
-    <section className={`constructor-shell${showModuleStrip ? ' has-module-navigation' : ''}${pendingInitialFieldDescriptions.length > 0 ? ' has-form-field-handoff' : ''}`} aria-label={`FacadeFlow Конструктор · ${title}`}>
-      <span className="constructor-contract-marker" aria-hidden="true">
-        FACADEFLOW CONSTRUCTOR · FIELD SEMANTICS 01D · Constructor 01C · Constructor 01D · CONSTRUCTOR 01B · Параметрична каса · SYSTEM NEUTRAL ·
-        Profile View {profileViewEnabled ? 'ON' : 'OFF'} · Grid {gridVisible ? 'ON' : 'OFF'} · Snap {snapEnabled ? 'ON' : 'OFF'} ·
-        КАТАЛОЖНИ BEAD КАНДИДАТИ · СТЪКЛОДЪРЖАТЕЛ · HUMAN SELECTION · catalog match ≠ resolved compatibility · auto-select: NO ·
-        BASE-PROFILE COMPATIBILITY: UNCONFIRMED · GLAZING INSET: UNKNOWN · GLASS CUT: UNKNOWN ·
-        БАЗОВ ПРОФИЛ ЗА FIX ПОЛЕТО · Няма auto-select дори при един кандидат ·
-        Само в родителското поле · автоматична до Profile Resolution · polygon / triangle / trapezoid ПОЛЕТА ·
-        OPENING SYMBOLS 01D.1 · OPENING SYMBOLS 01D.1 · FIELD INFO 01D.2 · MINIMAL LABELS 01D.3 · BOTTOM POLISH 01D.3.1 ·
-        точните inset и glazing inset · Glazing inset / glass cut: НЕИЗВЕСТНО · source: human · HARDWARE REQUIREMENTS ·
-        MISSING CONTEXT · Това не е стандартен шаблон · MISSING CONTEXT · избери Прозорец или Врата тук · OPERABLE полето вече се брои като задължителен PROFILE target · 02A.2
-      </span>
-
+    <section className={`constructor-shell${showModuleStrip ? ' has-module-navigation' : ''}${!isCompositeView && pendingInitialFieldDescriptions.length > 0 ? ' has-form-field-handoff' : ''}`} aria-label={`FacadeFlow Конструктор · ${title}`}>
       <header className="constructor-topbar">
         <div className="constructor-title-block">
           <button type="button" className="constructor-back" onClick={onClose}>
@@ -2597,12 +2775,15 @@ export default function ConstructorShell({
             <span>КОНСТРУКТОР · ТЕХНИЧЕСКА СКИЦА</span>
             <h2>{title}</h2>
             <p>
-              {isFreeMode
+              {isCompositeView ? 'Структурна скица · само преглед. Промените се правят в „Структура на модула“.' : isFreeMode
                 ? hasActiveModule
                   ? `Работиш по Модул ${moduleNumber}. Тук задаваш формата, ПОЛЕТАТА и начина на отваряне. Профилите и стъклопакетът се задават от панела вдясно.`
                   : 'Създай Модул 1, за да започнеш. Всеки следващ модул ще пази собствена независима скица.'
                 : 'Тук задаваш формата, ПОЛЕТАТА и начина на отваряне на изделието. Мести се само избраният елемент.'}
             </p>
+            {constructorView.kind === 'legacy' && constructorView.historicalConflict && <p className="composite-sketch-note" role="status">
+              Модулът има записана конструкция и структура. Показана е записаната конструкция; структурата е запазена.
+            </p>}
           </div>
         </div>
 
@@ -2623,8 +2804,8 @@ export default function ConstructorShell({
             <b>{isFreeMode ? 'Свободен конструктор' : 'Офертен модул'}</b>
           </div>
           <div>
-            <span>ГАБАРИТ</span>
-            <b>{moduleSizeLabel}</b>
+            <span>{isCompositeView ? 'ИЗГЛЕД' : 'ГАБАРИТ'}</span>
+            <b>{isCompositeView ? 'Структурна скица' : moduleSizeLabel}</b>
           </div>
           <div className="constructor-draft-chip">ЧЕРНОВА</div>
         </div>
@@ -2679,7 +2860,7 @@ export default function ConstructorShell({
         </div>
       )}
 
-      {!isFreeMode && pendingInitialFieldDescriptions.length > 0 && (
+      {!isCompositeView && !isFreeMode && pendingInitialFieldDescriptions.length > 0 && (
         <div className="constructor-form-field-handoff" role="status">
           <div>
             <b>ПРЕХОД ОТ ОПИСАНИЕТО КЪМ КОНСТРУКТОРА</b>
@@ -2714,7 +2895,7 @@ export default function ConstructorShell({
           </button>
         </div>
 
-        <div className="constructor-toolbar-group">
+        {!isCompositeView && <div className="constructor-toolbar-group">
           <button type="button" disabled title="Предстои в следващ етап">
             Референтна схема
           </button>
@@ -2727,19 +2908,21 @@ export default function ConstructorShell({
           >
             Профилен изглед {profileViewEnabled ? 'ВКЛ.' : 'ИЗКЛ.'}
           </button>
-        </div>
+        </div>}
 
         <div className="constructor-toolbar-group constructor-toolbar-view">
           <button
             type="button"
-            className={gridVisible ? 'is-active' : ''}
+            className={gridVisible && !isCompositeView ? 'is-active' : ''}
+            disabled={isCompositeView}
             onClick={() => setGridVisible((current) => !current)}
           >
-            Мрежа {gridVisible ? 'ВКЛ.' : 'ИЗКЛ.'}
+            Мрежа {gridVisible && !isCompositeView ? 'ВКЛ.' : 'ИЗКЛ.'}
           </button>
           <button
             type="button"
             className={snapEnabled ? 'is-active' : ''}
+            disabled={isCompositeView}
             onClick={() => setSnapEnabled((current) => !current)}
           >
             Прилепване {snapEnabled ? 'ВКЛ.' : 'ИЗКЛ.'}
@@ -2747,8 +2930,8 @@ export default function ConstructorShell({
           <button
             type="button"
             className={autoFitEnabled ? 'is-active' : ''}
-            disabled={!frame}
-            title="Побери и центрирай цялото изделие в работната площ"
+            disabled={!viewBounds}
+            title="Побери изделието с отстъп от края на работната площ"
             onClick={restoreFitView}
           >
             {autoFitEnabled ? 'Побиране: АВТО' : 'Побери'}
@@ -2774,7 +2957,12 @@ export default function ConstructorShell({
       </div>
 
       <div className="constructor-layout is-context-workflow">
-        <aside className="constructor-tools-panel" aria-label="Инструменти за конструкция">
+        {isCompositeView ? <aside className="constructor-tools-panel composite-sketch-details" aria-label="Структурна скица">
+          <b>САМО ПРЕГЛЕД</b>
+          <p>Редактирай рамковите части от „Структура на модула“.</p>
+            <p>Използвай „Панорама“, мащаба и „Побери“ за преглед.</p>
+            <p>Мащабът е условен. Разстоянията в скицата не се измерват по CAD мрежа в mm.</p>
+        </aside> : <aside className="constructor-tools-panel" aria-label="Инструменти за конструкция">
           <div className="constructor-panel-heading">
             <span>ИНСТРУМЕНТИ</span>
             <b>Конструкция</b>
@@ -2786,7 +2974,7 @@ export default function ConstructorShell({
               className={activeTool === 'select' ? 'is-active' : ''}
               onClick={() => setActiveTool('select')}
             >
-              <span className="constructor-tool-glyph">↖</span>
+              <span className="constructor-tool-glyph" aria-hidden="true">{renderConstructorToolIcon('select')}</span>
               <span>
                 <b>Селекция</b>
                 <small>Маркирай каса или ръб</small>
@@ -2798,7 +2986,7 @@ export default function ConstructorShell({
               className={activeTool === 'pan' ? 'is-active' : ''}
               onClick={() => setActiveTool('pan')}
             >
-              <span className="constructor-tool-glyph">✥</span>
+              <span className="constructor-tool-glyph" aria-hidden="true">{renderConstructorToolIcon('pan')}</span>
               <span>
                 <b>Панорама</b>
                 <small>Премести изгледа</small>
@@ -2811,7 +2999,7 @@ export default function ConstructorShell({
               className={activeTool === 'frame' ? 'is-active' : ''}
               onClick={activateFrameTool}
             >
-              <span className="constructor-tool-glyph">▣</span>
+              <span className="constructor-tool-glyph" aria-hidden="true">{renderConstructorToolIcon('frame')}</span>
               <span>
                 <b>Каса / рамка</b>
                 <small>
@@ -2835,7 +3023,7 @@ export default function ConstructorShell({
                 setSelectedDividerId(null)
               }}
             >
-              <span className="constructor-tool-glyph">│</span>
+              <span className="constructor-tool-glyph" aria-hidden="true">{renderConstructorToolIcon('vertical-divider')}</span>
               <span>
                 <b>Вертикален делител</b>
                 <small>{frame ? 'Кликни къде да разделиш ПОЛЕТО' : 'Първо създай каса'}</small>
@@ -2853,7 +3041,7 @@ export default function ConstructorShell({
                 setSelectedDividerId(null)
               }}
             >
-              <span className="constructor-tool-glyph">─</span>
+              <span className="constructor-tool-glyph" aria-hidden="true">{renderConstructorToolIcon('horizontal-divider')}</span>
               <span>
                 <b>Хоризонтален делител</b>
                 <small>{frame ? 'Кликни къде да разделиш ПОЛЕТО' : 'Първо създай каса'}</small>
@@ -2870,10 +3058,10 @@ export default function ConstructorShell({
                 setFrameSelected(false)
                 setSelectedFieldId(null)
                 setSelectedDividerId(null)
-      setSelectedAngledDividerId(null)
+                setSelectedAngledDividerId(null)
               }}
             >
-              <span className="constructor-tool-glyph">╱</span>
+              <span className="constructor-tool-glyph" aria-hidden="true">{renderConstructorToolIcon('angled-divider')}</span>
               <span>
                 <b>Ъглов делител</b>
                 <small>{frame ? 'Кликни в ПОЛЕ · после мести двата края' : 'Първо създай каса'}</small>
@@ -2892,7 +3080,7 @@ export default function ConstructorShell({
                 setSelectedAngledDividerId(null)
               }}
             >
-              <span className="constructor-tool-glyph">□</span>
+              <span className="constructor-tool-glyph" aria-hidden="true">{renderConstructorToolIcon('fixed-field')}</span>
               <span>
                 <b>Фиксирано поле</b>
                 <small>{frame ? 'Кликни върху ПОЛЕ' : 'Първо създай каса'}</small>
@@ -2911,7 +3099,7 @@ export default function ConstructorShell({
                 setSelectedAngledDividerId(null)
               }}
             >
-              <span className="constructor-tool-glyph">◩</span>
+              <span className="constructor-tool-glyph" aria-hidden="true">{renderConstructorToolIcon('operable-field')}</span>
               <span>
                 <b>Отваряемо поле</b>
                 <small>{frame ? 'Кликни върху ПОЛЕ · създава крило' : 'Първо създай каса'}</small>
@@ -2919,7 +3107,7 @@ export default function ConstructorShell({
             </button>
 
             <button type="button" disabled>
-              <span className="constructor-tool-glyph">▥</span>
+              <span className="constructor-tool-glyph" aria-hidden="true">{renderConstructorToolIcon('door')}</span>
               <span>
                 <b>Врата</b>
                 <small>следващ етап</small>
@@ -2974,28 +3162,27 @@ export default function ConstructorShell({
               <small>Премахва целия модул от проекта</small>
             </button>
           )}
-        </aside>
+        </aside>}
 
-        <section className="constructor-workarea" aria-label="Работно поле за конструкцията">{/* CONSTRUCTOR 01E - TECHNICAL DRAWING CLARITY · 01E.2 MINIMAL FIELD BADGES */}
-          <div className="constructor-ruler constructor-ruler-top" aria-hidden="true">
+        <section className="constructor-workarea has-fixed-cad-origin" aria-label="Работно поле за конструкцията">{/* CONSTRUCTOR 01E - TECHNICAL DRAWING CLARITY · 01E.2 MINIMAL FIELD BADGES */}
+          {!isCompositeView && <><div className="constructor-ruler constructor-ruler-top" aria-hidden="true">
             {[0, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000].map((value) => (
-              <span key={value} style={{ left: `${viewOffset.xPx + value * pxPerMm}px` }}>{value}</span>
+              <span key={value} style={{ left: `${cadWorldToScreen({ xMm: value, yMm: 0 }, canvasViewport).xPx}px` }}>{value}</span>
             ))}
           </div>
 
           <div className="constructor-ruler constructor-ruler-left" aria-hidden="true">
             {[0, 500, 1000, 1500, 2000].map((value) => (
-              <span key={value} style={{ top: `${viewOffset.yPx + value * pxPerMm}px` }}>{value}</span>
+              <span key={value} style={{ top: `${cadWorldToScreen({ xMm: 0, yMm: value }, canvasViewport).yPx}px` }}>{value}</span>
             ))}
-          </div>
+          </div></>}
 
           <div
             ref={canvasRef}
-            className={`constructor-canvas${gridVisible ? ' has-grid' : ''}${activeTool === 'frame' ? ' is-frame-tool' : ''}${activeTool === 'pan' ? ' is-pan-tool' : ''}${viewPanState ? ' is-panning' : ''}${activeTool === 'vertical-divider' || activeTool === 'horizontal-divider' || activeTool === 'angled-divider' ? ' is-divider-tool' : ''}`}
+            className={`constructor-canvas${gridVisible && !isCompositeView ? ' has-grid' : ''}${activeTool === 'frame' ? ' is-frame-tool' : ''}${activeTool === 'pan' ? ' is-pan-tool' : ''}${viewPanState ? ' is-panning' : ''}${activeTool === 'vertical-divider' || activeTool === 'horizontal-divider' || activeTool === 'angled-divider' ? ' is-divider-tool' : ''}`}
             style={{
               '--constructor-grid-step': `${GRID_STEP_MM * pxPerMm}px`,
               '--constructor-major-grid-step': `${MAJOR_GRID_STEP_MM * pxPerMm}px`,
-              backgroundPosition: `${viewOffset.xPx - 1}px ${viewOffset.yPx - 1}px`,
             } as CSSProperties}
             onPointerDownCapture={handleCanvasPointerDownCapture}
             onPointerDown={handleCanvasPointerDown}
@@ -3011,7 +3198,9 @@ export default function ConstructorShell({
                 : `ОФЕРТА · МОДУЛ ${String(moduleNumber).padStart(2, '0')}`}
             </div>
 
-            {!canEditConstruction && (
+            {compositeProjection && <CompositeStructuralSketch projection={compositeProjection} scale={pxPerMm} offset={viewOffset} />}
+
+            {!isCompositeView && !canEditConstruction && (
               <div className="constructor-module-start-hint">
                 <span>МОДУЛЕН КОНСТРУКТОР</span>
                 <b>Създай Модул 1</b>
@@ -3039,15 +3228,16 @@ export default function ConstructorShell({
               </div>
             )}
 
-            {displayedFrame && (
+            {!isCompositeView && displayedFrame && (
               <div
                 className={frameClassName}
+                title={activeTool === 'select' ? 'Хвани касата и премести изделието' : undefined}
                 style={{
-                  left: `${viewOffset.xPx + displayedFrame.xMm * pxPerMm}px`,
-                  top: `${viewOffset.yPx + displayedFrame.yMm * pxPerMm}px`,
+                  left: `${displayedFramePosition?.xPx ?? 0}px`,
+                  top: `${displayedFramePosition?.yPx ?? 0}px`,
                   width: `${Math.max(1, displayedFrame.widthMm * pxPerMm)}px`,
                   height: `${Math.max(1, displayedFrame.heightMm * pxPerMm)}px`,
-                  '--constructor-frame-face': `${frameFacePx}px`,
+                  '--constructor-frame-face': `${profileViewActive && reviewedFrameFacePx !== null ? reviewedFrameFacePx : frameFacePx}px`,
                   '--constructor-profile-frame-face': `${reviewedFrameFacePx ?? frameFacePx}px`,
                 } as CSSProperties}
                 onPointerDown={(event) => {
@@ -3058,17 +3248,30 @@ export default function ConstructorShell({
                   if (activeTool === 'vertical-divider' || activeTool === 'horizontal-divider') {
                     addDivider(
                       activeTool === 'vertical-divider' ? 'vertical' : 'horizontal',
-                      pointFromPointer(event),
+                      framePointFromPointer(event),
                     )
                     return
                   }
                   if (activeTool === 'angled-divider') {
-                    addAngledDivider(pointFromPointer(event))
+                    addAngledDivider(framePointFromPointer(event))
                     return
                   }
                   if (activeTool === 'select') {
-                    // CONTEXT INSPECTOR 01.1 V2 — frame body returns to module context.
-                    setFrameSelected(false)
+                    if (!construction) return
+                    event.stopPropagation()
+                    const point = cadPointFromPointer(event)
+                    const currentConstruction = construction
+                    event.currentTarget.setPointerCapture(event.pointerId)
+                    setAutoFitEnabled(false)
+                    setDragState({
+                      kind: 'move-frame',
+                      pointerId: event.pointerId,
+                      startPointer: point,
+                      originalPlacementOffset: { ...framePlacementOffsetMm },
+                      original: { ...frame },
+                      originalConstruction: cloneConstructionModel(currentConstruction),
+                    })
+                    setFrameSelected(true)
                     setSelectedFieldId(null)
                     setSelectedEdge(null)
                     setSelectedDividerId(null)
@@ -3078,21 +3281,67 @@ export default function ConstructorShell({
                 }}
               >
                 <div className="constructor-frame-visual" aria-hidden="true">
-                  {profileViewActive && profileAwareGeometry?.frame.reviewed && (
-                    <i className="constructor-profile-frame-face-overlay" />
+                  <i className="constructor-frame-edge-face edge-face-left" />
+                  <i className="constructor-frame-edge-face edge-face-right" />
+                  <i className="constructor-frame-edge-face edge-face-top" />
+                  {frameEdges?.bottom === 'frame' && <i className="constructor-frame-edge-face edge-face-bottom" />}
+                  {frameEdges?.bottom === 'threshold' && (
+                    <i className="constructor-frame-threshold-placeholder">ПРАГ · НЕИЗБРАН ПРОФИЛ</i>
                   )}
                   <i className="constructor-frame-mitre mitre-tl" />
                   <i className="constructor-frame-mitre mitre-tr" />
-                  <i className="constructor-frame-mitre mitre-bl" />
-                  <i className="constructor-frame-mitre mitre-br" />
+                  {frameEdges?.bottom === 'frame' && <i className="constructor-frame-mitre mitre-bl" />}
+                  {frameEdges?.bottom === 'frame' && <i className="constructor-frame-mitre mitre-br" />}
                 </div>
 
                 {frame && dragState?.kind !== 'create' && fields.map((field) => {
                   const sashPlacement = profileViewActive ? profileAwareSashGeometry?.fields[field.id] : null
                   const innerProfileBoundsMm = sashPlacement?.placementReady ? sashPlacement.innerProfileBoundsMm : null
+                  const fieldWidthPx = field.bounds.widthMm * pxPerMm
+                  const fieldHeightPx = field.bounds.heightMm * pxPerMm
+                  const fieldDimensionText = `${Math.round(field.bounds.widthMm)} × ${Math.round(field.bounds.heightMm)} mm`
+                  const canvasRect = selectedField?.id === field.id ? canvasRef.current?.getBoundingClientRect() : undefined
+                  const dimensionLabelPlacement = selectedField?.id === field.id
+                    ? placeFieldDimensionLabel(fieldDimensionText, fieldWidthPx, fieldHeightPx,
+                        field.fieldType !== 'operable' ? null : innerProfileBoundsMm ? {
+                          left: (innerProfileBoundsMm.xMm - field.bounds.xMm) * pxPerMm,
+                          top: (innerProfileBoundsMm.yMm - field.bounds.yMm) * pxPerMm,
+                          width: innerProfileBoundsMm.widthMm * pxPerMm,
+                          height: innerProfileBoundsMm.heightMm * pxPerMm,
+                        } : {
+                          left: SCHEMATIC_OPENING_INSET_PX,
+                          top: SCHEMATIC_OPENING_INSET_PX,
+                          width: fieldWidthPx - SCHEMATIC_OPENING_INSET_PX * 2,
+                          height: fieldHeightPx - SCHEMATIC_OPENING_INSET_PX * 2,
+                        },
+                        Boolean(profileViewActive && field.fieldType === 'operable' && !innerProfileBoundsMm && !profileAwareGeometry?.sashes[field.id]?.reviewed),
+                        {
+                          forceExternal: Boolean(field.polygon),
+                          // Reserve the existing external dimension lanes in display
+                          // pixels; no dimension value or chain position is changed.
+                          obstacles: [{
+                            left: -field.bounds.xMm * pxPerMm - 10,
+                            top: (frame.heightMm - field.bounds.yMm) * pxPerMm,
+                            width: frame.widthMm * pxPerMm + 20,
+                            height: 80,
+                          }, {
+                            left: (frame.widthMm - field.bounds.xMm) * pxPerMm,
+                            top: -field.bounds.yMm * pxPerMm - 10,
+                            width: 82,
+                            height: frame.heightMm * pxPerMm + 90,
+                          }],
+                          viewport: canvasRect && displayedFramePosition ? {
+                            left: Math.max(0, -canvasRect.left) - displayedFramePosition.xPx - field.bounds.xMm * pxPerMm + 4,
+                            top: Math.max(0, -canvasRect.top) - displayedFramePosition.yPx - field.bounds.yMm * pxPerMm + 4,
+                            width: Math.max(0, Math.min(canvasRect.width, window.innerWidth - canvasRect.left) - Math.max(0, -canvasRect.left) - 8),
+                            height: Math.max(0, Math.min(canvasRect.height, window.innerHeight - canvasRect.top) - Math.max(0, -canvasRect.top) - 8),
+                          } : undefined,
+                        },
+                      )
+                    : null
                   return (
+                  <Fragment key={field.id}>
                   <button
-                    key={field.id}
                     type="button"
                     className={`constructor-field-surface ${selectedFieldId === field.id ? 'is-selected' : ''} ${field.fieldType === 'fixed' ? 'is-fixed' : field.fieldType === 'operable' ? 'is-operable' : 'is-unset'} ${profileViewActive && field.fieldType === 'operable' ? (innerProfileBoundsMm ? 'has-reviewed-sash-placement' : profileAwareGeometry?.sashes[field.id]?.reviewed ? 'has-reviewed-sash-geometry' : 'has-unresolved-sash-geometry') : ''}`}
                     style={{
@@ -3100,22 +3349,23 @@ export default function ConstructorShell({
                       top: `${field.bounds.yMm * pxPerMm}px`,
                       width: `${field.bounds.widthMm * pxPerMm}px`,
                       height: `${field.bounds.heightMm * pxPerMm}px`,
+                      '--constructor-opening-inset': `${SCHEMATIC_OPENING_INSET_PX}px`,
                       clipPath: field.polygon
                         ? `polygon(${field.polygon.map((point) => `${((point.xMm - field.bounds.xMm) / Math.max(1, field.bounds.widthMm)) * 100}% ${((point.yMm - field.bounds.yMm) / Math.max(1, field.bounds.heightMm)) * 100}%`).join(', ')})`
                         : undefined,
-                    }}
+                    } as CSSProperties}
                     aria-label={`Поле ${field.sequence}`}
                     onPointerDown={(event) => {
                       event.stopPropagation()
                       if (activeTool === 'vertical-divider' || activeTool === 'horizontal-divider') {
                         addDivider(
                           activeTool === 'vertical-divider' ? 'vertical' : 'horizontal',
-                          pointFromPointer(event),
+                          framePointFromPointer(event),
                         )
                         return
                       }
                       if (activeTool === 'angled-divider') {
-                        addAngledDivider(pointFromPointer(event))
+                        addAngledDivider(framePointFromPointer(event))
                         return
                       }
                       if (activeTool === 'fixed-field' || activeTool === 'operable-field') {
@@ -3147,6 +3397,7 @@ export default function ConstructorShell({
                         </span>
                         {/* CONSTRUCTOR 01E.5.2: opening symbol is inset to the inner sash contour. */}
                         {/* 01.1: reviewed placement uses domain bounds; fallback retains the schematic CSS inset. */}
+                        {/* The viewBox adds symbol breathing room only, not a physical profile inset. */}
                         <svg
                           className={`constructor-operable-visual mode-${field.openingMode ?? 'unset'} handing-${field.openingHanding ?? 'none'}`}
                           style={innerProfileBoundsMm ? {
@@ -3156,7 +3407,7 @@ export default function ConstructorShell({
                             width: `${innerProfileBoundsMm.widthMm * pxPerMm}px`,
                             height: `${innerProfileBoundsMm.heightMm * pxPerMm}px`,
                           } : undefined}
-                          viewBox="0 0 100 100"
+                          viewBox="-6 -6 112 112"
                           preserveAspectRatio="none"
                           aria-hidden="true"
                         >
@@ -3180,18 +3431,18 @@ export default function ConstructorShell({
                           )}
                           {field.openingMode === 'tilt-turn' && field.openingHanding === 'left' && (
                             <>
-                              <line className="opening-primary" x1="0" y1="0" x2="100" y2="50" />
-                              <line className="opening-primary" x1="0" y1="100" x2="100" y2="50" />
-                              <line className="opening-tilt" x1="0" y1="100" x2="50" y2="0" />
-                              <line className="opening-tilt" x1="100" y1="100" x2="50" y2="0" />
+                              <line className="opening-primary" x1="0" y1="20" x2="100" y2="50" />
+                              <line className="opening-primary" x1="0" y1="80" x2="100" y2="50" />
+                              <line className="opening-tilt" x1="35" y1="16" x2="50" y2="0" />
+                              <line className="opening-tilt" x1="65" y1="16" x2="50" y2="0" />
                             </>
                           )}
                           {field.openingMode === 'tilt-turn' && field.openingHanding === 'right' && (
                             <>
-                              <line className="opening-primary" x1="100" y1="0" x2="0" y2="50" />
-                              <line className="opening-primary" x1="100" y1="100" x2="0" y2="50" />
-                              <line className="opening-tilt" x1="0" y1="100" x2="50" y2="0" />
-                              <line className="opening-tilt" x1="100" y1="100" x2="50" y2="0" />
+                              <line className="opening-primary" x1="100" y1="20" x2="0" y2="50" />
+                              <line className="opening-primary" x1="100" y1="80" x2="0" y2="50" />
+                              <line className="opening-tilt" x1="35" y1="16" x2="50" y2="0" />
+                              <line className="opening-tilt" x1="65" y1="16" x2="50" y2="0" />
                             </>
                           )}
                           {(field.openingMode === 'side-hinged' || field.openingMode === 'tilt-turn') &&
@@ -3215,6 +3466,21 @@ export default function ConstructorShell({
                       {field.sequence}
                     </span>
                   </button>
+                    {dimensionLabelPlacement && (
+                      <span
+                        className={`constructor-field-dimension-label${dimensionLabelPlacement.external ? ' is-external' : ''}`}
+                        style={{
+                          left: field.bounds.xMm * pxPerMm + dimensionLabelPlacement.left,
+                          top: field.bounds.yMm * pxPerMm + dimensionLabelPlacement.top,
+                          width: dimensionLabelPlacement.width,
+                          height: dimensionLabelPlacement.height,
+                        }}
+                        title={`${field.polygon ? 'Габарит на полето' : 'Вътрешен схемен размер на полето'}: ${fieldDimensionText}`}
+                      >
+                        {fieldDimensionText}
+                      </span>
+                    )}
+                  </Fragment>
                   )
                 })}
 
@@ -3408,11 +3674,22 @@ export default function ConstructorShell({
                 <div className="constructor-frame-dimension constructor-frame-dimension-height">
                   <span>{Math.round(displayedFrame.heightMm)}</span>
                 </div>
+
+                {frameClearDimensions.widthMm !== null && dragState?.kind !== 'create' && (
+                  <div className="constructor-frame-inner-dimension constructor-frame-inner-dimension-width">
+                    <span>ВЪТР. {Math.round(frameClearDimensions.widthMm)}</span>
+                  </div>
+                )}
+                {frameClearDimensions.heightMm !== null && dragState?.kind !== 'create' && (
+                  <div className="constructor-frame-inner-dimension constructor-frame-inner-dimension-height">
+                    <span>ВЪТР. {Math.round(frameClearDimensions.heightMm)}</span>
+                  </div>
+                )}
               </div>
             )}
           </div>
 
-          {frame && dragState?.kind !== 'create' && fields.length > 0 && (
+          {!isCompositeView && frame && dragState?.kind !== 'create' && fields.length > 0 && (
             <section className="constructor-field-details-panel" aria-label="Данни за полетата в модула">
               <div className="constructor-field-details-heading">
                 <span>ПОЛЕТА В МОДУЛА</span>
@@ -3475,7 +3752,10 @@ export default function ConstructorShell({
             </section>
           )}
 
-          <footer className="constructor-statusbar">
+          {isCompositeView ? <footer className="constructor-statusbar">
+            <span>СТРУКТУРНА СКИЦА · САМО ПРЕГЛЕД</span>
+            <span>УСЛОВЕН МАЩАБ: {zoom}% · {autoFitEnabled ? 'АВТО ПОБИРАНЕ' : 'РЪЧЕН ИЗГЛЕД'}</span>
+          </footer> : <footer className="constructor-statusbar">
             <span>
               ИНСТРУМЕНТ:{' '}
               {activeTool === 'select'
@@ -3500,10 +3780,18 @@ export default function ConstructorShell({
             <span>ПРИЛЕПВАНЕ: {snapEnabled ? `${SNAP_STEP_MM} mm` : 'ИЗКЛ.'}</span>
             <span>МАЩАБ: {zoom}% · {autoFitEnabled ? 'АВТО ПОБИРАНЕ' : 'РЪЧЕН ИЗГЛЕД'}</span>
             <span>ПОЛЕТА: {conceptualFieldCount}</span>
-          </footer>
+          </footer>}
         </section>
 
-        <aside className="constructor-properties-panel constructor-context-inspector" aria-label="Данни за избраното" data-context={selectedField ? 'field' : selectedDivider ? 'divider' : selectedAngledDivider ? 'angled-divider' : 'module'}>
+        {compositeProjection ? <aside className="constructor-properties-panel composite-sketch-details" aria-label="Данни за структурната скица">
+          <b>МОДУЛ {moduleNumber}</b>
+          <p>Номинални размери на рамковите части</p>
+          {compositeProjection.status === 'ready' && <ul>{compositeProjection.parts.map((part) => <li key={part.id}>
+            <b>{part.label}</b><span>{part.dimensions}</span>
+          </li>)}</ul>}
+          <p>Разстоянията и пунктирните връзки са условни. Точната връзка между рамките изисква човешки преглед.</p>
+          <small>Скицата не е готова за производство.</small>
+        </aside> : <aside className="constructor-properties-panel constructor-context-inspector" aria-label="Данни за избраното" data-context={selectedField ? 'field' : selectedDivider ? 'divider' : selectedAngledDivider ? 'angled-divider' : 'module'}>
           <header className="constructor-context-heading">
             <span>ИЗБРАНО</span>
             <h2>{selectedElementTitle}</h2>
@@ -3519,7 +3807,7 @@ export default function ConstructorShell({
             {renderContextCheck()}
             <small>Скицата не е готова за производство.</small>
           </section>
-        </aside>
+        </aside>}
       </div>
     </section>
   )

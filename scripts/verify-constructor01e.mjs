@@ -9,7 +9,7 @@ const packageJson = JSON.parse(await readFile(new URL('../package.json', import.
 assert.match(shell, /CONSTRUCTOR 01E - TECHNICAL DRAWING CLARITY/)
 assert.match(shell, /constructor-field-number-badge/)
 assert.match(shellCss, /Constructor 01E — technical drawing clarity/)
-assert.match(shellCss, /inset: 24px 0 106px 28px/)
+assert.match(shellCss, /inset: var\(--constructor-cad-top\) 0 var\(--constructor-cad-bottom\) var\(--constructor-cad-left\)/)
 assert.match(shellCss, /background-color: #ffffff/)
 assert.match(shellCss, /constructor-field-number-badge/)
 assert.match(shellCss, /height: 78px/)

@@ -1,3 +1,4 @@
+import { assertConstructorFeature } from './constructor-source-inspection.mjs'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
@@ -18,7 +19,7 @@ const packageJson = JSON.parse(
   await readFile(new URL('../package.json', import.meta.url), 'utf8'),
 )
 
-assert.match(shell, /CONSTRUCTOR 01[BC]/)
+assertConstructorFeature('frame')
 assert.match(shell, /type FrameEdge = 'left' \| 'right' \| 'top' \| 'bottom'/)
 assert.match(shell, /type FrameModel/)
 assert.match(shell, /SNAP_STEP_MM = 10/)

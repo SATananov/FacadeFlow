@@ -1,3 +1,4 @@
+import { assertConstructorFeature } from './constructor-source-inspection.mjs'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
@@ -17,7 +18,7 @@ assert.match(topology, /setConstructionFieldType/)
 assert.match(topology, /setConstructionFieldOpeningMode/)
 assert.match(topology, /setConstructionFieldOpeningHanding/)
 assert.match(topology, /openingMode === 'side-hinged' \|\| openingMode === 'tilt-turn'/)
-assert.match(shell, /FIELD SEMANTICS 01D/)
+assertConstructorFeature('topology')
 assert.match(shell, /activeTool === 'fixed-field'/)
 assert.match(shell, /activeTool === 'operable-field'/)
 assert.match(shell, /Отваряемо \/ крило/)

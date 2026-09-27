@@ -73,7 +73,7 @@ const otherSystem = catalog.getSelectableProfileSystems().find((system) => syste
 assert.ok(otherSystem, 'system-change fixture from central selectable catalogue')
 const renderApp = mount(App)
 let appTree = renderApp()
-button(appTree, 'Започни в Конструктора').props.onClick()
+button(appTree, 'Нова свободна скица').props.onClick()
 function active() {
   appTree = renderApp()
   const shell = nodes(appTree, (node) => node.type === Shell)[0]
@@ -251,7 +251,7 @@ for (const systemId of [prelude.id, '']) {
     // "free sketch" re-entry button.
     const transferRender = mount(App)
     let transferTree = transferRender()
-    button(transferTree, 'Започни в Конструктора').props.onClick()
+    button(transferTree, 'Нова свободна скица').props.onClick()
     transferTree = transferRender()
 
     let transferShell = nodes(transferTree, (node) => node.type === Shell)[0]

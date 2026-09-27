@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { cssRules, uniqueCssValue } from './constructor-source-inspection.mjs'
 import { readFile } from 'node:fs/promises'
 
 const shell = await readFile(
@@ -35,12 +36,17 @@ assert.match(shell, /constructor-frame-mitre/)
 assert.match(css, /\.constructor-divider/)
 assert.match(css, /\.constructor-field-number-badge/)
 assert.match(css, /\.constructor-frame-mitre/)
-assert.match(css, /Full-face frame mitres/)
 assert.match(css, /1\.414214/)
-assert.match(css, /left: calc\(0px - var\(--constructor-frame-face/)
-assert.match(css, /right: calc\(0px - var\(--constructor-frame-face/)
-assert.match(css, /top: calc\(0px - var\(--constructor-frame-face/)
-assert.match(css, /bottom: calc\(0px - var\(--constructor-frame-face/)
+const frameRules = cssRules(new URL('../src/components/ConstructorShell.css', import.meta.url))
+for (const [corner, xEdge, yEdge, rotation] of [
+  ['tl', 'left', 'top', '45deg'], ['tr', 'right', 'top', '-45deg'],
+  ['bl', 'left', 'bottom', '-45deg'], ['br', 'right', 'bottom', '45deg'],
+]) {
+  const selector = '.constructor-parametric-frame .constructor-frame-mitre.mitre-' + corner
+  assert.equal(uniqueCssValue(frameRules, selector, xEdge), '0')
+  assert.equal(uniqueCssValue(frameRules, selector, yEdge), '0')
+  assert.equal(uniqueCssValue(frameRules, selector, 'transform'), 'rotate(' + rotation + ')')
+}
 assert.match(css, /mitre-tr[\s\S]*rotate\(-45deg\)/)
 assert.match(css, /mitre-br[\s\S]*rotate\(45deg\)/)
 assert.match(app, /(?:offerModuleSketchDraft|moduleSketchDrafts)/)

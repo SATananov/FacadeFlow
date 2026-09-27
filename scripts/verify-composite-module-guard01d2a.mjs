@@ -349,9 +349,11 @@ test('first-save pointer failure leaves no hidden new module and retry creates e
     assert.equal(saved.constructionDraftsByModuleId[retry.moduleId], null)
   } finally { if (previous === undefined) delete globalThis.window; else globalThis.window = previous }
 })
-test('01D.1, Constructor renderer/topology and Model Library storage fingerprints are untouched', () => {
+test('01D.1, approved Constructor view integration, topology and Model Library fingerprints', () => {
+  // 01D.2B intentionally adds conditional presentation to the shared shell.
+  // Its verifier also fingerprints the original legacy frame body and exercises both render paths.
   const hashes = {
-    'src/components/ConstructorShell.tsx': '4ca53b6f54553bbc320692f13abd67104711b1d400fc6b44a564b1aa70296dbc',
+    'src/components/ConstructorShell.tsx': '21813d23d539b18c2bd19ddc42873574339b39602a645477c83a5c5a0474f728',
     'src/domain/compositeModuleStructure.ts': 'c27aeb815b993ba61420da66bceed9d186b343b3a3f9fd4050367caf47ebf249',
     'src/components/CompositeModuleStructurePanel.tsx': '7eb5a5f63f40e2c1e47a9b17d022e2db9c1a5120919c774685ed6d5093b16760',
     'src/components/compositeModuleStructureDraft.ts': '017d8aa7877720ff368acb1f6f5383a77f71e431c30a5856101557f3920a6f63',
@@ -365,4 +367,4 @@ test('01D.1, Constructor renderer/topology and Model Library storage fingerprint
   assert.doesNotMatch(read('src/App.tsx'), /const nextSequence|createOfferModule\(/)
 })
 console.log(`COMPOSITE MODULE GUARD 01D.2A PASS: ${passed} cases`)
-console.log('APPLICATION NOT STARTED\nNO BROWSER ACCEPTANCE\nNO CONSTRUCTOR SKETCH CHANGE\nNO FIELD INTEGRATION\nNO MODEL ASSIGNMENT\nOCCUPIED MODULE OVERWRITE = BLOCKED\nNEW MODULE CREATION = USER CONFIRMED')
+console.log('APPLICATION NOT STARTED\nNO BROWSER ACCEPTANCE\nNO CONSTRUCTOR TOPOLOGY CHANGE\nNO FIELD INTEGRATION\nNO MODEL ASSIGNMENT\nOCCUPIED MODULE OVERWRITE = BLOCKED\nNEW MODULE CREATION = USER CONFIRMED')

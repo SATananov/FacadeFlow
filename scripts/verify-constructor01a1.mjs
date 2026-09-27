@@ -9,7 +9,7 @@ const acceptance = fs.readFileSync('docs/CONSTRUCTOR_01A_1_DIRECT_ENTRY_ACCEPTAN
 const checks = [
   [app.includes('useProjectWorkspace') && app.includes('setConstructorMode'), 'App has explicit offer/free constructor launch modes'],
   [app.includes('openConstructorFromHome'), 'App exposes direct constructor entry through the current product navigation'],
-  [app.includes("hasConstructorWork ? 'Продължи в Конструктора' : 'Започни в Конструктора'"), 'Home labels direct constructor entry according to current project activity'],
+  [app.includes("'Нова свободна скица'") && app.includes("'Продължи свободната скица'") && app.includes("'Продължи изделието'"), 'Home labels distinguish new free sketch, existing free work, and offer work'],
   [app.includes('onClick={openConstructorFromHome}'), 'Header/Home constructor action uses the shared constructor launcher'],
   [app.includes('mode="free"'), 'App launches shared ConstructorShell in free mode'],
   [app.includes('mode="offer"'), 'App preserves offer-mode ConstructorShell route'],

@@ -13,6 +13,27 @@ export type ConstructionFrame = {
   heightMm: number
 }
 
+/**
+ * Perimeter semantics are intentionally independent from profile resolution.
+ * `threshold` means a human-selected bottom boundary role only; it does not
+ * invent a threshold profile, depth, visible face, overlap, or cut geometry.
+ */
+export type ConstructionFrameEdgeKind = 'frame' | 'none' | 'threshold'
+
+export type ConstructionFrameEdges = {
+  left: ConstructionFrameEdgeKind
+  right: ConstructionFrameEdgeKind
+  top: ConstructionFrameEdgeKind
+  bottom: ConstructionFrameEdgeKind
+}
+
+export const DEFAULT_CONSTRUCTION_FRAME_EDGES: ConstructionFrameEdges = {
+  left: 'frame',
+  right: 'frame',
+  top: 'frame',
+  bottom: 'frame',
+}
+
 export type ConstructionFieldType = 'fixed' | 'operable'
 export type ConstructionOpeningMode = 'side-hinged' | 'tilt' | 'tilt-turn'
 export type ConstructionOpeningHanding = 'left' | 'right'
@@ -74,6 +95,8 @@ export type ConstructionModel = {
   /** Older 01C.1/01C.2 topologies remain readable; new 01C.3 drafts emit field-topology-03. */
   version: 'field-topology-01' | 'field-topology-02' | 'field-topology-03' | 'field-topology-04' | 'field-topology-05' | 'field-topology-06' | 'field-topology-07'
   frame: ConstructionFrame
+  /** Legacy drafts omit this and are read as a full four-sided frame. */
+  frameEdges?: ConstructionFrameEdges
   /** Schematic visible frame face. Not a profile-resolved production value. */
   frameFaceMm?: number
   root: ConstructionFieldNode
@@ -160,6 +183,7 @@ export function createConstructionModel(frame: ConstructionFrame): ConstructionM
   return {
     version: 'field-topology-05',
     frame: { ...frame },
+    frameEdges: { ...DEFAULT_CONSTRUCTION_FRAME_EDGES },
     frameFaceMm: CONSTRUCTION_DEFAULT_FRAME_FACE_MM,
     root: {
       kind: 'field',

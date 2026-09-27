@@ -50,7 +50,7 @@ function frame(value: unknown) {
   const item = keys(value, ['xMm', 'yMm', 'widthMm', 'heightMm'])
   number(item.xMm); number(item.yMm); number(item.widthMm, Number.MIN_VALUE); number(item.heightMm, Number.MIN_VALUE)
 }
-function construction(value: unknown): { fields: Set<string>; dividers: Set<string> } | null {
+function construction(value: unknown, allowFrameEdges = false): { fields: Set<string>; dividers: Set<string> } | null {
   if (value === null) return null
   const draft = keys(value, ['version', 'frame'], ['topology', 'dividers'])
   choice(draft.version, ['constructor-01b', 'constructor-01c', 'constructor-01c.1', 'constructor-01c.2', 'constructor-01c.3',
@@ -64,12 +64,16 @@ function construction(value: unknown): { fields: Set<string>; dividers: Set<stri
     })
   }
   if (draft.topology === undefined) return null
-  const topology = keys(draft.topology, ['version', 'frame', 'root', 'nextFieldId', 'nextDividerId'], ['frameFaceMm'])
+  const topology = keys(draft.topology, ['version', 'frame', 'root', 'nextFieldId', 'nextDividerId'], allowFrameEdges ? ['frameFaceMm', 'frameEdges'] : ['frameFaceMm'])
   choice(topology.version, Array.from({ length: 7 }, (_, i) => `field-topology-0${i + 1}`))
   frame(topology.frame)
   requireThat(['xMm', 'yMm', 'widthMm', 'heightMm'].every((key) => object(draft.frame)[key] === object(topology.frame)[key]), 'frame mismatch')
   sequence(topology.nextFieldId); sequence(topology.nextDividerId)
   if (topology.frameFaceMm !== undefined) number(topology.frameFaceMm)
+  if (topology.frameEdges !== undefined) {
+    const frameEdges = keys(topology.frameEdges, ['left', 'right', 'top', 'bottom'])
+    for (const edge of ['left', 'right', 'top', 'bottom']) choice(frameEdges[edge], ['frame', 'none', 'threshold'])
+  }
   const fields = new Set<string>(), dividers = new Set<string>(), lineage = new Set<string>()
   let count = 0
   function node(value: unknown, depth: number) {
@@ -189,7 +193,7 @@ function validateProjectGraph(value: unknown, allowCompositeStructure: boolean):
     validateModuleCompositeStructure(module as ProjectModule)
     requireThat(object(module.definition).kind === owner.entryMode, 'module kind ownership')
     requireThat(Object.hasOwn(drafts, key) && Object.hasOwn(profiles, key), 'missing module payload')
-    const topology = construction(drafts[key])
+    const topology = construction(drafts[key], allowCompositeStructure)
     const def = object(module.definition)
     const systemId = def.kind === 'free' ? def.profileSystemId : object(object(def.draft).inheritedDefaults).profileSystemId
     profileResolution(profiles[key], topology, systemId)

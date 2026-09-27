@@ -1,0 +1,281 @@
+.composite-sketch-layer, .composite-sketch-connections {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.composite-sketch-layer {
+  color: #30474e;
+}
+
+.composite-sketch-part {
+  position: absolute;
+  color: #30474e;
+}
+
+/*
+ * 01D.2C presentation face: a visible frame band, NOT a production profile section.
+ * The width is presentation-only and intentionally clamped in the renderer.
+ */
+.composite-sketch-side {
+  position: absolute;
+  z-index: 2;
+  display: block;
+  box-sizing: border-box;
+  background: rgba(64, 90, 98, 0.10);
+  box-shadow: inset 0 0 0 1.5px #405a62;
+}
+
+.composite-sketch-side.side-top {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--composite-frame-face-px);
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    calc(100% - var(--composite-frame-face-px)) 100%,
+    var(--composite-frame-face-px) 100%
+  );
+}
+
+.composite-sketch-side.side-bottom {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--composite-frame-face-px);
+  clip-path: polygon(
+    var(--composite-frame-face-px) 0,
+    calc(100% - var(--composite-frame-face-px)) 0,
+    100% 100%,
+    0 100%
+  );
+}
+
+.composite-sketch-side.side-left {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--composite-frame-face-px);
+  clip-path: polygon(
+    0 0,
+    100% var(--composite-frame-face-px),
+    100% calc(100% - var(--composite-frame-face-px)),
+    0 100%
+  );
+}
+
+.composite-sketch-side.side-right {
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: var(--composite-frame-face-px);
+  clip-path: polygon(
+    0 var(--composite-frame-face-px),
+    100% 0,
+    100% 100%,
+    0 calc(100% - var(--composite-frame-face-px))
+  );
+}
+
+.composite-sketch-label {
+  position: absolute;
+  z-index: 3;
+  inset: calc(var(--composite-frame-face-px) + 12px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  overflow: hidden;
+  font-size: 12px;
+  text-align: center;
+}
+
+.composite-sketch-label b {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.composite-sketch-label span {
+  font-size: 11px;
+}
+
+.composite-sketch-profile-tag {
+  position: absolute;
+  z-index: 4;
+  top: calc(var(--composite-frame-face-px) + 6px);
+  left: calc(var(--composite-frame-face-px) + 6px);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  max-width: calc(100% - (var(--composite-frame-face-px) * 2) - 12px);
+  padding: 2px 5px;
+  border: 1px solid rgba(64, 90, 98, 0.20);
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.86);
+  font-size: 9px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.composite-sketch-profile-tag span {
+  color: #71858b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.composite-sketch-profile-tag b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 700;
+  color: #30474e;
+}
+
+/* Width dimension is outside the frame and remains a screen annotation only. */
+.composite-sketch-width-dimension {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  bottom: -28px;
+  height: 18px;
+  color: #647a81;
+  font-size: 9px;
+}
+
+.composite-sketch-width-dimension .dimension-line {
+  position: absolute;
+  top: 7px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #8da0a5;
+}
+
+.composite-sketch-width-dimension .dimension-tick {
+  position: absolute;
+  top: 2px;
+  width: 1px;
+  height: 11px;
+  background: #8da0a5;
+}
+
+.composite-sketch-width-dimension .dimension-tick-start { left: 0; }
+.composite-sketch-width-dimension .dimension-tick-end { right: 0; }
+
+.composite-sketch-width-dimension em {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -2px);
+  padding: 0 5px;
+  background: rgba(255, 255, 255, 0.92);
+  font-style: normal;
+  white-space: nowrap;
+}
+
+.composite-sketch-connections {
+  z-index: 5;
+  overflow: visible;
+}
+
+.composite-sketch-connections path {
+  fill: none;
+  stroke: #71878d;
+  stroke-width: 1.25;
+}
+
+.composite-zero-divider-line {
+  stroke-dasharray: 5 4;
+}
+
+.composite-zero-divider-leader {
+  stroke-dasharray: 2 3;
+}
+
+.composite-zero-divider-label {
+  fill: #526a72;
+  font-size: 10px;
+  font-weight: 600;
+  paint-order: stroke;
+  stroke: rgba(255, 255, 255, 0.96);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+.composite-sketch-message {
+  position: absolute;
+  inset: 25% 10% auto;
+  text-align: center;
+  color: #526a72;
+  line-height: 1.6;
+}
+
+.constructor-title-block .composite-sketch-note {
+  margin-top: 6px;
+  padding: 6px 10px;
+  color: #526a72;
+  background: #f1f6f7;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.composite-sketch-details {
+  padding: 12px;
+  color: #405a62;
+  line-height: 1.6;
+}
+
+.composite-sketch-details ul { padding-left: 18px; }
+.composite-sketch-details li { margin-bottom: 12px; font-size: 12px; overflow-wrap: anywhere; }
+.composite-sketch-details li span { display: block; }
+
+.composite-sketch-height-dimension {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  bottom: 0;
+  width: 24px;
+  color: #647a81;
+  font-size: 9px;
+}
+
+.composite-sketch-height-dimension.is-left { left: -34px; }
+.composite-sketch-height-dimension.is-right { right: -34px; }
+
+.composite-sketch-height-dimension .dimension-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 11px;
+  width: 1px;
+  background: #8da0a5;
+}
+
+.composite-sketch-height-dimension .dimension-tick {
+  position: absolute;
+  left: 6px;
+  width: 11px;
+  height: 1px;
+  background: #8da0a5;
+}
+
+.composite-sketch-height-dimension .dimension-tick-start { top: 0; }
+.composite-sketch-height-dimension .dimension-tick-end { bottom: 0; }
+
+.composite-sketch-height-dimension em {
+  position: absolute;
+  top: 50%;
+  left: 11px;
+  transform: translate(-50%, -50%) rotate(-90deg);
+  padding: 0 5px;
+  background: rgba(255, 255, 255, 0.92);
+  font-style: normal;
+  white-space: nowrap;
+}

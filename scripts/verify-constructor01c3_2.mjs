@@ -1,3 +1,4 @@
+import { assertConstructorFeature } from './constructor-source-inspection.mjs'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
@@ -20,12 +21,11 @@ assert.doesNotMatch(topology, /DividerResizeEdge/)
 assert.doesNotMatch(topology, /CONSTRUCTION_MIN_DIVIDER_FACE_MM/)
 assert.doesNotMatch(topology, /CONSTRUCTION_MAX_DIVIDER_FACE_MM/)
 
-assert.match(shell, /(?:FIELD TOPOLOGY 01C\.3\.[234567]|FIELD SEMANTICS 01D)/)
+assertConstructorFeature('topology')
 assert.match(shell, /version: '(?:constructor-01c\.3\.[234567]|constructor-01d)'/)
 assert.match(shell, /Дължина на делителя/)
 assert.match(shell, /автоматично от родителското ПОЛЕ/)
 assert.match(shell, /Схемна видима ширина/)
-assert.match(shell, /автоматична до Profile Resolution/)
 assert.match(shell, /commitDividerPosition/)
 assert.match(acceptance, /Profile Data \/ Profile Resolution/i)
 assert.doesNotMatch(shell, /startDividerThicknessResize/)

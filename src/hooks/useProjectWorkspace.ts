@@ -113,30 +113,37 @@ export function useProjectWorkspace() {
     return result
   }
   const newProject = () => {
-    // A damaged record stays untouched; the explicit new project uses a new key.
-    if (!latest.current.blocked && !latest.current.detached && saveNow().status !== 'saved') return
+    // Never persist an untouched placeholder merely because the user asks for another project.
+    // Meaningful attached work is saved first; empty/detached drafts are simply replaced in memory.
+    const current = latest.current
+    if (!current.blocked && !current.detached && hasMeaningfulProjectContent(current.snapshot) && saveNow().status !== 'saved') return
     const next = createProjectSnapshot()
     next.workspace.screen = 'offer-setup'
-    const session: ProjectSession = { snapshot: next, hydrated: true, blocked: false, detached: false, status: 'unsaved', error: null }
+    const session: ProjectSession = { snapshot: next, hydrated: true, blocked: false, detached: true, status: 'unsaved', error: null }
     latest.current = session
     lastSaved.current = null
     setSession(session)
   }
-  const openProject = (id: string) => {
-    if (!latest.current.blocked && !latest.current.detached && saveNow().status !== 'saved') return
+  const loadProject = (id: string, screen?: ProjectSnapshot['workspace']['screen']) => {
+    if (!latest.current.blocked && !latest.current.detached && saveNow().status !== 'saved') return null
     try {
       const loaded = storage.load(id)
       if (!loaded) throw new Error('Проектът не е намерен.')
+      if (screen) loaded.workspace.screen = screen
       // Also update the startup pointer, with failures accurately surfaced.
       const result = saveProjectSession({ snapshot: loaded, hydrated: true, blocked: false, detached: false, status: 'unsaved', error: null }, storage)
       if (result.status !== 'saved') throw new Error(result.error ?? 'Неуспешно отваряне.')
-      lastSaved.current = loaded
+      lastSaved.current = result.snapshot
       latest.current = result
       setSession(result)
+      return result.snapshot
     } catch (error) {
       setSession((current) => ({ ...current, status: 'failed', error: error instanceof Error ? error.message : 'Неуспешно отваряне.' }))
+      return null
     }
   }
+  const openProject = (id: string) => { loadProject(id) }
+  const openProjectForOffer = (id: string) => loadProject(id, 'offer-setup')
   const deleteProject = (id: string) => {
     try {
       const deletingCurrent = id === latest.current.snapshot.project.id
@@ -208,7 +215,7 @@ export function useProjectWorkspace() {
     confirmStatement: (request: ConfirmationRequest, actor: HumanActor, intent: HumanConfirmation['intent']) =>
       applyAssurance((s) => confirmStatement(s, request, actor, new Date().toISOString(), intent)),
     snapshot, persistence: { status: session.status, error: session.error, blocked: session.blocked, attached: !session.detached }, projects,
-    saveNow, newProject, openProject, deleteProject,
+    saveNow, newProject, openProject, openProjectForOffer, deleteProject,
     offer: getOfferForm(snapshot),
     setOffer: (update: Update<OfferDraft>) => edit((s) => writeOfferForm(s, applyUpdate(getOfferForm(s), update))),
     saved: offer.setupStage === 'modules',

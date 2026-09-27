@@ -74,7 +74,11 @@ assert.match(packageJson.scripts?.verify ?? '', /test:contract/)
 assert.match(packageJson.scripts?.verify ?? '', /test:release018/)
 assert.match(packageJson.scripts?.verify ?? '', /npm run lint/)
 assert.match(packageJson.scripts?.verify ?? '', /npm run build/)
-assert.equal(packageJson.scripts?.['verify:release018'], 'npm run verify')
+assert.equal(
+  packageJson.scripts?.['verify:release018'],
+  'npm run test:contract && npm run test:release018 && npm run lint && npm run build',
+  'verify:release018 must be an explicit non-recursive alias for the final release gate',
+)
 
 assert.match(readme, /FacadeFlow 0\.1\.8/)
 assert.match(readme, /0\.1\.8B.*0\.1\.8E\.1/s)

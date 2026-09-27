@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import assert from 'node:assert/strict'
+import { assertConstructorFeature } from './constructor-source-inspection.mjs'
 
 const read = (path) => fs.readFileSync(path, 'utf8')
 const resolution = read('src/domain/profileResolution.ts')
@@ -30,7 +31,7 @@ assert.match(inventory, /profile-component-inventory-02a/)
 assert.match(inventory, /buildProfileSystemComponentInventory/)
 assert.match(constructor, /СТЪКЛОДЪРЖАТЕЛ/)
 assert.match(constructor, /АРМИРОВКА НА КАСАТА/)
-assert.match(constructor, /HARDWARE REQUIREMENTS/)
+assertConstructorFeature('hardware')
 assert.match(resolution, /glazingBeads: \{ assigned: number; resolved: number; targetsRequired: number \}/)
 assert.match(acceptance, /MACHINE READY: NO/)
 assert.match(acceptance, /CONSTRUCTOR TOPOLOGY \/ GEOMETRY MUTATION: NO/)

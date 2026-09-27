@@ -1,4 +1,4 @@
-import { createProjectSnapshot, getProjectDisplayName, type IdFactory, type ProjectSnapshot } from '../domain/project/projectModel'
+import { createProjectSnapshot, getProjectDisplayName, hasMeaningfulProjectContent, type IdFactory, type ProjectSnapshot } from '../domain/project/projectModel'
 import { deserializeProject, serializeProject } from '../domain/project/projectSerialization'
 import { assertHistoryPreserved } from '../domain/project/revisionOperations'
 import { dependencyContents } from '../domain/assurance/changeTracking'
@@ -23,6 +23,41 @@ export type ProjectSession = {
 }
 export class LocalProjectStorage {
   constructor(private readonly getStorage: () => ProjectStorage) {}
+
+  /**
+   * Remove only provably empty throw-away drafts created by older navigation flows.
+   * Any project with metadata, offer/free work, modules, revisions, or assurance records is preserved.
+   */
+  cleanupEmptyDraftProjects(): number {
+    const storage = this.getStorage()
+    const removableIds: string[] = []
+
+    for (let i = 0; i < storage.length; i++) {
+      const key = storage.key(i)
+      if (!key?.startsWith(PROJECT_KEY_PREFIX)) continue
+      const id = key.slice(PROJECT_KEY_PREFIX.length)
+      try {
+        const snapshot = this.load(id)
+        if (!snapshot) continue
+        const hasRevision = snapshot.revisions.headRevisionId !== null
+          || Object.keys(snapshot.revisions.revisionsById).length > 0
+        const hasAssurance = Object.keys(snapshot.assurance.sourcesById).length > 0
+          || Object.keys(snapshot.assurance.evidenceById).length > 0
+          || Object.keys(snapshot.assurance.confirmationsById).length > 0
+          || Object.keys(snapshot.assurance.currentEvidenceByStatementKey).length > 0
+        const disposable = !hasMeaningfulProjectContent(snapshot)
+          && Object.keys(snapshot.modulesById).length === 0
+          && !hasRevision
+          && !hasAssurance
+        if (disposable) removableIds.push(id)
+      } catch {
+        // Never auto-delete unreadable/future-version records.
+      }
+    }
+
+    for (const id of removableIds) this.deleteProject(id)
+    return removableIds.length
+  }
   load(projectId?: string): ProjectSnapshot | null {
     const storage = this.getStorage()
     const id = projectId ?? storage.getItem(ACTIVE_PROJECT_KEY)
@@ -86,6 +121,16 @@ export class LocalProjectStorage {
           const head = snapshot.revisions.headRevisionId
             ? snapshot.revisions.revisionsById[snapshot.revisions.headRevisionId] ?? null
             : null
+          const hasRevision = snapshot.revisions.headRevisionId !== null
+            || Object.keys(snapshot.revisions.revisionsById).length > 0
+          const hasAssurance = Object.keys(snapshot.assurance.sourcesById).length > 0
+            || Object.keys(snapshot.assurance.evidenceById).length > 0
+            || Object.keys(snapshot.assurance.confirmationsById).length > 0
+            || Object.keys(snapshot.assurance.currentEvidenceByStatementKey).length > 0
+          if (!hasMeaningfulProjectContent(snapshot)
+            && Object.keys(snapshot.modulesById).length === 0
+            && !hasRevision
+            && !hasAssurance) continue
           summary = {
             id,
             label: getProjectDisplayName(snapshot),
@@ -107,6 +152,7 @@ const message = (error: unknown) => error instanceof Error ? error.message : 'Л
 /** Synchronous hydration finishes before React can schedule an autosave effect. */
 export function hydrateProject(storage: LocalProjectStorage, idFactory?: IdFactory): ProjectSession {
   try {
+    storage.cleanupEmptyDraftProjects()
     const loaded = storage.load()
     return { snapshot: loaded ?? createProjectSnapshot(idFactory), hydrated: true, blocked: false, detached: !loaded,
       status: loaded ? 'saved' : 'unsaved', error: null }

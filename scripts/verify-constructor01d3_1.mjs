@@ -1,3 +1,4 @@
+import { assertConstructorFeature } from './constructor-source-inspection.mjs'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
@@ -6,7 +7,7 @@ const shellCss = await readFile(new URL('../src/components/ConstructorShell.css'
 const acceptance = await readFile(new URL('../docs/CONSTRUCTOR_01D_3_1_BOTTOM_FIELD_DETAILS_UI_POLISH_ACCEPTANCE.md', import.meta.url), 'utf8')
 const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'))
 
-assert.match(shell, /BOTTOM POLISH 01D\.3\.1/)
+assertConstructorFeature('field-details')
 assert.match(shell, /aria-pressed=\{selectedFieldId === field\.id\}/)
 assert.match(shell, /constructor-field-detail-card/)
 assert.match(shell, /constructor-field-detail-number/)
@@ -19,8 +20,8 @@ assert.match(shellCss, /scroll-snap-type: x proximity/)
 assert.match(shellCss, /border: 2px solid #0b9db5/)
 assert.match(shellCss, /width: 23px/)
 assert.match(shellCss, /height: 23px/)
-assert.match(shellCss, /bottom: 106px/)
-assert.match(shellCss, /inset: 24px 0 106px 28px/)
+assert.match(shellCss, /--constructor-cad-bottom: 106px/)
+assert.match(shellCss, /inset: var\(--constructor-cad-top\) 0 var\(--constructor-cad-bottom\) var\(--constructor-cad-left\)/)
 
 assert.match(acceptance, /UI-only/)
 assert.match(acceptance, /stable minimum width/)

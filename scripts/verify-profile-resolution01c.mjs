@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { assertConstructorFeature, cssRules, uniqueCssValue } from './constructor-source-inspection.mjs'
 import { readFile } from 'node:fs/promises'
 
 const geometry = await readFile(new URL('../src/domain/profileAwareGeometry.ts', import.meta.url), 'utf8')
@@ -24,15 +25,21 @@ assert.match(semantics, /profileCode: '482\.21'[\s\S]*visibleFace:[\s\S]*valueMm
 assert.doesNotMatch(semantics, /profileCode: '482\.18'[\s\S]*sashOverlap:/)
 
 assert.match(shell, /buildProfileAwareGeometryReadModel/)
-assert.match(shell, /Profile View \{profileViewEnabled \? 'ON' : 'OFF'\}/)
+assertConstructorFeature('controls')
 assert.doesNotMatch(shell, /constructor-profile-geometry-legend/)
 assert.doesNotMatch(shell, /PROFILE RESOLUTION 01C · REVIEWED 2D/)
-assert.match(shell, /constructor-profile-frame-face-overlay/)
+assert.doesNotMatch(shell, /constructor-profile-frame-face-overlay/)
+assert.match(shell, /profileViewActive && reviewedFrameFacePx !== null \? reviewedFrameFacePx : frameFacePx/)
 assert.match(shell, /constructor-profile-divider-face-overlay/)
 assert.match(shell, /has-unresolved-sash-geometry/)
 assert.match(css, /Profile Resolution 01C/)
 assert.doesNotMatch(css, /constructor-profile-geometry-legend/)
-assert.match(css, /constructor-profile-frame-face-overlay/)
+assert.doesNotMatch(css, /constructor-profile-frame-face-overlay/)
+const frameRules = cssRules(new URL('../src/components/ConstructorShell.css', import.meta.url))
+assert.equal(uniqueCssValue(frameRules, '.constructor-frame-edge-face.edge-face-top', 'top'), '0')
+assert.equal(uniqueCssValue(frameRules, '.constructor-frame-edge-face.edge-face-bottom', 'bottom'), '0')
+assert.match(uniqueCssValue(frameRules, '.constructor-frame-edge-face.edge-face-top', 'clip-path'), /^polygon\(/)
+assert.match(uniqueCssValue(frameRules, '.constructor-frame-edge-face.edge-face-bottom', 'clip-path'), /^polygon\(/)
 assert.match(css, /constructor-profile-divider-face-overlay/)
 assert.match(semantics, /profileCode: '482\.18'[\s\S]*visibleFace:[\s\S]*valueMm: 56/)
 assert.match(semantics, /not an automatic joint overlap/)
@@ -46,15 +53,8 @@ assert.match(acceptance, /RAW CATALOG POSITIONAL INFERENCE: NO/)
 assert.match(acceptance, /MACHINE READY: NO/)
 assert.match(packageJson.scripts['test:contract'], /verify-profile-resolution01c\.mjs/)
 
-// Rendering contract: reviewed overlay is permitted only for reviewed faces.
-const reviewedFrameFaceMm = 42
-const reviewedDividerFaceMm = 40
-const schematicFrameFaceMm = 60
-assert.ok(reviewedFrameFaceMm < schematicFrameFaceMm)
-assert.equal(reviewedDividerFaceMm, 40)
-
 console.log('PROFILE RESOLUTION 01C VERIFY PASS')
-console.log('PROFILE VIEW: REVIEWED 2D FACE OVERLAY')
+console.log('PROFILE VIEW: REVIEWED PER-EDGE FACES WITH IN-BOUNDS MITRES')
 console.log('482.30 FRAME FACE: 42 mm HUMAN CONFIRMED')
 console.log('482.21 MULLION FACE: 40 mm HUMAN CONFIRMED')
 console.log('SASH FACE / OVERLAP / GLAZING INSET: UNKNOWN -> SCHEMATIC')

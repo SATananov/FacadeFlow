@@ -6,7 +6,7 @@ import { ProjectManagerPanel } from './components/ProjectManagerPanel'
 import { ModelLibraryPanel } from './components/ModelLibraryPanel'
 import { CompositeModuleStructurePanel } from './components/CompositeModuleStructurePanel'
 import { CompositeModuleEntry } from './components/CompositeModuleEntry'
-import { getEditingOffer, getProjectActivity, getProjectDisplayName, getProjectModuleSystemId, type OfferDraft, type FreeConstructorModule } from './domain/project/projectModel'
+import { getEditingOffer, getOfferForm, getOfferModules, getProjectActivity, getProjectDisplayName, getProjectModuleSystemId, type OfferDraft, type FreeConstructorModule, type ProjectSnapshot } from './domain/project/projectModel'
 import {
   getConfirmedGlazingOptions,
   getConfirmedHardwareStandards,
@@ -34,7 +34,6 @@ import {
   getOfferModuleHandingRelevantFieldCount,
   getOfferModuleMissingFields,
   getOfferModuleOperableFieldCount,
-  isOfferModuleBasicsReady,
   isOfferModuleStructureReady,
   MODULE_DIMENSION_PRESETS_MM,
   MODULE_FIELD_COUNT_PRESETS,
@@ -57,6 +56,7 @@ import ConstructorShell, {
   type ConstructorDraftSnapshot,
   type ConstructorFieldTopologySummary,
 } from './components/ConstructorShell'
+import { selectModuleConstructorView } from './components/compositeStructuralSketchProjection'
 import { APP_VERSION } from './appVersion'
 import { compareAppVersions, getDesktopUpdateApi } from './desktopUpdate'
 import './App.css'
@@ -230,6 +230,9 @@ export default function App() {
     freeModuleSketchDrafts, setFreeModuleSketchDrafts,
   } = workspace
 
+  const [offerFlowStep, setOfferFlowStep] = useState<1 | 2 | 3 | 4>(saved ? 4 : 1)
+  const [moduleEditorOpen, setModuleEditorOpen] = useState(true)
+
   const clientObjectReady =
     offer.clientName.trim().length > 0 &&
     offer.objectName.trim().length > 0
@@ -375,9 +378,6 @@ export default function App() {
   const constructorTopologyAuthoritative = Boolean(
     activeModuleSketchDraft?.topology,
   )
-  const firstModuleBasicsReady = firstModule
-    ? isOfferModuleBasicsReady(firstModule)
-    : false
   const firstModuleStructureReady = firstModule
     ? isOfferModuleStructureReady(firstModule)
     : false
@@ -674,6 +674,8 @@ export default function App() {
   const startNewOffer = () => {
     setCompositeEditor(null)
     setHeaderSection('home')
+    setOfferFlowStep(1)
+    setModuleEditorOpen(true)
     workspace.newProject()
   }
 
@@ -685,6 +687,14 @@ export default function App() {
     event.preventDefault()
     if (!canContinueToModules || !moduleDefaults) return
     workspace.completeOfferSetup()
+    setOfferFlowStep(4)
+    setModuleEditorOpen(true)
+    window.setTimeout(() => {
+      document.getElementById('offer-modules-step')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+    }, 0)
   }
 
   const createNextFreeModule = () => {
@@ -819,11 +829,26 @@ export default function App() {
   const projectDisplayName = getProjectDisplayName(workspace.snapshot)
   const hasNamedProject = projectDisplayName !== 'Нов проект' && projectDisplayName !== 'Свободен проект'
   const hasActiveProject = projectActivity.kind !== 'empty'
-  const hasConstructorWork = hasFreeConstructorWork || hasOfferConstructorWork
+  const recoverableProjects = workspace.projects.filter((project) => (
+    project.openable &&
+    project.id !== workspace.snapshot.project.id &&
+    (project.clientName.trim().length > 0 || project.objectName.trim().length > 0 || project.moduleCount > 0)
+  ))
+  const singleRecoverableProject = !hasActiveProject && recoverableProjects.length === 1
+    ? recoverableProjects[0]
+    : null
+  const homeSavedProjects = !hasActiveProject
+    ? [...recoverableProjects]
+        .sort((a, b) => {
+          const revisionDelta = (b.headRevisionNumber ?? -1) - (a.headRevisionNumber ?? -1)
+          return revisionDelta !== 0 ? revisionDelta : a.label.localeCompare(b.label, 'bg')
+        })
+        .slice(0, 3)
+    : []
 
   const toolbarProjectLabel = (() => {
     if (projectActivity.kind === 'empty') return 'Няма активен проект'
-    if (projectActivity.kind === 'free') return 'Свободен проект'
+    if (projectActivity.kind === 'free') return 'Свободен проект · без клиент'
     if (hasNamedProject) return projectDisplayName
     return 'Оферта в подготовка'
   })()
@@ -839,11 +864,48 @@ export default function App() {
     setConstructorMode('free')
   }
 
-  const openOfferFromHome = () => {
+  const getReturnOfferStep = (): 1 | 2 | 3 | 4 => {
+    if (saved || modules.length > 0) return 4
+    if (canContinueToModules) return 3
+    if (selectedProfileSystem) return 3
+    if (clientObjectReady) return 2
+    return 1
+  }
+
+  const getStoredOfferStep = (snapshot: ProjectSnapshot): 1 | 2 | 3 | 4 => {
+    const storedOffer = getEditingOffer(snapshot)
+    const storedForm = getOfferForm(snapshot)
+    if (storedOffer.setupStage === 'modules' || getOfferModules(snapshot).length > 0) return 4
+    if (storedForm.profileSystemId.trim().length > 0) return 3
+    if (storedForm.clientName.trim().length > 0 && storedForm.objectName.trim().length > 0) return 2
+    return 1
+  }
+
+  const resumeStoredOffer = (projectId: string) => {
+    const loaded = workspace.openProjectForOffer(projectId)
+    if (!loaded) return
+    setCompositeEditor(null)
     setHeaderSection('home')
-    if (hasOfferProjectWork && !hasOfferConstructorWork) {
-      setConstructorMode(null)
-      setOfferStartOpen(true)
+    setOfferFlowStep(getStoredOfferStep(loaded))
+    setModuleEditorOpen(true)
+  }
+
+  const continueCurrentOffer = () => {
+    setCompositeEditor(null)
+    setHeaderSection('home')
+    setConstructorMode(null)
+    setOfferFlowStep(getReturnOfferStep())
+    setModuleEditorOpen(true)
+    setOfferStartOpen(true)
+  }
+
+  const openOfferFromHome = () => {
+    if (hasOfferProjectWork) {
+      continueCurrentOffer()
+      return
+    }
+    if (singleRecoverableProject) {
+      resumeStoredOffer(singleRecoverableProject.id)
       return
     }
     startNewOffer()
@@ -879,11 +941,11 @@ export default function App() {
             <button
               type="button"
               className={`product-nav-item product-nav-primary${offerStartOpen ? ' is-active' : ''}`}
-              onClick={startNewOffer}
+              onClick={openOfferFromHome}
               aria-current={offerStartOpen ? 'page' : undefined}
             >
               <span className="product-nav-icon"><OfferIcon /></span>
-              Създай оферта
+              {hasOfferProjectWork || singleRecoverableProject ? 'Продължи офертата' : 'Създай оферта'}
             </button>
 
             <button
@@ -932,6 +994,24 @@ export default function App() {
             onDelete={workspace.deleteProject}
             onNew={workspace.newProject}
           />
+          {hasOfferProjectWork && !offerStartOpen && (
+            <button
+              type="button"
+              className="project-return-offer-action"
+              onClick={continueCurrentOffer}
+            >
+              Продължи офертата
+            </button>
+          )}
+          {!hasActiveProject && singleRecoverableProject && (
+            <button
+              type="button"
+              className="project-return-offer-action is-recovery"
+              onClick={() => resumeStoredOffer(singleRecoverableProject.id)}
+            >
+              Върни се към офертата
+            </button>
+          )}
           {hasActiveProject && (
             <>
               <span role="status" className={`project-save-status is-${workspace.persistence.status}`}>
@@ -995,6 +1075,7 @@ export default function App() {
             }))}
             activeModuleId={activeFreeModule?.id}
             initialDraft={activeFreeModuleDraft}
+            constructorView={selectModuleConstructorView(workspace.snapshot, activeFreeModule?.id)}
             onDraftChange={setActiveFreeModuleDraft}
             freeProfileSystemId={activeFreeModule?.profileSystemId ?? ''}
             onFreeProfileSystemChange={activeFreeModule ? setActiveFreeModuleSystem : undefined}
@@ -1025,6 +1106,7 @@ export default function App() {
             }))}
             activeModuleId={firstModule.id}
             initialDraft={activeModuleSketchDraft}
+            constructorView={selectModuleConstructorView(workspace.snapshot, firstModule.id)}
             initialFieldDescriptions={activeModuleFormFieldDescriptions.map((field) => ({
               sequence: field.sequence,
               constructionFieldId: field.constructionFieldId,
@@ -1245,25 +1327,60 @@ export default function App() {
               <h2>FacadeFlow</h2>
 
               <p>
-                {hasOfferProjectWork && !hasOfferConstructorWork
-                  ? 'Продължете започнатата оферта или работете директно в Конструктора.'
-                  : hasConstructorWork
-                    ? 'Създайте оферта или продължете текущата работа в Конструктора.'
-                    : 'Създайте оферта или започнете директно в Конструктора.'}
+                Изберете как искате да започнете. FacadeFlow пази отделно офертите и свободните скици.
               </p>
 
-              <div className="empty-home-actions">
+              {homeSavedProjects.length > 0 && (
+                <section className="empty-home-saved-projects" aria-labelledby="home-saved-projects-title">
+                  <div className="empty-home-saved-projects-heading">
+                    <div>
+                      <b id="home-saved-projects-title">Запазени проекти</b>
+                      <span>Продължете директно от проекта, който ви трябва.</span>
+                    </div>
+                    <small>{recoverableProjects.length === 1 ? '1 проект' : `${recoverableProjects.length} проекта`}</small>
+                  </div>
+                  <div className="empty-home-saved-project-list">
+                    {homeSavedProjects.map((project) => (
+                      <article className="empty-home-saved-project" key={project.id}>
+                        <div className="empty-home-saved-project-copy">
+                          <strong>{project.label}</strong>
+                          <span>
+                            {project.moduleCount === 1 ? '1 модул' : `${project.moduleCount} модула`}
+                            {project.headRevisionNumber !== null ? ` · ревизия R${project.headRevisionNumber}` : ''}
+                          </span>
+                        </div>
+                        <button type="button" onClick={() => resumeStoredOffer(project.id)}>
+                          Продължи
+                        </button>
+                      </article>
+                    ))}
+                  </div>
+                  {recoverableProjects.length > homeSavedProjects.length && (
+                    <p className="empty-home-saved-projects-more">
+                      Още {recoverableProjects.length - homeSavedProjects.length} {recoverableProjects.length - homeSavedProjects.length === 1 ? 'проект е' : 'проекта са'} налични чрез „Отвори проект“ горе.
+                    </p>
+                  )}
+                </section>
+              )}
+
+              <div className="empty-home-actions" aria-label="Начин на започване">
+                <button type="button" onClick={openOfferFromHome}>
+                  <b>{hasOfferProjectWork || singleRecoverableProject ? 'Продължи офертата' : 'Нова оферта'}</b>
+                  <small>{hasOfferProjectWork ? toolbarProjectLabel : singleRecoverableProject ? singleRecoverableProject.label : 'Клиент → обект → система → модули'}</small>
+                </button>
                 <button type="button" onClick={openConstructorFromHome}>
-                  <b>{hasConstructorWork ? 'Продължи в Конструктора' : 'Започни в Конструктора'}</b>
+                  <b>
+                    {hasOfferConstructorWork
+                      ? 'Продължи изделието'
+                      : hasFreeConstructorWork
+                        ? 'Продължи свободната скица'
+                        : 'Нова свободна скица'}
+                  </b>
                   <small>
                     {hasOfferConstructorWork
                       ? toolbarProjectLabel
-                      : hasFreeConstructorWork ? 'Свободен проект' : 'Чертане без оферта'}
+                      : 'Без клиент и оферта'}
                   </small>
-                </button>
-                <button type="button" onClick={openOfferFromHome}>
-                  <b>{hasOfferProjectWork && !hasOfferConstructorWork ? 'Продължи офертата' : 'Създай оферта'}</b>
-                  <small>{hasOfferProjectWork && !hasOfferConstructorWork ? toolbarProjectLabel : 'Клиент → система → модули'}</small>
                 </button>
               </div>
 
@@ -1370,8 +1487,46 @@ export default function App() {
               </button>
             </div>
 
+            <nav className="offer-flow-steps" aria-label="Стъпки на офертата">
+              <button
+                type="button"
+                className={offerFlowStep === 1 ? 'is-active' : clientObjectReady ? 'is-complete' : ''}
+                onClick={() => setOfferFlowStep(1)}
+              >
+                <b>1 · Клиент и обект</b>
+                <small>{clientObjectReady ? `${offer.clientName} · ${offer.objectName}` : 'Въведете основните данни'}</small>
+              </button>
+              <button
+                type="button"
+                className={offerFlowStep === 2 ? 'is-active' : selectedProfileSystem ? 'is-complete' : ''}
+                disabled={!clientObjectReady}
+                onClick={() => setOfferFlowStep(2)}
+              >
+                <b>2 · Система</b>
+                <small>{selectedProfileSystem ? `${selectedProfileSystem.manufacturer} ${selectedProfileSystem.name}` : 'Изберете профилна система'}</small>
+              </button>
+              <button
+                type="button"
+                className={offerFlowStep === 3 ? 'is-active' : canContinueToModules ? 'is-complete' : ''}
+                disabled={!selectedProfileSystem}
+                onClick={() => setOfferFlowStep(3)}
+              >
+                <b>3 · Материали</b>
+                <small>{canContinueToModules ? 'Материалите са зададени' : 'Цвят · стъклопакет · обков'}</small>
+              </button>
+              <button
+                type="button"
+                className={offerFlowStep === 4 ? 'is-active' : ''}
+                disabled={!saved}
+                onClick={() => setOfferFlowStep(4)}
+              >
+                <b>4 · Модули</b>
+                <small>{saved ? `${modules.length} ${modules.length === 1 ? 'модул' : 'модула'}` : 'След запазване на офертата'}</small>
+              </button>
+            </nav>
+
             <form className="offer-form" onSubmit={submitOffer}>
-              <div className="offer-required-legend" role="note">
+              <div className="offer-required-legend" role="note" hidden={offerFlowStep === 4}>
                 <span><b>*</b> Задължително поле</span>
                 <small>Фирма / име, Наименование на обекта и Профилна система са нужни за проекта. Цвят / фолиране, Стъклопакет и Обков са задължителни преди преминаване към модулите.</small>
               </div>
@@ -1381,6 +1536,7 @@ export default function App() {
               <section
                 className="form-section contractor-section"
                 aria-labelledby="contractor-title"
+                hidden={offerFlowStep !== 1}
               >
                 <div className="section-heading">
                   <span className="section-number">01</span>
@@ -1443,6 +1599,7 @@ export default function App() {
               <section
                 className="form-section"
                 aria-labelledby="client-title"
+                hidden={offerFlowStep !== 1}
               >
                 <div className="section-heading">
                   <span className="section-number">02</span>
@@ -1542,6 +1699,7 @@ export default function App() {
               <section
                 className="form-section object-section"
                 aria-labelledby="object-title"
+                hidden={offerFlowStep !== 1}
               >
                 <div className="section-heading">
                   <span className="section-number">03</span>
@@ -1583,9 +1741,20 @@ export default function App() {
                 </div>
               </section>
 
+              <div className="offer-step-actions" hidden={offerFlowStep !== 1}>
+                <div>
+                  <b>Клиентът и обектът готови ли са?</b>
+                  <span>Продължете към избора на профилна система.</span>
+                </div>
+                <button type="button" disabled={!clientObjectReady} onClick={() => setOfferFlowStep(2)}>
+                  Продължи към Система
+                </button>
+              </div>
+
               <section
                 className="form-section profile-system-section"
                 aria-labelledby="profile-system-title"
+                hidden={offerFlowStep !== 2}
               >
                 <div className="section-heading">
                   <span className="section-number">04</span>
@@ -1672,9 +1841,20 @@ export default function App() {
                 )}
               </section>
 
+              <div className="offer-step-actions" hidden={offerFlowStep !== 2}>
+                <div>
+                  <b>{selectedProfileSystem ? `${selectedProfileSystem.manufacturer} ${selectedProfileSystem.name}` : 'Изберете система'}</b>
+                  <span>След това задайте цвят, стъклопакет и обков.</span>
+                </div>
+                <button type="button" disabled={!selectedProfileSystem} onClick={() => setOfferFlowStep(3)}>
+                  Продължи към Материали
+                </button>
+              </div>
+
               <section
                 className="form-section finish-section"
                 aria-labelledby="finish-title"
+                hidden={offerFlowStep !== 3}
               >
                 <div className="section-heading">
                   <span className="section-number">05</span>
@@ -1807,6 +1987,7 @@ export default function App() {
               <section
                 className="form-section glazing-section"
                 aria-labelledby="glazing-title"
+                hidden={offerFlowStep !== 3}
               >
                 <div className="section-heading">
                   <span className="section-number">06</span>
@@ -1887,6 +2068,7 @@ export default function App() {
               <section
                 className="form-section hardware-section"
                 aria-labelledby="hardware-title"
+                hidden={offerFlowStep !== 3}
               >
                 <div className="section-heading">
                   <span className="section-number">07</span>
@@ -1991,8 +2173,9 @@ export default function App() {
               </section>
 
               <section
-                className="form-section"
+                className="form-section form-section-secondary"
                 aria-labelledby="offer-parameters-title"
+                hidden={offerFlowStep !== 3}
               >
                 <div className="section-heading">
                   <span className="section-number">08</span>
@@ -2035,7 +2218,7 @@ export default function App() {
               </section>
 
               <aside
-                className="offer-party-summary"
+                className="offer-party-summary" hidden={offerFlowStep !== 3}
                 aria-label="Страни и обект"
               >
                 <div>
@@ -2059,7 +2242,7 @@ export default function App() {
               </aside>
 
               <aside
-                className="offer-summary"
+                className="offer-summary" hidden={offerFlowStep !== 3}
                 aria-label="Резюме на общите параметри"
               >
                 <div>
@@ -2097,7 +2280,7 @@ export default function App() {
                 </div>
               </aside>
 
-              <div className="module-defaults-note" role="status">
+              <div className="module-defaults-note" hidden={offerFlowStep !== 3} role="status">
                 <div>
                   <span>ОБЩИ НАСТРОЙКИ ЗА МОДУЛИТЕ</span>
                   <b>Система · Цвят · Фолиране · Стъклопакет · Обков</b>
@@ -2110,7 +2293,7 @@ export default function App() {
                 </p>
               </div>
 
-              <div className="offer-form-footer">
+              <div className="offer-form-footer" hidden={offerFlowStep !== 3}>
                 <div>
                   <strong>
                     Следваща стъпка: Модули
@@ -2131,7 +2314,7 @@ export default function App() {
                 </button>
               </div>
 
-              {saved && moduleDefaults && (
+              {saved && moduleDefaults && offerFlowStep === 3 && (
                 <div className="saved-notice" role="status">
                   <b>
                     Офертата и общите технически настройки за модулите са подготвени.
@@ -2146,17 +2329,23 @@ export default function App() {
 
             {saved && firstModule && (
               <section
-                className="module-workspace"
+                id="offer-modules-step"
+                className={`module-workspace${moduleEditorOpen ? '' : ' is-collapsed'}`}
                 aria-labelledby={`module-${firstModule.sequence}-title`}
+                hidden={offerFlowStep !== 4}
               >
+                <div className="module-step-banner">
+                  <b>СТЪПКА 4 · ИЗДЕЛИЯ / МОДУЛИ</b>
+                  <span>Опишете изделието и продължете към неговата скица.</span>
+                </div>
                 <div className="module-workspace-heading">
                   <div>
                     <span>МОДУЛ {String(firstModule.sequence).padStart(2, '0')}</span>
                     <h2 id={`module-${firstModule.sequence}-title`}>Модул {firstModule.sequence}</h2>
                     <p>
-                      Модулът работи в общата техническа конфигурация на офертата.
-                      Отворете Конструктора за CAD-подобното работно поле; текущите
-                      опционални полета остават като чернова и контекст.
+                      {moduleEditorOpen
+                        ? 'Попълнете само данните, които знаете. После продължете към Конструктора.'
+                        : `${firstModule.productType ?? 'Тип не е избран'} · ${firstModule.widthMm ?? '—'} × ${firstModule.heightMm ?? '—'} mm · ${firstModule.fieldCount ?? '—'} полета`}
                     </p>
                   </div>
 
@@ -2164,13 +2353,12 @@ export default function App() {
                     <div className="module-inheritance-badge">
                       Общата офертна конфигурация важи за модула
                     </div>
-
                     <button
                       type="button"
-                      className="open-constructor-action"
-                      onClick={() => setConstructorMode('offer')}
+                      className="module-collapse-toggle"
+                      onClick={() => setModuleEditorOpen((current) => !current)}
                     >
-                      Отвори Конструктор
+                      {moduleEditorOpen ? 'Свий модула' : 'Редактирай модула'}
                     </button>
                   </div>
                 </div>
@@ -2231,11 +2419,10 @@ export default function App() {
                 </div>
 
                 <div className="module-optional-note" role="status">
-                  <b>Модул {firstModule.sequence} може да остане чернова.</b>
+                  <b>Попълнете само това, което знаете за изделието.</b>
                   <span>
-                    Всички модулни стойности на този етап са опционални. Използвайте
-                    падащите менюта за стандартните избори или ръчно въвеждане за
-                    нестандартни стойности.
+                    Може да продължите и без всички размери. Липсващите данни могат
+                    да се зададат по-късно в Конструктора.
                   </span>
                 </div>
 
@@ -2303,7 +2490,7 @@ export default function App() {
                         }
                       >
                         <option value="unset">Не е зададена</option>
-                        <option value="manual">Ръчно / нестандартно</option>
+                        <option value="manual">Въведи ръчно (mm)</option>
                         <option value="constructor" disabled>От Конструктора</option>
                         <option
                           value="preset"
@@ -2398,7 +2585,7 @@ export default function App() {
                         }
                       >
                         <option value="unset">Не е зададена</option>
-                        <option value="manual">Ръчно / нестандартно</option>
+                        <option value="manual">Въведи ръчно (mm)</option>
                         <option value="constructor" disabled>От Конструктора</option>
                         <option
                           value="preset"
@@ -2747,7 +2934,7 @@ export default function App() {
                               }
                             >
                               <option value="unset">Не е зададена</option>
-                              <option value="manual">Ръчно / нестандартно</option>
+                              <option value="manual">Въведи ръчно (mm)</option>
                               <option value="constructor" disabled>От Конструктора</option>
                               <option
                                 value="preset"
@@ -2845,17 +3032,13 @@ export default function App() {
                 >
                   <b>
                     {firstModuleStructureReady
-                      ? 'Основните данни и броят полета са въведени.'
-                      : `Модул ${firstModule.sequence} е запазен като опционална чернова.`}
+                      ? 'Модулът е готов за работа в Конструктора.'
+                      : `Модул ${firstModule.sequence} е непълен, но може да бъде запазен като чернова.`}
                   </b>
                   <span>
                     {firstModuleStructureReady
-                      ? 'Следващият етап може да описва всяко поле поотделно.'
-                      : `Неуточнени: ${firstModuleMissingFields.join(', ') || 'няма'}. Това не блокира черновата.`}
-                  </span>
-                  <span>
-                    Основни данни (тип + ширина + височина):{' '}
-                    {firstModuleBasicsReady ? 'въведени' : 'непълни'}.
+                      ? 'Основните данни са въведени и ще бъдат използвани като контекст.'
+                      : `Липсват: ${firstModuleMissingFields.join(', ') || 'няма'}. Можете да ги попълните тук или по-късно в Конструктора.`}
                   </span>
                   {firstModule.fields.length > 0 && (
                     <span>
@@ -2871,13 +3054,26 @@ export default function App() {
                   )}
                 </div>
 
-                <div className="module-geometry-boundary">
-                  Concept 06B не генерира геометрия и не предполага стандартни
-                  размери. Concept 06C описва полетата като опционални чернови,
-                  а Concept 06D добавя опционален начин на отваряне за отваряемите
-                  полета. Не се определят автоматично ляво / дясно, панти,
-                  делители, крила или механизми. Машинни данни не се подготвят.
+                <div className="module-next-action" aria-label="Следваща стъпка за модула">
+                  <div>
+                    <span>СЛЕДВАЩА СТЪПКА</span>
+                    <b>Продължете към Конструктора</b>
+                    <p>
+                      {firstModuleStructureReady
+                        ? 'Модулът има достатъчно основни данни. Отворете работната скица.'
+                        : 'Може да продължите и с чернова. Липсващите размери и полета могат да се зададат в Конструктора.'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="open-constructor-action module-next-action-button"
+                    onClick={() => setConstructorMode('offer')}
+                  >
+                    {firstModuleStructureReady ? 'Отвори Конструктора' : 'Продължи с чернова'}
+                  </button>
                 </div>
+
+                {/* Technical boundary remains enforced by domain/verifiers; developer concept labels are not shown to operators. */}
               </section>
             )}
           </section>

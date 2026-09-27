@@ -1,3 +1,4 @@
+import { assertConstructorFeature } from './constructor-source-inspection.mjs'
 import { createRuntimeLoader } from './runtime-loader.mjs'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
@@ -37,7 +38,7 @@ assert.match(app, /module-workspace-switcher/)
 assert.match(app, /key=\{firstModule\.id\}/)
 assert.match(app, /moduleItems=\{modules\.map/)
 
-assert.match(shell, /(?:FIELD TOPOLOGY 01C\.3\.[34567]|FIELD SEMANTICS 01D)/)
+assertConstructorFeature('topology')
 assert.match(shell, /constructor-module-strip/)
 assert.match(shell, /\+ Нов модул/)
 assert.match(shell, /Изтрий скицата/)

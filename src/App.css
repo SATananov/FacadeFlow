@@ -2095,10 +2095,10 @@
   padding: 12px 14px;
   display: grid;
   gap: 3px;
-  border: 1px solid #d5c5a5;
+  border: 1px solid #b8ced3;
   border-radius: 9px;
-  background: #fffaf1;
-  color: #705c3a;
+  background: #f4fafb;
+  color: #47676f;
 }
 
 .module-basics-status.is-ready {
@@ -3345,4 +3345,524 @@
   padding: 5px 8px;
   color: inherit;
   background: #fff;
+}
+
+/* ==========================================================
+   UX START FLOW 01 · GUIDED ENTRY + OFFER → MODULES
+   ========================================================== */
+
+.offer-flow-steps {
+  padding: 12px 28px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  border-bottom: 1px solid #dbe5e8;
+  background: #f7fafb;
+}
+
+.offer-flow-steps span {
+  min-height: 34px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d2dfe2;
+  border-radius: 9px;
+  background: #fff;
+  color: #71858b;
+  font-size: 10px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.offer-flow-steps span.is-active {
+  border-color: #50aebc;
+  background: #edf8fa;
+  color: #176f7d;
+  box-shadow: inset 0 -2px #1597aa;
+}
+
+.offer-flow-steps span.is-complete {
+  border-color: #a9cdbf;
+  background: #f1faf6;
+  color: #315f50;
+}
+
+.form-section-secondary {
+  background: #f8fafb;
+}
+
+.form-section-secondary .section-heading {
+  margin-bottom: 16px;
+}
+
+.form-section-secondary .section-number {
+  border-color: #bdcbd0;
+  background: #f1f5f6;
+  color: #687d83;
+  box-shadow: none;
+}
+
+.form-section-secondary .section-heading h3 {
+  color: #536b72;
+  font-size: 16px;
+}
+
+.module-step-banner {
+  padding: 12px 26px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #a9ccd3;
+  background: linear-gradient(90deg, #dff4f7, #edf8fa);
+  color: #245a65;
+}
+
+.module-step-banner b {
+  font-size: 10px;
+  letter-spacing: .55px;
+}
+
+.module-step-banner span {
+  font-size: 10px;
+  color: #5d7980;
+}
+
+.module-heading-actions {
+  min-width: 250px;
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+
+.module-constructor-guidance {
+  max-width: 330px;
+  color: #6b8187;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.45;
+  text-align: right;
+}
+
+#offer-modules-step {
+  scroll-margin-top: 118px;
+}
+
+@media (max-width: 900px) {
+  .offer-flow-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .module-heading-actions {
+    min-width: 0;
+    justify-items: start;
+  }
+
+  .module-constructor-guidance {
+    text-align: left;
+  }
+}
+
+@media (max-width: 620px) {
+  .offer-flow-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .module-step-banner {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+}
+
+
+/* UX MODULE FLOW 01 - one clear next action */
+.module-next-action {
+  margin: 0 26px 18px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  border: 1px solid #9fc9d1;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #eef9fb, #f8fcfd);
+}
+
+.module-next-action > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.module-next-action span {
+  color: #4f7a83;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .65px;
+}
+
+.module-next-action b {
+  color: #214f59;
+  font-size: 15px;
+}
+
+.module-next-action p {
+  margin: 0;
+  max-width: 720px;
+  color: #667f85;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.module-next-action-button {
+  flex: 0 0 auto;
+  min-width: 190px;
+}
+
+@media (max-width: 700px) {
+  .module-next-action {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .module-next-action-button {
+    width: 100%;
+  }
+}
+
+/* ==========================================================
+   UX OFFER FLOW 02 · COMPACT STEP WORKFLOW
+   ========================================================== */
+.offer-flow-steps {
+  position: sticky;
+  top: 48px;
+  z-index: 120;
+  box-shadow: 0 7px 18px rgba(22, 58, 67, .08);
+}
+
+.offer-flow-steps button {
+  min-height: 48px;
+  padding: 7px 10px;
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  border: 1px solid #d2dfe2;
+  border-radius: 9px;
+  background: #fff;
+  color: #71858b;
+  text-align: center;
+}
+
+.offer-flow-steps button b {
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.offer-flow-steps button small {
+  max-width: 100%;
+  overflow: hidden;
+  color: #87999e;
+  font-size: 8px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.offer-flow-steps button.is-active {
+  border-color: #50aebc;
+  background: #edf8fa;
+  color: #176f7d;
+  box-shadow: inset 0 -2px #1597aa;
+}
+
+.offer-flow-steps button.is-complete {
+  border-color: #a9cdbf;
+  background: #f1faf6;
+  color: #315f50;
+}
+
+.offer-flow-steps button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.offer-form [hidden],
+.module-workspace[hidden] {
+  display: none !important;
+}
+
+.offer-step-actions {
+  margin: 0 28px 22px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border: 1px solid #b8d4da;
+  border-radius: 10px;
+  background: #f4fafb;
+}
+
+.offer-step-actions[hidden] {
+  display: none !important;
+}
+
+.offer-step-actions > div {
+  display: grid;
+  gap: 3px;
+}
+
+.offer-step-actions b {
+  color: #285965;
+  font-size: 12px;
+}
+
+.offer-step-actions span {
+  color: #6e858b;
+  font-size: 9px;
+}
+
+.offer-step-actions button,
+.module-collapse-toggle {
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid #278fa1;
+  border-radius: 7px;
+  background: #e8f7f9;
+  color: #087b8e;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.offer-step-actions button:disabled {
+  border-color: #c9d5d8;
+  background: #f1f4f5;
+  color: #91a0a4;
+}
+
+.module-heading-actions {
+  display: flex;
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.module-collapse-toggle {
+  background: #fff;
+}
+
+.module-workspace.is-collapsed > :not(.module-step-banner):not(.module-workspace-heading) {
+  display: none !important;
+}
+
+.module-workspace.is-collapsed .module-workspace-heading {
+  border-bottom: 0;
+}
+
+@media (max-width: 760px) {
+  .offer-flow-steps {
+    top: 48px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .offer-step-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .offer-step-actions button {
+    width: 100%;
+  }
+}
+
+/* UX OFFER RETURN 01 */
+.project-return-offer-action {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--line-strong, #9fc6d0);
+  border-radius: 9px;
+  background: #ffffff;
+  color: #176b7c;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.project-return-offer-action:hover {
+  background: #eef9fb;
+}
+
+/* UX OFFER RETURN 01.1 — make saved-offer recovery obvious without widening the main flow. */
+.empty-home-recovery {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1rem auto 1.1rem;
+  padding: 0.85rem 1rem;
+  max-width: 44rem;
+  border: 1px solid rgba(43, 177, 199, 0.35);
+  border-radius: 0.8rem;
+  background: rgba(43, 177, 199, 0.08);
+}
+
+.empty-home-recovery > div {
+  display: grid;
+  gap: 0.2rem;
+  text-align: left;
+}
+
+.empty-home-recovery b {
+  font-size: 0.95rem;
+}
+
+.empty-home-recovery span {
+  opacity: 0.78;
+  font-size: 0.82rem;
+}
+
+.empty-home-recovery button {
+  flex: 0 0 auto;
+  min-height: 2.5rem;
+  padding: 0 1rem;
+  border: 1px solid rgba(43, 177, 199, 0.55);
+  border-radius: 0.65rem;
+  background: rgba(16, 130, 150, 0.22);
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.empty-home-recovery.is-multiple {
+  justify-content: flex-start;
+}
+
+.project-return-offer-action.is-recovery {
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .empty-home-recovery {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .empty-home-recovery button {
+    width: 100%;
+  }
+}
+
+
+/* UX HOME SAVED PROJECTS 01 — direct continuation without a detour through the project dialog. */
+.empty-home-saved-projects {
+  width: min(100%, 46rem);
+  margin: 1rem auto 1.15rem;
+  padding: 0.9rem;
+  display: grid;
+  gap: 0.75rem;
+  border: 1px solid rgba(43, 177, 199, 0.28);
+  border-radius: 0.9rem;
+  background: rgba(8, 57, 68, 0.38);
+  text-align: left;
+}
+
+.empty-home-saved-projects-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.empty-home-saved-projects-heading > div {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.empty-home-saved-projects-heading b {
+  font-size: 0.96rem;
+}
+
+.empty-home-saved-projects-heading span,
+.empty-home-saved-projects-heading small,
+.empty-home-saved-projects-more {
+  color: rgba(220, 240, 244, 0.68);
+  font-size: 0.78rem;
+}
+
+.empty-home-saved-projects-heading small {
+  white-space: nowrap;
+}
+
+.empty-home-saved-project-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.empty-home-saved-project {
+  min-width: 0;
+  padding: 0.68rem 0.72rem 0.68rem 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+  border: 1px solid rgba(148, 205, 216, 0.22);
+  border-radius: 0.68rem;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.empty-home-saved-project-copy {
+  min-width: 0;
+  display: grid;
+  gap: 0.18rem;
+}
+
+.empty-home-saved-project-copy strong {
+  overflow: hidden;
+  color: #e5f4f6;
+  font-size: 0.88rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empty-home-saved-project-copy span {
+  color: rgba(220, 240, 244, 0.62);
+  font-size: 0.74rem;
+}
+
+.empty-home-saved-project button {
+  flex: 0 0 auto;
+  min-height: 2.25rem;
+  padding: 0 0.9rem;
+  border: 1px solid rgba(43, 177, 199, 0.5);
+  border-radius: 0.58rem;
+  background: rgba(20, 145, 165, 0.2);
+  color: #e8f7f9;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.empty-home-saved-project button:hover {
+  background: rgba(20, 145, 165, 0.32);
+}
+
+.empty-home-saved-projects-more {
+  margin: 0;
+  line-height: 1.4;
+}
+
+@media (max-width: 760px) {
+  .empty-home-saved-projects-heading,
+  .empty-home-saved-project {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .empty-home-saved-project button {
+    width: 100%;
+  }
 }

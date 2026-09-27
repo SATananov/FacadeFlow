@@ -1,11 +1,14 @@
 import {
   CONSTRUCTION_DEFAULT_FRAME_FACE_MM,
+  DEFAULT_CONSTRUCTION_FRAME_EDGES,
   createConstructionModel,
   createFieldDefinition,
   type ConstructionAxis,
   type ConstructionFieldBounds,
   type ConstructionFieldNode,
   type ConstructionFrame,
+  type ConstructionFrameEdgeKind,
+  type ConstructionFrameEdges,
   type ConstructionModel,
   type ConstructionPoint,
   type ConstructionFieldType,
@@ -28,14 +31,59 @@ export function getConstructionFrameFaceMm(model: ConstructionModel): number {
     : CONSTRUCTION_DEFAULT_FRAME_FACE_MM
 }
 
-export function getFrameInteriorBounds(model: ConstructionModel): ConstructionFieldBounds {
-  const frameFaceMm = getConstructionFrameFaceMm(model)
+export function getConstructionFrameEdges(model: ConstructionModel): ConstructionFrameEdges {
+  const source = model.frameEdges
   return {
-    xMm: frameFaceMm,
-    yMm: frameFaceMm,
-    widthMm: Math.max(0, model.frame.widthMm - frameFaceMm * 2),
-    heightMm: Math.max(0, model.frame.heightMm - frameFaceMm * 2),
+    left: source?.left ?? DEFAULT_CONSTRUCTION_FRAME_EDGES.left,
+    right: source?.right ?? DEFAULT_CONSTRUCTION_FRAME_EDGES.right,
+    top: source?.top ?? DEFAULT_CONSTRUCTION_FRAME_EDGES.top,
+    bottom: source?.bottom ?? DEFAULT_CONSTRUCTION_FRAME_EDGES.bottom,
   }
+}
+
+function edgeConsumesSchematicFrameFace(kind: ConstructionFrameEdgeKind): boolean {
+  // `threshold` is a semantic placeholder until a real threshold profile is
+  // selected/reviewed. We therefore do not invent a bottom inset for it.
+  return kind === 'frame'
+}
+
+export function getConstructionFrameInsets(model: ConstructionModel): {
+  leftMm: number
+  rightMm: number
+  topMm: number
+  bottomMm: number
+} {
+  const frameFaceMm = getConstructionFrameFaceMm(model)
+  const edges = getConstructionFrameEdges(model)
+  return {
+    leftMm: edgeConsumesSchematicFrameFace(edges.left) ? frameFaceMm : 0,
+    rightMm: edgeConsumesSchematicFrameFace(edges.right) ? frameFaceMm : 0,
+    topMm: edgeConsumesSchematicFrameFace(edges.top) ? frameFaceMm : 0,
+    bottomMm: edgeConsumesSchematicFrameFace(edges.bottom) ? frameFaceMm : 0,
+  }
+}
+
+export function getFrameInteriorBounds(model: ConstructionModel): ConstructionFieldBounds {
+  const insets = getConstructionFrameInsets(model)
+  return {
+    xMm: insets.leftMm,
+    yMm: insets.topMm,
+    widthMm: Math.max(0, model.frame.widthMm - insets.leftMm - insets.rightMm),
+    heightMm: Math.max(0, model.frame.heightMm - insets.topMm - insets.bottomMm),
+  }
+}
+
+export function setConstructionFrameEdgeKind(
+  model: ConstructionModel,
+  edge: keyof ConstructionFrameEdges,
+  kind: ConstructionFrameEdgeKind,
+): ConstructionModel {
+  const next = cloneConstructionModel(model)
+  next.frameEdges = {
+    ...getConstructionFrameEdges(model),
+    [edge]: kind,
+  }
+  return next
 }
 
 function getDividerThicknessMm(
@@ -128,6 +176,7 @@ export function cloneConstructionModel(model: ConstructionModel): ConstructionMo
   return {
     ...model,
     frame: { ...model.frame },
+    frameEdges: { ...getConstructionFrameEdges(model) },
     frameFaceMm: getConstructionFrameFaceMm(model),
     root: cloneNode(model.root),
   }
@@ -528,12 +577,11 @@ export function upgradeConstructionModelPhysicalDividers(model: ConstructionMode
     widthMm: model.frame.widthMm,
     heightMm: model.frame.heightMm,
   }
-  const nextBounds: ConstructionFieldBounds = {
-    xMm: frameFaceMm,
-    yMm: frameFaceMm,
-    widthMm: Math.max(0, model.frame.widthMm - frameFaceMm * 2),
-    heightMm: Math.max(0, model.frame.heightMm - frameFaceMm * 2),
-  }
+  const nextBounds = getFrameInteriorBounds({
+    ...model,
+    frameFaceMm,
+    frameEdges: getConstructionFrameEdges(model),
+  })
 
   const migrateNode = (
     node: ConstructionFieldNode,
@@ -581,6 +629,7 @@ export function upgradeConstructionModelPhysicalDividers(model: ConstructionMode
   return {
     ...cloned,
     version: 'field-topology-03',
+    frameEdges: { ...getConstructionFrameEdges(model) },
     frameFaceMm,
     root: migrateNode(cloned.root, oldBounds, nextBounds),
   }
@@ -1366,9 +1415,9 @@ export function getConstructionMinimumFrameSize(model: ConstructionModel): {
   heightMm: number
 } {
   const minimum = minimumNodeSize(model.root)
-  const frameFaceMm = getConstructionFrameFaceMm(model)
+  const insets = getConstructionFrameInsets(model)
   return {
-    widthMm: minimum.widthMm + frameFaceMm * 2,
-    heightMm: minimum.heightMm + frameFaceMm * 2,
+    widthMm: minimum.widthMm + insets.leftMm + insets.rightMm,
+    heightMm: minimum.heightMm + insets.topMm + insets.bottomMm,
   }
 }

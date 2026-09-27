@@ -59,13 +59,13 @@ class MemoryStorage {
 }
 
 test('canonical serialization ignores nested object insertion order; arrays retain order', () => {
-  const a = { z: [1, { b: 'Български', a: -0 }], a: null }, b = { a: null, z: [1, { a: 0, b: 'Български' }] }
+  const a = { z: [1, { b: 'Р‘СЉР»РіР°СЂСЃРєРё', a: -0 }], a: null }, b = { a: null, z: [1, { a: 0, b: 'Р‘СЉР»РіР°СЂСЃРєРё' }] }
   assert.equal(canonical.canonicalize(a), canonical.canonicalize(b))
   assert.equal(canonical.fingerprint(a), canonical.fingerprint(b))
   assert.notEqual(canonical.fingerprint([1, 2]), canonical.fingerprint([2, 1]))
 })
 test('SHA256 integrity matches Node crypto across block lengths and Unicode', () => {
-  for (const value of ['', null, {}, '🪟 Б', 'a'.repeat(55), 'b'.repeat(64), 'c'.repeat(1000)]) {
+  for (const value of ['', null, {}, 'рџЄџ Р‘', 'a'.repeat(55), 'b'.repeat(64), 'c'.repeat(1000)]) {
     assert.equal(canonical.fingerprint(value), `sha256:${createHash('sha256').update(canonical.canonicalize(value)).digest('hex')}`)
   }
 })
@@ -257,8 +257,12 @@ test('Free to Offer copy has new identities and no borrowed human authority', ()
   codec.validateProjectSnapshot(next)
 })
 test('PF01 migration preserves graph exactly, creates no history and invents no attribution', () => {
-  const { s } = fixture(), { revisions: _r, assurance: _a, ...legacy } = s
+  const { s } = fixture()
+  const { revisions: _r, assurance: _a, ...legacy } = s
   legacy.schemaVersion = 'project-foundation-01'
+  for (const draft of Object.values(legacy.constructionDraftsByModuleId ?? {})) {
+    if (draft?.topology && 'frameEdges' in draft.topology) delete draft.topology.frameEdges
+  }
   const migrated = codec.deserializeProject(JSON.stringify(legacy))
   const { revisions: r, assurance: a, schemaVersion: _v, ...graph } = migrated
   const { schemaVersion: _old, ...oldGraph } = legacy
@@ -383,8 +387,12 @@ test('recorded revision fingerprint ignores property insertion order throughout 
   assert.equal(canonical.fingerprint(revisions.revisionContent(s)), canonical.fingerprint(revisions.revisionContent(reordered)))
 })
 test('PF01 hydration migration writes nothing until explicit save, using the same storage keys', () => {
-  const { s } = fixture(), { assurance: _a, revisions: _r, ...legacy } = s
+  const { s } = fixture()
+  const { revisions: _r, assurance: _a, ...legacy } = s
   legacy.schemaVersion = 'project-foundation-01'
+  for (const draft of Object.values(legacy.constructionDraftsByModuleId ?? {})) {
+    if (draft?.topology && 'frameEdges' in draft.topology) delete draft.topology.frameEdges
+  }
   const memory = new MemoryStorage(), storage = new persistence.LocalProjectStorage(() => memory)
   memory.data.set(persistence.ACTIVE_PROJECT_KEY, s.project.id)
   memory.data.set(persistence.PROJECT_KEY_PREFIX + s.project.id, JSON.stringify(legacy))

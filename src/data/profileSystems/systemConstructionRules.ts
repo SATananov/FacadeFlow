@@ -96,10 +96,10 @@ export type ResolvedSystemBoundaryRule = Readonly<{
 const kmg60ReferenceRuleSource: SystemConstructionRuleSource = {
   id: 'kmg60-reference-01',
   kind: 'reference-derived',
-  labelBg: 'KMG 60 В· СЂРµС„РµСЂРµРЅС‚РЅРѕ СЃРёСЃС‚РµРјРЅРѕ РїСЂР°РІРёР»Рѕ',
+  labelBg: 'KMG 60 · референтно системно правило',
   product: 'KMG 60 reference dataset',
   dataset: 'KMG / PVC KMG 60mm standard configuration',
-  noteBg: 'РР·РїРѕР»Р·РІР° СЃРµ СЃР°РјРѕ РєРѕРЅСЃС‚СЂСѓРєС‚РёРІРЅР°С‚Р° Р»РѕРіРёРєР° Рё РїР°СЂР°РјРµС‚СЂРёС‚Рµ РѕС‚ СЂРµС„РµСЂРµРЅС‚РЅР°С‚Р° РєРѕРЅС„РёРіСѓСЂР°С†РёСЏ. РўРѕРІР° РЅРµ Рµ РґРѕРєР°Р·Р°С‚РµР»СЃС‚РІРѕ Р·Р° С‚РѕС‡РЅР°С‚Р° РјРѕРЅС‚Р°Р¶РЅР° РіРµРѕРјРµС‚СЂРёСЏ РЅР° РїСЂРѕС„РёР»РЅРёСЏ СЂР°Р·СЂРµР·.',
+  noteBg: 'Използва се само конструктивната логика и параметрите от референтната конфигурация. Това не е доказателство за точната монтажна геометрия на профилния разрез.',
 }
 
 const kmgPrelude60Window48205: SystemSashConstructionRule = {
@@ -222,7 +222,7 @@ export function resolveSystemBoundaryRule(args: {
 }): ResolvedSystemBoundaryRule | null {
   if (!args.supportProfileCode || !args.sashProfileCode) return null
 
-  // ASSEMBLY MODEL 04C вЂ” CATALOGUE PAIRING TRUTH.
+  // ASSEMBLY MODEL 04C — CATALOGUE PAIRING TRUTH.
   // PRELUDE 60 catalogue page 25 shows mullion 482.21 with sash 482.18.
   // Do not generalize the external 482.05 reference into an automatic
   // catalogue mate for 482.21. Keep the user's explicit 482.05 selection,
@@ -275,7 +275,7 @@ export function resolveSystemBoundaryRule(args: {
     supportConnectorQuantity: dividerRule?.connectorQuantityPerDivider ?? null,
     exactAssemblyGeometryProven: false,
     noteBg: dividerRule
-      ? 'РЎРёСЃС‚РµРјРЅРѕС‚Рѕ РїСЂР°РІРёР»Рѕ СЂР°Р·РїРѕР·РЅР°РІР° 482.21 РєР°С‚Рѕ С…РѕСЂРёР·РѕРЅС‚Р°Р»РµРЅ/РІРµСЂС‚РёРєР°Р»РµРЅ РґРµР»РёС‚РµР» Рё 482.05 РєР°С‚Рѕ РєСЂРёР»Рѕ. Р РµС„РµСЂРµРЅС‚РЅРёС‚Рµ РєРѕСЂРµРєС†РёРё РјРѕРіР°С‚ РґР° РІРѕРґСЏС‚ РєРѕРЅСЃС‚СЂСѓРєС‚РёРІРЅР°С‚Р° Р»РѕРіРёРєР°, РЅРѕ РЅРµ РґРѕРєР°Р·РІР°С‚ С‚РѕС‡РЅРёСЏ РїСЂРѕС„РёР»РµРЅ СЂР°Р·СЂРµР· РЅР° РІСЉР·РµР»Р°.'
-      : 'РЎРёСЃС‚РµРјРЅРѕС‚Рѕ РїСЂР°РІРёР»Рѕ СЂР°Р·РїРѕР·РЅР°РІР° РєР°СЃР°С‚Р° 482.30 Рё РєСЂРёР»РѕС‚Рѕ 482.05 РїРѕ СЃС‚СЂР°РЅРёС‚Рµ РЅР° РїСЂРѕР·РѕСЂРµС†Р°. Р РµС„РµСЂРµРЅС‚РЅРёС‚Рµ РєРѕСЂРµРєС†РёРё РјРѕРіР°С‚ РґР° РІРѕРґСЏС‚ РєРѕРЅСЃС‚СЂСѓРєС‚РёРІРЅР°С‚Р° Р»РѕРіРёРєР°, РЅРѕ РЅРµ РґРѕРєР°Р·РІР°С‚ С‚РѕС‡РЅРёСЏ РїСЂРѕС„РёР»РµРЅ СЂР°Р·СЂРµР· РЅР° РІСЉР·РµР»Р°.',
+      ? 'Системното правило разпознава 482.21 като хоризонтален/вертикален делител и 482.05 като крило. Референтните корекции могат да водят конструктивната логика, но не доказват точния профилен разрез на възела.'
+      : 'Системното правило разпознава касата 482.30 и крилото 482.05 по страните на прозореца. Референтните корекции могат да водят конструктивната логика, но не доказват точния профилен разрез на възела.',
   }
 }

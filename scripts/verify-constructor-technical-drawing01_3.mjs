@@ -1,52 +1,31 @@
-import fs from 'node:fs'
-import path from 'node:path'
+import assert from 'node:assert/strict'
+import { cssRules, uniqueCssValue, readSource, nodes, ts } from './constructor-source-inspection.mjs'
 
-const root = process.cwd()
-const cssPath = path.join(root, 'src/components/ConstructorShell.css')
-const tsxPath = path.join(root, 'src/components/ConstructorShell.tsx')
-const packagePath = path.join(root, 'package.json')
-
-const css = fs.readFileSync(cssPath, 'utf8')
-const tsx = fs.readFileSync(tsxPath, 'utf8')
-const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'))
-
-const requiredCss = [
-  'CONSTRUCTOR TECHNICAL DRAWING 01.3 — dimensions & manufacturing reading',
-  '.constructor-bay-dimension-band',
-  '.constructor-parametric-frame.has-bay-dimensions .constructor-frame-dimension-width',
-  'bottom: -66px;',
-  'font-variant-numeric: tabular-nums;',
-  'height: 16px;',
-  'width: 16px;',
-]
-for (const marker of requiredCss) {
-  if (!css.includes(marker)) throw new Error(`TD01.3 CSS marker missing: ${marker}`)
+const rules = cssRules(new URL('../src/components/ConstructorShell.css', import.meta.url))
+const shell = readSource(new URL('../src/components/ConstructorShell.tsx', import.meta.url))
+const width = '.constructor-frame-dimension-width'
+const chainedWidth = '.constructor-parametric-frame.has-bay-dimensions .constructor-frame-dimension-width'
+const bay = '.constructor-bay-dimension-band'
+const height = '.constructor-frame-dimension-height'
+const pixels = (selector, property) => {
+  const value = uniqueCssValue(rules, selector, property)
+  assert.match(value, /^-?\d+px$/, 'Position must have one explicit, non-important pixel value')
+  return Number.parseInt(value, 10)
 }
-
-const canonicalTsxMarkers = [
-  'simpleBayDimensions.map((bay) =>',
-  '<span>{Math.round(bay.widthMm)}</span>',
-  '<span>{Math.round(displayedFrame.widthMm)}</span>',
-  '<span>{Math.round(displayedFrame.heightMm)}</span>',
-]
-for (const marker of canonicalTsxMarkers) {
-  if (!tsx.includes(marker)) throw new Error(`Canonical dimension rendering missing: ${marker}`)
+assert.ok(pixels(width, 'bottom') < 0)
+assert.ok(pixels(chainedWidth, 'bottom') < pixels(bay, 'bottom') - 24, 'Overall width must stay outside the intermediate chain')
+assert.ok(pixels(height, 'right') < 0, 'Overall height belongs on the right')
+for (const rule of rules) {
+  if (rule.selector.includes('constructor-frame-dimension-width')) {
+    for (const declaration of rule.declarations.filter((item) => item.property === 'bottom')) {
+      assert.ok([width, chainedWidth].includes(rule.selector), 'Unexpected width-position override')
+      assert.doesNotMatch(declaration.value, /!important/)
+    }
+  }
 }
-
-if (!pkg.scripts?.['test:technical-drawing01_1']) throw new Error('TD01.1 verifier must remain registered')
-if (!pkg.scripts?.['test:technical-drawing01_2']) throw new Error('TD01.2 verifier must remain registered')
-if (!pkg.scripts?.['test:technical-drawing01_3']) throw new Error('TD01.3 verifier is not registered')
-if (!pkg.scripts?.['test:contract']?.includes('test:technical-drawing01_3')) {
-  throw new Error('TD01.3 verifier is not part of test:contract')
+const renderedExpressions = nodes(shell, (node) => ts.isJsxExpression(node) && node.expression)
+  .map((node) => node.expression.getText())
+for (const expression of ['Math.round(bay.widthMm)', 'Math.round(displayedFrame.widthMm)', 'Math.round(displayedFrame.heightMm)']) {
+  assert.ok(renderedExpressions.includes(expression), 'Missing dimension value in JSX: ' + expression)
 }
-
-console.log('=== CONSTRUCTOR TECHNICAL DRAWING 01.3 VERIFY PASS ===')
-console.log('BAY / FIELD DIMENSION CHAIN: SECONDARY VISUAL')
-console.log('OVERALL WIDTH / HEIGHT: PRIMARY VISUAL')
-console.log('DIMENSION END LEGS: EMPHASIZED')
-console.log('CANONICAL MM VALUES: UNCHANGED')
-console.log('DIMENSION CALCULATION / ROUNDING: UNCHANGED')
-console.log('GEOMETRY / TOPOLOGY / PERSISTENCE: UNCHANGED')
-console.log('AUTOMATIC GEOMETRY = NO')
-console.log('RULES VALIDATED = NO')
-console.log('MACHINE READY = NO')
+console.log('DIMENSION SOURCE CONTRACT: chain separation and canonical JSX values passed; layout not rendered.')

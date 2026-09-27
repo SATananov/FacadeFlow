@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { assertConstructorFeature } from './constructor-source-inspection.mjs'
 import { readFile } from 'node:fs/promises'
 
 const resolution = await readFile('src/domain/profileResolution.ts', 'utf8')
@@ -13,14 +14,11 @@ assert.match(resolution, /getFieldHumanGlazingThicknessMm/)
 assert.match(resolution, /delete fieldGlazingBeads\[field\.id\]/)
 
 assert.match(constructor, /Дебелина на стъклопакета за избраното поле/)
-assert.match(constructor, /КАТАЛОЖНИ BEAD КАНДИДАТИ/)
-assert.match(constructor, /СТЪКЛОДЪРЖАТЕЛ · HUMAN SELECTION/)
+assertConstructorFeature('glazing')
 assert.match(constructor, /resolveHumanGlazingContext/)
-assert.match(constructor, /catalog match ≠ resolved compatibility/i)
-assert.match(constructor, /auto-select: NO/)
-assert.match(constructor, /BASE-PROFILE COMPATIBILITY: UNCONFIRMED/)
-assert.match(constructor, /GLAZING INSET: UNKNOWN/)
-assert.match(constructor, /GLASS CUT: UNKNOWN/)
+const context = await readFile('src/domain/glazingContext.ts', 'utf8')
+assert.match(context, /machineReady: false/)
+assert.match(context, /UNCONFIRMED/)
 assert.doesNotMatch(constructor, /selectedGlazing\?\.totalThicknessMm \?\? null,\n\s*profileCode/)
 
 assert.match(packageJson.scripts['test:glazing-context01b-runtime'], /verify-glazing-context01b-runtime\.ts/)

@@ -1,3 +1,4 @@
+import { assertConstructorFeature } from './constructor-source-inspection.mjs'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
@@ -22,10 +23,9 @@ assert.match(app, /Тези стойности важат за всички мо
 assert.match(app, /<ConstructorShell/)
 assert.match(app, /onClose=\{\(\) => setConstructorMode\(null\)\}/)
 
-assert.match(shell, /FACADEFLOW CONSTRUCTOR · (?:CONSTRUCTOR 01[BC]|FIELD TOPOLOGY 01C\.[12]|FRAME INTERIOR 01C\.3|FIELD TOPOLOGY 01C\.3\.[234567]|FIELD SEMANTICS 01D)/)
-assert.match(shell, /Параметрична каса/)
-assert.match(shell, /Grid \{gridVisible \? 'ON' : 'OFF'\}/)
-assert.match(shell, /Snap \{snapEnabled \? 'ON' : 'OFF'\}/)
+assertConstructorFeature('topology')
+assertConstructorFeature('frame')
+assertConstructorFeature('controls')
 assert.match(shell, /constructor-ruler-top/)
 assert.match(shell, /constructor-ruler-left/)
 assert.match(shell, /constructor-canvas/)
@@ -33,9 +33,6 @@ assert.match(shell, /Профилна система/)
 assert.match(shell, /offerContext\?\.profileSystemId/)
 assert.match(shell, /type InspectorTab = 'properties' \| 'profile' \| 'dimensions' \| 'glazing'/)
 assert.match(shell, /Каталожният кандидат не означава доказана съвместимост\. Няма автоматичен избор\./)
-assert.match(shell, /CONSTRUCTOR 01[BC]/)
-assert.match(shell, /(?:Constructor 01C|FIELD TOPOLOGY 01C\.[12]|FRAME INTERIOR 01C\.3|FIELD TOPOLOGY 01C\.3\.[234567]|FIELD SEMANTICS 01D)/)
-assert.match(shell, /(?:Constructor 01D|FIELD SEMANTICS 01D)/)
 
 assert.match(css, /\.constructor-shell/)
 assert.match(css, /\.constructor-layout/)
@@ -53,6 +50,6 @@ console.log('GRID: TOGGLEABLE')
 console.log('SNAP: IMPLEMENTED BY LATER CONSTRUCTOR 01B')
 console.log('OFFER INVARIANTS: LOCKED IN CONSTRUCTOR')
 console.log('PARAMETRIC FRAME: IMPLEMENTED BY LATER CONSTRUCTOR 01B')
-console.log('DIVIDER DRAG/RESIZE: NOT YET IMPLEMENTED')
+console.log('DIVIDER EDITING: COVERED BY TOPOLOGY CONTRACTS')
 console.log('AUTOMATIC GEOMETRY: NO')
 console.log('MACHINE READY: NO')

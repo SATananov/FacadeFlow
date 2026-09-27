@@ -1,3 +1,4 @@
+import { assertConstructorFeature } from './constructor-source-inspection.mjs'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
@@ -19,7 +20,7 @@ assert.match(app, /key=\{activeFreeModule\?\.id \?\? 'free-no-module'\}/)
 assert.match(app, /moduleItems=\{freeModules\.map/)
 assert.match(app, /onCreateModule=\{createNextFreeModule\}/)
 
-assert.match(shell, /(?:FIELD TOPOLOGY 01C\.3\.[4567]|FIELD SEMANTICS 01D)/)
+assertConstructorFeature('topology')
 assert.match(shell, /hasActiveModule/)
 assert.match(shell, /canEditConstruction/)
 assert.match(shell, /showModuleStrip/)
