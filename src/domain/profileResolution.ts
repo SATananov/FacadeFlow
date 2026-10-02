@@ -1,3 +1,4 @@
+import type { ModuleProductType } from './offerModules'
 import type {
   GlazingBeadDefinition,
   ProfileDefinition,
@@ -145,7 +146,7 @@ export function getDividerProfileCandidates(
  * but never which concrete catalogue code should be chosen.
  */
 export function getFieldSashRole(
-  productType: 'window' | 'door' | null,
+  productType: ModuleProductType | null,
   fieldType: ProfileResolvableField['fieldType'],
 ): 'sash' | 'door-sash' | null {
   if (fieldType !== 'operable') return null
@@ -156,7 +157,7 @@ export function getFieldSashRole(
 
 export function getFieldSashProfileCandidates(
   system: ProfileSystemCatalogEntry,
-  productType: 'window' | 'door' | null,
+  productType: ModuleProductType | null,
   fieldType: ProfileResolvableField['fieldType'],
 ): readonly ProfileDefinition[] {
   const role = getFieldSashRole(productType, fieldType)
@@ -275,7 +276,7 @@ export function setDividerProfileAssignment(
 export function setFieldSashProfileAssignment(
   current: ModuleProfileResolution | null | undefined,
   system: ProfileSystemCatalogEntry,
-  productType: 'window' | 'door' | null,
+  productType: ModuleProductType | null,
   field: ProfileResolvableField,
   profileCode: string | null,
 ): ModuleProfileResolution {
@@ -537,7 +538,7 @@ function parseReinforcementTargetKey(key: string): ReinforcementTarget | null {
 export function reconcileModuleProfileResolution(
   current: ModuleProfileResolution | null | undefined,
   system: ProfileSystemCatalogEntry,
-  productType: 'window' | 'door' | null,
+  productType: ModuleProductType | null,
   dividerIds: readonly string[],
   fields: readonly ProfileResolvableField[],
   glazingThicknessMm: number | null = null,
@@ -644,7 +645,7 @@ export type ProfileResolutionMissingTarget =
 export function getProfileResolutionMissingTargets(
   resolution: ModuleProfileResolution | null | undefined,
   hasFrame: boolean,
-  productType: 'window' | 'door' | null,
+  productType: ModuleProductType | null,
   dividerIds: readonly string[],
   fields: readonly ProfileResolvableField[],
 ): ProfileResolutionMissingTarget[] {
@@ -677,7 +678,7 @@ export function getProfileResolutionMissingTargets(
 export function getProfileResolutionProgress(
   resolution: ModuleProfileResolution | null | undefined,
   hasFrame: boolean,
-  _productType: 'window' | 'door' | null,
+  _productType: ModuleProductType | null,
   dividerIds: readonly string[],
   fields: readonly ProfileResolvableField[],
 ): { assigned: number; required: number } {

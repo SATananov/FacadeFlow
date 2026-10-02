@@ -14,9 +14,9 @@ function resolveZeroDividerAnchor(
   // If a door participates, the visual marker belongs to the contacting door side.
   // Otherwise it is anchored to the geometrically later part so the relationship
   // still reads at the contact edge without inventing a new member.
-  const anchor = from.function === 'door'
+  const anchor = (from.function === 'door' || from.function === 'terrace-door')
     ? from
-    : to.function === 'door'
+    : (to.function === 'door' || to.function === 'terrace-door')
       ? to
       : from.x <= to.x ? to : from
   const other = anchor.id === from.id ? to : from

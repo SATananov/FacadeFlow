@@ -59,11 +59,12 @@ import ConstructorShell, {
 import { selectModuleConstructorView } from './components/compositeStructuralSketchProjection'
 import { APP_VERSION } from './appVersion'
 import { compareAppVersions, getDesktopUpdateApi } from './desktopUpdate'
+import { GlobalGuidance, getGuidanceContext } from './components/GlobalGuidance'
 import './App.css'
 
 const nadezhdaLogoUrl = './branding/nadezhda-header.png'
 
-type HeaderSection = 'home' | 'orders' | 'completed-orders' | 'catalogs' | 'models' | 'help'
+type HeaderSection = 'home' | 'orders' | 'completed-orders' | 'catalogs' | 'models'
 
 const HEADER_NAV_ITEMS: ReadonlyArray<{ id: HeaderSection; label: string }> = [
   { id: 'home', label: 'Начало' },
@@ -71,7 +72,6 @@ const HEADER_NAV_ITEMS: ReadonlyArray<{ id: HeaderSection; label: string }> = [
   { id: 'completed-orders', label: 'Завършени поръчки' },
   { id: 'catalogs', label: 'Каталози' },
   { id: 'models', label: 'Модели' },
-  { id: 'help', label: 'Помощ' },
 ]
 
 function OfferIcon() {
@@ -727,7 +727,7 @@ export default function App() {
       : module))
   }
 
-  const setActiveFreeModuleProductType = (productType: 'window' | 'door' | null) => {
+  const setActiveFreeModuleProductType = (productType: ModuleProductType | null) => {
     if (!activeFreeModule) return
     setFreeModules((current) => current.map((module) => module.id === activeFreeModule.id
       ? reconcileFreeModuleProfiles({ ...module, productType }, activeFreeModuleDraft) : module))
@@ -972,6 +972,9 @@ export default function App() {
                 </button>
               )
             })}
+            <GlobalGuidance id="global-guidance" navigation context={getGuidanceContext({
+              section: headerSection, constructorMode, offerStartOpen, offerStep: offerFlowStep, composite: Boolean(compositeEditing),
+            })} />
           </nav>
         </div>
       </header>
@@ -1306,15 +1309,6 @@ export default function App() {
               <h2 id="catalogs-title">Каталози</h2>
               <p>Централното място за профилни системи, сечения, компоненти, съвместимости и оригинални каталожни източници.</p>
               <div className="product-section-state">Каталожните данни остават непроменени; тук засега изграждаме само продуктовия вход.</div>
-            </div>
-          </section>
-        ) : headerSection === 'help' ? (
-          <section className="product-section-page" aria-labelledby="help-title">
-            <div className="product-section-panel">
-              <span className="product-section-eyebrow">КАК РАБОТИ FACADEFLOW</span>
-              <h2 id="help-title">Помощ</h2>
-              <p>FacadeFlow води работата от клиент и обект през техническа конфигурация и модули до конструктивна и производствена подготовка, без да измисля недоказани производствени правила.</p>
-              <div className="product-section-state">Следващата стъпка тук ще бъде кратко визуално ръководство за първа работа.</div>
             </div>
           </section>
         ) : !offerStartOpen ? (

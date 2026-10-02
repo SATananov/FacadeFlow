@@ -1,6 +1,6 @@
 import type { OfferModuleDefaults } from './offerModuleDefaults'
 
-export type ModuleProductType = 'window' | 'door'
+export type ModuleProductType = 'window' | 'terrace-door' | 'door'
 export type ModuleInputSource = 'unset' | 'preset' | 'manual' | 'constructor'
 export type ModuleFieldType = 'fixed' | 'operable'
 export type ModuleOpeningMode = 'side-hinged' | 'tilt' | 'tilt-turn'
@@ -8,6 +8,7 @@ export type ModuleOpeningHanding = 'left' | 'right'
 
 export const MODULE_PRODUCT_TYPE_PRESETS = [
   { id: 'window', labelBg: 'Прозорец' },
+  { id: 'terrace-door', labelBg: 'Терасна врата' },
   { id: 'door', labelBg: 'Врата' },
 ] as const satisfies readonly {
   id: ModuleProductType

@@ -114,7 +114,7 @@ export function validateCompositeModuleStructure(value: unknown): asserts value 
     requireId(part.id, `${path}.id`)
     requireThat(!partIds.has(part.id), `${path}: duplicate frame part ID`)
     partIds.add(part.id)
-    requireThat(part.function === null || part.function === 'window' || part.function === 'door', `${path}: invalid function`)
+    requireThat(part.function === null || part.function === 'window' || part.function === 'terrace-door' || part.function === 'door', `${path}: invalid function`)
     requireDimension(part.widthMm, `${path}.widthMm`)
     requireDimension(part.heightMm, `${path}.heightMm`)
 

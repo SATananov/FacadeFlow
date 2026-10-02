@@ -289,10 +289,18 @@ test('zero mutation, no persisted assembly, repeat selectors stable', () => {
   assert.ok(!before.includes('af01a-assembly'))
 })
 test('PF01 migration preserves identities and does not invent assembly/history', () => {
-  const f = fixture(), { revisions: _r, assurance: _a, ...legacy } = f.s
+  const f = fixture(), { revisions: _r, assurance: _a, ...legacy } = structuredClone(f.s)
+  // PF01 predates explicit frame-edge semantics; do not relabel a PF02 graph.
+  for (const draft of Object.values(legacy.constructionDraftsByModuleId)) {
+    if (draft?.topology) delete draft.topology.frameEdges
+  }
   const migrated = codec.deserializeProject(JSON.stringify({...legacy,schemaVersion:'project-foundation-01'}))
   assert.equal(migrated.project.id,f.s.project.id)
+  assert.deepEqual(migrated.constructionDraftsByModuleId, legacy.constructionDraftsByModuleId)
+  assert.deepEqual(migrated.modulesById, legacy.modulesById)
   assert.equal(migrated.revisions.headRevisionId,null)
+  assert.deepEqual(migrated.revisions.revisionsById,{})
+  assert.deepEqual(migrated.assurance.confirmationsById,{})
   assert.equal(derive(migrated,f.a).coverageStatus,'partial')
 })
 test('PF02 confirmation does not close physical evidence or mutate history', () => {

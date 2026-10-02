@@ -100,12 +100,12 @@ function definition(value: unknown) {
   const item = object(value)
   choice(item.kind, ['free', 'offer'])
   if (item.kind === 'free') {
-    keys(item, ['kind', 'profileSystemId', 'productType']); string(item.profileSystemId); choice(item.productType, [null, 'window', 'door']); return
+    keys(item, ['kind', 'profileSystemId', 'productType']); string(item.profileSystemId); choice(item.productType, [null, 'window', 'terrace-door', 'door']); return
   }
   keys(item, ['kind', 'draft'])
   const draft = keys(item.draft, ['inheritedDefaults', 'productType', 'customProductTypeLabel', 'productTypeSource',
     'widthMm', 'widthSource', 'heightMm', 'heightSource', 'fieldCount', 'fieldCountSource', 'fields'])
-  settings(draft.inheritedDefaults, true); choice(draft.productType, [null, 'window', 'door']); string(draft.customProductTypeLabel)
+  settings(draft.inheritedDefaults, true); choice(draft.productType, [null, 'window', 'terrace-door', 'door']); string(draft.customProductTypeLabel)
   const sources = ['unset', 'preset', 'manual', 'constructor']
   for (const name of ['productTypeSource', 'widthSource', 'heightSource', 'fieldCountSource']) choice(draft[name], sources)
   for (const name of ['widthMm', 'heightMm', 'fieldCount']) nullableNumber(draft[name])

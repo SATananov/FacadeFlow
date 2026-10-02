@@ -1,3 +1,4 @@
+import type { ModuleProductType } from '../domain/offerModules'
 import {
   Fragment,
   useEffect,
@@ -142,7 +143,7 @@ type ConstructorOfferContext = {
 }
 
 type ConstructorModuleSummary = {
-  productType: 'window' | 'door' | null
+  productType: ModuleProductType | null
   productTypeLabel: string
   widthMm: number | null
   heightMm: number | null
@@ -174,7 +175,7 @@ type ConstructorShellProps = {
   onDraftChange?: (draft: ConstructorDraftSnapshot | null) => void
   onProfileResolutionChange?: (resolution: ModuleProfileResolution) => void
   onModuleSizeChange?: (size: ConstructorModuleSize) => void
-  onModuleProductTypeChange?: (productType: 'window' | 'door' | null) => void
+  onModuleProductTypeChange?: (productType: ModuleProductType | null) => void
   onFieldTopologyChange?: (fields: readonly ConstructorFieldTopologySummary[]) => void
   onSelectModule?: (moduleId: string) => void
   onCreateModule?: () => void
@@ -187,7 +188,7 @@ type ConstructorShellProps = {
 type ConstructorHistoryEntry = {
   construction: ConstructionModel | null
   profileResolution: ModuleProfileResolution | null
-  productType: 'window' | 'door' | null
+  productType: ModuleProductType | null
 }
 
 type ConstructorHistoryStacks = {
@@ -459,7 +460,7 @@ export default function ConstructorShell({
   const profileResolutionRef = useRef<ModuleProfileResolution | null>(
     cloneHistoryProfileResolution(profileResolution ?? null),
   )
-  const productTypeRef = useRef<'window' | 'door' | null>(moduleSummary.productType)
+  const productTypeRef = useRef<ModuleProductType | null>(moduleSummary.productType)
   const undoStackRef = useRef<ConstructorHistoryEntry[]>(undoStack)
   const redoStackRef = useRef<ConstructorHistoryEntry[]>(redoStack)
   const frame = construction?.frame ?? null
@@ -1810,7 +1811,7 @@ export default function ConstructorShell({
     )
   }
 
-  const applyModuleProductTypeFromConstructor = (productType: 'window' | 'door' | null) => {
+  const applyModuleProductTypeFromConstructor = (productType: ModuleProductType | null) => {
     if (productTypeRef.current === productType) return
 
     pushUndoEntry(captureHistoryEntry())
@@ -1834,27 +1835,30 @@ export default function ConstructorShell({
         <div className="constructor-field-semantic-buttons">
           <button
             type="button"
+            aria-pressed={frameEdges.bottom === 'frame'}
             className={frameEdges.bottom === 'frame' ? 'is-selected' : ''}
             onClick={() => applyBottomFrameEdgeKind('frame')}
           >
-            Цяла каса
+            Пълна каса
           </button>
           <button
             type="button"
+            aria-pressed={frameEdges.bottom === 'none'}
             className={frameEdges.bottom === 'none' ? 'is-selected' : ''}
             onClick={() => applyBottomFrameEdgeKind('none')}
           >
-            Без долна каса
+            П-образна каса
           </button>
           <button
             type="button"
+            aria-pressed={frameEdges.bottom === 'threshold'}
             className={frameEdges.bottom === 'threshold' ? 'is-selected' : ''}
             onClick={() => applyBottomFrameEdgeKind('threshold')}
           >
             Праг
           </button>
         </div>
-        <small>„Праг“ задава само ролята на долния край. FacadeFlow не измисля праг, профил или размери без потвърдени системни данни.</small>
+        <small>П-образна каса: лява, горна и дясна страна, без долна каса. „Праг“ задава само роля, без профил или размери.</small>
         {frameEdges.bottom !== 'frame' && (
           <small className="constructor-frame-topology-safety">Профилните възли по долния край остават НЕПОТВЪРДЕНИ, докато няма отделно правило/профил за тази граница.</small>
         )}
@@ -1863,22 +1867,33 @@ export default function ConstructorShell({
   }
 
   const renderModuleProductTypeResolution = () => (
-    <div className="constructor-field-semantic-controls">
-      <span>ТИП МОДУЛ</span>
-      <div className="constructor-field-semantic-buttons">
+    <div className="constructor-field-semantic-controls constructor-module-type-control">
+      <span>Тип модул</span>
+      <div className="constructor-field-semantic-buttons" role="group" aria-label="Тип модул">
         <button
           type="button"
+          aria-pressed={moduleSummary.productType === 'window'}
           className={moduleSummary.productType === 'window' ? 'is-selected' : ''}
           onClick={() => applyModuleProductTypeFromConstructor('window')}
-          disabled={!onModuleProductTypeChange}
+          disabled={!onModuleProductTypeChange || !hasActiveModule}
         >
           Прозорец
         </button>
         <button
           type="button"
+          aria-pressed={moduleSummary.productType === 'terrace-door'}
+          className={moduleSummary.productType === 'terrace-door' ? 'is-selected' : ''}
+          onClick={() => applyModuleProductTypeFromConstructor('terrace-door')}
+          disabled={!onModuleProductTypeChange || !hasActiveModule}
+        >
+          Терасна врата
+        </button>
+        <button
+          type="button"
+          aria-pressed={moduleSummary.productType === 'door'}
           className={moduleSummary.productType === 'door' ? 'is-selected' : ''}
           onClick={() => applyModuleProductTypeFromConstructor('door')}
-          disabled={!onModuleProductTypeChange}
+          disabled={!onModuleProductTypeChange || !hasActiveModule}
         >
           Врата
         </button>
@@ -1891,7 +1906,7 @@ export default function ConstructorShell({
           Изчисти
         </button>
       </div>
-      <small>Избери дали модулът е прозорец или врата.</small>
+      <small>{!hasActiveModule ? 'Първо създайте модул.' : 'Изборът описва намерение. Размерите и страните на касата не се променят автоматично.'}</small>
     </div>
   )
 
@@ -2687,8 +2702,7 @@ export default function ConstructorShell({
           </select>
         </label>
       ) : <div className="constructor-property-row"><span>Профилна система</span><b>{offerContext?.profileSystemLabel ?? 'Не е избрана'}</b></div>}
-      {renderModuleProductTypeResolution()}
-      {renderFrameTopologyResolution()}
+      {moduleSummary.productType !== 'door' && renderFrameTopologyResolution()}
       {renderSystemDrivenModuleSummary()}
       {frame ? renderSelectedPropertiesPane() : <p className="constructor-context-hint">{canEditConstruction ? 'Избери „Каса“ и начертай модула.' : 'Добави модул, за да започнеш.'}</p>}
       {!isFreeMode && <details className="constructor-context-details"><summary>Общи настройки на офертата</summary>
@@ -2808,6 +2822,18 @@ export default function ConstructorShell({
             <b>{isCompositeView ? 'Структурна скица' : moduleSizeLabel}</b>
           </div>
           <div className="constructor-draft-chip">ЧЕРНОВА</div>
+        </div>
+        <div className="constructor-module-type-bar">
+          {renderModuleProductTypeResolution()}
+          {moduleSummary.productType === 'door' && !isCompositeView && (
+            construction ? renderFrameTopologyResolution() : <p>След задаване на външните размери изберете изрично „П-образна каса“ или „Пълна каса“.</p>
+          )}
+          {moduleSummary.productType === 'terrace-door' && <div className="constructor-terrace-relationship" role="note">
+            <b>Нулев делител · структурна връзка</b>
+            <p>За комбинация прозорец / терасна врата използвайте „Структура на модула“ горе: задайте рамковите части и добавете „Нулев делител“ към страната на вратата.</p>
+            <p>Без обикновена видима ширина на връзката; не е 40 mm делител. Геометрията и каталожната съвместимост са НЕПОТВЪРДЕНИ (NOT VERIFIED). Не се добавят профили или панти.</p>
+            <small>При съществуваща скица приложението предлага отделен модул, за да я запази.</small>
+          </div>}
         </div>
       </header>
 

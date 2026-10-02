@@ -1,3 +1,4 @@
+import type { ModuleProductType } from '../../domain/offerModules'
 import type { ProfileJointKind } from './jointSemantics'
 
 export type SystemConstructionEdge = 'left' | 'right' | 'top' | 'bottom'
@@ -171,7 +172,7 @@ const kmgPrelude60GlazingRules: readonly SystemGlazingConstructionRule[] = [
 
 export function getSystemSashConstructionRule(args: {
   systemId: string
-  productType: 'window' | 'door' | null
+  productType: ModuleProductType | null
   frameProfileCode: string | null
   sashProfileCode: string | null
 }): SystemSashConstructionRule | null {
@@ -212,7 +213,7 @@ export function getSystemGlazingConstructionRule(args: {
 
 export function resolveSystemBoundaryRule(args: {
   systemId: string
-  productType: 'window' | 'door' | null
+  productType: ModuleProductType | null
   jointKind: ProfileJointKind
   supportProfileCode: string | null
   sashProfileCode: string | null

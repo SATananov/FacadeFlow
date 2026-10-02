@@ -1,3 +1,4 @@
+import { MODULE_PRODUCT_TYPE_PRESETS } from '../domain/offerModules'
 import { useState } from 'react'
 import { getProfileSystemById } from '../data/profileSystems/catalog'
 import type { CompositeFramePart, CompositeModuleStructure, FrameSides } from '../domain/compositeModuleStructure'
@@ -13,7 +14,7 @@ const sides: readonly { key: keyof FrameSides; label: string }[] = [
   { key: 'top', label: 'Горе' }, { key: 'right', label: 'Дясно' },
   { key: 'bottom', label: 'Долу' }, { key: 'left', label: 'Ляво' },
 ]
-const functionLabel = (value: CompositeFramePart['function']) => value === 'window' ? 'Прозорец' : value === 'door' ? 'Врата' : 'Не е избрана функция'
+const functionLabel = (value: CompositeFramePart['function']) => MODULE_PRODUCT_TYPE_PRESETS.find((option) => option.id === value)?.labelBg ?? 'Не е избрана функция'
 const dimensionLabel = (value: number) => Number.isFinite(value) && value > 0 ? String(value) : 'не е въведено'
 
 export type CompositeModuleStructurePanelProps = {
@@ -79,7 +80,7 @@ export function CompositeModuleStructurePanel({ moduleNumber, systemId, initialV
           <button type="button" onClick={onCancel}>Откажи</button>
         </div>
         {error && <p className="composite-error" role="alert">{error}</p>}
-        <p className="composite-boundary">Само структурно описание. Съвместимостта между касите изисква човешка проверка. Точната геометрия на връзката не е определена. Не се изчисляват срезове, застъпвания или отстъпи.</p>
+        <p className="composite-boundary">Само структурно описание. Съвместимостта между касите изисква човешка проверка. Нулевият делител е връзка без обикновена видима ширина, а не 40 mm профил. Точната геометрия е НЕПОТВЪРДЕНА (NOT VERIFIED). Не се изчисляват срезове, застъпвания или отстъпи.</p>
 
         <div className="composite-system">
           <label htmlFor="composite-system">1. Система на модула</label>
@@ -97,10 +98,9 @@ export function CompositeModuleStructurePanel({ moduleNumber, systemId, initialV
                 <legend>Рамкова част {index + 1}</legend>
                 <label htmlFor={`composite-function-${part.id}`}>Функция</label>
                 <select id={`composite-function-${part.id}`} value={part.function ?? ''}
-                  onChange={(event) => updatePart(part.id, { function: event.target.value === 'window' ? 'window' : event.target.value === 'door' ? 'door' : null })}>
+                  onChange={(event) => updatePart(part.id, { function: MODULE_PRODUCT_TYPE_PRESETS.find((option) => option.id === event.target.value)?.id ?? null })}>
                   <option value="">Избери функция</option>
-                  <option value="window">Прозорец</option>
-                  <option value="door">Врата</option>
+                  {MODULE_PRODUCT_TYPE_PRESETS.map((option) => <option key={option.id} value={option.id}>{option.labelBg}</option>)}
                 </select>
                 <label htmlFor={`composite-position-${part.id}`}>Позиция в модула</label>
                 <select id={`composite-position-${part.id}`} value={part.placement.order === null ? '' : 'current'}
@@ -204,7 +204,7 @@ export function CompositeModuleStructurePanel({ moduleNumber, systemId, initialV
               <strong>{problem ? 'Описанието не е завършено' : 'Структурно дефинирано'}</strong>
               <p>{problem ?? 'Проверени са само структурните данни. Това не потвърждава производствена съвместимост.'}</p>
             </div>
-            <p className="composite-hint">Точната геометрия на връзката не е определена. Съвместимостта между касите изисква човешка проверка.</p>
+            <p className="composite-hint">Нулевият делител е връзка без обикновена видима ширина, а не 40 mm профил. Точната геометрия е НЕПОТВЪРДЕНА (NOT VERIFIED). Съвместимостта между касите изисква човешка проверка.</p>
           </aside>
         </div>
       </div>

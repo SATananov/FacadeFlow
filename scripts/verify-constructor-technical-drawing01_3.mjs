@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { cssRules, uniqueCssValue, readSource, nodes, ts } from './constructor-source-inspection.mjs'
+import { cssRules, readSource, nodes, ts } from './constructor-source-inspection.mjs'
 
 const rules = cssRules(new URL('../src/components/ConstructorShell.css', import.meta.url))
 const shell = readSource(new URL('../src/components/ConstructorShell.tsx', import.meta.url))
@@ -8,9 +8,13 @@ const chainedWidth = '.constructor-parametric-frame.has-bay-dimensions .construc
 const bay = '.constructor-bay-dimension-band'
 const height = '.constructor-frame-dimension-height'
 const pixels = (selector, property) => {
-  const value = uniqueCssValue(rules, selector, property)
-  assert.match(value, /^-?\d+px$/, 'Position must have one explicit, non-important pixel value')
-  return Number.parseInt(value, 10)
+  const values = rules.filter(rule => rule.selector === selector)
+    .flatMap(rule => rule.declarations.filter(item => item.property === property).map(item => item.value))
+  assert.ok(values.length > 0, `Missing ${selector} ${property}`)
+  for (const value of values) assert.match(value, /^-?\d+px$/, 'Position must be an explicit, non-important pixel value')
+  // These position rules are unconditional, same-selector declarations. The
+  // later DIMENSION READABILITY 02 rules intentionally override the base CSS.
+  return Number.parseInt(values.at(-1), 10)
 }
 assert.ok(pixels(width, 'bottom') < 0)
 assert.ok(pixels(chainedWidth, 'bottom') < pixels(bay, 'bottom') - 24, 'Overall width must stay outside the intermediate chain')

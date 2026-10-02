@@ -1,0 +1,64 @@
+.global-guidance-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border: 1px solid #7dabb6;
+  border-radius: 8px;
+  background: #eef8fa;
+  color: #214e5a;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Keep Help discoverable when the existing navigation scrolls horizontally. */
+.product-navigation > .global-guidance-trigger {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  margin-left: auto;
+  background: #12333e;
+  color: #e7f5f8;
+  border-color: #568693;
+}
+
+.global-guidance-panel {
+  position: fixed;
+  inset: 16px 16px auto auto;
+  box-sizing: border-box;
+  width: min(420px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  margin: 0;
+  padding: 18px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid #a8c7ce;
+  border-radius: 12px;
+  background: #f8fcfd;
+  color: #233e48;
+  box-shadow: 0 12px 40px #071c3040;
+  font: 13px/1.55 system-ui, sans-serif;
+  text-align: left;
+  white-space: normal;
+}
+
+.global-guidance-panel::backdrop { background: transparent; }
+.global-guidance-heading { display: flex; align-items: start; justify-content: space-between; gap: 8px; }
+.global-guidance-heading h2 { margin: 0; color: #173f4b; font-size: 17px; line-height: 1.3; }
+.global-guidance-heading button { flex: 0 0 auto; min-width: 28px; min-height: 28px; padding: 4px 6px; border: 1px solid #a8c7ce; border-radius: 6px; background: #fff; color: #214e5a; font: inherit; font-size: 11px; cursor: pointer; }
+.global-guidance-panel .global-guidance-purpose { margin: 14px 0; }
+.global-guidance-panel .global-guidance-next { margin: 12px 0; padding: 10px; border-left: 3px solid #2190a4; background: #e9f5f8; }
+.global-guidance-next strong { display: block; margin-bottom: 4px; }
+.global-guidance-panel ul { margin: 12px 0; padding-left: 20px; }
+.global-guidance-panel li + li { margin-top: 9px; }
+.global-guidance-panel summary { cursor: pointer; color: #185d6e; font-weight: 700; }
+.global-guidance-panel .global-guidance-footer { margin: 14px 0 0; color: #526b73; font-size: 11px; }
+.global-guidance-trigger:focus-visible,
+.global-guidance-panel :focus-visible { outline: 2px solid #187e93; outline-offset: 3px; }
+
+@media (min-width: 861px) {
+  .global-guidance-panel { width: 368px; }
+}

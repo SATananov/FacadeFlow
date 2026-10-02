@@ -1,3 +1,4 @@
+import type { ModuleProductType } from '../offerModules'
 import type { ConstructorDraftSnapshot } from '../construction'
 import { resolveConstructionTopology } from '../construction'
 import { syncOfferModuleFieldsFromTopology } from '../offerModules'
@@ -36,7 +37,7 @@ export type ProjectOffer = OfferBase & (
 )
 export type ModuleDefinition =
   | { kind: 'offer'; draft: Omit<OfferModuleDraft, 'id' | 'sequence'> }
-  | { kind: 'free'; profileSystemId: string; productType: 'window' | 'door' | null }
+  | { kind: 'free'; profileSystemId: string; productType: ModuleProductType | null }
 export type ProjectModule = {
   id: string; offerId: string; sequence: number; definition: ModuleDefinition
   compositeStructure?: CompositeModuleStructure | null
@@ -46,7 +47,7 @@ export function getProjectModuleSystemId(module: ProjectModule): string {
   return module.definition.kind === 'free' ? module.definition.profileSystemId : module.definition.draft.inheritedDefaults.profileSystemId
 }
 export type FreeConstructorModule = {
-  id: string; sequence: number; profileSystemId: string; productType: 'window' | 'door' | null
+  id: string; sequence: number; profileSystemId: string; productType: ModuleProductType | null
   profileResolution: ModuleProfileResolution | null
 }
 

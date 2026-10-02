@@ -33,7 +33,7 @@ const nodes = tree => !tree || typeof tree !== 'object' ? []
 function mount(snapshot) {
   const memory = new MemoryStorage()
   new LocalProjectStorage(() => memory).save(snapshot)
-  const h = { values: [], index: 0, effects: [], dirty: true, memory }
+  const h = { values: [], index: 0, effects: [], timers: [], dirty: true, memory }
   const react = {
     useState(initial) {
       const index = h.index++
@@ -54,12 +54,16 @@ function mount(snapshot) {
   const runtime = createRuntimeLoader({ react })
   const App = runtime('src/App.tsx').default
   h.render = () => {
-    globalThis.window = { localStorage: memory }
+    globalThis.window = { localStorage: memory, setTimeout: callback => h.timers.push(callback) }
     for (let i = 0; i < 30; i++) {
       h.index = 0; h.effects = []; h.dirty = false
       h.tree = App()
       h.effects.forEach(effect => effect())
-      if (!h.dirty) return
+      if (!h.dirty) {
+        // Run deferred browser work after the render/effects have settled.
+        h.timers.splice(0).forEach(callback => callback())
+        if (!h.dirty) return
+      }
     }
     throw new Error('App did not settle')
   }
@@ -123,7 +127,10 @@ function assertLocked(h) {
   for (const name of Object.keys(choices)) assert.equal(h.control(name).props.disabled, true, 'Metadata edits never unlock technical defaults')
 }
 const previousWindow = globalThis.window
+const previousDocument = globalThis.document
 try {
+  // This hook host has no mounted DOM; the optional scroll target is absent.
+  globalThis.document = { getElementById: () => null }
   for (const withSystem of [true, false]) {
     const fixture = freeFixture(withSystem), h = mount(fixture.snapshot)
     h.find(n => n.props?.mode === 'free').props.onCreateOfferFromSketch(fixture.draft); h.render()
@@ -162,6 +169,8 @@ try {
 } finally {
   if (previousWindow === undefined) delete globalThis.window
   else globalThis.window = previousWindow
+  if (previousDocument === undefined) delete globalThis.document
+  else globalThis.document = previousDocument
 }
 
 // Exercise every key on App's real generic setter, including keys normally

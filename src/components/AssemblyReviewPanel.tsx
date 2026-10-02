@@ -41,6 +41,7 @@ import {
   getAssemblyTechnicalSectionGraphic,
   getCatalogueTechnicalSectionGraphic,
 } from './assemblyTechnicalSectionGraphics'
+import { GlobalGuidance } from './GlobalGuidance'
 import './AssemblyReviewPanel.css'
 
 const EDGE_LABELS = {
@@ -68,6 +69,7 @@ const gateLabels = {
 
 function moduleProductTypeLabel(model: SystemDrivenModuleReadModel): string {
   if (model.productType === 'window') return 'Прозорец'
+  if (model.productType === 'terrace-door') return 'Терасна врата'
   if (model.productType === 'door') return 'Врата'
   return 'Типът не е зададен'
 }
@@ -2786,6 +2788,7 @@ export function AssemblyReviewPanel({ snapshot, moduleId }: { snapshot: ProjectS
         }}>
           <header className="assembly-product-dialog-head">
             <div><h2 id="assembly-review-title">{activeModule ? `Сглобки · Модул ${activeModule.sequence}` : 'Сглобки на изделието'}</h2><p>Конструкция → функция → система → остъкляване → техническа скица</p></div>
+            <GlobalGuidance id="assembly-guidance" context="assembly" />
             <button type="button" onClick={() => setOpen(false)}>Затвори</button>
           </header>
 

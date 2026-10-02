@@ -13,6 +13,8 @@
 .composite-sketch-part {
   position: absolute;
   color: #30474e;
+  container-type: size;
+  container-name: structural-part;
 }
 
 /*
@@ -135,6 +137,15 @@
   text-overflow: ellipsis;
   font-weight: 700;
   color: #30474e;
+}
+
+/* Screen space, not nominal geometry: full details remain in the side panel.
+ * Restore the internal labels automatically when zoom provides enough room. */
+@container structural-part (max-width: 150px) or (max-height: 110px) {
+  .composite-sketch-label,
+  .composite-sketch-profile-tag {
+    display: none;
+  }
 }
 
 /* Width dimension is outside the frame and remains a screen annotation only. */

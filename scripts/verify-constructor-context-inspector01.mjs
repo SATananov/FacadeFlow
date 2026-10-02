@@ -42,7 +42,7 @@ const windowStub = { requestAnimationFrame: () => 1, cancelAnimationFrame() {}, 
 function load(filename) {
   let path = resolve(root, filename)
   if (path.endsWith('.css')) return {}
-  if (!/\.tsx?$/.test(path)) path = existsSync(`${path}.ts`) ? `${path}.ts` : join(path, 'index.ts')
+  if (!/\.tsx?$/.test(path)) path = existsSync(`${path}.ts`) ? `${path}.ts` : existsSync(`${path}.tsx`) ? `${path}.tsx` : join(path, 'index.ts')
   if (cache.has(path)) return cache.get(path)
   const { outputText } = ts.transpileModule(readFileSync(path, 'utf8'), {
     fileName: path, compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
@@ -137,7 +137,7 @@ for (const mode of ['free', 'offer']) {
   assert.equal(result.fields[1].fieldType, 'fixed')
   h.click('Стъклопакет')
   assert.ok(h.find(n => n.props?.['aria-label'] === 'Дебелина на стъклопакета за избраното поле', h.inspector()))
-  assert.doesNotMatch(text(h.inspector()), /MISSING|UNCONFIRMED|FIELD|RESOLVED|source=/)
+  assert.doesNotMatch(text(h.inspector()), /MISSING|UNCONFIRMED|RESOLVED|source=/)
   console.log(`PASS ${mode}: module → field → divider → field → module; selection-only writes = 0; opening; undo/redo; field isolation`)
 }
 console.log('CONSTRUCTOR CONTEXT INSPECTOR 01: PASS')

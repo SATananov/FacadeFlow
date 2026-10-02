@@ -1,3 +1,4 @@
+import type { ModuleProductType } from './offerModules'
 import {
   getProfileSystemById,
   type ProfileDefinition,
@@ -323,7 +324,7 @@ export type SystemDrivenModuleReadModel = Readonly<{
   version: typeof SYSTEM_DRIVEN_PRODUCT_MODEL_VERSION
   moduleId: string | null
   moduleSequence: number | null
-  productType: 'window' | 'door' | null
+  productType: ModuleProductType | null
   systemId: string | null
   systemLabel: string
   constructionReady: boolean
@@ -522,7 +523,7 @@ function findSupportForEdge(args: {
 function buildJoint(args: {
   system: ProfileSystemCatalogEntry
   resolution: ModuleProfileResolution
-  productType: 'window' | 'door' | null
+  productType: ModuleProductType | null
   field: ResolvedConstructionField
   edge: Edge
   support: ResolvedBoundarySupport
@@ -1287,7 +1288,7 @@ function buildJointLibrary(joints: readonly SystemDrivenJointReadModel[]): reado
 export function buildSystemDrivenModuleReadModel(args: {
   moduleId?: string | null
   moduleSequence?: number | null
-  productType: 'window' | 'door' | null
+  productType: ModuleProductType | null
   system: ProfileSystemCatalogEntry | null
   construction: ConstructionModel | null
   resolution: ModuleProfileResolution | null
@@ -1538,7 +1539,7 @@ export function buildSystemDrivenModuleReadModel(args: {
 
 function getModuleSystemAndProductType(snapshot: ProjectSnapshot, moduleId: string): {
   system: ProfileSystemCatalogEntry | null
-  productType: 'window' | 'door' | null
+  productType: ModuleProductType | null
   offerDefaultGlazingId: string | null
 } {
   const module = snapshot.modulesById[moduleId]

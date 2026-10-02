@@ -1,3 +1,4 @@
+import type { ModuleProductType } from '../domain/offerModules'
 import { getFramePartPlacement, validateCompositeModuleStructure, type FrameSides } from '../domain/compositeModuleStructure'
 import { hasModuleConstructorConstruction } from '../domain/project/compositeModuleGuard'
 import type { ProjectSnapshot } from '../domain/project/projectModel'
@@ -6,7 +7,7 @@ import type { ProjectSnapshot } from '../domain/project/projectModel'
 export type SketchBounds = { x: number; y: number; width: number; height: number }
 export type SketchPart = SketchBounds & {
   id: string
-  function: 'window' | 'door' | null
+  function: ModuleProductType | null
   label: string
   widthMm: number
   heightMm: number
@@ -55,7 +56,7 @@ export function buildCompositeStructuralSketchProjection(value: unknown): Compos
     const width = part.widthMm / nominalScale * 1000, height = part.heightMm / nominalScale * 1000
     const result: SketchPart = {
       id: part.id, function: part.function ?? null,
-      label: part.function === 'window' ? 'Прозорец' : part.function === 'door' ? 'Врата' : 'Рамкова част',
+      label: part.function === 'window' ? 'Прозорец' : part.function === 'terrace-door' ? 'Терасна врата' : part.function === 'door' ? 'Врата' : 'Рамкова част',
       widthMm: part.widthMm, heightMm: part.heightMm,
       dimensions: `${part.widthMm} × ${part.heightMm} mm`, profileCode: part.frameProfileCode ?? null, sides: { ...part.frameSides },
       x, y: top + (getFramePartPlacement(part).verticalAlignment === 'BOTTOM' ? tallest - height : 0), width, height,
