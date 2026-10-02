@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { StoredProjectSummary } from '../persistence/localProjectStorage'
 import './ProjectManagerPanel.css'
@@ -26,6 +26,7 @@ function moduleLabel(count: number) {
 
 export function ProjectManagerPanel({ current, projects, blocked, onOpen, onDelete, onNew }: Props) {
   const [open, setOpen] = useState(false)
+  const openTriggerRef = useRef<HTMLButtonElement>(null)
   const available = useMemo(() => {
     const map = new Map<string, StoredProjectSummary>()
     for (const project of projects) map.set(project.id, project)
@@ -53,16 +54,21 @@ export function ProjectManagerPanel({ current, projects, blocked, onOpen, onDele
 
   const createNew = () => {
     onNew()
+    closeDialog()
+  }
+
+  const closeDialog = () => {
     setOpen(false)
+    window.requestAnimationFrame(() => openTriggerRef.current?.focus())
   }
 
   const openProject = (id: string) => {
     if (id === current.id) {
-      setOpen(false)
+      closeDialog()
       return
     }
     onOpen(id)
-    setOpen(false)
+    closeDialog()
   }
 
   const deleteProject = (project: StoredProjectSummary) => {
@@ -72,7 +78,7 @@ export function ProjectManagerPanel({ current, projects, blocked, onOpen, onDele
     )
     if (!confirmed) return
     onDelete(project.id)
-    setOpen(false)
+    closeDialog()
   }
 
   return (
@@ -87,6 +93,7 @@ export function ProjectManagerPanel({ current, projects, blocked, onOpen, onDele
         aria-label="Отвори проект"
         aria-haspopup="dialog"
         aria-expanded={open}
+        ref={openTriggerRef}
         onClick={() => setOpen(true)}
       >
         Отвори проект
@@ -97,16 +104,22 @@ export function ProjectManagerPanel({ current, projects, blocked, onOpen, onDele
 
       {open && createPortal(
         <div className="project-manager-overlay" role="presentation" onMouseDown={(event) => {
-          if (event.target === event.currentTarget) setOpen(false)
+          if (event.target === event.currentTarget) closeDialog()
         }}>
-          <section className="project-manager-dialog" role="dialog" aria-modal="true" aria-labelledby="project-manager-title">
+          <section className="project-manager-dialog" role="dialog" aria-modal="true" aria-labelledby="project-manager-title"
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                event.preventDefault()
+                closeDialog()
+              }
+            }}>
             <header className="project-manager-header">
               <div>
                 <span className="project-manager-kicker">Проекти</span>
                 <h2 id="project-manager-title">Отвори запазен проект</h2>
                 <p>Избери проект по име. Вътрешните идентификатори остават скрити.</p>
               </div>
-              <button type="button" className="project-manager-close" aria-label="Затвори" onClick={() => setOpen(false)}>×</button>
+              <button type="button" className="project-manager-close" aria-label="Затвори" onClick={closeDialog} autoFocus>×</button>
             </header>
 
             <div className="project-manager-toolbar">
