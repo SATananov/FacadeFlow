@@ -41,7 +41,8 @@
 .project-open-trigger:hover {
   background: #dff8fb !important;
 }
-.project-open-trigger:focus-visible {
+.project-open-trigger:focus-visible,
+.project-new-trigger:focus-visible {
   outline: 3px solid rgba(19, 171, 193, .22);
   outline-offset: 2px;
 }
