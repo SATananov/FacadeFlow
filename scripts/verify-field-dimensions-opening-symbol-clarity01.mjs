@@ -34,17 +34,19 @@ assert.match(code(variable(shell, 'innerProfileBoundsMm')), /sashPlacement\?\.pl
 assert.ok(hasJsxClass(shell, 'constructor-reviewed-sash-placement'))
 assert.match(code(shell), /sashGeometry\.sashVisibleFaceMm \* pxPerMm/)
 assert.match(code(shell), /profileViewActive && reviewedFrameFacePx !== null \? reviewedFrameFacePx : frameFacePx/)
-for (const mode of ['side-hinged', 'tilt', 'tilt-turn']) assert.ok(code(shell).includes("field.openingMode === '" + mode + "'"))
+for (const mode of ['side-hinged', 'tilt', 'tilt-turn', 'top-hung', 'side-hinged-top-hung']) assert.ok(code(shell).includes("field.openingMode === '" + mode + "'"))
 for (const handing of ['left', 'right']) assert.ok(code(shell).includes("field.openingHanding === '" + handing + "'"))
 assert.equal(uniqueCssValue(rules, '.constructor-field-surface.is-operable .constructor-operable-visual .opening-primary', 'stroke-width'), '1')
 assert.equal(uniqueCssValue(rules, '.constructor-field-surface.is-operable .constructor-operable-visual .opening-tilt', 'stroke-dasharray'), '2.4 2.2')
 assert.equal(uniqueCssValue(rules, '.constructor-field-surface.is-operable .constructor-operable-visual.mode-tilt .opening-tilt', 'stroke-dasharray'), '2.4 2.2')
+assert.equal(uniqueCssValue(rules, '.constructor-field-surface.is-operable .constructor-operable-visual .opening-top-hung', 'stroke-dasharray'), '4 2')
 assert.equal(uniqueCssValue(rules, '.constructor-operable-sash-priority', 'z-index'), '8')
 assert.equal(uniqueCssValue(rules, '.constructor-operable-sash-priority', 'pointer-events'), 'none')
 assert.equal(uniqueCssValue(rules, '.constructor-operable-sash-priority::before', 'border'), '1.25px solid rgba(38, 53, 58, .98)')
 assert.ok(code(shell).indexOf('className="constructor-divider is-local') < code(shell).indexOf('constructor-operable-sash-priority'),
   'Operable sash priority overlay must render above the divider layer')
 assert.match(code(shell), /field\.fieldType === 'operable'\)\s*\.map\(\(field\) => \(\s*<span[\s\S]*?constructor-operable-sash-priority/)
+assert.match(code(shell), /forceExternal: Boolean\(field\.polygon \|\| field\.openingMode === 'top-hung' \|\| field\.openingMode === 'side-hinged-top-hung'\)/)
 assert.equal(uniqueCssValue(rules, '.constructor-field-dimension-label', 'pointer-events'), 'none')
 assert.equal(uniqueCssValue(rules, '.constructor-field-dimension-label.is-external', 'background'), '#fff')
 const labels = nodes(shell, (node) => ts.isJsxElement(node)
@@ -79,10 +81,14 @@ const lineData = (node) => Object.fromEntries(node.attributes.properties.filter(
   .filter((attribute) => ['x1', 'y1', 'x2', 'y2'].includes(attribute.name.getText()))
   .map((attribute) => [attribute.name.getText(), Number(attribute.initializer.text)]))
 const segments = nodes(openingSvg[0], (node) => ts.isJsxSelfClosingElement(node) && node.tagName.getText() === 'line')
-  .map((node) => Object.fromEntries(Object.entries(lineData(node)).map(([key, value]) =>
-    [key, key.startsWith('x') ? (value - minX) / viewWidth : (value - minY) / viewHeight])))
+  .map((node) => ({
+    ...Object.fromEntries(Object.entries(lineData(node)).map(([key, value]) =>
+      [key, key.startsWith('x') ? (value - minX) / viewWidth : (value - minY) / viewHeight])),
+    className: code(node).match(/className="([^"]+)"/)?.[1],
+    mode: code(node).match(/data-opening-mode="([^"]+)"/)?.[1],
+  }))
 assert.ok(segments.length >= 4)
-assert.ok(segments.every((segment) => Object.values(segment).every((value) => value >= 0 && value <= 1)),
+assert.ok(segments.every((segment) => Object.entries(segment).every(([key, value]) => key === 'className' || key === 'mode' || (value >= 0 && value <= 1))),
   'Schematic symbol strokes must stay inside the profile/glazing boundary')
 assert.ok(segments.some((segment) => Object.values(segment).includes(0))
   && segments.some((segment) => Object.values(segment).includes(1)),
@@ -149,6 +155,7 @@ for (const width of [45, 130, 260, 540, 950]) for (const height of [30, 90, 185,
       assert.ok(label.top + label.height <= height - (warning ? 32 : 6))
     }
     for (const segment of segments) {
+      if (segment.className === 'opening-top-hung' || segment.mode === 'side-hinged-top-hung') continue
       const scaled = Object.fromEntries(Object.entries(segment).map(([key, value]) => [key,
         key.startsWith('x') ? area.left + value * area.width : area.top + value * area.height]))
       assert.ok(!intersects(label, scaled), 'Dimension annotation overlaps an existing opening line')
@@ -156,6 +163,10 @@ for (const width of [45, 130, 260, 540, 950]) for (const height of [30, 90, 185,
   }
 }
 assert.ok(insideCases > 0 && fallbackCases > 0)
+for (const width of [45, 130, 260, 540, 950]) for (const height of [30, 90, 185, 360, 800]) {
+  const external = place('1234 × 567 mm', width, height, { left: inset, top: inset, width: width - 2 * inset, height: height - 2 * inset }, false, { forceExternal: true })
+  assert.ok(external?.external, 'Top-hung symbol convergence near the lower center moves the annotation outside the field')
+}
 assert.ok(place('735 × 480', 250, 180, null, false), 'Normal fixed field must display its label')
 assert.equal(place('735 × 480', 60, 30, null, false).external, true)
 assert.equal(place('735 × 480', NaN, 180, null, false), null)

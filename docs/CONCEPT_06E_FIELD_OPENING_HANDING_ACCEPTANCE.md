@@ -6,11 +6,12 @@ Allow an operable module field to carry an optional human-entered working left/r
 ## Accepted behavior
 - Handing is optional and does not gate saving a module draft.
 - Confirmed dropdown presets are `Ляво` and `Дясно`, plus manual/custom text.
-- Handing is offered for side-hinged and tilt-turn opening modes.
+- Handing is offered for side-hinged, tilt-turn and side-hinged-top-hung opening modes.
 - A manual/custom opening mode may also carry a manual or preset working handing.
-- Tilt-only opening does not require or retain left/right handing.
+- Tilt-only and top-hung opening do not require or retain left/right handing.
+- For side-hinged-top-hung, left/right applies only to the side-opening component; the top-hung component remains symmetric.
 - Changing the field away from operable clears opening and handing data.
-- Changing a preset opening mode to tilt clears any previously entered handing.
+- Changing a preset opening mode to a direction-independent mode clears any previously entered handing.
 - The module keeps hybrid input semantics: preset or manual custom.
 
 ## Safety boundary

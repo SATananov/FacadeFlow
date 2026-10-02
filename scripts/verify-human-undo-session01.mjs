@@ -65,6 +65,14 @@ assert.equal(cache.get(key)?.undo.length, 0)
 assert.equal(cache.get(key)?.redo.length, 1)
 console.log('PASS Undo publishes redo history before restored state callbacks')
 
+const beforeOpeningEdit = { construction: { openingMode: 'top-hung', openingHanding: null } }
+const afterOpeningEdit = { construction: { openingMode: 'side-hinged-top-hung', openingHanding: 'right' } }
+const undoOpening = clone(afterOpeningEdit)
+const redoOpening = clone(beforeOpeningEdit)
+assert.deepEqual(undoOpening, afterOpeningEdit, 'Undo snapshot retains the combined mode and its working side')
+assert.deepEqual(redoOpening, beforeOpeningEdit, 'Redo snapshot restores the direction-independent mode without handing')
+console.log('PASS opening-mode snapshots preserve mode and handing through Undo/Redo cloning')
+
 console.log('')
 console.log('FACADEFLOW 0.1.8E.1 HUMAN UNDO SESSION HOTFIX V2 VERIFY PASS')
 console.log('FIRST TECHNICAL EDIT -> UNDO AVAILABLE: SYNCHRONOUS')

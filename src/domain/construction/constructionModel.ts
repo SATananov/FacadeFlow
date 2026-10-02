@@ -35,8 +35,14 @@ export const DEFAULT_CONSTRUCTION_FRAME_EDGES: ConstructionFrameEdges = {
 }
 
 export type ConstructionFieldType = 'fixed' | 'operable'
-export type ConstructionOpeningMode = 'side-hinged' | 'tilt' | 'tilt-turn'
+export type ConstructionOpeningMode = 'side-hinged' | 'tilt' | 'tilt-turn' | 'top-hung' | 'side-hinged-top-hung'
 export type ConstructionOpeningHanding = 'left' | 'right'
+
+export function isConstructionOpeningHandingRelevant(
+  openingMode: ConstructionOpeningMode | null,
+): boolean {
+  return openingMode === 'side-hinged' || openingMode === 'tilt-turn' || openingMode === 'side-hinged-top-hung'
+}
 
 /**
  * Canonical FIELD semantics. Constructor 01C.1 created the stable FIELD object;

@@ -1,11 +1,12 @@
 import { getProfileSystemHardwareCompatibility } from '../data/profileSystems/hardwareOptions'
+import { isConstructionOpeningHandingRelevant, type ConstructionOpeningMode } from './construction/constructionModel'
 
 export const HARDWARE_REQUIREMENTS_VERSION = 'hardware-requirements-02a' as const
 
 export type HardwareResolvableField = {
   id: string
   fieldType: 'fixed' | 'operable' | null
-  openingMode: 'side-hinged' | 'tilt' | 'tilt-turn' | null
+  openingMode: ConstructionOpeningMode | null
   openingHanding: 'left' | 'right' | null
 }
 
@@ -56,8 +57,7 @@ export function buildFieldHardwareRequirements(args: {
   if (field.fieldType !== 'operable') missing.push('FIELD_TYPE')
   if (field.fieldType === 'operable' && !field.openingMode) missing.push('OPENING_MODE')
 
-  const handingRequired =
-    field.openingMode === 'side-hinged' || field.openingMode === 'tilt-turn'
+  const handingRequired = isConstructionOpeningHandingRelevant(field.openingMode)
   if (field.fieldType === 'operable' && handingRequired && !field.openingHanding) {
     missing.push('OPENING_HANDING')
   }
@@ -80,6 +80,22 @@ export function buildFieldHardwareRequirements(args: {
       profileSystemCompatibility: compatibility?.status ?? 'missing',
       missing,
       noteBg: `Липсва: ${missing.join(', ')}. FacadeFlow не избира hardware kit автоматично.`,
+      machineReady: false,
+    }
+  }
+
+  if (field.openingMode === 'top-hung' || field.openingMode === 'side-hinged-top-hung') {
+    return {
+      version: HARDWARE_REQUIREMENTS_VERSION,
+      fieldId: field.id,
+      status: 'unconfirmed',
+      openingMode: field.openingMode,
+      openingHanding: field.openingHanding,
+      handingRequired,
+      hardwareStandardId: hardwareStandardId || null,
+      profileSystemCompatibility: compatibility?.status ?? 'missing',
+      missing: [],
+      noteBg: 'Този режим на отваряне не е потвърден за избор на обков.',
       machineReady: false,
     }
   }

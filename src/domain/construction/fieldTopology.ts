@@ -13,6 +13,7 @@ import {
   type ConstructionPoint,
   type ConstructionFieldType,
   type ConstructionOpeningMode,
+  isConstructionOpeningHandingRelevant,
   type ConstructionOpeningHanding,
   type ConstructorDividerSnapshot,
   type ResolvedConstructionDivider,
@@ -1224,10 +1225,7 @@ export function setConstructionFieldOpeningMode(
       return {
         ...field,
         openingMode,
-        openingHanding:
-          openingMode === 'side-hinged' || openingMode === 'tilt-turn'
-            ? field.openingHanding
-            : null,
+        openingHanding: isConstructionOpeningHandingRelevant(openingMode) ? field.openingHanding : null,
       }
     }),
   }
@@ -1242,9 +1240,7 @@ export function setConstructionFieldOpeningHanding(
     ...model,
     version: 'field-topology-07',
     root: updateLeafFieldDefinition(model.root, fieldId, (field) => {
-      const handingRelevant =
-        field.fieldType === 'operable' &&
-        (field.openingMode === 'side-hinged' || field.openingMode === 'tilt-turn')
+      const handingRelevant = field.fieldType === 'operable' && isConstructionOpeningHandingRelevant(field.openingMode)
       return handingRelevant
         ? { ...field, openingHanding }
         : field

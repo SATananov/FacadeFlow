@@ -16,7 +16,7 @@ assert.match(finalVisualOverrides, /\.constructor-field-surface\.is-operable \.c
 assert.doesNotMatch(sashContrastOverrides, /^\s*(?:inset|left|top|right|bottom|width|height|transform|clip-path|stroke-width)\s*:/m)
 assert.doesNotMatch(finalVisualOverrides, /\.is-fixed|\.is-selected/)
 assert.match(finalVisualOverrides, /\.constructor-operable-sash-priority \{[\s\S]*?z-index: 8;[\s\S]*?pointer-events: none;/)
-assert.match(finalVisualOverrides, /\.constructor-operable-sash-priority::before \{[\s\S]*?inset: 1px;[\s\S]*?border: 1\.25px solid rgba\(38, 53, 58, \.98\);[\s\S]*?filter: drop-shadow\(0 0 1\.25px rgba\(248, 250, 250, \.98\)\);/)
+assert.match(finalVisualOverrides, /\.constructor-operable-sash-priority::before \{[\s\S]*?inset: 1px;[\s\S]*?border: 1\.25px solid rgba\(38, 53, 58, \.98\);[\s\S]*?box-shadow:[\s\S]*?inset 0 0 0 10px #f7f9f9,[\s\S]*?inset 0 0 0 11\.15px rgba\(55, 70, 75, \.98\);[\s\S]*?filter: drop-shadow\(0 0 1\.25px rgba\(248, 250, 250, \.98\)\);/)
 assert.match(component, /className="constructor-operable-sash-priority"/)
 
 // Historical checks for intermediate declarations were superseded by later CSS cascade blocks.
@@ -27,14 +27,17 @@ assert.match(component, /field\.openingMode === 'side-hinged' && field\.openingH
 assert.match(component, /field\.openingMode === 'tilt' && \([\s\S]*?className="opening-tilt"/)
 assert.match(component, /field\.openingMode === 'tilt-turn' && field\.openingHanding === 'left' && \([\s\S]*?className="opening-primary"/)
 assert.match(component, /field\.openingMode === 'tilt-turn' && field\.openingHanding === 'right' && \([\s\S]*?className="opening-primary"/)
-assert.match(component, /\(field\.openingMode === 'side-hinged' \|\| field\.openingMode === 'tilt-turn'\) &&\s*field\.openingHanding === 'left' &&\s*\(\s*<g className="constructor-opening-handle"/)
-assert.match(component, /\(field\.openingMode === 'side-hinged' \|\| field\.openingMode === 'tilt-turn'\) &&\s*field\.openingHanding === 'right' &&\s*\(\s*<g className="constructor-opening-handle"/)
+assert.match(component, /field\.openingMode === 'top-hung' \|\| field\.openingMode === 'side-hinged-top-hung'/)
+assert.match(component, /className="opening-top-hung"/)
+assert.match(component, /isConstructionOpeningHandingRelevant\(field\.openingMode\) &&\s*field\.openingHanding === 'left' &&\s*\(\s*<g className="constructor-opening-handle"/)
+assert.match(component, /isConstructionOpeningHandingRelevant\(field\.openingMode\) &&\s*field\.openingHanding === 'right' &&\s*\(\s*<g className="constructor-opening-handle"/)
 
 assert.match(acceptance, /FRAME → DIVIDER → SASH PROFILE BAND → GLAZING/)
 assert.match(acceptance, /changes only final CSS line contrast/)
 assert.match(acceptance, /No physical overlap, rebate, sash-face, glazing inset, cut angle, or catalogue dimension is inferred or stored/)
 assert.match(acceptance, /FIXED FIELD remains glazing-only/)
 assert.match(acceptance, /Unknown handing stays visually unknown/)
+assert.match(acceptance, /top-hung marks do not imply handing/)
 assert.match(acceptance, /Selection remains a separate existing state cue/)
 assert.match(acceptance, /GEOMETRY \/ TOPOLOGY \/ FIELD SEMANTICS: UNCHANGED/)
 assert.match(acceptance, /MACHINE READY: NO/)

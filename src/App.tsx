@@ -20,7 +20,7 @@ import {
   getSelectableProfileSystems,
 } from './data/profileSystems'
 import { buildOfferModuleDefaults } from './domain/offerModuleDefaults'
-import { resolveConstructionTopology } from './domain/construction'
+import { isConstructionOpeningHandingRelevant, resolveConstructionTopology } from './domain/construction'
 import {
   createModuleProfileResolution,
   reconcileModuleProfileResolution,
@@ -610,7 +610,7 @@ export default function App() {
       openingMode,
       customOpeningModeLabel: '',
       openingModeSource: 'preset',
-      ...(openingMode === 'tilt' ? resetHanding : {}),
+      ...(!isConstructionOpeningHandingRelevant(openingMode) ? resetHanding : {}),
     })
   }
 
@@ -2856,8 +2856,7 @@ export default function App() {
                                 {(field.openingModeSource === 'manual' ||
                                   ((field.openingModeSource === 'preset' ||
                                     field.openingModeSource === 'constructor') &&
-                                    (field.openingMode === 'side-hinged' ||
-                                      field.openingMode === 'tilt-turn'))) && (
+                                    isConstructionOpeningHandingRelevant(field.openingMode))) && (
                                   <div className="module-handing-block">
                                     <label className="field">
                                       <span>Работна страна на отваряне</span>
@@ -2910,7 +2909,8 @@ export default function App() {
 
                                 <p className="module-opening-note">
                                   Начинът на отваряне и работната страна са опционални.
-                                  При падащо отваряне ляво / дясно не се изисква.
+                                  При падащо или вдигащо отваряне ляво / дясно не се изисква.
+                                  При странично + вдигащо ляво / дясно описва само страничния компонент.
                                 </p>
                               </div>
                             )}

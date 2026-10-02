@@ -7,20 +7,20 @@ const shell = await readFile(
 )
 
 assert.match(shell, /FACADEFLOW 0\.1\.8B ATOMIC MODULE HISTORY 01/)
-assert.match(shell, /type ConstructorHistoryEntry = \{[\s\S]*construction: ConstructionModel \| null[\s\S]*profileResolution: ModuleProfileResolution \| null[\s\S]*productType: 'window' \| 'door' \| null/)
+assert.match(shell, /type ConstructorHistoryEntry = \{[\s\S]*construction: ConstructionModel \| null[\s\S]*profileResolution: ModuleProfileResolution \| null[\s\S]*productType: ModuleProductType \| null/)
 assert.match(shell, /constructorHistoryByModuleId = new Map<string, ConstructorHistoryStacks>/)
 assert.match(shell, /historySessionKey = activeModuleId \? `\$\{mode\}:\$\{activeModuleId\}` : null/)
 assert.match(shell, /cachedModuleHistory\?\.undo\.map\(cloneHistoryEntry\)/)
 assert.match(shell, /cachedModuleHistory\?\.redo\.map\(cloneHistoryEntry\)/)
 
 assert.match(shell, /profileResolutionRef = useRef<ModuleProfileResolution \| null>/)
-assert.match(shell, /productTypeRef = useRef<'window' \| 'door' \| null>/)
+assert.match(shell, /productTypeRef = useRef<ModuleProductType \| null>/)
 assert.match(shell, /profileResolutionRef\.current = cloneHistoryProfileResolution\(effectiveProfileResolution\)[\s\S]*onProfileResolutionChange\(effectiveProfileResolution\)/)
 
 assert.match(shell, /pushUndoEntry\(captureHistoryEntry\(currentConstruction\)\)/)
 assert.match(shell, /pushUndoEntry\(captureHistoryEntry\(originalConstruction\)\)/)
 assert.match(shell, /const publishProfileResolution = \(next: ModuleProfileResolution\) => \{[\s\S]*pushUndoEntry\(captureHistoryEntry\(\)\)[\s\S]*setRedoStack\(\[\]\)[\s\S]*onProfileResolutionChange\?\.\(next\)/)
-assert.match(shell, /const applyModuleProductTypeFromConstructor = \(productType: 'window' \| 'door' \| null\) => \{[\s\S]*pushUndoEntry\(captureHistoryEntry\(\)\)[\s\S]*productTypeRef\.current = productType[\s\S]*onModuleProductTypeChange\?\.\(productType\)/)
+assert.match(shell, /const applyModuleProductTypeFromConstructor = \(productType: ModuleProductType \| null\) => \{[\s\S]*pushUndoEntry\(captureHistoryEntry\(\)\)[\s\S]*productTypeRef\.current = productType[\s\S]*onModuleProductTypeChange\?\.\(productType\)/)
 
 assert.match(shell, /const restoreHistoryEntry = \(entry: ConstructorHistoryEntry\) => \{[\s\S]*onModuleProductTypeChange\?\.\(restored\.productType\)[\s\S]*broadcastConstruction\(restored\.construction\)[\s\S]*profileResolutionRef\.current = cloneHistoryProfileResolution\(restored\.profileResolution\)[\s\S]*onProfileResolutionChange\?\./)
 assert.match(shell, /const currentSnapshot = captureHistoryEntry\(\)[\s\S]*setRedoStack[\s\S]*cloneHistoryEntry\(currentSnapshot\)[\s\S]*restoreHistoryEntry\(previous\)/)

@@ -12,9 +12,11 @@ For an `OPERABLE` FIELD:
 - `side-hinged + left` -> hinge side LEFT / handle side RIGHT: two lines from the left corners to a midpoint at the right side (`>` working mark);
 - `side-hinged + right` -> mirror image: two lines from the right corners to a midpoint at the left side (`<` working mark);
 - `tilt` -> two lines from both lower corners to the top midpoint (`^` working mark);
+- `top-hung` -> two dashed lines from both upper corners to the bottom midpoint; symmetric and without handing or handle cue;
 - `tilt-turn + left` -> LEFT side-hinged mark plus tilt mark;
 - `tilt-turn + right` -> RIGHT side-hinged mark plus tilt mark;
-- a small handle marker is shown on the working/handle side for side-hinged and tilt-turn modes.
+- `side-hinged-top-hung + left/right` -> the existing handed solid side mark plus the symmetric dashed top-hung mark;
+- a small handle marker is shown only for side-hinged components with explicit known working handing.
 
 `FIX` has no opening symbol.
 
@@ -24,6 +26,7 @@ For an `OPERABLE` FIELD:
 - LEFT/RIGHT symbols are visually mirrored.
 - Changing LEFT <-> RIGHT changes only the working symbol and canonical handing value; frame/FIELD/divider geometry is unchanged.
 - Changing to `tilt` removes LEFT/RIGHT handing and shows only the tilt mark.
+- Changing to `top-hung` removes LEFT/RIGHT handing and shows only the symmetric top-hung mark.
 - Changing to `FIX` removes the sash opening symbol.
 - Undo/Redo continues to restore semantic changes.
 

@@ -13,12 +13,14 @@ const packageJson = JSON.parse(
 
 assert.match(
   modules,
-  /export type ModuleOpeningMode = 'side-hinged' \| 'tilt' \| 'tilt-turn'/,
+  /export type ModuleOpeningMode = 'side-hinged' \| 'tilt' \| 'tilt-turn' \| 'top-hung' \| 'side-hinged-top-hung'/,
 )
 assert.match(modules, /MODULE_OPENING_MODE_PRESETS/)
 assert.match(modules, /id: 'side-hinged', labelBg: 'Странично'/)
 assert.match(modules, /id: 'tilt', labelBg: 'Падащо'/)
 assert.match(modules, /id: 'tilt-turn', labelBg: 'Странично \+ падащо'/)
+assert.match(modules, /id: 'top-hung', labelBg: 'Вдигащо'/)
+assert.match(modules, /id: 'side-hinged-top-hung', labelBg: 'Странично \+ вдигащо'/)
 assert.match(modules, /openingMode: ModuleOpeningMode \| null/)
 assert.match(modules, /customOpeningModeLabel: string/)
 assert.match(modules, /openingModeSource: ModuleInputSource/)
@@ -36,7 +38,7 @@ assert.match(app, /Друго \/ ръчно/)
 assert.match(app, /Ръчно описание на отварянето/)
 assert.match(app, /Начинът на отваряне.*опционал/)
 assert.match(app, /работната страна/)
-assert.match(app, /При падащо отваряне ляво \/ дясно не се изисква/)
+assert.match(app, /При падащо или вдигащо отваряне ляво \/ дясно не се изисква/)
 assert.match(app, /field\.fieldType === 'operable'/)
 assert.match(app, /selectFirstModuleFieldOpeningMode/)
 assert.match(app, /firstModuleConfiguredOpeningCount/)
@@ -50,7 +52,7 @@ assert.match(packageJson.scripts['test:contract'], /verify-concept06d\.mjs/)
 
 console.log('CONCEPT 06D FIELD OPENING MODE VERIFY PASS')
 console.log('FLOW: OPERABLE FIELD -> OPTIONAL OPENING MODE')
-console.log('OPENING MODES: SIDE-HINGED | TILT | TILT-TURN | MANUAL CUSTOM')
+console.log('OPENING MODES: SIDE-HINGED | TILT | TILT-TURN | TOP-HUNG | SIDE-HINGED-TOP-HUNG | MANUAL CUSTOM')
 console.log('OPENING MODE ENTRY: DROPDOWN OR MANUAL CUSTOM')
 console.log('OPENING MODE DRAFT GATE: NONE')
 console.log('HANDING: IMPLEMENTED BY LATER CONCEPT 06E')

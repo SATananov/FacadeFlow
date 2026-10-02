@@ -11,9 +11,9 @@ Add canonical FIELD semantics on top of Constructor 01C.3.7 without changing the
 - The left toolbar contains enabled `Фиксирано поле` and `Отваряемо поле` tools. The operator chooses a tool and clicks the target FIELD.
 - A selected FIELD can also change type from the Properties panel.
 - Switching a FIELD to `FIXED` clears opening mode and left/right working handing.
-- An `OPERABLE` FIELD can store one opening mode: `side-hinged`, `tilt`, or `tilt-turn`.
-- Left/right working handing is available only for `side-hinged` and `tilt-turn`.
-- `tilt` clears and does not accept left/right handing.
+- An `OPERABLE` FIELD can store one opening mode: `side-hinged`, `tilt`, `tilt-turn`, `top-hung`, or `side-hinged-top-hung`.
+- Left/right working handing is available only for `side-hinged`, `tilt-turn`, and `side-hinged-top-hung`.
+- `tilt` and `top-hung` clear and do not accept left/right handing.
 - Constructor 01D establishes the operable sash visualization slot without making profile/hardware decisions. The initial neutral visual is superseded by the working opening-symbol renderer in Constructor 01D.1.
 - FIX / OPERABLE / opening mode / working handing are persisted in the canonical ConstructionModel FIELD definition.
 - Semantic edits do not modify frame size, FIELD bounds, dividers, polygon geometry, or module dimensions.

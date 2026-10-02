@@ -9,6 +9,7 @@ const model = load('src/domain/project/projectModel')
 const ops = load('src/domain/project/projectOperations')
 const codec = load('src/domain/project/projectSerialization')
 const defaults = load('src/domain/offerModuleDefaults')
+const hardware = load('src/domain/hardwareResolution')
 
 let passed = 0
 let counter = 0
@@ -175,6 +176,48 @@ test('validator rejects geometry or constructor semantics inside transition payl
   const corruptSource = structuredClone(transitioned)
   corruptSource.modulesById[moduleId].definition.draft.fields[0].fieldTypeSource = 'constructor'
   assert.throws(() => codec.validateProjectSnapshot(corruptSource))
+})
+
+test('new opening modes transfer by preset semantics and survive project serialization round trips', () => {
+  for (const [mode, expectedHanding] of [['top-hung', null], ['side-hinged-top-hung', 'right']]) {
+    const topology = transition.transferFormFieldDescriptionsToConstruction(
+      construction.createConstructionModel({ xMm: 0, yMm: 0, widthMm: 1200, heightMm: 1000 }),
+      [{ sequence: 1, constructionFieldId: null, fieldType: 'operable', fieldTypeSource: 'preset',
+        openingMode: mode, openingModeSource: 'preset', openingHanding: 'right', openingHandingSource: 'preset' }],
+    )
+    const field = construction.resolveConstructionTopology(topology).fields[0]
+    assert.equal(field.openingHanding, expectedHanding)
+    assert.equal(field.openingMode, mode)
+    assert.equal(construction.resolveConstructionTopology(construction.cloneConstructionModel(topology)).fields[0].openingMode, mode)
+    assert.equal(construction.resolveConstructionTopology(construction.cloneConstructionModel(topology)).fields[0].openingHanding, expectedHanding)
+
+    const { snapshot, moduleId } = projectFixture()
+    const changed = ops.editProject(snapshot, (next) => {
+      const draft = next.modulesById[moduleId].definition.draft.fields[0]
+      draft.openingMode = mode; draft.openingModeSource = 'preset'
+      draft.openingHanding = expectedHanding; draft.openingHandingSource = expectedHanding ? 'preset' : 'unset'
+      next.constructionDraftsByModuleId[moduleId] = {
+        version: 'constructor-01d', frame: structuredClone(topology.frame), topology: structuredClone(topology),
+      }
+    })
+    codec.validateProjectSnapshot(changed)
+    const loaded = codec.deserializeProject(codec.serializeProject(changed))
+    assert.deepEqual(loaded, changed)
+    assert.equal(loaded.constructionDraftsByModuleId[moduleId].topology.root.field.openingMode, mode)
+    assert.equal(loaded.constructionDraftsByModuleId[moduleId].topology.root.field.openingHanding, expectedHanding)
+  }
+})
+
+test('new opening modes never resolve as hardware-supported', () => {
+  for (const [mode, handing] of [['top-hung', null], ['side-hinged-top-hung', 'left']]) {
+    const result = hardware.buildFieldHardwareRequirements({
+      field: { id: 'field-test', fieldType: 'operable', openingMode: mode, openingHanding: handing },
+      profileSystemId: 'kmg-prelude-60', hardwareStandardId: 'standard-european',
+    })
+    assert.equal(result.handingRequired, mode === 'side-hinged-top-hung')
+    assert.equal(result.status, 'unconfirmed')
+    assert.equal(result.machineReady, false)
+  }
 })
 
 console.log(`FACADEFLOW 0.1.8C FORM -> CONSTRUCTOR TRANSITION RUNTIME PASS: ${passed} cases`)

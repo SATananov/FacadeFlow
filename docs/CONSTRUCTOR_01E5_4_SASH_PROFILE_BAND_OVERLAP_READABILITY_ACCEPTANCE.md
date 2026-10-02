@@ -10,7 +10,7 @@ Make the technical sketch read with the same clear construction hierarchy visibl
 - A FIXED FIELD remains glazing-only and does not acquire a sash band.
 - The fixed/operable distinction comes from the existing operable-only sash band, not a permanent text badge.
 - Selection remains a separate existing state cue and is not used to communicate field type.
-- Opening marks remain schematic. Directional side-hinged and tilt-turn marks, and the corresponding handle cue, remain conditional on explicit known left/right handing; tilt-only marks do not imply handing. Unknown handing stays visually unknown.
+- Opening marks remain schematic. Directional side-hinged, tilt-turn, and side-hinged-top-hung marks, and the corresponding handle cue, remain conditional on explicit known left/right handing; tilt-only and top-hung marks do not imply handing. Unknown handing stays visually unknown.
 - Increased contour contrast must remain readable at small zoom; this requires human visual review.
 - No additional parallel contours or changes to CSS inset positions are introduced.
 - The existing sash outer contour position remains unchanged, preserving the reviewed frame/divider/sash relationship.

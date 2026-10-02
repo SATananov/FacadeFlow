@@ -131,6 +131,27 @@ for (const mode of ['free', 'offer']) {
   assert.equal(domain.resolveConstructionTopology(h.draft.topology).fields[0].openingHanding, null)
   h.click('↷ Повтори')
   assert.equal(domain.resolveConstructionTopology(h.draft.topology).fields[0].openingHanding, 'left')
+  h.click('Вдигащо')
+  let openingField = domain.resolveConstructionTopology(h.draft.topology).fields[0]
+  assert.equal(openingField.openingMode, 'top-hung')
+  assert.equal(openingField.openingHanding, null)
+  h.click('↶ Отмени')
+  openingField = domain.resolveConstructionTopology(h.draft.topology).fields[0]
+  assert.equal(openingField.openingMode, 'tilt-turn')
+  assert.equal(openingField.openingHanding, 'left')
+  h.click('↷ Повтори')
+  openingField = domain.resolveConstructionTopology(h.draft.topology).fields[0]
+  assert.equal(openingField.openingMode, 'top-hung')
+  assert.equal(openingField.openingHanding, null)
+  h.click('Странично + вдигащо')
+  h.click('Дясно')
+  openingField = domain.resolveConstructionTopology(h.draft.topology).fields[0]
+  assert.equal(openingField.openingMode, 'side-hinged-top-hung')
+  assert.equal(openingField.openingHanding, 'right')
+  h.click('↶ Отмени')
+  openingField = domain.resolveConstructionTopology(h.draft.topology).fields[0]
+  assert.equal(openingField.openingMode, 'side-hinged-top-hung')
+  assert.equal(openingField.openingHanding, null)
   h.click('Поле 2'); h.click('Фиксирано')
   const result = domain.resolveConstructionTopology(h.draft.topology)
   assert.equal(result.fields[0].fieldType, 'operable')

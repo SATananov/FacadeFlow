@@ -43,7 +43,7 @@ function settings(value: unknown, inherited = false) {
 }
 function fieldSemantics(item: Obj) {
   choice(item.fieldType, [null, 'fixed', 'operable'])
-  choice(item.openingMode, [null, 'side-hinged', 'tilt', 'tilt-turn'])
+  choice(item.openingMode, [null, 'side-hinged', 'tilt', 'tilt-turn', 'top-hung', 'side-hinged-top-hung'])
   choice(item.openingHanding, [null, 'left', 'right'])
 }
 function frame(value: unknown) {

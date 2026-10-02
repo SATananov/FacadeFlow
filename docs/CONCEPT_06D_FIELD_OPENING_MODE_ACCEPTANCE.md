@@ -10,6 +10,8 @@ Allow every preset `operable` module field to optionally describe how it opens w
   - `side-hinged` - Странично
   - `tilt` - Падащо
   - `tilt-turn` - Странично + падащо
+  - `top-hung` - Вдигащо
+  - `side-hinged-top-hung` - Странично + вдигащо
 - A non-standard opening can use `manual` source plus a free-text description.
 - The same hybrid input principle is preserved:
   - unset

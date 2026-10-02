@@ -1,4 +1,5 @@
 import {
+  isConstructionOpeningHandingRelevant,
   resolveConstructionTopology,
   setConstructionFieldOpeningHanding,
   setConstructionFieldOpeningMode,
@@ -78,7 +79,7 @@ export function transferFormFieldDescriptionsToConstruction(
 
     if (
       current?.fieldType === 'operable' &&
-      (current.openingMode === 'side-hinged' || current.openingMode === 'tilt-turn') &&
+      isConstructionOpeningHandingRelevant(current.openingMode) &&
       current.openingHanding === null &&
       description.openingHandingSource === 'preset' &&
       description.openingHanding !== null

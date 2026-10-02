@@ -11,6 +11,7 @@ It does not introduce or infer manufacturing geometry.
 - side-hinged left/right handing is the primary opening instruction;
 - tilt lines are secondary when combined with side-hinged opening;
 - pure tilt remains a continuous, easily readable symbol;
+- top-hung uses a symmetric dashed vertical mirror of the falling symbol; the combined side-hinged-top-hung mode keeps the solid handed component distinct from that dashed component;
 - the SVG handle circle is hidden because `preserveAspectRatio="none"` deforms it into an ellipse on non-square fields;
 - the existing handle tick remains anchored to the glazing-side sash contour.
 

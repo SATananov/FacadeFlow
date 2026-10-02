@@ -1,9 +1,10 @@
 import type { OfferModuleDefaults } from './offerModuleDefaults'
+import { isConstructionOpeningHandingRelevant } from './construction/constructionModel'
 
 export type ModuleProductType = 'window' | 'terrace-door' | 'door'
 export type ModuleInputSource = 'unset' | 'preset' | 'manual' | 'constructor'
 export type ModuleFieldType = 'fixed' | 'operable'
-export type ModuleOpeningMode = 'side-hinged' | 'tilt' | 'tilt-turn'
+export type ModuleOpeningMode = 'side-hinged' | 'tilt' | 'tilt-turn' | 'top-hung' | 'side-hinged-top-hung'
 export type ModuleOpeningHanding = 'left' | 'right'
 
 export const MODULE_PRODUCT_TYPE_PRESETS = [
@@ -32,7 +33,9 @@ export const MODULE_FIELD_TYPE_PRESETS = [
 export const MODULE_OPENING_MODE_PRESETS = [
   { id: 'side-hinged', labelBg: 'Странично' },
   { id: 'tilt', labelBg: 'Падащо' },
+  { id: 'top-hung', labelBg: 'Вдигащо' },
   { id: 'tilt-turn', labelBg: 'Странично + падащо' },
+  { id: 'side-hinged-top-hung', labelBg: 'Странично + вдигащо' },
 ] as const satisfies readonly {
   id: ModuleOpeningMode
   labelBg: string
@@ -172,7 +175,7 @@ export function isOfferModuleOpeningHandingRelevant(
 
   return (
     (field.openingModeSource === 'preset' || field.openingModeSource === 'constructor') &&
-    (field.openingMode === 'side-hinged' || field.openingMode === 'tilt-turn')
+    isConstructionOpeningHandingRelevant(field.openingMode)
   )
 }
 
@@ -469,7 +472,7 @@ export function syncOfferModuleFieldsFromTopology(
 
     const constructorOpeningHanding =
       constructorFieldType === 'operable' &&
-      (constructorOpeningMode === 'side-hinged' || constructorOpeningMode === 'tilt-turn')
+      isConstructionOpeningHandingRelevant(constructorOpeningMode)
         ? topologyField.openingHanding ?? null
         : null
     return {
@@ -487,20 +490,20 @@ export function syncOfferModuleFieldsFromTopology(
       openingModeSource: constructorOpeningMode ? 'constructor' : effectiveFieldType === 'operable' ? base.openingModeSource : 'unset',
       openingHanding: constructorOpeningHanding ?? (
         effectiveFieldType === 'operable' &&
-        (effectiveOpeningMode === 'side-hinged' || effectiveOpeningMode === 'tilt-turn')
+        isConstructionOpeningHandingRelevant(effectiveOpeningMode)
           ? base.openingHanding
           : null
       ),
       customOpeningHandingLabel: constructorOpeningHanding
         ? ''
         : effectiveFieldType === 'operable' &&
-          (effectiveOpeningMode === 'side-hinged' || effectiveOpeningMode === 'tilt-turn')
+          isConstructionOpeningHandingRelevant(effectiveOpeningMode)
           ? base.customOpeningHandingLabel
           : '',
       openingHandingSource: constructorOpeningHanding
         ? 'constructor'
         : effectiveFieldType === 'operable' &&
-          (effectiveOpeningMode === 'side-hinged' || effectiveOpeningMode === 'tilt-turn')
+          isConstructionOpeningHandingRelevant(effectiveOpeningMode)
           ? base.openingHandingSource
           : 'unset',
     }

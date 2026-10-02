@@ -1672,6 +1672,13 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.constructor-field-semantic-buttons.is-five {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.constructor-field-semantic-buttons.is-five button:nth-child(-n + 3) { grid-column: span 2; }
+.constructor-field-semantic-buttons.is-five button:nth-child(n + 4) { grid-column: span 3; }
+
 .constructor-field-semantic-buttons button {
   min-height: 32px;
   padding: 5px 6px;
@@ -4797,6 +4804,14 @@
   stroke-linecap: round;
 }
 
+.constructor-field-surface.is-operable .constructor-operable-visual .opening-top-hung {
+  stroke: rgba(76, 94, 100, .72);
+  stroke-width: .9;
+  stroke-dasharray: 4 2;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
 /* Keep tilt dashed in both pure and combined modes to preserve its distinct meaning. */
 .constructor-field-surface.is-operable .constructor-operable-visual.mode-tilt .opening-tilt {
   stroke: rgba(55, 75, 81, .78);
@@ -4824,6 +4839,10 @@
 
 .constructor-field-surface.is-selected .constructor-operable-visual .opening-tilt {
   stroke: rgba(64, 88, 95, .56);
+}
+
+.constructor-field-surface.is-selected .constructor-operable-visual .opening-top-hung {
+  stroke: rgba(64, 88, 95, .68);
 }
 
 /* CONSTRUCTOR TECHNICAL DRAWING 01.3 — dimensions & manufacturing reading.
@@ -5574,6 +5593,9 @@
   inset: 1px;
   box-sizing: border-box;
   border: 1.25px solid rgba(38, 53, 58, .98);
+  box-shadow:
+    inset 0 0 0 10px #f7f9f9,
+    inset 0 0 0 11.15px rgba(55, 70, 75, .98);
   filter: drop-shadow(0 0 1.25px rgba(248, 250, 250, .98));
   pointer-events: none;
 }

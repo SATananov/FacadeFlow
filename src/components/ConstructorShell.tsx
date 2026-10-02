@@ -16,6 +16,7 @@ import {
   getConstructionFrameFaceMm,
   getConstructionFrameEdges,
   getConstructionMinimumFrameSize,
+  isConstructionOpeningHandingRelevant,
   migrateLegacyDividersToTopology,
   moveDivider,
   moveAngledDivider,
@@ -2468,13 +2469,13 @@ export default function ConstructorShell({
             <>
               <div className="constructor-field-semantic-controls">
                 <span>РЕЖИМ НА ОТВАРЯНЕ</span>
-                <div className="constructor-field-semantic-buttons is-three">
-                  {([['side-hinged', 'Странично'], ['tilt', 'Падащо'], ['tilt-turn', 'Странично + падащо']] as const).map(([modeId, label]) => (
+                <div className="constructor-field-semantic-buttons is-five">
+                  {([['side-hinged', 'Странично'], ['tilt', 'Падащо'], ['top-hung', 'Вдигащо'], ['tilt-turn', 'Странично + падащо'], ['side-hinged-top-hung', 'Странично + вдигащо']] as const).map(([modeId, label]) => (
                     <button key={modeId} type="button" className={selectedField.openingMode === modeId ? 'is-selected' : ''} onClick={() => applySelectedFieldOpeningMode(modeId)}>{label}</button>
                   ))}
                 </div>
               </div>
-              {(selectedField.openingMode === 'side-hinged' || selectedField.openingMode === 'tilt-turn') && (
+              {isConstructionOpeningHandingRelevant(selectedField.openingMode) && (
                 <div className="constructor-field-semantic-controls">
                   <span>РАБОТНА ПОСОКА</span>
                   <div className="constructor-field-semantic-buttons">
@@ -2484,7 +2485,7 @@ export default function ConstructorShell({
                   </div>
                 </div>
               )}
-              <div className="constructor-property-row"><span>Визуализация на крилото</span><b>{selectedField.openingMode === null ? 'Контур на крило · избери режим на отваряне' : selectedField.openingMode === 'tilt' ? 'Символ за падащо отваряне · без ляво / дясно' : selectedField.openingHanding === null ? 'Избери Ляво / Дясно, за да се покаже правилната посока' : `${selectedField.openingMode === 'tilt-turn' ? 'Комбинирано' : 'Странично'} отваряне · ${selectedField.openingHanding === 'left' ? 'ляво' : 'дясно'}`}</b></div>
+              <div className="constructor-property-row"><span>Визуализация на крилото</span><b>{selectedField.openingMode === null ? 'Контур на крило · избери режим на отваряне' : selectedField.openingMode === 'tilt' ? 'Символ за падащо отваряне · без ляво / дясно' : selectedField.openingMode === 'top-hung' ? 'Символ за вдигащо отваряне · без ляво / дясно' : selectedField.openingHanding === null ? 'Избери Ляво / Дясно, за да се покаже страничният компонент' : `${selectedField.openingMode === 'tilt-turn' || selectedField.openingMode === 'side-hinged-top-hung' ? 'Комбинирано' : 'Странично'} отваряне · ${selectedField.openingHanding === 'left' ? 'ляво' : 'дясно'}`}</b></div>
             </>
           )}
           <div className="constructor-field-action-hint"><span>РАЗДЕЛЯНЕ НА ПОЛЕ</span><p>Избери вертикален или хоризонтален делител и кликни в това поле. Делителят няма да преминава автоматично през съседните полета.</p></div>
@@ -3342,7 +3343,7 @@ export default function ConstructorShell({
                         },
                         Boolean(profileViewActive && field.fieldType === 'operable' && !innerProfileBoundsMm && !profileAwareGeometry?.sashes[field.id]?.reviewed),
                         {
-                          forceExternal: Boolean(field.polygon),
+                          forceExternal: Boolean(field.polygon || field.openingMode === 'top-hung' || field.openingMode === 'side-hinged-top-hung'),
                           // Reserve the existing external dimension lanes in display
                           // pixels; no dimension value or chain position is changed.
                           obstacles: [{
@@ -3455,6 +3456,24 @@ export default function ConstructorShell({
                               <line className="opening-tilt" x1="100" y1="100" x2="50" y2="0" />
                             </>
                           )}
+                          {(field.openingMode === 'top-hung' || field.openingMode === 'side-hinged-top-hung') && (
+                            <>
+                              <line className="opening-top-hung" x1="0" y1="0" x2="50" y2="100" />
+                              <line className="opening-top-hung" x1="100" y1="0" x2="50" y2="100" />
+                            </>
+                          )}
+                          {field.openingMode === 'side-hinged-top-hung' && field.openingHanding === 'left' && (
+                            <>
+                              <line className="opening-primary" data-opening-mode="side-hinged-top-hung" x1="0" y1="0" x2="100" y2="50" />
+                              <line className="opening-primary" data-opening-mode="side-hinged-top-hung" x1="0" y1="100" x2="100" y2="50" />
+                            </>
+                          )}
+                          {field.openingMode === 'side-hinged-top-hung' && field.openingHanding === 'right' && (
+                            <>
+                              <line className="opening-primary" data-opening-mode="side-hinged-top-hung" x1="100" y1="0" x2="0" y2="50" />
+                              <line className="opening-primary" data-opening-mode="side-hinged-top-hung" x1="100" y1="100" x2="0" y2="50" />
+                            </>
+                          )}
                           {field.openingMode === 'tilt-turn' && field.openingHanding === 'left' && (
                             <>
                               <line className="opening-primary" x1="0" y1="0" x2="100" y2="50" />
@@ -3471,14 +3490,14 @@ export default function ConstructorShell({
                               <line className="opening-tilt" x1="100" y1="100" x2="50" y2="0" />
                             </>
                           )}
-                          {(field.openingMode === 'side-hinged' || field.openingMode === 'tilt-turn') &&
+                          {isConstructionOpeningHandingRelevant(field.openingMode) &&
                             field.openingHanding === 'left' && (
                               <g className="constructor-opening-handle" aria-hidden="true">
                                 <circle cx="100" cy="50" r="2.2" />
                                 <line x1="100" y1="50" x2="92" y2="50" />
                               </g>
                             )}
-                          {(field.openingMode === 'side-hinged' || field.openingMode === 'tilt-turn') &&
+                          {isConstructionOpeningHandingRelevant(field.openingMode) &&
                             field.openingHanding === 'right' && (
                               <g className="constructor-opening-handle" aria-hidden="true">
                                 <circle cx="0" cy="50" r="2.2" />
@@ -3749,6 +3768,10 @@ export default function ConstructorShell({
                       ? 'Падащо'
                       : field.openingMode === 'tilt-turn'
                         ? 'Странично + падащо'
+                        : field.openingMode === 'top-hung'
+                          ? 'Вдигащо'
+                          : field.openingMode === 'side-hinged-top-hung'
+                            ? 'Странично + вдигащо'
                         : null
                   const handingLabel = field.openingHanding === 'left'
                     ? 'ЛЯВО'

@@ -106,7 +106,8 @@ export function deriveResolvedAssembly(snapshot: ProjectSnapshot, moduleId: stri
     if (field?.fieldType === 'operable') {
       if (!resolution.fieldSashes[field.id]) absent('Не е избран профил на крилото.')
       else if (resolution.fieldSashes[field.id].profileCode !== '482.05') unsupported('AF01A изисква крило 482.05.')
-      if (!field.openingMode || !field.openingHanding) absent('Липсва начин или посока на отваряне.')
+      if (!field.openingMode) absent('Липсва начин на отваряне.')
+      else if (field.openingMode === 'side-hinged-top-hung' && !field.openingHanding) absent('Липсва работна посока за страничния компонент.')
       else if (field.openingMode !== 'side-hinged' || field.openingHanding !== 'right') unsupported('Начинът или посоката на отваряне са извън AF01A.')
       if (!input.hardwareStandardId) absent('Липсва обковен стандарт; свободният модул няма наследени настройки за обков.')
       else if (input.hardwareStandardId !== 'standard-european') unsupported('Обковният стандарт е извън AF01A.')
