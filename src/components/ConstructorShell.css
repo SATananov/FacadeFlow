@@ -4797,11 +4797,11 @@
   stroke-linecap: round;
 }
 
-/* Pure tilt keeps a continuous symbol because there is no competing handing V. */
+/* Keep tilt dashed in both pure and combined modes to preserve its distinct meaning. */
 .constructor-field-surface.is-operable .constructor-operable-visual.mode-tilt .opening-tilt {
   stroke: rgba(55, 75, 81, .78);
   stroke-width: 1;
-  stroke-dasharray: none;
+  stroke-dasharray: 2.4 2.2;
 }
 
 /* The SVG uses preserveAspectRatio=none, so its circle becomes an ellipse on
@@ -5549,3 +5549,31 @@
 .constructor-terrace-relationship { flex: 2 1 380px; min-width: 0; font-size: 12px; line-height: 1.45; }
 .constructor-module-type-bar p { margin: 5px 0; font-size: 12px; }
 .constructor-module-type-bar button:focus-visible { outline: 2px solid #17677a; outline-offset: 2px; }
+
+/* OPERABLE SKETCH CLARITY 01 — final visual-only line-contrast overrides.
+   Preserve the existing schematic insets, dimensions, SVG coordinates and state behavior. */
+.constructor-field-surface.is-operable .constructor-sash-profile-visual {
+  border-color: rgba(38, 53, 58, .98);
+}
+
+.constructor-field-surface.is-operable .constructor-sash-profile-visual .sash-profile-inner {
+  border-color: rgba(55, 70, 75, .98);
+}
+
+/* Paint the same operable sash edge over divider contact; the overlay is visual-only and non-interactive. */
+.constructor-operable-sash-priority {
+  position: absolute;
+  z-index: 8;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.constructor-operable-sash-priority::before {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  box-sizing: border-box;
+  border: 1.25px solid rgba(38, 53, 58, .98);
+  filter: drop-shadow(0 0 1.25px rgba(248, 250, 250, .98));
+  pointer-events: none;
+}

@@ -3433,7 +3433,7 @@ export default function ConstructorShell({
                             width: `${innerProfileBoundsMm.widthMm * pxPerMm}px`,
                             height: `${innerProfileBoundsMm.heightMm * pxPerMm}px`,
                           } : undefined}
-                          viewBox="-6 -6 112 112"
+                          viewBox="0 0 100 100"
                           preserveAspectRatio="none"
                           aria-hidden="true"
                         >
@@ -3457,18 +3457,18 @@ export default function ConstructorShell({
                           )}
                           {field.openingMode === 'tilt-turn' && field.openingHanding === 'left' && (
                             <>
-                              <line className="opening-primary" x1="0" y1="20" x2="100" y2="50" />
-                              <line className="opening-primary" x1="0" y1="80" x2="100" y2="50" />
-                              <line className="opening-tilt" x1="35" y1="16" x2="50" y2="0" />
-                              <line className="opening-tilt" x1="65" y1="16" x2="50" y2="0" />
+                              <line className="opening-primary" x1="0" y1="0" x2="100" y2="50" />
+                              <line className="opening-primary" x1="0" y1="100" x2="100" y2="50" />
+                              <line className="opening-tilt" x1="0" y1="100" x2="50" y2="0" />
+                              <line className="opening-tilt" x1="100" y1="100" x2="50" y2="0" />
                             </>
                           )}
                           {field.openingMode === 'tilt-turn' && field.openingHanding === 'right' && (
                             <>
-                              <line className="opening-primary" x1="100" y1="20" x2="0" y2="50" />
-                              <line className="opening-primary" x1="100" y1="80" x2="0" y2="50" />
-                              <line className="opening-tilt" x1="35" y1="16" x2="50" y2="0" />
-                              <line className="opening-tilt" x1="65" y1="16" x2="50" y2="0" />
+                              <line className="opening-primary" x1="100" y1="0" x2="0" y2="50" />
+                              <line className="opening-primary" x1="100" y1="100" x2="0" y2="50" />
+                              <line className="opening-tilt" x1="0" y1="100" x2="50" y2="0" />
+                              <line className="opening-tilt" x1="100" y1="100" x2="50" y2="0" />
                             </>
                           )}
                           {(field.openingMode === 'side-hinged' || field.openingMode === 'tilt-turn') &&
@@ -3604,6 +3604,26 @@ export default function ConstructorShell({
                     </button>
                   )
                 })}
+
+                {/* Paint only the operable sash perimeter above divider faces; this layer cannot intercept input. */}
+                {frame && dragState?.kind !== 'create' && fields
+                  .filter((field) => field.fieldType === 'operable')
+                  .map((field) => (
+                    <span
+                      key={`operable-sash-priority-${field.id}`}
+                      className="constructor-operable-sash-priority"
+                      style={{
+                        left: `${field.bounds.xMm * pxPerMm}px`,
+                        top: `${field.bounds.yMm * pxPerMm}px`,
+                        width: `${field.bounds.widthMm * pxPerMm}px`,
+                        height: `${field.bounds.heightMm * pxPerMm}px`,
+                        clipPath: field.polygon
+                          ? `polygon(${field.polygon.map((point) => `${((point.xMm - field.bounds.xMm) / Math.max(1, field.bounds.widthMm)) * 100}% ${((point.yMm - field.bounds.yMm) / Math.max(1, field.bounds.heightMm)) * 100}%`).join(', ')})`
+                          : undefined,
+                      }}
+                      aria-hidden="true"
+                    />
+                  ))}
 
                 {frame && dragState?.kind !== 'create' && angledDividers.map((divider) => {
                   const xs = divider.facePolygon.map((point) => point.xMm)

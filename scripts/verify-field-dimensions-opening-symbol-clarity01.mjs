@@ -38,7 +38,13 @@ for (const mode of ['side-hinged', 'tilt', 'tilt-turn']) assert.ok(code(shell).i
 for (const handing of ['left', 'right']) assert.ok(code(shell).includes("field.openingHanding === '" + handing + "'"))
 assert.equal(uniqueCssValue(rules, '.constructor-field-surface.is-operable .constructor-operable-visual .opening-primary', 'stroke-width'), '1')
 assert.equal(uniqueCssValue(rules, '.constructor-field-surface.is-operable .constructor-operable-visual .opening-tilt', 'stroke-dasharray'), '2.4 2.2')
-assert.equal(uniqueCssValue(rules, '.constructor-field-surface.is-operable .constructor-operable-visual.mode-tilt .opening-tilt', 'stroke-dasharray'), 'none')
+assert.equal(uniqueCssValue(rules, '.constructor-field-surface.is-operable .constructor-operable-visual.mode-tilt .opening-tilt', 'stroke-dasharray'), '2.4 2.2')
+assert.equal(uniqueCssValue(rules, '.constructor-operable-sash-priority', 'z-index'), '8')
+assert.equal(uniqueCssValue(rules, '.constructor-operable-sash-priority', 'pointer-events'), 'none')
+assert.equal(uniqueCssValue(rules, '.constructor-operable-sash-priority::before', 'border'), '1.25px solid rgba(38, 53, 58, .98)')
+assert.ok(code(shell).indexOf('className="constructor-divider is-local') < code(shell).indexOf('constructor-operable-sash-priority'),
+  'Operable sash priority overlay must render above the divider layer')
+assert.match(code(shell), /field\.fieldType === 'operable'\)\s*\.map\(\(field\) => \(\s*<span[\s\S]*?constructor-operable-sash-priority/)
 assert.equal(uniqueCssValue(rules, '.constructor-field-dimension-label', 'pointer-events'), 'none')
 assert.equal(uniqueCssValue(rules, '.constructor-field-dimension-label.is-external', 'background'), '#fff')
 const labels = nodes(shell, (node) => ts.isJsxElement(node)
@@ -76,20 +82,39 @@ const segments = nodes(openingSvg[0], (node) => ts.isJsxSelfClosingElement(node)
   .map((node) => Object.fromEntries(Object.entries(lineData(node)).map(([key, value]) =>
     [key, key.startsWith('x') ? (value - minX) / viewWidth : (value - minY) / viewHeight])))
 assert.ok(segments.length >= 4)
-assert.ok(segments.every((segment) => Object.values(segment).every((value) => value > 0 && value < 1)),
+assert.ok(segments.every((segment) => Object.values(segment).every((value) => value >= 0 && value <= 1)),
   'Schematic symbol strokes must stay inside the profile/glazing boundary')
+assert.ok(segments.some((segment) => Object.values(segment).includes(0))
+  && segments.some((segment) => Object.values(segment).includes(1)),
+  'Opening strokes must reach the inner sash/infill limits')
 const combined = nodes(openingSvg[0], (node) => ts.isJsxExpression(node) && node.expression
   && ts.isBinaryExpression(node.expression) && code(node.expression.left).includes("field.openingMode === 'tilt-turn'"))
   .filter((node) => nodes(node, (child) => ts.isJsxSelfClosingElement(child) && child.tagName.getText() === 'line').length === 4)
 assert.equal(combined.length, 2, 'Both combined-mode handings must remain available')
+const combinedByHanding = new Map()
 for (const symbol of combined) {
   const lines = nodes(symbol, (node) => ts.isJsxSelfClosingElement(node) && node.tagName.getText() === 'line')
   const primary = lines.filter((node) => code(node).includes('opening-primary')).map(lineData)
   const secondary = lines.filter((node) => code(node).includes('opening-tilt')).map(lineData)
   assert.equal(primary.length, 2); assert.equal(secondary.length, 2)
-  assert.ok(Math.max(...secondary.flatMap((line) => [line.y1, line.y2]))
-    < Math.min(...primary.flatMap((line) => [line.y1, line.y2])), 'Secondary tilt cue must not cross primary side-hung lines')
+  const expression = code(symbol)
+  const handing = expression.includes("field.openingHanding === 'left'") ? 'left' : 'right'
+  combinedByHanding.set(handing, { primary, secondary })
+  const tiltDiagonals = secondary.filter((line) => line.y1 === 100 && line.y2 === 0)
+  assert.equal(tiltDiagonals.length, 2)
+  assert.deepEqual(tiltDiagonals.map((line) => line.x1).sort((a, b) => a - b), [0, 100])
+  assert.ok(tiltDiagonals.every((line) => line.x2 === 50),
+    'Combined tilt cue must span from both bottom corners toward top center')
 }
+assert.deepEqual([...combinedByHanding.keys()].sort(), ['left', 'right'])
+assert.deepEqual(combinedByHanding.get('left').primary, [
+  { x1: 0, y1: 0, x2: 100, y2: 50 },
+  { x1: 0, y1: 100, x2: 100, y2: 50 },
+])
+assert.deepEqual(combinedByHanding.get('right').primary, [
+  { x1: 100, y1: 0, x2: 0, y2: 50 },
+  { x1: 100, y1: 100, x2: 0, y2: 50 },
+])
 assert.ok(Number(uniqueCssValue(rules, '.constructor-field-surface.is-operable .constructor-operable-visual .opening-tilt', 'stroke-width'))
   < Number(uniqueCssValue(rules, '.constructor-field-surface.is-operable .constructor-operable-visual .opening-primary', 'stroke-width')))
 const intersects = (box, segment) => {

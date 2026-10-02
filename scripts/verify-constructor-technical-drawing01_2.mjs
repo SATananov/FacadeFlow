@@ -5,7 +5,7 @@ const rules = cssRules(new URL('../src/components/ConstructorShell.css', import.
 const shell = readSource(new URL('../src/components/ConstructorShell.tsx', import.meta.url))
 assertConstructorFeature('opening')
 assert.equal(uniqueCssValue(rules, '.constructor-field-surface.is-operable .constructor-operable-visual .opening-tilt', 'stroke-dasharray'), '2.4 2.2')
-assert.equal(uniqueCssValue(rules, '.constructor-field-surface.is-operable .constructor-operable-visual.mode-tilt .opening-tilt', 'stroke-dasharray'), 'none')
+assert.equal(uniqueCssValue(rules, '.constructor-field-surface.is-operable .constructor-operable-visual.mode-tilt .opening-tilt', 'stroke-dasharray'), '2.4 2.2')
 assert.equal(uniqueCssValue(rules, '.constructor-opening-handle circle', 'display'), 'none')
 for (const mode of ['side-hinged', 'tilt-turn', 'tilt']) assert.ok(code(shell).includes("field.openingMode === '" + mode + "'"))
 for (const handing of ['left', 'right']) assert.ok(code(shell).includes("field.openingHanding === '" + handing + "'"))
