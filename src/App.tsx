@@ -1343,7 +1343,7 @@ export default function App() {
                             {project.headRevisionNumber !== null ? ` · ревизия R${project.headRevisionNumber}` : ''}
                           </span>
                         </div>
-                        <button type="button" onClick={() => resumeStoredOffer(project.id)}>
+                        <button type="button" aria-label={`Продължи проекта ${project.label}`} onClick={() => resumeStoredOffer(project.id)}>
                           Продължи
                         </button>
                       </article>
