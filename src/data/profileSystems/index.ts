@@ -17,3 +17,5 @@ export * from './glazingEvidence'
 export * from './systemConstructionRules'
 
 export * from './technicalSections'
+
+export * from './systemStandards'

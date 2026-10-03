@@ -72,6 +72,12 @@ import {
   getGlazingOptionById,
   getProfileSystemById,
   getSelectableProfileSystems,
+  getSystemStandardById,
+  getSystemStandards,
+  getSystemStandardConflicts,
+  prelude60SystemStandardConflicts,
+  getStandardComponentRef,
+  rankSystemStandardSuggestions,
   type ProfileDefinition,
   type ReinforcementDefinition,
 } from '../data/profileSystems'
@@ -436,6 +442,7 @@ export default function ConstructorShell({
     typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1,
   )
   const [profileViewEnabled, setProfileViewEnabled] = useState(true)
+  const [selectedSystemStandardId, setSelectedSystemStandardId] = useState('')
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>('properties')
   const [construction, setConstruction] = useState<ConstructionModel | null>(() =>
     isCompositeView ? null : getInitialConstruction(initialDraft, moduleSummary, initialFieldDescriptions),
@@ -539,6 +546,16 @@ export default function ConstructorShell({
   const selectedProfileSystem = getProfileSystemById(
     isFreeMode ? freeProfileSystemId : offerContext?.profileSystemId ?? '',
   )
+  const availableSystemStandards = selectedProfileSystem?.id === 'kmg-prelude-60'
+    ? getSystemStandards(selectedProfileSystem.id)
+    : []
+  const selectedSystemStandard = getSystemStandardById(selectedSystemStandardId)
+  const activeSystemStandard = selectedSystemStandard?.systemId === selectedProfileSystem?.id
+    ? selectedSystemStandard
+    : undefined
+  useEffect(() => {
+    setSelectedSystemStandardId('')
+  }, [selectedProfileSystem?.id, activeModuleId])
   const selectedGlazing = !isFreeMode && offerContext
     ? getGlazingOptionById(offerContext.glazingId)
     : undefined
@@ -2103,6 +2120,9 @@ export default function ConstructorShell({
     )
     const humanContext = selectedFieldHumanGlazingContext
     const candidates = humanContext?.candidates ?? []
+    const orderedBeadCandidates = [...candidates].sort((a, b) =>
+      Number(Boolean(getStandardComponentRef(activeSystemStandard, b.beadCode))) - Number(Boolean(getStandardComponentRef(activeSystemStandard, a.beadCode))),
+    )
     const assignment = selectedFieldGlazingAssignment
     const canSelectBead = Boolean(
       selectedFieldGlazingThicknessMm !== null &&
@@ -2216,7 +2236,7 @@ export default function ConstructorShell({
           </div>
           {candidates.length > 0 ? (
             <div className="constructor-glazing-candidate-list">
-              {candidates.map((candidate) => (
+              {orderedBeadCandidates.map((candidate) => (
                 <div key={candidate.beadCode} className="constructor-glazing-candidate">
                   <b>{candidate.beadCode}</b>
                   <span>{candidate.catalogueBead.labelBg}</span>
@@ -2245,9 +2265,9 @@ export default function ConstructorShell({
             onChange={(event) => applySelectedFieldGlazingBead(event.target.value || null)}
           >
             <option value="">Не е избран стъклодържател</option>
-            {candidates.map((candidate) => (
+            {orderedBeadCandidates.map((candidate) => (
               <option key={candidate.beadCode} value={candidate.beadCode}>
-                {candidate.beadCode} · {candidate.catalogueBead.labelBg}
+                {candidate.beadCode} · {candidate.catalogueBead.labelBg}{getStandardComponentRef(activeSystemStandard, candidate.beadCode) ? ' · Препоръчано от системния вариант' : ''}
               </option>
             ))}
           </select>
@@ -2302,7 +2322,9 @@ export default function ConstructorShell({
     candidates: readonly ProfileDefinition[],
     value: string,
     onChange: (profileCode: string | null) => void,
-  ) => (
+  ) => {
+    const orderedCandidates = rankSystemStandardSuggestions(candidates, activeSystemStandard)
+    return (
     <div className="constructor-profile-resolution-control">
       <span>{label}</span>
       <select
@@ -2311,11 +2333,14 @@ export default function ConstructorShell({
         onChange={(event) => onChange(event.target.value || null)}
       >
         <option value="">Не е избран профил</option>
-        {candidates.map((candidate) => (
+        {orderedCandidates.map((candidate) => {
+          const suggestion = getStandardComponentRef(activeSystemStandard, candidate.code)
+          return (
           <option key={candidate.code} value={candidate.code}>
-            {candidate.code} · {candidate.labelBg}
+            {candidate.code} · {candidate.labelBg}{suggestion ? ' · Препоръчано от системния вариант' : ''}
           </option>
-        ))}
+          )
+        })}
       </select>
       <small>
         {value
@@ -2323,7 +2348,8 @@ export default function ConstructorShell({
           : 'Изборът е ръчен · FacadeFlow не избира кандидат автоматично'}
       </small>
     </div>
-  )
+    )
+  }
 
   const dimensionStatusLabel = (dimension: ResolvedDimension) => {
     if (dimension.status === 'human-confirmed') return 'ПОТВЪРДЕНО ОТ ЧОВЕК'
@@ -2692,6 +2718,50 @@ export default function ConstructorShell({
     )
   }
 
+  const renderSystemStandardSelector = () => {
+    if (availableSystemStandards.length === 0) return null
+    return (
+      <section className="constructor-system-standard" aria-label="Системен вариант">
+        <label>
+          <span>Системен вариант</span>
+          <select value={activeSystemStandard?.id ?? ''} onChange={(event) => setSelectedSystemStandardId(event.target.value)}>
+            <option value="">Избери вариант</option>
+            {availableSystemStandards.map((standard) => <option key={standard.id} value={standard.id}>{standard.displayNameBg}</option>)}
+          </select>
+        </label>
+        <small>Филтрира предложенията по данните на избрания системен вариант. Не избира автоматично профили.</small>
+        {activeSystemStandard && (
+          <>
+            <small className="constructor-system-standard-boundary">Системният вариант показва профили, намерени в каталожен/legacy контекст. Това не потвърждава автоматично сглобката.</small>
+            {activeSystemStandard.components.length > 0 ? (
+              <ul>
+                {activeSystemStandard.components.map((component, index) => (
+                  <li key={`${component.code}-${component.sourceDetail}-${index}`}>
+                    <b>{component.code}</b><span>{component.role}</span>
+                    <small>Източник: Altest.mdb · standart.corrections / variables · {component.sourceDetail}</small>
+                    {component.code === '482.22' && <small>32 mm reference · Не е потвърдена съвместимост с конкретното крило.</small>}
+                    {component.evidence === 'formula-reference' && component.code !== '482.22' && <small>Формулна референция · Не е потвърдена съвместимост.</small>}
+                    {component.note && component.evidence !== 'formula-reference' && <small>{component.note}</small>}
+                  </li>
+                ))}
+              </ul>
+            ) : <small>За този вариант няма изведени компонентни предложения.</small>}
+            {[...new Set([...(activeSystemStandard.conflicts ?? []), ...getSystemStandardConflicts(activeSystemStandard).map((conflict) => conflict.summary)])]
+              .map((conflict) => <em key={conflict}>Legacy конфликт: {conflict}</em>)}
+            {prelude60SystemStandardConflicts.some((conflict) => !conflict.standardIds?.includes(activeSystemStandard.id)) && (
+              <details>
+                <summary>Други нерешени legacy конфликти</summary>
+                {prelude60SystemStandardConflicts
+                  .filter((conflict) => !conflict.standardIds?.includes(activeSystemStandard.id))
+                  .map((conflict) => <small key={conflict.id}>Legacy конфликт · {conflict.summary} · Източник: Altest.mdb · {conflict.sourceDetail}</small>)}
+              </details>
+            )}
+          </>
+        )}
+      </section>
+    )
+  }
+
   const renderModuleBasics = () => (
     <div className="constructor-module-basics">
       {isFreeMode ? (
@@ -2703,6 +2773,7 @@ export default function ConstructorShell({
           </select>
         </label>
       ) : <div className="constructor-property-row"><span>Профилна система</span><b>{offerContext?.profileSystemLabel ?? 'Не е избрана'}</b></div>}
+      {renderSystemStandardSelector()}
       {moduleSummary.productType !== 'door' && renderFrameTopologyResolution()}
       {renderSystemDrivenModuleSummary()}
       {frame ? renderSelectedPropertiesPane() : <p className="constructor-context-hint">{canEditConstruction ? 'Избери „Каса“ и начертай модула.' : 'Добави модул, за да започнеш.'}</p>}
