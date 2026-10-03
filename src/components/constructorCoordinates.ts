@@ -8,6 +8,15 @@ export type FrameView = {
   pan: ScreenPoint
 }
 
+export type DoorViewOrientation = 'outside' | 'inside' | null
+
+/** Inverse view-only X mapping for a horizontally mirrored frame drawing. */
+export function framePointForDoorView(point: CadPoint, frameWidthMm: number, orientation: DoorViewOrientation): CadPoint {
+  return orientation === 'inside'
+    ? { xMm: frameWidthMm - point.xMm, yMm: point.yMm }
+    : point
+}
+
 /** Client pixels -> fixed CAD world. Pan belongs to the product view, not the grid. */
 export function screenToCadWorld(point: ScreenPoint, viewport: CadViewport): CadPoint {
   return {

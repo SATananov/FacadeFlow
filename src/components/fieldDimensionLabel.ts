@@ -10,7 +10,7 @@ export function placeFieldDimensionLabel(
   fieldHeightPx: number,
   opening: ScreenRect | null,
   hasUnknownWarning: boolean,
-  options: { viewport?: ScreenRect; forceExternal?: boolean; obstacles?: readonly ScreenRect[] } = {},
+  options: { viewport?: ScreenRect; forceExternal?: boolean; preferAbove?: boolean; obstacles?: readonly ScreenRect[] } = {},
 ): LabelPlacement | null {
   // Conservative monospace text allowance, including padding and border.
   const width = text.length * 7 + 12
@@ -25,10 +25,14 @@ export function placeFieldDimensionLabel(
     && a.top + a.height > b.top - margin
   const obstacles = options.obstacles ?? []
   const fallback = (): LabelPlacement => {
+    const below = { left: (fieldWidthPx - width) / 2, top: fieldHeightPx + margin, width, height }
+    const above = { left: (fieldWidthPx - width) / 2, top: -height - margin, width, height }
     const candidates = [
-      { left: (fieldWidthPx - width) / 2, top: fieldHeightPx + margin, width, height },
+      ...(options.preferAbove ? [above] : []),
+      below,
       { left: fieldWidthPx + margin, top: (fieldHeightPx - height) / 2, width, height },
       { left: -width - margin, top: (fieldHeightPx - height) / 2, width, height },
+      ...(!options.preferAbove ? [above] : []),
     ]
     const viewport = options.viewport
     const blocked = [...obstacles, { left: 0, top: 0, width: fieldWidthPx, height: fieldHeightPx }]
@@ -36,7 +40,7 @@ export function placeFieldDimensionLabel(
       && !blocked.some((obstacle) => overlaps(rect, obstacle))
     const candidate = candidates.find(available)
     if (candidate) return { ...candidate, external: true }
-    const preferred = candidates[0]
+    const preferred = options.preferAbove ? above : below
     // Try the edges of occupied annotation lanes before clamping at a viewport
     // edge. This keeps the callout clear of overall/bay dimensions, not over them.
     const xs = [preferred.left, ...blocked.flatMap((rect) => [rect.left - width - margin, rect.left + rect.width + margin])]

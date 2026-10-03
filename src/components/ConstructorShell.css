@@ -172,6 +172,13 @@
   margin-left: auto;
 }
 
+.constructor-door-view-control > span {
+  color: #45636b;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 .constructor-zoom-value {
   min-width: 46px;
   text-align: center;
@@ -1948,6 +1955,34 @@
   background: #fff;
   border-color: #9fb1b6;
   box-shadow: 0 1px 3px rgba(37, 55, 60, .12);
+}
+
+.constructor-drawing-layer {
+  position: absolute;
+  inset: 0;
+  transform-origin: center;
+}
+
+.constructor-drawing-layer.is-view-inside {
+  transform: scaleX(-1);
+}
+
+.constructor-drawing-layer.is-view-inside .constructor-frame-visual {
+  z-index: auto;
+}
+
+.constructor-drawing-layer.is-view-inside .constructor-frame-edge-face,
+.constructor-drawing-layer.is-view-inside .constructor-frame-mitre {
+  z-index: 11;
+}
+
+.constructor-drawing-layer.is-view-inside .constructor-field-number-badge {
+  transform: translate(-50%, -50%) scaleX(-1);
+}
+
+.constructor-drawing-layer.is-view-inside .constructor-field-dimension-label,
+.constructor-drawing-layer.is-view-inside .constructor-frame-threshold-placeholder {
+  transform: scaleX(-1);
 }
 
 .constructor-field-details-panel {
@@ -5265,6 +5300,11 @@
   bottom: -94px;
 }
 
+/* Keep the P-frame note upright after the later canonical pseudo-element rule. */
+.constructor-parametric-frame.has-open-bottom-frame .constructor-drawing-layer.is-view-inside .constructor-frame-visual::after {
+  transform: translateX(-50%) scaleX(-1);
+}
+
 .constructor-frame-topology-controls {
   margin-top: 10px;
 }
@@ -5665,4 +5705,131 @@
     inset 0 0 0 11.15px rgba(55, 70, 75, .98);
   filter: drop-shadow(0 0 1.25px rgba(248, 250, 250, .98));
   pointer-events: none;
+}
+
+/* DOOR LEAF / P-FRAME VISUAL SEMANTICS 01.
+   Display pixels only, unrelated to catalogue dimensions, floor level or rebate.
+   AUTOMATIC GEOMETRY = NO; RULES VALIDATED = NO; MACHINE READY = NO. */
+.is-door-leaf { --door-leaf-bottom-space: -4px; }
+.door-leaf-bottom-none { --door-leaf-bottom-space: 14px; }
+.door-leaf-bottom-threshold { --door-leaf-bottom-space: 36px; }
+
+.constructor-field-surface.is-door-leaf {
+  z-index: 9;
+  overflow: visible;
+  background: transparent;
+  box-shadow: none;
+}
+
+.constructor-field-surface.is-door-leaf .constructor-sash-profile-visual {
+  inset: -4px -4px var(--door-leaf-bottom-space);
+  opacity: 1;
+  background: #f7f9f9;
+}
+
+.constructor-field-surface.is-door-leaf .sash-profile-inner {
+  inset: 14px;
+  background: #dbf0f4;
+}
+
+.constructor-field-surface.is-door-leaf .constructor-operable-visual {
+  left: 14px;
+  right: 14px;
+  width: calc(100% - 28px);
+  bottom: calc(15px + var(--door-leaf-bottom-space));
+  height: calc(100% - var(--constructor-opening-inset, 11px) - 15px - var(--door-leaf-bottom-space));
+}
+
+.constructor-operable-sash-priority.is-door-leaf { z-index: 10; }
+.constructor-operable-sash-priority.is-door-leaf::before {
+  inset: -4px -4px var(--door-leaf-bottom-space);
+  box-shadow: inset 0 0 0 14px #f7f9f9, inset 0 0 0 15.15px #37464b;
+  filter: none;
+}
+
+.is-door-sketch .constructor-frame-threshold-placeholder {
+  height: 22px;
+  box-sizing: border-box;
+  border: 1px solid #547781;
+  border-top: 3px double #547781;
+  background: repeating-linear-gradient(135deg, #e0e8eb 0 3px, #f3f6f7 3px 6px);
+}
+
+/* Dashed sketch reference only, never a finished-floor datum. */
+.is-door-sketch.has-open-bottom-frame .constructor-frame-visual::before {
+  content: '';
+  display: block;
+  position: absolute;
+  inset: auto var(--constructor-frame-face, 18px) 0;
+  height: 0;
+  border: 0;
+  border-top: 1px dashed #83999f;
+  box-shadow: none;
+}
+
+/* Give only threshold door leaves a slightly stronger screen-space overlap on
+   the surrounding frame. Keep the existing bottom gap and threshold graphic. */
+.constructor-field-surface.is-door-leaf.door-leaf-bottom-threshold .constructor-sash-profile-visual {
+  inset: -6px -6px var(--door-leaf-bottom-space);
+}
+
+.constructor-operable-sash-priority.is-door-leaf.door-leaf-bottom-threshold::before {
+  inset: -6px -6px var(--door-leaf-bottom-space);
+}
+
+/* DOOR VIEW SEMANTICS 02: all insets are screen pixels, never profile dimensions. */
+.is-door-view-outside .constructor-field-surface.is-door-leaf .constructor-sash-profile-visual,
+.constructor-field-surface.is-door-leaf.is-door-view-outside .constructor-sash-profile-visual {
+  inset: -10px -10px var(--door-leaf-bottom-space);
+}
+
+.constructor-field-surface.is-door-leaf.is-door-view-inside .constructor-sash-profile-visual {
+  inset: 0 0 var(--door-leaf-bottom-space);
+}
+
+.constructor-operable-sash-priority.is-door-leaf.is-door-view-outside::before {
+  inset: -10px -10px var(--door-leaf-bottom-space);
+}
+
+.constructor-operable-sash-priority.is-door-leaf.is-door-view-inside::before {
+  inset: 0 0 var(--door-leaf-bottom-space);
+}
+
+.constructor-field-surface.is-door-leaf.is-door-view-outside.door-leaf-bottom-threshold,
+.constructor-operable-sash-priority.is-door-leaf.is-door-view-outside.door-leaf-bottom-threshold {
+  --door-leaf-bottom-space: 7px;
+}
+
+.constructor-field-surface.is-door-leaf.is-door-view-inside.door-leaf-bottom-threshold,
+.constructor-operable-sash-priority.is-door-leaf.is-door-view-inside.door-leaf-bottom-threshold {
+  --door-leaf-bottom-space: 10px;
+}
+
+.is-door-view-outside .constructor-frame-threshold-placeholder {
+  left: var(--constructor-frame-face, 18px);
+  right: var(--constructor-frame-face, 18px);
+  z-index: 11;
+}
+
+.is-door-view-inside .constructor-frame-threshold-placeholder {
+  z-index: 3;
+}
+
+/* DOOR VIEW MINI POLISH 01: screen-space profile and corner readability only. */
+.constructor-field-surface.is-door-leaf .constructor-sash-profile-visual .sash-profile-mitre {
+  z-index: 3;
+  height: 1.25px;
+  background: rgba(55, 70, 75, .92);
+}
+
+.constructor-field-surface.is-door-leaf.is-door-view-outside .constructor-operable-visual {
+  /* Outside sash outer edge is 10px beyond the field; its inner contour is 14px inward. */
+  left: 4px;
+  right: 4px;
+  width: calc(100% - 8px);
+}
+
+.constructor-field-surface.is-door-leaf.is-door-view-outside.door-leaf-bottom-frame,
+.constructor-operable-sash-priority.is-door-leaf.is-door-view-outside.door-leaf-bottom-frame {
+  --door-leaf-bottom-space: -10px;
 }

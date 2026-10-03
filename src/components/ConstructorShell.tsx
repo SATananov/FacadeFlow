@@ -114,12 +114,14 @@ import './ConstructorShell.css'
 import { CompositeStructuralSketch } from './CompositeStructuralSketch'
 import type { ConstructorView, SketchBounds } from './compositeStructuralSketchProjection'
 import { placeFieldDimensionLabel, SCHEMATIC_OPENING_INSET_PX } from './fieldDimensionLabel'
+import { doorLeafVisualClass } from './doorLeafVisual'
 import {
   cadWorldToScreen,
   frameOriginInCadWorld,
   screenToCadWorld,
-  screenToConstructionWorld,
   screenToFrameLocal,
+  framePointForDoorView,
+  type DoorViewOrientation,
   type CadViewport,
 } from './constructorCoordinates'
 
@@ -442,6 +444,7 @@ export default function ConstructorShell({
     typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1,
   )
   const [profileViewEnabled, setProfileViewEnabled] = useState(true)
+  const [doorViewOrientation, setDoorViewOrientation] = useState<DoorViewOrientation>(null)
   const [selectedSystemStandardId, setSelectedSystemStandardId] = useState('')
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>('properties')
   const [construction, setConstruction] = useState<ConstructionModel | null>(() =>
@@ -504,6 +507,10 @@ export default function ConstructorShell({
   const inspectorPaneRef = useRef<HTMLDivElement>(null)
 
   const isFreeMode = mode === 'free'
+  const insideDoorView = moduleSummary.productType === 'door' && doorViewOrientation === 'inside'
+  const doorViewClass = moduleSummary.productType === 'door' && doorViewOrientation
+    ? `is-door-view-${doorViewOrientation}`
+    : ''
   const hasActiveModule = Boolean(activeModuleId && moduleItems.some((item) => item.id === activeModuleId))
   const canEditConstruction = !isCompositeView && (!isFreeMode || hasActiveModule)
   const showModuleStrip = isFreeMode || moduleItems.length > 0
@@ -808,6 +815,10 @@ export default function ConstructorShell({
   }, [activeModuleId])
 
   useEffect(() => {
+    setDoorViewOrientation(null)
+  }, [activeModuleId, moduleSummary.productType])
+
+  useEffect(() => {
     if (!autoFitEnabled || dragState || viewPanState || !viewBounds) return
     const requestId = window.requestAnimationFrame(() => fitViewToFrame(viewBounds))
     return () => window.cancelAnimationFrame(requestId)
@@ -862,9 +873,16 @@ export default function ConstructorShell({
   const cadPointFromPointer = (event: ReactPointerEvent<HTMLElement>): CanvasPoint =>
     screenToCadWorld(pointerScreenPoint(event), pointerViewport())
   const framePointFromPointer = (event: ReactPointerEvent<HTMLElement>): CanvasPoint =>
-    screenToFrameLocal(pointerScreenPoint(event), pointerViewport(), frameView())
+    framePointForDoorView(
+      screenToFrameLocal(pointerScreenPoint(event), pointerViewport(), frameView()),
+      frame?.widthMm ?? 0,
+      insideDoorView ? 'inside' : null,
+    )
   const pointFromPointer = (event: ReactPointerEvent<HTMLElement>): CanvasPoint =>
-    screenToConstructionWorld(pointerScreenPoint(event), pointerViewport(), frameView())
+    {
+      const local = framePointFromPointer(event)
+      return { xMm: (frame?.xMm ?? 0) + local.xMm, yMm: (frame?.yMm ?? 0) + local.yMm }
+    }
   const snapSignedMm = (value: number) => snapEnabled
     ? Math.round(value / SNAP_STEP_MM) * SNAP_STEP_MM
     : Math.round(value)
@@ -1780,10 +1798,14 @@ export default function ConstructorShell({
     setSelectedEdge(null)
   }
 
+  const frameEdgeForView = (edge: FrameEdge): FrameEdge => insideDoorView
+    ? edge === 'left' ? 'right' : edge === 'right' ? 'left' : edge
+    : edge
+
   const frameClassName = [
     'constructor-parametric-frame',
     frameSelected ? 'is-selected' : '',
-    selectedEdge ? `has-selected-${selectedEdge}` : '',
+    selectedEdge ? `has-selected-${frameEdgeForView(selectedEdge)}` : '',
     dragState?.kind === 'create' ? 'is-preview' : '',
     dragState?.kind === 'move-frame' ? 'is-moving' : '',
     activeTool === 'select' ? 'is-frame-movable' : '',
@@ -1792,6 +1814,8 @@ export default function ConstructorShell({
     profileViewActive && profileAwareGeometry?.frame.reviewed ? 'has-reviewed-frame-face' : '',
     frameEdges?.bottom === 'none' ? 'has-open-bottom-frame' : '',
     frameEdges?.bottom === 'threshold' ? 'has-threshold-bottom' : '',
+    moduleSummary.productType === 'door' ? 'is-door-sketch' : '',
+    doorViewClass,
   ]
     .filter(Boolean)
     .join(' ')
@@ -3008,6 +3032,14 @@ export default function ConstructorShell({
           </button>
         </div>}
 
+        {!isCompositeView && moduleSummary.productType === 'door' && (
+          <div className="constructor-toolbar-group constructor-door-view-control" role="group" aria-label="Гледка на вратата">
+            <span>Гледка:</span>
+            <button type="button" className={doorViewOrientation === 'outside' ? 'is-active' : ''} aria-pressed={doorViewOrientation === 'outside'} onClick={() => setDoorViewOrientation('outside')}>Отвън</button>
+            <button type="button" className={doorViewOrientation === 'inside' ? 'is-active' : ''} aria-pressed={doorViewOrientation === 'inside'} onClick={() => setDoorViewOrientation('inside')}>Отвътре</button>
+          </div>
+        )}
+
         <div className="constructor-toolbar-group constructor-toolbar-view">
           <button
             type="button"
@@ -3378,21 +3410,23 @@ export default function ConstructorShell({
                   }
                 }}
               >
+                <div className={`constructor-drawing-layer${insideDoorView ? ' is-view-inside' : ''}`}>
                 <div className="constructor-frame-visual" aria-hidden="true">
                   <i className="constructor-frame-edge-face edge-face-left" />
                   <i className="constructor-frame-edge-face edge-face-right" />
                   <i className="constructor-frame-edge-face edge-face-top" />
                   {frameEdges?.bottom === 'frame' && <i className="constructor-frame-edge-face edge-face-bottom" />}
-                  {frameEdges?.bottom === 'threshold' && (
-                    <i className="constructor-frame-threshold-placeholder">ПРАГ · НЕИЗБРАН ПРОФИЛ</i>
-                  )}
                   <i className="constructor-frame-mitre mitre-tl" />
                   <i className="constructor-frame-mitre mitre-tr" />
                   {frameEdges?.bottom === 'frame' && <i className="constructor-frame-mitre mitre-bl" />}
                   {frameEdges?.bottom === 'frame' && <i className="constructor-frame-mitre mitre-br" />}
                 </div>
+                {frameEdges?.bottom === 'threshold' && (
+                  <i className="constructor-frame-threshold-placeholder">ПРАГ</i>
+                )}
 
                 {frame && dragState?.kind !== 'create' && fields.map((field) => {
+                  const doorLeafClass = doorLeafVisualClass(moduleSummary.productType, field, frameEdges?.bottom, frame.heightMm, frameFaceMm)
                   const sashPlacement = profileViewActive ? profileAwareSashGeometry?.fields[field.id] : null
                   const innerProfileBoundsMm = sashPlacement?.placementReady ? sashPlacement.innerProfileBoundsMm : null
                   const fieldWidthPx = field.bounds.widthMm * pxPerMm
@@ -3414,7 +3448,8 @@ export default function ConstructorShell({
                         },
                         Boolean(profileViewActive && field.fieldType === 'operable' && !innerProfileBoundsMm && !profileAwareGeometry?.sashes[field.id]?.reviewed),
                         {
-                          forceExternal: Boolean(field.polygon || field.openingMode === 'top-hung' || field.openingMode === 'side-hinged-top-hung'),
+                          forceExternal: Boolean(doorLeafClass || field.polygon || field.openingMode === 'top-hung' || field.openingMode === 'side-hinged-top-hung'),
+                          preferAbove: doorLeafClass === 'is-door-leaf door-leaf-bottom-threshold',
                           // Reserve the existing external dimension lanes in display
                           // pixels; no dimension value or chain position is changed.
                           obstacles: [{
@@ -3441,7 +3476,8 @@ export default function ConstructorShell({
                   <Fragment key={field.id}>
                   <button
                     type="button"
-                    className={`constructor-field-surface ${selectedFieldId === field.id ? 'is-selected' : ''} ${field.fieldType === 'fixed' ? 'is-fixed' : field.fieldType === 'operable' ? 'is-operable' : 'is-unset'} ${profileViewActive && field.fieldType === 'operable' ? (innerProfileBoundsMm ? 'has-reviewed-sash-placement' : profileAwareGeometry?.sashes[field.id]?.reviewed ? 'has-reviewed-sash-geometry' : 'has-unresolved-sash-geometry') : ''}`}
+                    className={`constructor-field-surface ${doorLeafClass} ${doorViewClass} ${selectedFieldId === field.id ? 'is-selected' : ''} ${field.fieldType === 'fixed' ? 'is-fixed' : field.fieldType === 'operable' ? 'is-operable' : 'is-unset'} ${profileViewActive && field.fieldType === 'operable' ? (innerProfileBoundsMm ? 'has-reviewed-sash-placement' : profileAwareGeometry?.sashes[field.id]?.reviewed ? 'has-reviewed-sash-geometry' : 'has-unresolved-sash-geometry') : ''}`}
+                    title={doorLeafClass && frameEdges?.bottom !== 'frame' ? 'Схематично отстояние под крилото · без зададен физически размер' : undefined}
                     style={{
                       left: `${field.bounds.xMm * pxPerMm}px`,
                       top: `${field.bounds.yMm * pxPerMm}px`,
@@ -3701,7 +3737,7 @@ export default function ConstructorShell({
                   .map((field) => (
                     <span
                       key={`operable-sash-priority-${field.id}`}
-                      className="constructor-operable-sash-priority"
+                      className={`constructor-operable-sash-priority ${doorLeafVisualClass(moduleSummary.productType, field, frameEdges?.bottom, frame.heightMm, frameFaceMm)} ${doorViewClass}`}
                       style={{
                         left: `${field.bounds.xMm * pxPerMm}px`,
                         top: `${field.bounds.yMm * pxPerMm}px`,
@@ -3758,19 +3794,21 @@ export default function ConstructorShell({
                   )
                 })}
 
+                </div>
+
                 {frame && dragState?.kind !== 'create' && (
                   <>
                     <button
                       type="button"
                       className="constructor-edge-handle edge-left"
-                      aria-label="Промени левия ръб на касата"
-                      onPointerDown={(event) => startEdgeResize('left', event)}
+                      aria-label={doorViewOrientation === 'inside' ? 'Промени левия видим ръб на касата' : 'Промени левия ръб на касата'}
+                      onPointerDown={(event) => startEdgeResize(frameEdgeForView('left'), event)}
                     />
                     <button
                       type="button"
                       className="constructor-edge-handle edge-right"
-                      aria-label="Промени десния ръб на касата"
-                      onPointerDown={(event) => startEdgeResize('right', event)}
+                      aria-label={doorViewOrientation === 'inside' ? 'Промени десния видим ръб на касата' : 'Промени десния ръб на касата'}
+                      onPointerDown={(event) => startEdgeResize(frameEdgeForView('right'), event)}
                     />
                     <button
                       type="button"
@@ -3794,7 +3832,7 @@ export default function ConstructorShell({
                         key={`bay-dimension-${bay.sequence}`}
                         className="constructor-bay-dimension"
                         style={{
-                          left: `${bay.startMm * pxPerMm}px`,
+                          left: `${(insideDoorView ? displayedFrame.widthMm - bay.startMm - bay.widthMm : bay.startMm) * pxPerMm}px`,
                           width: `${bay.widthMm * pxPerMm}px`,
                         }}
                       >

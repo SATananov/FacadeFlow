@@ -24,6 +24,7 @@ assert.ok(nodes(shell, (node) => ts.isJsxExpression(node) && node.expression?.ge
 assert.match(code(variable(shell, 'dimensionLabelPlacement')), /selectedField\?\.id === field\.id\s*\?/)
 assert.match(code(variable(shell, 'dimensionLabelPlacement')), /placeFieldDimensionLabel\(fieldDimensionText, fieldWidthPx, fieldHeightPx/)
 assert.match(code(variable(shell, 'dimensionLabelPlacement')), /obstacles:/)
+assert.match(code(variable(shell, 'dimensionLabelPlacement')), /preferAbove: doorLeafClass === 'is-door-leaf door-leaf-bottom-threshold'/)
 assert.doesNotMatch(code(text), /920\s*[×x]\s*650/)
 for (const source of [shell, layout]) assert.doesNotMatch(code(source), /482\.(30|21|05|15)/, 'Profile facts belong in the existing domain/catalogue')
 
@@ -46,7 +47,7 @@ assert.equal(uniqueCssValue(rules, '.constructor-operable-sash-priority::before'
 assert.ok(code(shell).indexOf('className="constructor-divider is-local') < code(shell).indexOf('constructor-operable-sash-priority'),
   'Operable sash priority overlay must render above the divider layer')
 assert.match(code(shell), /field\.fieldType === 'operable'\)\s*\.map\(\(field\) => \(\s*<span[\s\S]*?constructor-operable-sash-priority/)
-assert.match(code(shell), /forceExternal: Boolean\(field\.polygon \|\| field\.openingMode === 'top-hung' \|\| field\.openingMode === 'side-hinged-top-hung'\)/)
+assert.match(code(shell), /forceExternal: Boolean\(doorLeafClass \|\| field\.polygon \|\| field\.openingMode === 'top-hung' \|\| field\.openingMode === 'side-hinged-top-hung'\)/)
 assert.equal(uniqueCssValue(rules, '.constructor-field-dimension-label', 'pointer-events'), 'none')
 assert.equal(uniqueCssValue(rules, '.constructor-field-dimension-label.is-external', 'background'), '#fff')
 const labels = nodes(shell, (node) => ts.isJsxElement(node)
@@ -177,6 +178,13 @@ assert.ok(small?.external)
 const nearBottom = { left: -20, top: -40, width: 500, height: 75 }
 const beside = place('735 × 480', 60, 30, null, false, { viewport: nearBottom })
 assert.ok(beside?.external && beside.left > 60, 'Use the right side when below is outside the canvas')
+const thresholdLabel = place('920 × 650 mm', 240, 160, null, false, { forceExternal: true, preferAbove: true })
+assert.ok(thresholdLabel?.external && thresholdLabel.top < 0, 'Threshold door label prefers the clear zone above the leaf')
+const blockedAbove = place('920 × 650 mm', 240, 160, null, false, {
+  forceExternal: true, preferAbove: true,
+  obstacles: [{ left: -100, top: -30, width: 500, height: 40 }],
+})
+assert.ok(blockedAbove?.external && blockedAbove.top >= 166, 'Existing collision checks choose another clear callout when above is blocked')
 for (const viewport of [nearBottom, { left: -200, top: -40, width: 265, height: 75 },
   { left: 0, top: 0, width: 110, height: 50 }]) {
   const label = place('735 × 480', 60, 30, null, false, { viewport })
