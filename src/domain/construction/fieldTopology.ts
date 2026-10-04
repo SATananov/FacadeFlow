@@ -19,6 +19,7 @@ import {
   type ResolvedConstructionDivider,
   type ResolvedConstructionAngledDivider,
   type ResolvedConstructionField,
+  type ResolvedSemanticBoundary,
 } from './constructionModel'
 
 export const CONSTRUCTION_MIN_FIELD_MM = 120
@@ -95,22 +96,42 @@ function getDividerThicknessMm(
   return CONSTRUCTION_DEFAULT_DIVIDER_FACE_MM
 }
 
+function resolveSemanticSplitGeometry(
+  node: Extract<ConstructionFieldNode, { kind: 'semantic-split' }>,
+  bounds: ConstructionFieldBounds,
+): { offsetMm: number; firstBounds: ConstructionFieldBounds; secondBounds: ConstructionFieldBounds } {
+  const offsetMm = Math.min(Math.max(Math.round(node.boundary.offsetMm), 0), bounds.widthMm)
+  return {
+    offsetMm,
+    firstBounds: { xMm: bounds.xMm, yMm: bounds.yMm, widthMm: offsetMm, heightMm: bounds.heightMm },
+    secondBounds: { xMm: bounds.xMm + offsetMm, yMm: bounds.yMm, widthMm: Math.max(0, bounds.widthMm - offsetMm), heightMm: bounds.heightMm },
+  }
+}
+
 function minimumNodeSize(node: ConstructionFieldNode): { widthMm: number; heightMm: number } {
   if (node.kind === 'field') {
     return { widthMm: CONSTRUCTION_MIN_FIELD_MM, heightMm: CONSTRUCTION_MIN_FIELD_MM }
   }
 
-  const first = minimumNodeSize(node.first)
-  const second = minimumNodeSize(node.second)
-  const dividerThicknessMm = getDividerThicknessMm(node.divider)
+  if (node.kind === 'semantic-split') {
+    const first = minimumNodeSize(node.first)
+    const second = minimumNodeSize(node.second)
+    return { widthMm: first.widthMm + second.widthMm, heightMm: Math.max(first.heightMm, second.heightMm) }
+  }
 
   if (node.kind === 'angled-split') {
+    const first = minimumNodeSize(node.first)
+    const second = minimumNodeSize(node.second)
+    const dividerThicknessMm = getDividerThicknessMm(node.divider)
     return {
       widthMm: first.widthMm + dividerThicknessMm + second.widthMm,
       heightMm: Math.max(CONSTRUCTION_MIN_FIELD_MM, first.heightMm, second.heightMm),
     }
   }
 
+  const first = minimumNodeSize(node.first)
+  const second = minimumNodeSize(node.second)
+  const dividerThicknessMm = getDividerThicknessMm(node.divider)
   return node.divider.axis === 'vertical'
     ? {
         widthMm: first.widthMm + dividerThicknessMm + second.widthMm,
@@ -156,6 +177,16 @@ function cloneNode(node: ConstructionFieldNode): ConstructionFieldNode {
         ...node.divider,
         thicknessMm: CONSTRUCTION_DEFAULT_DIVIDER_FACE_MM,
       },
+      first: cloneNode(node.first),
+      second: cloneNode(node.second),
+    }
+  }
+
+  if (node.kind === 'semantic-split') {
+    return {
+      kind: 'semantic-split',
+      field: { ...node.field },
+      boundary: { ...node.boundary, kind: 'ZERO_DIVIDER' },
       first: cloneNode(node.first),
       second: cloneNode(node.second),
     }
@@ -451,10 +482,28 @@ function walkResolved(
   fields: ResolvedConstructionField[],
   dividers: ResolvedConstructionDivider[],
   angledDividers: ResolvedConstructionAngledDivider[],
+  semanticBoundaries: ResolvedSemanticBoundary[],
   polygon?: ConstructionPoint[],
 ) {
   if (node.kind === 'field') {
     fields.push({ ...node.field, sequence: 0, bounds: polygon ? polygonBounds(polygon) : { ...bounds }, polygon: polygon ? polygon.map((p) => ({ ...p })) : undefined })
+    return
+  }
+
+  if (node.kind === 'semantic-split') {
+    const geometry = resolveSemanticSplitGeometry(node, bounds)
+    semanticBoundaries.push({
+      id: node.boundary.id,
+      parentFieldId: node.field.id,
+      axis: 'vertical',
+      positionMm: bounds.xMm + geometry.offsetMm,
+      offsetMm: geometry.offsetMm,
+      kind: 'ZERO_DIVIDER',
+      startMm: bounds.yMm,
+      endMm: bounds.yMm + bounds.heightMm,
+    })
+    walkResolved(node.first, geometry.firstBounds, fields, dividers, angledDividers, semanticBoundaries)
+    walkResolved(node.second, geometry.secondBounds, fields, dividers, angledDividers, semanticBoundaries)
     return
   }
 
@@ -473,8 +522,8 @@ function walkResolved(
       lengthMm: geometry.lengthMm,
       facePolygon: geometry.facePolygon,
     })
-    walkResolved(node.first, polygonBounds(geometry.firstPolygon), fields, dividers, angledDividers, geometry.firstPolygon)
-    walkResolved(node.second, polygonBounds(geometry.secondPolygon), fields, dividers, angledDividers, geometry.secondPolygon)
+    walkResolved(node.first, polygonBounds(geometry.firstPolygon), fields, dividers, angledDividers, semanticBoundaries, geometry.firstPolygon)
+    walkResolved(node.second, polygonBounds(geometry.secondPolygon), fields, dividers, angledDividers, semanticBoundaries, geometry.secondPolygon)
     return
   }
 
@@ -500,8 +549,8 @@ function walkResolved(
       thicknessMm: geometry.dividerThicknessMm,
       facePolygon: geometry.facePolygon,
     })
-    walkResolved(node.first, geometry.firstBounds, fields, dividers, angledDividers, geometry.firstPolygon)
-    walkResolved(node.second, geometry.secondBounds, fields, dividers, angledDividers, geometry.secondPolygon)
+    walkResolved(node.first, geometry.firstBounds, fields, dividers, angledDividers, semanticBoundaries, geometry.firstPolygon)
+    walkResolved(node.second, geometry.secondBounds, fields, dividers, angledDividers, semanticBoundaries, geometry.secondPolygon)
     return
   }
 
@@ -526,18 +575,19 @@ function walkResolved(
     thicknessMm: geometry.dividerThicknessMm,
   })
 
-  walkResolved(node.first, geometry.firstBounds, fields, dividers, angledDividers)
-  walkResolved(node.second, geometry.secondBounds, fields, dividers, angledDividers)
+  walkResolved(node.first, geometry.firstBounds, fields, dividers, angledDividers, semanticBoundaries)
+  walkResolved(node.second, geometry.secondBounds, fields, dividers, angledDividers, semanticBoundaries)
 }
 
 function resolveTopologyWithBounds(
   root: ConstructionFieldNode,
   bounds: ConstructionFieldBounds,
-): { fields: ResolvedConstructionField[]; dividers: ResolvedConstructionDivider[]; angledDividers: ResolvedConstructionAngledDivider[] } {
+): { fields: ResolvedConstructionField[]; dividers: ResolvedConstructionDivider[]; angledDividers: ResolvedConstructionAngledDivider[]; semanticBoundaries: ResolvedSemanticBoundary[] } {
   const fields: ResolvedConstructionField[] = []
   const dividers: ResolvedConstructionDivider[] = []
   const angledDividers: ResolvedConstructionAngledDivider[] = []
-  walkResolved(root, bounds, fields, dividers, angledDividers)
+  const semanticBoundaries: ResolvedSemanticBoundary[] = []
+  walkResolved(root, bounds, fields, dividers, angledDividers, semanticBoundaries)
   fields.sort((a, b) => {
     const rowDelta = a.bounds.yMm - b.bounds.yMm
     if (Math.abs(rowDelta) > 0.001) return rowDelta
@@ -547,6 +597,7 @@ function resolveTopologyWithBounds(
     fields: fields.map((field, index) => ({ ...field, sequence: index + 1 })),
     dividers,
     angledDividers,
+    semanticBoundaries,
   }
 }
 
@@ -554,6 +605,7 @@ export function resolveConstructionTopology(model: ConstructionModel): {
   fields: ResolvedConstructionField[]
   dividers: ResolvedConstructionDivider[]
   angledDividers: ResolvedConstructionAngledDivider[]
+  semanticBoundaries: ResolvedSemanticBoundary[]
 } {
   return resolveTopologyWithBounds(model.root, getFrameInteriorBounds(model))
 }
@@ -589,7 +641,7 @@ export function upgradeConstructionModelPhysicalDividers(model: ConstructionMode
     previousBounds: ConstructionFieldBounds,
     interiorBounds: ConstructionFieldBounds,
   ): ConstructionFieldNode => {
-    if (node.kind === 'field') return cloneNode(node)
+    if (node.kind === 'field' || node.kind === 'semantic-split') return cloneNode(node)
     if (node.kind === 'angled-split') return cloneNode(node)
 
     const previousGeometry = resolveSplitGeometry(node, previousBounds)
@@ -685,6 +737,52 @@ function replaceLeafWithSplit(
       secondFieldId,
       dividerId,
     ),
+  }
+}
+
+function replaceLeafWithSemanticSplit(
+  node: ConstructionFieldNode,
+  fieldId: string,
+  offsetMm: number,
+  firstFieldId: string,
+  secondFieldId: string,
+  boundaryId: string,
+): ConstructionFieldNode {
+  if (node.kind === 'field') {
+    if (node.field.id !== fieldId) return node
+    return {
+      kind: 'semantic-split',
+      field: { ...node.field },
+      boundary: { id: boundaryId, axis: 'vertical', offsetMm, kind: 'ZERO_DIVIDER' },
+      first: { kind: 'field', field: createFieldDefinition(firstFieldId) },
+      second: { kind: 'field', field: createFieldDefinition(secondFieldId) },
+    }
+  }
+  return {
+    ...node,
+    first: replaceLeafWithSemanticSplit(node.first, fieldId, offsetMm, firstFieldId, secondFieldId, boundaryId),
+    second: replaceLeafWithSemanticSplit(node.second, fieldId, offsetMm, firstFieldId, secondFieldId, boundaryId),
+  }
+}
+
+export function splitFieldSemantic(
+  model: ConstructionModel,
+  fieldId: string,
+  offsetMm: number,
+): ConstructionModel | null {
+  const field = resolveConstructionTopology(model).fields.find((item) => item.id === fieldId)
+  if (!field || !Number.isFinite(offsetMm)) return null
+  const safeOffset = Math.round(offsetMm)
+  if (safeOffset <= 0 || safeOffset >= field.bounds.widthMm) return null
+  const firstFieldId = `field-${model.nextFieldId}`
+  const secondFieldId = `field-${model.nextFieldId + 1}`
+  const boundaryId = `zero-divider-${model.nextDividerId}`
+  return {
+    ...model,
+    version: 'field-topology-08',
+    root: replaceLeafWithSemanticSplit(model.root, fieldId, safeOffset, firstFieldId, secondFieldId, boundaryId),
+    nextFieldId: model.nextFieldId + 2,
+    nextDividerId: model.nextDividerId + 1,
   }
 }
 
@@ -885,6 +983,15 @@ function updateDividerOffset(
 ): ConstructionFieldNode {
   if (node.kind === 'field') return node
 
+  if (node.kind === 'semantic-split') {
+    const geometry = resolveSemanticSplitGeometry(node, bounds)
+    return {
+      ...node,
+      first: updateDividerOffset(node.first, dividerId, requestedOffsetMm, geometry.firstBounds),
+      second: updateDividerOffset(node.second, dividerId, requestedOffsetMm, geometry.secondBounds),
+    }
+  }
+
   if (node.kind === 'angled-split') {
     const geometry = resolveAngledGeometry(node, bounds)
     return {
@@ -990,6 +1097,7 @@ function findDividerNode(
   dividerId: string,
 ): Extract<ConstructionFieldNode, { kind: 'split' }> | null {
   if (node.kind === 'field') return null
+  if (node.kind === 'semantic-split') return findDividerNode(node.first, dividerId) ?? findDividerNode(node.second, dividerId)
   if (node.kind === 'split' && node.divider.id === dividerId) return node
   return findDividerNode(node.first, dividerId) ?? findDividerNode(node.second, dividerId)
 }
@@ -1000,6 +1108,12 @@ function collectSameAxisDescendantDividerIds(
   ids: string[] = [],
 ): string[] {
   if (node.kind === 'field') return ids
+
+  if (node.kind === 'semantic-split') {
+    collectSameAxisDescendantDividerIds(node.first, axis, ids)
+    collectSameAxisDescendantDividerIds(node.second, axis, ids)
+    return ids
+  }
 
   if (node.kind === 'split' && node.divider.axis === axis) {
     ids.push(node.divider.id)
@@ -1172,6 +1286,56 @@ export function moveDivider(
   return best
 }
 
+function updateSemanticBoundaryNode(
+  node: ConstructionFieldNode,
+  boundaryId: string,
+  absolutePositionMm: number,
+  bounds: ConstructionFieldBounds,
+): ConstructionFieldNode {
+  if (node.kind === 'field') return node
+  if (node.kind === 'semantic-split' && node.boundary.id === boundaryId) {
+    const candidate = Math.round(absolutePositionMm - bounds.xMm)
+    if (candidate <= 0 || candidate >= bounds.widthMm) return node
+    return { ...node, boundary: { ...node.boundary, offsetMm: candidate, kind: 'ZERO_DIVIDER' } }
+  }
+  if (node.kind === 'semantic-split') {
+    const geometry = resolveSemanticSplitGeometry(node, bounds)
+    return {
+      ...node,
+      first: updateSemanticBoundaryNode(node.first, boundaryId, absolutePositionMm, geometry.firstBounds),
+      second: updateSemanticBoundaryNode(node.second, boundaryId, absolutePositionMm, geometry.secondBounds),
+    }
+  }
+  if (node.kind === 'angled-split') {
+    const geometry = resolveAngledGeometry(node, bounds)
+    return {
+      ...node,
+      first: updateSemanticBoundaryNode(node.first, boundaryId, absolutePositionMm, polygonBounds(geometry.firstPolygon)),
+      second: updateSemanticBoundaryNode(node.second, boundaryId, absolutePositionMm, polygonBounds(geometry.secondPolygon)),
+    }
+  }
+  const geometry = resolveSplitGeometry(node, bounds)
+  return {
+    ...node,
+    first: updateSemanticBoundaryNode(node.first, boundaryId, absolutePositionMm, geometry.firstBounds),
+    second: updateSemanticBoundaryNode(node.second, boundaryId, absolutePositionMm, geometry.secondBounds),
+  }
+}
+
+export function moveSemanticBoundary(
+  model: ConstructionModel,
+  boundaryId: string,
+  absolutePositionMm: number,
+): ConstructionModel {
+  const boundary = resolveConstructionTopology(model).semanticBoundaries.find((item) => item.id === boundaryId)
+  if (!boundary || !Number.isFinite(absolutePositionMm)) return model
+  return {
+    ...model,
+    version: 'field-topology-08',
+    root: updateSemanticBoundaryNode(model.root, boundaryId, absolutePositionMm, getFrameInteriorBounds(model)),
+  }
+}
+
 
 function updateLeafFieldDefinition(
   node: ConstructionFieldNode,
@@ -1250,7 +1414,7 @@ export function setConstructionFieldOpeningHanding(
 
 function removeDividerNode(node: ConstructionFieldNode, dividerId: string): ConstructionFieldNode {
   if (node.kind === 'field') return node
-  if (node.divider.id === dividerId) {
+  if (node.kind !== 'semantic-split' && node.divider.id === dividerId) {
     return { kind: 'field', field: { ...node.field } }
   }
 
@@ -1270,12 +1434,43 @@ export function removeDivider(model: ConstructionModel, dividerId: string): Cons
   }
 }
 
+function removeSemanticBoundaryNode(node: ConstructionFieldNode, boundaryId: string): ConstructionFieldNode {
+  if (node.kind === 'field') return node
+  if (node.kind === 'semantic-split' && node.boundary.id === boundaryId) {
+    return { kind: 'field', field: { ...node.field } }
+  }
+  return {
+    ...node,
+    first: removeSemanticBoundaryNode(node.first, boundaryId),
+    second: removeSemanticBoundaryNode(node.second, boundaryId),
+  }
+}
+
+export function removeSemanticBoundary(model: ConstructionModel, boundaryId: string): ConstructionModel {
+  if (!resolveConstructionTopology(model).semanticBoundaries.some((item) => item.id === boundaryId)) return model
+  return {
+    ...model,
+    version: 'field-topology-08',
+    root: removeSemanticBoundaryNode(model.root, boundaryId),
+  }
+}
+
 function normalizeNodeToBounds(
   node: ConstructionFieldNode,
   bounds: ConstructionFieldBounds,
   polygon?: ConstructionPoint[],
 ): ConstructionFieldNode {
   if (node.kind === 'field') return node
+
+  if (node.kind === 'semantic-split') {
+    const geometry = resolveSemanticSplitGeometry(node, bounds)
+    return {
+      ...node,
+      boundary: { ...node.boundary, kind: 'ZERO_DIVIDER', offsetMm: geometry.offsetMm },
+      first: normalizeNodeToBounds(node.first, geometry.firstBounds),
+      second: normalizeNodeToBounds(node.second, geometry.secondBounds),
+    }
+  }
 
   if (node.kind === 'angled-split') {
     const geometry = resolveAngledGeometry(node, bounds)

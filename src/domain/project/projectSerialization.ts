@@ -34,6 +34,77 @@ function sequence(value: unknown) { number(value, 1); requireThat(Number.isSafeI
 function choice(value: unknown, values: unknown[]) { requireThat(values.includes(value), `invalid enum ${String(value)}`) }
 function strings(value: unknown, names: string[]) { const item = keys(value, names); names.forEach((name) => string(item[name])); return item }
 function nullableNumber(value: unknown) { if (value !== null) number(value) }
+function combinedLayout(value: Obj, productType: unknown) {
+  const layout = value.combinedLayout ?? null
+  choice(layout, [null, 'window-left', 'window-right', 'window-both'])
+  requireThat(productType === 'combined-door-window' || layout === null, 'combined layout requires combined module type')
+}
+function combinedComposition(value: Obj, productType: unknown) {
+  const composition = value.combinedComposition
+  if (composition === undefined || composition === null) return
+  requireThat(productType === 'combined-door-window', 'combined composition requires combined module type')
+  const item = keys(composition, ['schemaVersion', 'layout', 'regions', 'zeroDividers'])
+  choice(item.schemaVersion, ['combined-composition-01'])
+  choice(item.layout, ['window-left', 'window-right', 'window-both'])
+  requireThat(value.combinedLayout === item.layout, 'combined composition layout must match selected module layout')
+  requireThat(Array.isArray(item.regions), 'combined regions')
+  requireThat(Array.isArray(item.zeroDividers), 'combined zero dividers')
+  const regionIds = new Set<string>()
+  for (const regionValue of item.regions) {
+    const region = keys(regionValue, ['id', 'order', 'role', 'fieldId'])
+    id(region.id); requireThat(!regionIds.has(region.id), 'duplicate combined region identity'); regionIds.add(region.id)
+    sequence(region.order); choice(region.role, ['WINDOW_REGION', 'DOOR_REGION'])
+    if (region.fieldId !== null) id(region.fieldId)
+  }
+  const boundaryIds = new Set<string>()
+  for (const dividerValue of item.zeroDividers) {
+    const divider = keys(dividerValue, ['id', 'boundaryId', 'leftRegionId', 'rightRegionId', 'kind'])
+    id(divider.id); requireThat(!boundaryIds.has(divider.id), 'duplicate combined boundary identity'); boundaryIds.add(divider.id)
+    id(divider.boundaryId); id(divider.leftRegionId); id(divider.rightRegionId); choice(divider.kind, ['ZERO_DIVIDER'])
+    requireThat(regionIds.has(divider.leftRegionId) && regionIds.has(divider.rightRegionId), 'combined boundary region target missing')
+  }
+}
+function combinedRegionGeometry(value: Obj, productType: unknown, compositionValue: unknown) {
+  const geometry = value.combinedRegionGeometry
+  if (geometry === undefined || geometry === null) return
+  requireThat(productType === 'combined-door-window', 'combined region geometry requires combined module type')
+  requireThat(compositionValue !== undefined && compositionValue !== null, 'combined region geometry requires composition')
+  const composition = keys(compositionValue, ['schemaVersion', 'layout', 'regions', 'zeroDividers'])
+  requireThat(value.combinedLayout === composition.layout, 'combined region geometry layout must match selected module layout')
+  const item = keys(geometry, ['schemaVersion', 'regions'])
+  choice(item.schemaVersion, ['combined-region-geometry-01'])
+  requireThat(Array.isArray(item.regions), 'combined region geometry regions')
+  const regionIds = new Set<string>()
+  const fieldIds = new Set<string>()
+  for (const regionValue of item.regions) {
+    const region = keys(regionValue, ['regionId', 'fieldId', 'bounds'])
+    id(region.regionId)
+    if (region.fieldId !== null) id(region.fieldId)
+    requireThat(!regionIds.has(region.regionId), 'duplicate combined geometry region identity')
+    requireThat(region.fieldId === null || !fieldIds.has(region.fieldId), 'duplicate combined geometry field identity')
+    regionIds.add(region.regionId)
+    if (region.fieldId !== null) fieldIds.add(region.fieldId)
+    const bounds = keys(region.bounds, ['xMm', 'yMm', 'widthMm', 'heightMm'])
+    for (const key of ['xMm', 'yMm', 'widthMm', 'heightMm']) {
+      requireThat(bounds[key] === null || typeof bounds[key] === 'number' && Number.isFinite(bounds[key]), `invalid combined region ${key}`)
+    }
+    requireThat(bounds.widthMm === null || (bounds.widthMm as number) > 0, 'combined region width must be positive')
+    requireThat(bounds.heightMm === null || (bounds.heightMm as number) > 0, 'combined region height must be positive')
+  }
+  requireThat(Array.isArray(composition.regions) && composition.regions.length === item.regions.length, 'combined geometry/composition region count mismatch')
+  for (let index = 0; index < item.regions.length; index += 1) {
+    const geometryRegion = object(item.regions[index])
+    const semanticRegion = object(composition.regions[index])
+    requireThat(geometryRegion.regionId === semanticRegion.id && geometryRegion.fieldId === semanticRegion.fieldId, 'combined geometry region reference mismatch')
+  }
+  const layoutRoles = composition.layout === 'window-left' ? ['WINDOW_REGION', 'DOOR_REGION']
+    : composition.layout === 'window-right' ? ['DOOR_REGION', 'WINDOW_REGION'] : ['WINDOW_REGION', 'DOOR_REGION', 'WINDOW_REGION']
+  requireThat(composition.regions.length === layoutRoles.length, 'combined geometry composition does not match layout')
+  for (let index = 0; index < layoutRoles.length; index += 1) {
+    const region = object(composition.regions[index])
+    requireThat(region.order === index + 1 && region.role === layoutRoles[index], 'combined geometry composition order mismatch')
+  }
+}
 const settingKeys = ['profileSystemId', 'colorId', 'foilModeId', 'glazingId', 'hardwareStandardId', 'hardwareManufacturerId']
 function settings(value: unknown, inherited = false) {
   const names = inherited ? ['inheritanceMode', ...settingKeys] : settingKeys
@@ -65,7 +136,7 @@ function construction(value: unknown, allowFrameEdges = false): { fields: Set<st
   }
   if (draft.topology === undefined) return null
   const topology = keys(draft.topology, ['version', 'frame', 'root', 'nextFieldId', 'nextDividerId'], allowFrameEdges ? ['frameFaceMm', 'frameEdges'] : ['frameFaceMm'])
-  choice(topology.version, Array.from({ length: 7 }, (_, i) => `field-topology-0${i + 1}`))
+  choice(topology.version, Array.from({ length: 8 }, (_, i) => `field-topology-0${i + 1}`))
   frame(topology.frame)
   requireThat(['xMm', 'yMm', 'widthMm', 'heightMm'].every((key) => object(draft.frame)[key] === object(topology.frame)[key]), 'frame mismatch')
   sequence(topology.nextFieldId); sequence(topology.nextDividerId)
@@ -79,18 +150,26 @@ function construction(value: unknown, allowFrameEdges = false): { fields: Set<st
   function node(value: unknown, depth: number) {
     requireThat(depth < 128 && ++count <= 10000, 'topology exceeds supported traversal limit')
     const item = object(value)
-    choice(item.kind, ['field', 'split', 'angled-split'])
-    keys(item, item.kind === 'field' ? ['kind', 'field'] : ['kind', 'field', 'divider', 'first', 'second'])
+    choice(item.kind, ['field', 'split', 'angled-split', 'semantic-split'])
+    keys(item, item.kind === 'field' ? ['kind', 'field'] : item.kind === 'semantic-split'
+      ? ['kind', 'field', 'boundary', 'first', 'second']
+      : ['kind', 'field', 'divider', 'first', 'second'])
     const field = keys(item.field, ['id', 'fieldType', 'openingMode', 'openingHanding'])
     id(field.id); fieldSemantics(field)
     requireThat(!lineage.has(field.id), 'duplicate FIELD identity'); lineage.add(field.id)
     if (item.kind === 'field') { fields.add(field.id); return }
-    const divider = keys(item.divider, item.kind === 'split'
-      ? ['id', 'axis', 'offsetMm', 'thicknessMm'] : ['id', 'axis', 'topOffsetMm', 'bottomOffsetMm', 'thicknessMm'])
-    id(divider.id); requireThat(!dividers.has(divider.id), 'duplicate divider identity'); dividers.add(divider.id)
-    number(divider.thicknessMm)
-    if (item.kind === 'split') { choice(divider.axis, ['vertical', 'horizontal']); number(divider.offsetMm) }
-    else { choice(divider.axis, ['angled']); number(divider.topOffsetMm); number(divider.bottomOffsetMm) }
+    if (item.kind === 'semantic-split') {
+      const boundary = keys(item.boundary, ['id', 'axis', 'offsetMm', 'kind'])
+      id(boundary.id); requireThat(!dividers.has(boundary.id), 'duplicate semantic boundary identity'); dividers.add(boundary.id)
+      choice(boundary.axis, ['vertical']); number(boundary.offsetMm); choice(boundary.kind, ['ZERO_DIVIDER'])
+    } else {
+      const divider = keys(item.divider, item.kind === 'split'
+        ? ['id', 'axis', 'offsetMm', 'thicknessMm'] : ['id', 'axis', 'topOffsetMm', 'bottomOffsetMm', 'thicknessMm'])
+      id(divider.id); requireThat(!dividers.has(divider.id), 'duplicate divider identity'); dividers.add(divider.id)
+      number(divider.thicknessMm)
+      if (item.kind === 'split') { choice(divider.axis, ['vertical', 'horizontal']); number(divider.offsetMm) }
+      else { choice(divider.axis, ['angled']); number(divider.topOffsetMm); number(divider.bottomOffsetMm) }
+    }
     node(item.first, depth + 1); node(item.second, depth + 1)
   }
   node(topology.root, 0)
@@ -100,12 +179,12 @@ function definition(value: unknown) {
   const item = object(value)
   choice(item.kind, ['free', 'offer'])
   if (item.kind === 'free') {
-    keys(item, ['kind', 'profileSystemId', 'productType']); string(item.profileSystemId); choice(item.productType, [null, 'window', 'terrace-door', 'door']); return
+    keys(item, ['kind', 'profileSystemId', 'productType'], ['combinedLayout', 'combinedComposition', 'combinedRegionGeometry']); string(item.profileSystemId); choice(item.productType, [null, 'window', 'terrace-door', 'door', 'combined-door-window']); combinedLayout(item, item.productType); combinedComposition(item, item.productType); combinedRegionGeometry(item, item.productType, item.combinedComposition); return
   }
   keys(item, ['kind', 'draft'])
   const draft = keys(item.draft, ['inheritedDefaults', 'productType', 'customProductTypeLabel', 'productTypeSource',
-    'widthMm', 'widthSource', 'heightMm', 'heightSource', 'fieldCount', 'fieldCountSource', 'fields'])
-  settings(draft.inheritedDefaults, true); choice(draft.productType, [null, 'window', 'terrace-door', 'door']); string(draft.customProductTypeLabel)
+    'widthMm', 'widthSource', 'heightMm', 'heightSource', 'fieldCount', 'fieldCountSource', 'fields'], ['combinedLayout', 'combinedComposition', 'combinedRegionGeometry'])
+  settings(draft.inheritedDefaults, true); choice(draft.productType, [null, 'window', 'terrace-door', 'door', 'combined-door-window']); combinedLayout(draft, draft.productType); combinedComposition(draft, draft.productType); combinedRegionGeometry(draft, draft.productType, draft.combinedComposition); string(draft.customProductTypeLabel)
   const sources = ['unset', 'preset', 'manual', 'constructor']
   for (const name of ['productTypeSource', 'widthSource', 'heightSource', 'fieldCountSource']) choice(draft[name], sources)
   for (const name of ['widthMm', 'heightMm', 'fieldCount']) nullableNumber(draft[name])

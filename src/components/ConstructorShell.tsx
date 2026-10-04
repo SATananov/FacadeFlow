@@ -1,4 +1,15 @@
-import type { ModuleProductType } from '../domain/offerModules'
+import { COMBINED_MODULE_LAYOUT_PRESETS, type CombinedModuleLayout, type ModuleProductType } from '../domain/offerModules'
+import { createCombinedRegionComposition, createIncompleteCombinedComposition, cloneCombinedModuleComposition, type CombinedModuleComposition } from '../domain/combinedModuleComposition'
+import {
+  cloneCombinedRegionGeometry,
+  createIncompleteCombinedRegionGeometry,
+  assignCombinedRegionFromFieldBounds,
+  findCombinedRegionAtPoint,
+  proportionallyResizeCombinedRegions,
+  resolveCombinedRegionGeometry,
+  setCombinedRegionDimensions,
+  type CombinedRegionGeometry,
+} from '../domain/combinedRegionGeometry'
 import {
   Fragment,
   useEffect,
@@ -30,6 +41,9 @@ import {
   setConstructionFrameEdgeKind,
   splitField,
   splitFieldAngled,
+  splitFieldSemantic,
+  moveSemanticBoundary,
+  removeSemanticBoundary,
   upgradeConstructionModelPhysicalDividers,
   type ConstructionAxis,
   type ConstructionFrame,
@@ -41,6 +55,7 @@ import {
   type ResolvedConstructionDivider,
   type ResolvedConstructionAngledDivider,
   type ResolvedConstructionField,
+  type ResolvedSemanticBoundary,
 } from '../domain/construction'
 export type { ConstructorDividerSnapshot, ConstructorDraftSnapshot } from '../domain/construction'
 import type { ConstructorDraftSnapshot } from '../domain/construction'
@@ -114,6 +129,7 @@ import './ConstructorShell.css'
 import { CompositeStructuralSketch } from './CompositeStructuralSketch'
 import type { ConstructorView, SketchBounds } from './compositeStructuralSketchProjection'
 import { placeFieldDimensionLabel, SCHEMATIC_OPENING_INSET_PX } from './fieldDimensionLabel'
+import { layoutCombinedTechnicalDimensions } from './combinedDimensionLayout'
 import { doorLeafVisualClass } from './doorLeafVisual'
 import {
   cadWorldToScreen,
@@ -153,6 +169,9 @@ type ConstructorOfferContext = {
 
 type ConstructorModuleSummary = {
   productType: ModuleProductType | null
+  combinedLayout: CombinedModuleLayout | null
+  combinedComposition?: CombinedModuleComposition | null
+  combinedRegionGeometry?: CombinedRegionGeometry | null
   productTypeLabel: string
   widthMm: number | null
   heightMm: number | null
@@ -185,6 +204,9 @@ type ConstructorShellProps = {
   onProfileResolutionChange?: (resolution: ModuleProfileResolution) => void
   onModuleSizeChange?: (size: ConstructorModuleSize) => void
   onModuleProductTypeChange?: (productType: ModuleProductType | null) => void
+  onModuleCombinedLayoutChange?: (layout: CombinedModuleLayout | null) => void
+  onCombinedCompositionChange?: (composition: CombinedModuleComposition | null) => void
+  onCombinedRegionGeometryChange?: (geometry: CombinedRegionGeometry | null) => void
   onFieldTopologyChange?: (fields: readonly ConstructorFieldTopologySummary[]) => void
   onSelectModule?: (moduleId: string) => void
   onCreateModule?: () => void
@@ -198,6 +220,9 @@ type ConstructorHistoryEntry = {
   construction: ConstructionModel | null
   profileResolution: ModuleProfileResolution | null
   productType: ModuleProductType | null
+  combinedLayout: CombinedModuleLayout | null
+  combinedComposition: CombinedModuleComposition | null
+  combinedRegionGeometry: CombinedRegionGeometry | null
 }
 
 type ConstructorHistoryStacks = {
@@ -220,6 +245,9 @@ function cloneHistoryEntry(entry: ConstructorHistoryEntry): ConstructorHistoryEn
     construction: entry.construction ? cloneConstructionModel(entry.construction) : null,
     profileResolution: cloneHistoryProfileResolution(entry.profileResolution),
     productType: entry.productType,
+    combinedLayout: entry.combinedLayout ?? null,
+    combinedComposition: cloneCombinedModuleComposition(entry.combinedComposition),
+    combinedRegionGeometry: cloneCombinedRegionGeometry(entry.combinedRegionGeometry),
   }
 }
 
@@ -232,6 +260,7 @@ type ConstructorTool =
   | 'angled-divider'
   | 'fixed-field'
   | 'operable-field'
+  | 'semantic-boundary'
 type FrameEdge = 'left' | 'right' | 'top' | 'bottom'
 type InspectorTab = 'properties' | 'profile' | 'dimensions' | 'glazing'
 type DividerModel = ResolvedConstructionDivider
@@ -287,6 +316,14 @@ type DragState =
       originalConstruction: ConstructionModel
     }
   | {
+      kind: 'semantic-boundary'
+      pointerId: number
+      boundaryId: string
+      grabOffsetMm: number
+      originalConstruction: ConstructionModel
+      originalCombinedComposition: CombinedModuleComposition | null
+    }
+  | {
       kind: 'angled-divider'
       pointerId: number
       dividerId: string
@@ -303,6 +340,14 @@ type DragState =
       parentStartXMm: number
       originalConstruction: ConstructionModel
     }
+  | {
+      kind: 'combined-region-resize'
+      pointerId: number
+      regionId: string
+      dimension: 'widthMm' | 'heightMm'
+      grabOffsetMm: number
+      originalGeometry: CombinedRegionGeometry
+    }
 
 const MIN_VIEW_ZOOM = 25
 const MAX_VIEW_ZOOM = 200
@@ -315,6 +360,9 @@ const MIN_FRAME_MM = 200
 
 const FREE_MODULE_SUMMARY: ConstructorModuleSummary = {
   productType: null,
+  combinedLayout: null,
+  combinedComposition: null,
+  combinedRegionGeometry: null,
   productTypeLabel: 'Свободна скица',
   widthMm: null,
   heightMm: null,
@@ -422,6 +470,9 @@ export default function ConstructorShell({
   onProfileResolutionChange,
   onModuleSizeChange,
   onModuleProductTypeChange,
+  onModuleCombinedLayoutChange,
+  onCombinedCompositionChange,
+  onCombinedRegionGeometryChange,
   onFieldTopologyChange,
   onSelectModule,
   onCreateModule,
@@ -476,25 +527,57 @@ export default function ConstructorShell({
     cloneHistoryProfileResolution(profileResolution ?? null),
   )
   const productTypeRef = useRef<ModuleProductType | null>(moduleSummary.productType)
+  const combinedLayoutRef = useRef<CombinedModuleLayout | null>(moduleSummary.combinedLayout)
+  const combinedCompositionRef = useRef<CombinedModuleComposition | null>(cloneCombinedModuleComposition(moduleSummary.combinedComposition))
+  const combinedRegionGeometryRef = useRef<CombinedRegionGeometry | null>(cloneCombinedRegionGeometry(moduleSummary.combinedRegionGeometry))
+  const [combinedRegionGeometryPreview, setCombinedRegionGeometryPreview] = useState<CombinedRegionGeometry | null>(null)
+  const combinedRegionGeometryForView = combinedRegionGeometryPreview ?? moduleSummary.combinedRegionGeometry
   const undoStackRef = useRef<ConstructorHistoryEntry[]>(undoStack)
   const redoStackRef = useRef<ConstructorHistoryEntry[]>(redoStack)
   const frame = construction?.frame ?? null
-  const viewBounds: SketchBounds | null = compositeProjection
-    ? compositeProjection.status === 'ready' ? compositeProjection.bounds : null
-    : frame ? { x: frame.xMm, y: frame.yMm, width: frame.widthMm, height: frame.heightMm } : null
   const resolvedTopology = useMemo(
     () => construction
       ? resolveConstructionTopology(construction)
-      : { fields: [] as FieldModel[], dividers: [] as DividerModel[], angledDividers: [] as AngledDividerModel[] },
+      : { fields: [] as FieldModel[], dividers: [] as DividerModel[], angledDividers: [] as AngledDividerModel[], semanticBoundaries: [] as ResolvedSemanticBoundary[] },
     [construction],
   )
-  const fields = resolvedTopology.fields
+  const topologyFields = resolvedTopology.fields
   const dividers = resolvedTopology.dividers
   const angledDividers = resolvedTopology.angledDividers
+  const semanticBoundaries = resolvedTopology.semanticBoundaries
+  const combinedGeometryResolution = useMemo(
+    () => resolveCombinedRegionGeometry(moduleSummary.productType === 'combined-door-window' ? moduleSummary.combinedComposition : null,
+      moduleSummary.productType === 'combined-door-window' ? combinedRegionGeometryForView : null),
+    [moduleSummary.productType, moduleSummary.combinedComposition, combinedRegionGeometryForView],
+  )
+  const combinedTechnicalDimensionLayout = useMemo(
+    () => moduleSummary.combinedLayout
+      ? layoutCombinedTechnicalDimensions(moduleSummary.combinedLayout, combinedGeometryResolution)
+      : null,
+    [moduleSummary.combinedLayout, combinedGeometryResolution],
+  )
+  const viewBounds: SketchBounds | null = compositeProjection
+    ? compositeProjection.status === 'ready' ? compositeProjection.bounds : null
+    : moduleSummary.productType === 'combined-door-window' && combinedGeometryResolution.status === 'complete' && combinedGeometryResolution.extent
+      ? { x: (frame?.xMm ?? 0) + combinedGeometryResolution.extent.xMm, y: (frame?.yMm ?? 0) + combinedGeometryResolution.extent.yMm, width: combinedGeometryResolution.extent.widthMm, height: combinedGeometryResolution.extent.heightMm }
+      : frame ? { x: frame.xMm, y: frame.yMm, width: frame.widthMm, height: frame.heightMm } : null
+  const fields = moduleSummary.productType === 'combined-door-window' && combinedRegionGeometryForView
+    ? combinedGeometryResolution.status === 'complete'
+      ? combinedGeometryResolution.regions.flatMap((region, index) => {
+          if (!region.fieldId) return []
+          const source = topologyFields.find((field) => field.id === region.fieldId)
+          return source ? [{ ...source, sequence: index + 1, bounds: region.bounds, polygon: undefined }] : []
+        })
+      : combinedGeometryResolution.status === 'incomplete' ? topologyFields : []
+    : topologyFields
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(
     null,
   )
   const [selectedDividerId, setSelectedDividerId] = useState<string | null>(null)
+  const [selectedSemanticBoundaryId, setSelectedSemanticBoundaryId] = useState<string | null>(null)
+  const [selectedCombinedZeroDividerId, setSelectedCombinedZeroDividerId] = useState<string | null>(null)
+  const [selectedCombinedRegionId, setSelectedCombinedRegionId] = useState<string | null>(null)
+  const [semanticBoundaryFeedback, setSemanticBoundaryFeedback] = useState<string | null>(null)
   const [selectedAngledDividerId, setSelectedAngledDividerId] = useState<string | null>(null)
   const [dividerPositionDraft, setDividerPositionDraft] = useState('')
   const [selectedEdge, setSelectedEdge] = useState<FrameEdge | null>(null)
@@ -507,8 +590,27 @@ export default function ConstructorShell({
   const [heightDraft, setHeightDraft] = useState(() =>
     frame ? String(Math.round(frame.heightMm)) : '',
   )
+  const [combinedRegionWidthDraft, setCombinedRegionWidthDraft] = useState('')
+  const [combinedRegionHeightDraft, setCombinedRegionHeightDraft] = useState('')
+  const [combinedRegionDimensionEdit, setCombinedRegionDimensionEdit] = useState<{ regionId: string; dimension: 'widthMm' | 'heightMm' } | null>(null)
+  const [combinedDimensionFeedback, setCombinedDimensionFeedback] = useState<string | null>(null)
   const [glazingThicknessDraft, setGlazingThicknessDraft] = useState('')
   const inspectorPaneRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const extent = combinedGeometryResolution.status === 'complete' ? combinedGeometryResolution.extent : null
+    setWidthDraft(extent ? String(Math.round(extent.widthMm)) : '')
+    setHeightDraft(extent ? String(Math.round(extent.heightMm)) : '')
+  }, [combinedGeometryResolution.status, combinedGeometryResolution.extent?.widthMm, combinedGeometryResolution.extent?.heightMm])
+
+  useEffect(() => {
+    if (combinedRegionDimensionEdit) return
+    const region = moduleSummary.combinedComposition?.regions.find((item) => item.id === selectedCombinedRegionId)
+      ?? moduleSummary.combinedComposition?.regions.find((item) => item.fieldId === selectedFieldId)
+    const bounds = combinedRegionGeometryForView?.regions.find((item) => item.regionId === region?.id)?.bounds
+    setCombinedRegionWidthDraft(bounds?.widthMm == null ? '' : String(bounds.widthMm))
+    setCombinedRegionHeightDraft(bounds?.heightMm == null ? '' : String(bounds.heightMm))
+  }, [selectedCombinedRegionId, selectedFieldId, moduleSummary.combinedComposition, combinedRegionGeometryForView, combinedRegionDimensionEdit])
 
   const isFreeMode = mode === 'free'
   const insideDoorView = moduleSummary.productType === 'door' && doorViewOrientation === 'inside'
@@ -517,6 +619,9 @@ export default function ConstructorShell({
     : ''
   const hasActiveModule = Boolean(activeModuleId && moduleItems.some((item) => item.id === activeModuleId))
   const canEditConstruction = !isCompositeView && (!isFreeMode || hasActiveModule)
+  const moduleIdentityLabel = moduleSummary.productType
+    ? `Модул ${moduleNumber} · ${moduleSummary.productTypeLabel}`
+    : `Модул ${moduleNumber}`
   const showModuleStrip = isFreeMode || moduleItems.length > 0
   const pxPerMm = BASE_PX_PER_MM * (zoom / 100)
   const frameFaceMm = construction
@@ -525,7 +630,16 @@ export default function ConstructorShell({
   const frameEdges = construction ? getConstructionFrameEdges(construction) : null
   const frameFacePx = Math.max(12, frameFaceMm * pxPerMm)
   const hasNonStandardBottomBoundary = frameEdges !== null && frameEdges.bottom !== 'frame'
-  const displayedFrame = dragState?.kind === 'create' ? dragState.preview : frame
+  const combinedGeometryComplete = moduleSummary.productType === 'combined-door-window'
+    && combinedGeometryResolution.status === 'complete' && combinedGeometryResolution.extent !== null
+  const combinedRegionMode = moduleSummary.productType === 'combined-door-window'
+    && Boolean(combinedRegionGeometryForView)
+  const combinedGeometryOwnsView = combinedRegionMode && combinedGeometryResolution.status !== 'incomplete'
+  const displayedFrame = combinedGeometryOwnsView
+    ? combinedGeometryComplete
+      ? { ...combinedGeometryResolution.extent!, xMm: frame?.xMm ?? 0, yMm: frame?.yMm ?? 0 }
+      : null
+    : dragState?.kind === 'create' ? dragState.preview : frame
   const canvasViewport: CadViewport = { origin: { xPx: 0, yPx: 0 }, pxPerMm }
   const displayedFramePosition = displayedFrame
     ? cadWorldToScreen(frameOriginInCadWorld({
@@ -543,30 +657,54 @@ export default function ConstructorShell({
       ? `Свободна скица · Модул ${moduleNumber}`
       : 'Свободна скица'
     : `Модул ${moduleNumber}`
-  const selectedDivider = dividers.find((divider) => divider.id === selectedDividerId) ?? null
-  const selectedAngledDivider = angledDividers.find((divider) => divider.id === selectedAngledDividerId) ?? null
+  const moduleWorkspaceTitle = !isCompositeView && hasActiveModule ? moduleIdentityLabel : title
+  const selectedCombinedRegion = moduleSummary.combinedComposition?.regions.find((region) => region.id === selectedCombinedRegionId)
+    ?? moduleSummary.combinedComposition?.regions.find((region) => region.fieldId === selectedFieldId)
+    ?? null
+  const selectedCombinedZeroDivider = !selectedCombinedRegion
+    ? combinedGeometryResolution.zeroDividers.find((boundary) => boundary.relationId === selectedCombinedZeroDividerId) ?? null
+    : null
+  const selectedSemanticBoundary = !selectedCombinedRegion && !selectedCombinedZeroDivider
+    ? semanticBoundaries.find((boundary) => boundary.id === selectedSemanticBoundaryId) ?? null
+    : null
+  const selectedDivider = !selectedCombinedRegion && !selectedCombinedZeroDivider && !selectedSemanticBoundary
+    ? dividers.find((divider) => divider.id === selectedDividerId) ?? null
+    : null
+  const selectedAngledDivider = !selectedCombinedRegion && !selectedCombinedZeroDivider && !selectedSemanticBoundary && !selectedDivider
+    ? angledDividers.find((divider) => divider.id === selectedAngledDividerId) ?? null
+    : null
   // Split tools may retain a FIELD id while selecting the new divider.
   // Resolve one UI context using the same priority as the drawing inspector.
-  const selectedField = !selectedDivider && !selectedAngledDivider && !frameSelected
+  const selectedField = !selectedDivider && !selectedSemanticBoundary && !selectedCombinedZeroDivider && !selectedAngledDivider && !frameSelected
     ? fields.find((field) => field.id === selectedFieldId) ?? null
     : null
   const conceptualFieldCount = fields.length
+  const combinedRegionCount = combinedGeometryComplete ? combinedGeometryResolution.regions.length : 0
   const pendingInitialFieldDescriptions = isFreeMode
     ? []
     : initialFieldDescriptions.filter(isPendingFormFieldDescription)
   const selectedProfileSystem = getProfileSystemById(
     isFreeMode ? freeProfileSystemId : offerContext?.profileSystemId ?? '',
   )
-  const availableSystemStandards = selectedProfileSystem?.id === 'kmg-prelude-60'
+  const availableSystemStandards = moduleSummary.productType === 'combined-door-window'
+    ? []
+    : selectedProfileSystem?.id === 'kmg-prelude-60'
     ? getSystemStandards(selectedProfileSystem.id)
     : []
   const selectedSystemStandard = getSystemStandardById(selectedSystemStandardId)
   const activeSystemStandard = selectedSystemStandard?.systemId === selectedProfileSystem?.id
     ? selectedSystemStandard
     : undefined
+  const combinedLayoutMissing = moduleSummary.productType === 'combined-door-window' && !moduleSummary.combinedLayout
+  const moduleSetupMissingItems = [
+    combinedLayoutMissing ? 'разположение на комбинирания модул' : null,
+    !moduleSummary.productType ? 'тип на модула' : null,
+    !selectedProfileSystem ? 'профилна система' : null,
+  ].filter((item): item is string => Boolean(item))
+  const moduleSetupIncomplete = hasActiveModule && moduleSetupMissingItems.length > 0
   useEffect(() => {
     setSelectedSystemStandardId('')
-  }, [selectedProfileSystem?.id, activeModuleId])
+  }, [selectedProfileSystem?.id, activeModuleId, moduleSummary.productType])
   const selectedGlazing = !isFreeMode && offerContext
     ? getGlazingOptionById(offerContext.glazingId)
     : undefined
@@ -775,7 +913,14 @@ export default function ConstructorShell({
 
   useEffect(() => {
     productTypeRef.current = moduleSummary.productType
-  }, [moduleSummary.productType])
+    combinedLayoutRef.current = moduleSummary.combinedLayout
+    combinedCompositionRef.current = cloneCombinedModuleComposition(moduleSummary.combinedComposition)
+    combinedRegionGeometryRef.current = cloneCombinedRegionGeometry(moduleSummary.combinedRegionGeometry)
+  }, [moduleSummary.productType, moduleSummary.combinedLayout, moduleSummary.combinedComposition, moduleSummary.combinedRegionGeometry])
+
+  useEffect(() => {
+    setCombinedRegionGeometryPreview(null)
+  }, [activeModuleId, moduleSummary.productType, moduleSummary.combinedLayout, moduleSummary.combinedRegionGeometry])
 
   useEffect(() => {
     undoStackRef.current = undoStack
@@ -984,6 +1129,9 @@ export default function ConstructorShell({
     construction: constructionOverride ? cloneConstructionModel(constructionOverride) : null,
     profileResolution: cloneHistoryProfileResolution(profileResolutionRef.current),
     productType: productTypeRef.current,
+    combinedLayout: combinedLayoutRef.current,
+    combinedComposition: cloneCombinedModuleComposition(combinedCompositionRef.current),
+    combinedRegionGeometry: cloneCombinedRegionGeometry(combinedRegionGeometryRef.current),
   })
 
   const constructionEquals = (
@@ -1079,6 +1227,112 @@ export default function ConstructorShell({
     pushUndoEntry(captureHistoryEntry(currentConstruction))
     setRedoStack([])
     broadcastConstruction(nextConstruction)
+  }
+
+  const syncCombinedComposition = (nextConstruction: ConstructionModel | null) => {
+    if (moduleSummary.productType !== 'combined-door-window' || !moduleSummary.combinedLayout || !nextConstruction) return
+    const layout = moduleSummary.combinedLayout
+    const expectedRoles = layout === 'window-left'
+      ? ['WINDOW_REGION', 'DOOR_REGION'] as const
+      : layout === 'window-right'
+        ? ['DOOR_REGION', 'WINDOW_REGION'] as const
+        : ['WINDOW_REGION', 'DOOR_REGION', 'WINDOW_REGION'] as const
+    const resolved = resolveConstructionTopology(nextConstruction)
+    const previous = combinedCompositionRef.current ?? createIncompleteCombinedComposition(layout)
+    const regions = expectedRoles.map((role, index) => ({
+      id: previous.regions[index]?.id ?? `combined-region-${index + 1}`,
+      order: index + 1,
+      role,
+      fieldId: resolved.fields.length === expectedRoles.length ? resolved.fields[index]?.id ?? null : null,
+    }))
+    const boundaries = [...resolved.semanticBoundaries].sort((a, b) => a.positionMm - b.positionMm)
+    const zeroDividers = boundaries.slice(0, Math.max(0, expectedRoles.length - 1)).map((boundary, index) => ({
+      id: previous.zeroDividers[index]?.id ?? `zero-divider-relation-${index + 1}`,
+      boundaryId: boundary.id,
+      leftRegionId: regions[index].id,
+      rightRegionId: regions[index + 1].id,
+      kind: 'ZERO_DIVIDER' as const,
+    }))
+    const nextComposition: CombinedModuleComposition = {
+      schemaVersion: 'combined-composition-01',
+      layout,
+      regions,
+      zeroDividers,
+    }
+    combinedCompositionRef.current = nextComposition
+    onCombinedCompositionChange?.(cloneCombinedModuleComposition(nextComposition))
+    if (!combinedRegionGeometryRef.current && resolved.fields.length === expectedRoles.length
+      && resolved.semanticBoundaries.length === expectedRoles.length - 1) {
+      const incompleteGeometry = createIncompleteCombinedRegionGeometry(nextComposition)
+      if (incompleteGeometry) {
+        combinedRegionGeometryRef.current = incompleteGeometry
+        onCombinedRegionGeometryChange?.(cloneCombinedRegionGeometry(incompleteGeometry))
+      }
+    }
+  }
+
+  const addSemanticBoundary = (point: CanvasPoint) => {
+    const currentConstruction = constructionRef.current
+    if (moduleSummary.productType === 'combined-door-window') {
+      setSemanticBoundaryFeedback('При комбиниран модул ZERO_DIVIDER се извежда от размерите на областите. Не поставяйте границата ръчно.')
+      return false
+    }
+    if (!currentConstruction || !moduleSummary.combinedLayout) {
+      setSemanticBoundaryFeedback('Изберете тип „Врата + прозорец“ и разположение преди поставяне.')
+      return false
+    }
+    const expectedCount = moduleSummary.combinedLayout === 'window-both' ? 2 : 1
+    const currentBoundaryCount = resolveConstructionTopology(currentConstruction).semanticBoundaries.length
+    if (currentBoundaryCount >= expectedCount) {
+      setSemanticBoundaryFeedback('Всички нулеви граници за избраното разположение вече са поставени.')
+      return false
+    }
+    const targetField = findFieldAtPoint(currentConstruction, point.xMm, point.yMm)
+    if (!targetField) {
+      setSemanticBoundaryFeedback('Кликнете вътре в поле на модула, за да поставите нулева граница.')
+      return false
+    }
+    const nextConstruction = splitFieldSemantic(currentConstruction, targetField.id, point.xMm - targetField.bounds.xMm)
+    if (!nextConstruction) {
+      setSemanticBoundaryFeedback('Тази позиция не може да образува две области. Изберете друга точка вътре в полето.')
+      return false
+    }
+    pushUndoEntry(captureHistoryEntry(currentConstruction))
+    setRedoStack([])
+    broadcastConstruction(nextConstruction)
+    syncCombinedComposition(nextConstruction)
+    const added = resolveConstructionTopology(nextConstruction).semanticBoundaries.at(-1)
+    setSelectedSemanticBoundaryId(added?.id ?? null)
+    setSelectedFieldId(null)
+    setSelectedDividerId(null)
+    setSelectedAngledDividerId(null)
+    setActiveTool('select')
+    setSemanticBoundaryFeedback(null)
+    return true
+  }
+
+  const updateSemanticBoundaryOffset = (boundaryId: string, absolutePositionMm: number, recordHistory = false) => {
+    const currentConstruction = constructionRef.current
+    if (!currentConstruction) return
+    const nextConstruction = moveSemanticBoundary(currentConstruction, boundaryId, absolutePositionMm)
+    if (recordHistory) {
+      pushUndoEntry(captureHistoryEntry(currentConstruction))
+      setRedoStack([])
+    }
+    broadcastConstruction(nextConstruction)
+    syncCombinedComposition(nextConstruction)
+  }
+
+  const removeSelectedSemanticBoundary = () => {
+    const currentConstruction = constructionRef.current
+    if (!currentConstruction || !selectedSemanticBoundaryId) return
+    const nextConstruction = removeSemanticBoundary(currentConstruction, selectedSemanticBoundaryId)
+    pushUndoEntry(captureHistoryEntry(currentConstruction))
+    setRedoStack([])
+    broadcastConstruction(nextConstruction)
+    syncCombinedComposition(nextConstruction)
+    setSelectedSemanticBoundaryId(null)
+    setSelectedFieldId(resolveConstructionTopology(nextConstruction).fields[0]?.id ?? null)
   }
 
   const recordDragHistory = (originalConstruction: ConstructionModel) => {
@@ -1310,6 +1564,15 @@ export default function ConstructorShell({
       productTypeRef.current = restored.productType
       onModuleProductTypeChange?.(restored.productType)
     }
+    if (combinedLayoutRef.current !== restored.combinedLayout) {
+      combinedLayoutRef.current = restored.combinedLayout
+      onModuleCombinedLayoutChange?.(restored.combinedLayout)
+    }
+    combinedCompositionRef.current = cloneCombinedModuleComposition(restored.combinedComposition)
+    onCombinedCompositionChange?.(cloneCombinedModuleComposition(restored.combinedComposition))
+    combinedRegionGeometryRef.current = cloneCombinedRegionGeometry(restored.combinedRegionGeometry)
+    setCombinedRegionGeometryPreview(cloneCombinedRegionGeometry(restored.combinedRegionGeometry))
+    onCombinedRegionGeometryChange?.(cloneCombinedRegionGeometry(restored.combinedRegionGeometry))
 
     broadcastConstruction(restored.construction)
 
@@ -1409,9 +1672,10 @@ export default function ConstructorShell({
         return
       }
 
-      if ((event.key === 'Delete' || event.key === 'Backspace') && (selectedDividerId || selectedAngledDividerId)) {
+      if ((event.key === 'Delete' || event.key === 'Backspace') && (selectedDividerId || selectedAngledDividerId || selectedSemanticBoundaryId)) {
         event.preventDefault()
-        if (selectedAngledDividerId) removeSelectedAngledDivider()
+        if (selectedSemanticBoundaryId) removeSelectedSemanticBoundary()
+        else if (selectedAngledDividerId) removeSelectedAngledDivider()
         else removeSelectedDivider()
       }
     }
@@ -1440,6 +1704,11 @@ export default function ConstructorShell({
 
     const world = cadPointFromPointer(event)
     setCursorPoint(world)
+
+    if (activeTool === 'semantic-boundary') {
+      addSemanticBoundary(framePointFromPointer(event))
+      return
+    }
 
     if (activeTool === 'frame' && !frame) {
       const point = { xMm: snapMm(world.xMm), yMm: snapMm(world.yMm) }
@@ -1472,6 +1741,7 @@ export default function ConstructorShell({
       setSelectedEdge(null)
       setSelectedDividerId(null)
       setSelectedAngledDividerId(null)
+      setSelectedSemanticBoundaryId(null)
     }
   }
 
@@ -1517,6 +1787,31 @@ export default function ConstructorShell({
       const rawLeadingFace = rawPointerPosition - dragState.grabOffsetMm
       const parentStartMm = currentDivider.positionMm - currentDivider.offsetMm
       updateDividerOffset(dragState.dividerId, rawLeadingFace - parentStartMm)
+      return
+    }
+
+    if (dragState.kind === 'semantic-boundary') {
+      if (!frame || !construction) return
+      const local = framePointFromPointer(event)
+      updateSemanticBoundaryOffset(dragState.boundaryId, local.xMm - dragState.grabOffsetMm)
+      return
+    }
+
+    if (dragState.kind === 'combined-region-resize') {
+      const composition = moduleSummary.combinedComposition
+      const region = composition?.regions.find((item) => item.id === dragState.regionId)
+      const original = dragState.originalGeometry.regions.find((item) => item.regionId === dragState.regionId)
+      if (!composition || !region || !original) return
+      const point = framePointFromPointer(event)
+      const coordinate = dragState.dimension === 'widthMm' ? point.xMm : point.yMm
+      const origin = dragState.dimension === 'widthMm' ? original.bounds.xMm ?? 0 : original.bounds.yMm ?? 0
+      const nextValue = snapMm(coordinate - dragState.grabOffsetMm - origin)
+      const next = setCombinedRegionDimensions(composition, dragState.originalGeometry, dragState.regionId, dragState.dimension, nextValue)
+      if (!next) return
+      setCombinedRegionGeometryPreview(next)
+      const nextBounds = next.regions.find((item) => item.regionId === dragState.regionId)?.bounds
+      setCombinedRegionWidthDraft(nextBounds?.widthMm == null ? '' : String(nextBounds.widthMm))
+      setCombinedRegionHeightDraft(nextBounds?.heightMm == null ? '' : String(nextBounds.heightMm))
       return
     }
 
@@ -1630,7 +1925,31 @@ export default function ConstructorShell({
       }
     }
 
-    if (
+    if (dragState.kind === 'semantic-boundary') {
+      if (!constructionEquals(dragState.originalConstruction, constructionRef.current)) {
+        pushUndoEntry({
+          construction: dragState.originalConstruction,
+          profileResolution: cloneHistoryProfileResolution(profileResolutionRef.current),
+          productType: productTypeRef.current,
+          combinedLayout: combinedLayoutRef.current,
+          combinedComposition: cloneCombinedModuleComposition(dragState.originalCombinedComposition),
+          combinedRegionGeometry: cloneCombinedRegionGeometry(combinedRegionGeometryRef.current),
+        })
+        setRedoStack([])
+      }
+    } else if (dragState.kind === 'combined-region-resize') {
+      const preview = combinedRegionGeometryPreview
+      if (preview && JSON.stringify(preview) !== JSON.stringify(dragState.originalGeometry)) {
+        const before = captureHistoryEntry()
+        pushUndoEntry({ ...before, combinedRegionGeometry: cloneCombinedRegionGeometry(dragState.originalGeometry) })
+        setRedoStack([])
+        combinedRegionGeometryRef.current = cloneCombinedRegionGeometry(preview)
+        setCombinedRegionGeometryPreview(cloneCombinedRegionGeometry(preview))
+        onCombinedRegionGeometryChange?.(cloneCombinedRegionGeometry(preview))
+      } else {
+        setCombinedRegionGeometryPreview(null)
+      }
+    } else if (
       dragState.kind === 'resize' ||
       dragState.kind === 'move-frame' ||
       dragState.kind === 'divider' ||
@@ -1644,6 +1963,40 @@ export default function ConstructorShell({
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId)
     }
+  }
+
+  const startCombinedRegionResize = (
+    region: (typeof combinedGeometryResolution.regions)[number],
+    dimension: 'widthMm' | 'heightMm',
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ) => {
+    const originalGeometry = cloneCombinedRegionGeometry(combinedRegionGeometryForView)
+    if (!originalGeometry || activeTool !== 'select') return
+    event.preventDefault()
+    event.stopPropagation()
+    canvasRef.current?.setPointerCapture(event.pointerId)
+    setAutoFitEnabled(false)
+    setSelectedCombinedRegionId(region.regionId)
+    setSelectedFieldId(region.fieldId)
+    setSelectedCombinedZeroDividerId(null)
+    setSelectedSemanticBoundaryId(null)
+    setSelectedDividerId(null)
+    setSelectedAngledDividerId(null)
+    setFrameSelected(false)
+    setSelectedEdge(null)
+    const point = framePointFromPointer(event)
+    const edgePositionMm = dimension === 'widthMm'
+      ? region.bounds.xMm + region.bounds.widthMm
+      : region.bounds.yMm + region.bounds.heightMm
+    const pointerCoordinateMm = dimension === 'widthMm' ? point.xMm : point.yMm
+    setDragState({
+      kind: 'combined-region-resize',
+      pointerId: event.pointerId,
+      regionId: region.regionId,
+      dimension,
+      grabOffsetMm: pointerCoordinateMm - edgePositionMm,
+      originalGeometry,
+    })
   }
 
   const startEdgeResize = (
@@ -1683,6 +2036,8 @@ export default function ConstructorShell({
     canvasRef.current?.setPointerCapture(event.pointerId)
     setActiveTool('select')
     setSelectedDividerId(divider.id)
+    setSelectedCombinedRegionId(null)
+    setSelectedCombinedZeroDividerId(null)
     setSelectedAngledDividerId(null)
     setSelectedFieldId(null)
     setDividerPositionDraft(String(Math.round(divider.offsetMm)))
@@ -1703,6 +2058,34 @@ export default function ConstructorShell({
     })
   }
 
+  const startSemanticBoundaryDrag = (
+    boundary: ResolvedSemanticBoundary,
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ) => {
+    if (!frame || !construction || activeTool === 'pan') return
+    event.preventDefault()
+    event.stopPropagation()
+    canvasRef.current?.setPointerCapture(event.pointerId)
+    setActiveTool('select')
+    setSelectedSemanticBoundaryId(boundary.id)
+    setSelectedCombinedRegionId(null)
+    setSelectedCombinedZeroDividerId(null)
+    setSelectedDividerId(null)
+    setSelectedAngledDividerId(null)
+    setSelectedFieldId(null)
+    setFrameSelected(false)
+    setSelectedEdge(null)
+    const point = framePointFromPointer(event)
+    setDragState({
+      kind: 'semantic-boundary',
+      pointerId: event.pointerId,
+      boundaryId: boundary.id,
+      grabOffsetMm: point.xMm - boundary.positionMm,
+      originalConstruction: cloneConstructionModel(construction),
+      originalCombinedComposition: cloneCombinedModuleComposition(combinedCompositionRef.current),
+    })
+  }
+
   const startAngledDividerDrag = (
     divider: AngledDividerModel,
     event: ReactPointerEvent<HTMLButtonElement>,
@@ -1713,6 +2096,8 @@ export default function ConstructorShell({
     canvasRef.current?.setPointerCapture(event.pointerId)
     setActiveTool('select')
     setSelectedAngledDividerId(divider.id)
+    setSelectedCombinedRegionId(null)
+    setSelectedCombinedZeroDividerId(null)
     setSelectedDividerId(null)
     setSelectedFieldId(null)
     setFrameSelected(false)
@@ -1740,6 +2125,8 @@ export default function ConstructorShell({
     canvasRef.current?.setPointerCapture(event.pointerId)
     setActiveTool('select')
     setSelectedAngledDividerId(divider.id)
+    setSelectedCombinedRegionId(null)
+    setSelectedCombinedZeroDividerId(null)
     setSelectedDividerId(null)
     setSelectedFieldId(null)
     setFrameSelected(false)
@@ -1762,6 +2149,27 @@ export default function ConstructorShell({
     const draft = dimension === 'widthMm' ? widthDraft : heightDraft
     const value = Number(draft.trim())
 
+    if (moduleSummary.productType === 'combined-door-window') {
+      const target = dimension === 'widthMm'
+        ? { widthMm: value, heightMm: undefined }
+        : { widthMm: undefined, heightMm: value }
+      const current = moduleSummary.combinedComposition && combinedRegionGeometryRef.current
+        ? proportionallyResizeCombinedRegions(moduleSummary.combinedComposition, combinedRegionGeometryRef.current, target)
+        : null
+      if (!current || resolveCombinedRegionGeometry(moduleSummary.combinedComposition, current).status !== 'complete') {
+        setWidthDraft(combinedGeometryResolution.extent ? String(Math.round(combinedGeometryResolution.extent.widthMm)) : '')
+        setHeightDraft(combinedGeometryResolution.extent ? String(Math.round(combinedGeometryResolution.extent.heightMm)) : '')
+        return
+      }
+      if (JSON.stringify(current) === JSON.stringify(combinedRegionGeometryRef.current)) return
+      pushUndoEntry(captureHistoryEntry())
+      setRedoStack([])
+      combinedRegionGeometryRef.current = current
+      onCombinedRegionGeometryChange?.(cloneCombinedRegionGeometry(current))
+      setFrameSelected(true)
+      return
+    }
+
     const minimum = dimension === 'widthMm'
       ? getMinFrameDimension('vertical')
       : getMinFrameDimension('horizontal')
@@ -1780,6 +2188,92 @@ export default function ConstructorShell({
       [dimension]: Math.round(value),
     }, true)
     setFrameSelected(true)
+  }
+
+  const commitCombinedRegionDimensionFor = (regionId: string, dimension: 'widthMm' | 'heightMm', raw: string) => {
+    const composition = moduleSummary.combinedComposition
+    const region = composition?.regions.find((item) => item.id === regionId)
+    if (!composition || !region) return
+    if (!raw.trim()) return
+    const value = Number(raw.trim())
+    const next = setCombinedRegionDimensions(composition, combinedRegionGeometryRef.current, region.id, dimension, value)
+    if (!next) {
+      const old = combinedRegionGeometryRef.current?.regions.find((item) => item.regionId === region.id)?.bounds
+      if (selectedFieldId === region.fieldId) {
+        if (dimension === 'widthMm') setCombinedRegionWidthDraft(old?.widthMm == null ? '' : String(old.widthMm))
+        else setCombinedRegionHeightDraft(old?.heightMm == null ? '' : String(old.heightMm))
+      }
+      setCombinedDimensionFeedback('Въведете положително числово измерение. Не е зададен минимален размер.')
+      return
+    }
+    if (JSON.stringify(next) === JSON.stringify(combinedRegionGeometryRef.current)) {
+      setCombinedDimensionFeedback(null)
+      return
+    }
+    pushUndoEntry(captureHistoryEntry())
+    setRedoStack([])
+    combinedRegionGeometryRef.current = next
+    setCombinedRegionGeometryPreview(cloneCombinedRegionGeometry(next))
+    onCombinedRegionGeometryChange?.(cloneCombinedRegionGeometry(next))
+    setCombinedDimensionFeedback(null)
+  }
+
+  const assignSelectedFieldToCombinedRegion = (regionId: string) => {
+    const field = selectedField
+    const composition = combinedCompositionRef.current
+    if (moduleSummary.productType !== 'combined-door-window' || !field || !composition) return
+    const currentRegion = composition.regions.find((region) => region.fieldId === field.id)
+    const assigned = assignCombinedRegionFromFieldBounds(
+      composition,
+      combinedRegionGeometryRef.current,
+      regionId,
+      field.id,
+      { widthMm: field.bounds.widthMm, heightMm: field.bounds.heightMm },
+    )
+    if (!assigned) {
+      setCombinedDimensionFeedback(currentRegion
+        ? 'Това поле вече е свързано с друга функционална област.'
+        : 'Неуспешно присвояване. Проверете полето и избраната функционална област.')
+      return
+    }
+    pushUndoEntry(captureHistoryEntry())
+    setRedoStack([])
+    combinedCompositionRef.current = assigned.composition
+    combinedRegionGeometryRef.current = assigned.geometry
+    setCombinedRegionGeometryPreview(cloneCombinedRegionGeometry(assigned.geometry))
+    onCombinedCompositionChange?.(cloneCombinedModuleComposition(assigned.composition))
+    onCombinedRegionGeometryChange?.(cloneCombinedRegionGeometry(assigned.geometry))
+    setSelectedCombinedRegionId(regionId)
+    setSelectedFieldId(field.id)
+    setSelectedSemanticBoundaryId(null)
+    setSelectedCombinedZeroDividerId(null)
+    setSelectedDividerId(null)
+    setSelectedAngledDividerId(null)
+    setSelectedEdge(null)
+    setFrameSelected(false)
+    setActiveTool('select')
+    setInspectorTab('properties')
+    setCombinedRegionDimensionEdit(null)
+    setCombinedRegionWidthDraft(String(assigned.geometry.regions.find((entry) => entry.regionId === regionId)?.bounds.widthMm ?? ''))
+    setCombinedRegionHeightDraft(String(assigned.geometry.regions.find((entry) => entry.regionId === regionId)?.bounds.heightMm ?? ''))
+    setCombinedDimensionFeedback(null)
+  }
+
+  const commitCombinedRegionDimension = (dimension: 'widthMm' | 'heightMm') => {
+    const region = selectedCombinedRegion
+      ?? moduleSummary.combinedComposition?.regions.find((item) => item.fieldId === selectedFieldId)
+    if (!region) return
+    commitCombinedRegionDimensionFor(region.id, dimension, dimension === 'widthMm' ? combinedRegionWidthDraft : combinedRegionHeightDraft)
+  }
+
+  const regionDisplayName = (regionId: string) => {
+    const regions = moduleSummary.combinedComposition?.regions ?? []
+    const region = regions.find((item) => item.id === regionId)
+    if (!region) return 'Област'
+    const sameRole = regions.filter((item) => item.role === region.role)
+    if (region.role === 'DOOR_REGION') return 'Врата'
+    if (sameRole.length === 1) return 'Прозорец'
+    return region.order === 1 ? 'Ляв прозорец' : 'Десен прозорец'
   }
 
   const resetNumericDimensionDraft = (dimension: 'widthMm' | 'heightMm') => {
@@ -1823,6 +2317,8 @@ export default function ConstructorShell({
     dragState?.kind === 'move-frame' ? 'is-moving' : '',
     activeTool === 'select' ? 'is-frame-movable' : '',
     simpleBayDimensions.length > 0 ? 'has-bay-dimensions' : '',
+    selectedCombinedRegionId ? 'is-combined-region-selected' : '',
+    dragState?.kind === 'combined-region-resize' ? 'is-combined-region-resizing' : '',
     profileViewActive ? 'has-profile-view' : '',
     profileViewActive && profileAwareGeometry?.frame.reviewed ? 'has-reviewed-frame-face' : '',
     frameEdges?.bottom === 'none' ? 'has-open-bottom-frame' : '',
@@ -1867,12 +2363,47 @@ export default function ConstructorShell({
   }
 
   const applyModuleProductTypeFromConstructor = (productType: ModuleProductType | null) => {
-    if (productTypeRef.current === productType) return
+    if (productTypeRef.current === productType) {
+      if (moduleSetupExpanded) setModuleSetupExpanded(false)
+      return
+    }
 
     pushUndoEntry(captureHistoryEntry())
     setRedoStack([])
     productTypeRef.current = productType
+    combinedLayoutRef.current = productType === 'combined-door-window' ? null : null
+    combinedCompositionRef.current = null
+    combinedRegionGeometryRef.current = null
     onModuleProductTypeChange?.(productType)
+    onModuleCombinedLayoutChange?.(null)
+    onCombinedCompositionChange?.(null)
+    onCombinedRegionGeometryChange?.(null)
+    if (productType !== null && productType !== 'combined-door-window') setModuleSetupExpanded(false)
+  }
+
+  const applyCombinedModuleLayout = (layout: CombinedModuleLayout | null) => {
+    if (moduleSummary.productType !== 'combined-door-window' || combinedLayoutRef.current === layout) {
+      if (layout !== null && moduleSummary.productType === 'combined-door-window') setModuleSetupExpanded(false)
+      return
+    }
+    pushUndoEntry(captureHistoryEntry())
+    setRedoStack([])
+    combinedLayoutRef.current = layout
+    const composition = layout ? createCombinedRegionComposition(layout) : null
+    const geometry = composition ? createIncompleteCombinedRegionGeometry(composition) : null
+    combinedCompositionRef.current = composition
+    combinedRegionGeometryRef.current = geometry
+    onModuleCombinedLayoutChange?.(layout)
+    onCombinedCompositionChange?.(cloneCombinedModuleComposition(composition))
+    onCombinedRegionGeometryChange?.(cloneCombinedRegionGeometry(geometry))
+    setActiveTool('select')
+    setSelectedFieldId(null)
+    setSelectedCombinedRegionId(null)
+    setSelectedSemanticBoundaryId(null)
+    setSelectedDividerId(null)
+    setSelectedAngledDividerId(null)
+    setSelectedEdge(null)
+    if (layout !== null) setModuleSetupExpanded(false)
   }
 
   const applyBottomFrameEdgeKind = (kind: ConstructionFrameEdgeKind) => {
@@ -1954,6 +2485,15 @@ export default function ConstructorShell({
         </button>
         <button
           type="button"
+          aria-pressed={moduleSummary.productType === 'combined-door-window'}
+          className={moduleSummary.productType === 'combined-door-window' ? 'is-selected' : ''}
+          onClick={() => applyModuleProductTypeFromConstructor('combined-door-window')}
+          disabled={!onModuleProductTypeChange || !hasActiveModule}
+        >
+          Врата + прозорец
+        </button>
+        <button
+          type="button"
           className="is-clear"
           onClick={() => applyModuleProductTypeFromConstructor(null)}
           disabled={!onModuleProductTypeChange || moduleSummary.productType === null}
@@ -1961,6 +2501,21 @@ export default function ConstructorShell({
           Изчисти
         </button>
       </div>
+      {moduleSummary.productType === 'combined-door-window' && (
+        <label className="constructor-combined-layout-control">
+          <span>Разположение</span>
+          <select
+            value={moduleSummary.combinedLayout ?? ''}
+            onChange={(event) => applyCombinedModuleLayout(
+              COMBINED_MODULE_LAYOUT_PRESETS.find((option) => option.id === event.target.value)?.id ?? null,
+            )}
+            disabled={!onModuleCombinedLayoutChange || !hasActiveModule}
+          >
+            <option value="">Избери разположение</option>
+            {COMBINED_MODULE_LAYOUT_PRESETS.map((option) => <option key={option.id} value={option.id}>{option.labelBg}</option>)}
+          </select>
+        </label>
+      )}
       <small>{!hasActiveModule ? 'Първо създайте модул.' : 'Изборът описва намерение. Размерите и страните на касата не се променят автоматично.'}</small>
     </div>
   )
@@ -2437,15 +2992,27 @@ export default function ConstructorShell({
   )
 
 
-  const selectedElementTitle = selectedAngledDivider
+  const selectedElementTitle = selectedCombinedRegion
+    ? `Поле ${selectedCombinedRegion.order} · ${regionDisplayName(selectedCombinedRegion.id)}`
+    : selectedSemanticBoundary
+    ? 'Нулева граница'
+    : selectedCombinedZeroDivider
+      ? 'Нулева граница'
+    : selectedAngledDivider
     ? 'Ъглов делител'
-    : selectedDivider
+      : selectedDivider
       ? (selectedDivider.axis === 'vertical' ? 'Вертикален делител' : 'Хоризонтален делител')
       : selectedField
         ? `Поле ${selectedField.sequence}`
         : canEditConstruction ? `Модул ${moduleNumber}` : 'Няма избран модул'
 
-  const selectedElementMeta = selectedAngledDivider
+  const selectedElementMeta = selectedCombinedRegion
+    ? `${selectedCombinedRegion.role} · размерите се редактират отделно от FIXED / OPERABLE`
+    : selectedSemanticBoundary
+    ? `${Math.round(selectedSemanticBoundary.offsetMm)} mm · ZERO_DIVIDER · без физическа ширина`
+    : selectedCombinedZeroDivider
+      ? 'ZERO_DIVIDER · изведен от общия ръб · без физическа ширина'
+    : selectedAngledDivider
     ? 'Двата края се местят независимо'
     : selectedDivider
       ? 'Плъзни делителя или въведи позиция'
@@ -2455,17 +3022,71 @@ export default function ConstructorShell({
           ? `${Math.round(frame.widthMm)} × ${Math.round(frame.heightMm)} mm`
           : moduleSizeLabel
 
-  const isModuleContext = !selectedField && !selectedDivider && !selectedAngledDivider
+  const isModuleContext = !selectedField && !selectedCombinedRegion && !selectedDivider && !selectedSemanticBoundary && !selectedCombinedZeroDivider && !selectedAngledDivider
   const selectModuleContext = () => {
     setSelectedFieldId(null)
+    setSelectedCombinedRegionId(null)
     setSelectedDividerId(null)
+    setSelectedSemanticBoundaryId(null)
+    setSelectedCombinedZeroDividerId(null)
     setSelectedAngledDividerId(null)
     setSelectedEdge(null)
     setFrameSelected(false)
     setInspectorTab('properties')
   }
 
+  const renderSelectedCombinedRegionDimensions = () => {
+    if (!selectedCombinedRegion) return null
+    const regionBounds = combinedRegionGeometryForView?.regions.find((region) => region.regionId === selectedCombinedRegion.id)?.bounds
+    const editingWidth = combinedRegionDimensionEdit?.regionId === selectedCombinedRegion.id && combinedRegionDimensionEdit.dimension === 'widthMm'
+    const editingHeight = combinedRegionDimensionEdit?.regionId === selectedCombinedRegion.id && combinedRegionDimensionEdit.dimension === 'heightMm'
+    return <div className="constructor-frame-properties constructor-field-properties constructor-combined-region-properties">
+      <div className="constructor-property-row"><span>Функционална област</span><b>{regionDisplayName(selectedCombinedRegion.id)}</b></div>
+      {selectedField && selectedField.id === selectedCombinedRegion.fieldId
+        && (regionBounds?.widthMm == null || regionBounds?.heightMm == null) && (
+          <button type="button" className="constructor-secondary-action" onClick={() => assignSelectedFieldToCombinedRegion(selectedCombinedRegion.id)}>
+            Използвай текущите размери на Поле {selectedField.sequence} · {Math.round(selectedField.bounds.widthMm)} × {Math.round(selectedField.bounds.heightMm)} mm
+          </button>
+        )}
+      <div className="constructor-field-semantic-controls">
+        <span>РАЗМЕР НА ПОЛЕТО</span>
+        <label><span>Ширина</span><div><input type="text" inputMode="numeric" value={editingWidth ? combinedRegionWidthDraft : regionBounds?.widthMm == null ? '' : String(regionBounds.widthMm)} aria-label={`Ширина на ${regionDisplayName(selectedCombinedRegion.id)}`} onFocus={(event) => { setCombinedRegionDimensionEdit({ regionId: selectedCombinedRegion.id, dimension: 'widthMm' }); setCombinedRegionWidthDraft(regionBounds?.widthMm == null ? '' : String(regionBounds.widthMm)); setCombinedRegionHeightDraft(regionBounds?.heightMm == null ? '' : String(regionBounds.heightMm)); event.currentTarget.select() }} onChange={(event) => setCombinedRegionWidthDraft(event.target.value)} onBlur={() => { commitCombinedRegionDimension('widthMm'); setCombinedRegionDimensionEdit(null) }} onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur() }} /><em>mm</em></div></label>
+        <label><span>Височина</span><div><input type="text" inputMode="numeric" value={editingHeight ? combinedRegionHeightDraft : regionBounds?.heightMm == null ? '' : String(regionBounds.heightMm)} aria-label={`Височина на ${regionDisplayName(selectedCombinedRegion.id)}`} onFocus={(event) => { setCombinedRegionDimensionEdit({ regionId: selectedCombinedRegion.id, dimension: 'heightMm' }); setCombinedRegionWidthDraft(regionBounds?.widthMm == null ? '' : String(regionBounds.widthMm)); setCombinedRegionHeightDraft(regionBounds?.heightMm == null ? '' : String(regionBounds.heightMm)); event.currentTarget.select() }} onChange={(event) => setCombinedRegionHeightDraft(event.target.value)} onBlur={() => { commitCombinedRegionDimension('heightMm'); setCombinedRegionDimensionEdit(null) }} onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur() }} /><em>mm</em></div></label>
+      </div>
+      <p className="constructor-invariant-note">Променя се само избраната област. Другите области запазват размерите си; следващите се преместват за запазване на съседството.</p>
+    </div>
+  }
+
   const renderSelectedPropertiesPane = () => {
+    if (selectedCombinedZeroDivider) {
+      return <div className="constructor-frame-properties constructor-divider-properties">
+        <div className="constructor-property-row"><span>Семантична връзка</span><b>ZERO_DIVIDER</b></div>
+        <div className="constructor-property-row"><span>Положение</span><b>Изведено от общия ръб на съседните области</b></div>
+        <p className="constructor-invariant-note">Без физическа ширина или профил.</p>
+      </div>
+    }
+    if (selectedSemanticBoundary && frame) {
+      return (
+        <div className="constructor-frame-properties constructor-divider-properties">
+          <div className="constructor-property-row"><span>Тип</span><b>ZERO_DIVIDER · Нулева граница</b></div>
+          <div className="constructor-property-row"><span>Позиция</span><b>{Math.round(selectedSemanticBoundary.positionMm)} mm</b></div>
+          <div className="constructor-property-row"><span>Физическа ширина</span><b>Няма</b></div>
+          <label>
+            <span>Позиция от левия край</span>
+            <input
+              type="number"
+              min="1"
+              max={Math.max(1, Math.round(frame.widthMm - 1))}
+              value={Math.round(selectedSemanticBoundary.positionMm)}
+              onChange={(event) => updateSemanticBoundaryOffset(selectedSemanticBoundary.id, Number(event.target.value))}
+              onBlur={() => updateSemanticBoundaryOffset(selectedSemanticBoundary.id, selectedSemanticBoundary.positionMm, true)}
+            />
+          </label>
+          <button type="button" className="constructor-delete-divider" onClick={removeSelectedSemanticBoundary}>Изтрий нулевата граница</button>
+          <p className="constructor-invariant-note">Семантична граница за комбиниран модул. Не създава профил, дебелина или производствена геометрия.</p>
+        </div>
+      )
+    }
     if (selectedAngledDivider && frame) {
       return (
         <div className="constructor-frame-properties constructor-divider-properties">
@@ -2515,11 +3136,30 @@ export default function ConstructorShell({
       )
     }
 
+    if (selectedCombinedRegion && (frame || combinedRegionMode)) return renderSelectedCombinedRegionDimensions()
     if (selectedField && frame) {
       return (
         <div className="constructor-frame-properties constructor-field-properties">
           <div className="constructor-property-row"><span>{selectedField.polygon ? 'Габарит на многоъгълното ПОЛЕ' : 'Вътрешен схемен размер на полето'}</span><b>{Math.round(selectedField.bounds.widthMm)} × {Math.round(selectedField.bounds.heightMm)} mm{selectedField.polygon ? ' · многоъгълно' : ''}</b></div>
           <div className="constructor-property-row"><span>Позиция във вътрешния контур</span><b>X {Math.round(selectedField.bounds.xMm - frameFaceMm)} · Y {Math.round(selectedField.bounds.yMm - frameFaceMm)} mm</b></div>
+          {moduleSummary.productType === 'combined-door-window' && moduleSummary.combinedComposition && (
+            <label className="constructor-field-semantic-controls">
+              <span>ФУНКЦИОНАЛНА ОБЛАСТ</span>
+              <select
+                aria-label="Присвои избраното поле към функционална област"
+                value={moduleSummary.combinedComposition.regions.find((region) => region.fieldId === selectedField.id)?.id ?? ''}
+                onChange={(event) => {
+                  if (event.target.value) assignSelectedFieldToCombinedRegion(event.target.value)
+                }}
+              >
+                <option value="">Изберете област</option>
+                {moduleSummary.combinedComposition.regions.map((region) => (
+                  <option key={region.id} value={region.id}>{regionDisplayName(region.id)}</option>
+                ))}
+              </select>
+              {combinedDimensionFeedback && <small role="alert">{combinedDimensionFeedback}</small>}
+            </label>
+          )}
           <div className="constructor-field-semantic-controls">
             <span>ТИП ПОЛЕ</span>
             <div className="constructor-field-semantic-buttons">
@@ -2556,7 +3196,35 @@ export default function ConstructorShell({
       )
     }
 
-    if (isModuleContext && frame) {
+    if (isModuleContext && (frame || combinedRegionMode)) {
+      if (moduleSummary.productType === 'combined-door-window') {
+        const complete = combinedGeometryResolution.status === 'complete'
+        const regionEntries = moduleSummary.combinedComposition?.regions ?? []
+        return <div className="constructor-frame-properties constructor-combined-overall-properties">
+          {complete ? <>
+            <strong>ОБЩ РАЗМЕР · ПРОПОРЦИОНАЛНО</strong>
+            <label><span>Ширина</span><div><input type="text" inputMode="numeric" value={widthDraft} aria-label="Обща ширина на комбинирания модул" onFocus={(event) => event.currentTarget.select()} onChange={(event) => setWidthDraft(event.target.value)} onBlur={() => commitNumericDimension('widthMm')} onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur() }} /><em>mm</em></div></label>
+            <label><span>Височина</span><div><input type="text" inputMode="numeric" value={heightDraft} aria-label="Обща височина на комбинирания модул" onFocus={(event) => event.currentTarget.select()} onChange={(event) => setHeightDraft(event.target.value)} onBlur={() => commitNumericDimension('heightMm')} onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur() }} /><em>mm</em></div></label>
+            <p className="constructor-invariant-note">Преоразмеряват се пропорционално всички области. Контурът и ZERO_DIVIDER се извеждат от резултатните размери.</p>
+          </> : regionEntries.length > 0 ? <>
+            <strong>ЗАДАЙТЕ РАЗМЕРИТЕ НА ОБЛАСТИТЕ</strong>
+            <p className="constructor-invariant-note">Въведете размерите директно. ZERO_DIVIDER ще се изведе от общия ръб; ръчно поставяне не е необходимо.</p>
+            {regionEntries.map((region) => {
+              const bounds = combinedRegionGeometryForView?.regions.find((entry) => entry.regionId === region.id)?.bounds
+              const label = regionDisplayName(region.id)
+              return <div className="constructor-combined-region-entry" key={region.id}>
+                <b>{label}</b>
+                <label><span>Ширина</span><div><input key={`${region.id}-width-${bounds?.widthMm ?? 'unset'}`} type="text" inputMode="numeric" defaultValue={bounds?.widthMm ?? ''} aria-label={`Ширина на ${label}`} onBlur={(event) => commitCombinedRegionDimensionFor(region.id, 'widthMm', event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur() }} /><em>mm</em></div></label>
+                <label><span>Височина</span><div><input key={`${region.id}-height-${bounds?.heightMm ?? 'unset'}`} type="text" inputMode="numeric" defaultValue={bounds?.heightMm ?? ''} aria-label={`Височина на ${label}`} onBlur={(event) => commitCombinedRegionDimensionFor(region.id, 'heightMm', event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur() }} /><em>mm</em></div></label>
+              </div>
+            })}
+            {combinedDimensionFeedback && <p role="alert">{combinedDimensionFeedback}</p>}
+          </> : <>
+            <strong>ОБЛАСТИТЕ ОЩЕ НЕ СА ОПРЕДЕЛЕНИ</strong>
+            <p>Задайте размерите на прозореца и вратата. ZERO_DIVIDER ще се изведе автоматично от общия им ръб.</p>
+          </>}
+        </div>
+      }
       return (
         <div className="constructor-frame-properties">
           <label><span>Ширина</span><div><input type="text" inputMode="numeric" pattern="[0-9]*" aria-label="Точна ширина в милиметри" value={widthDraft} onFocus={(event) => event.currentTarget.select()} onChange={(event) => setWidthDraft(event.target.value)} onBlur={() => commitNumericDimension('widthMm')} onKeyDown={(event) => { if (event.key === 'Enter') { commitNumericDimension('widthMm'); event.currentTarget.blur() } if (event.key === 'Escape') { resetNumericDimensionDraft('widthMm'); event.currentTarget.blur() } }} /><em>mm</em></div></label>
@@ -2694,6 +3362,7 @@ export default function ConstructorShell({
   }
 
   const renderSelectedDimensionsPane = () => {
+    if (selectedCombinedRegion) return renderSelectedCombinedRegionDimensions()
     if (selectedAngledDivider && selectedProfileSystem && effectiveProfileResolution) {
       return <>{renderProfileDimensionalSemantics('РАЗМЕРИ НА ДЕЛИТЕЛЯ', getAssignedProfileDimensionalReadModel(selectedProfileSystem, effectiveProfileResolution.dividers[selectedAngledDivider.id]))}</>
     }
@@ -2756,6 +3425,14 @@ export default function ConstructorShell({
   }
 
   const renderSystemStandardSelector = () => {
+    if (moduleSummary.productType === 'combined-door-window') {
+      return (
+        <section className="constructor-system-standard constructor-system-standard-unavailable" aria-label="Системен вариант">
+          <span>Системен вариант</span>
+          <p role="status">Няма потвърдени системни варианти за този тип модул.</p>
+        </section>
+      )
+    }
     if (availableSystemStandards.length === 0) return null
     return (
       <section className="constructor-system-standard" aria-label="Системен вариант">
@@ -2811,7 +3488,7 @@ export default function ConstructorShell({
         </label>
       ) : <div className="constructor-property-row"><span>Профилна система</span><b>{offerContext?.profileSystemLabel ?? 'Не е избрана'}</b></div>}
       {renderSystemStandardSelector()}
-      {moduleSummary.productType !== 'door' && renderFrameTopologyResolution()}
+      {moduleSummary.productType !== 'door' && moduleSummary.productType !== 'combined-door-window' && renderFrameTopologyResolution()}
       {renderSystemDrivenModuleSummary()}
       {frame ? renderSelectedPropertiesPane() : <p className="constructor-context-hint">{canEditConstruction ? 'Избери „Каса“ и начертай модула.' : 'Добави модул, за да започнеш.'}</p>}
       {!isFreeMode && <details className="constructor-context-details"><summary>Общи настройки на офертата</summary>
@@ -2840,7 +3517,23 @@ export default function ConstructorShell({
         <p>Без обикновена видима ширина на връзката; не е 40 mm делител. Геометрията и каталожната съвместимост са НЕПОТВЪРДЕНИ (NOT VERIFIED). Не се добавят профили или панти.</p>
         <small>При съществуваща скица приложението предлага отделен модул, за да я запази.</small>
       </div>}
+      {moduleSummary.productType === 'combined-door-window' && (
+        <div className="constructor-combined-boundary" role="note">
+          <b>Смесеният долен край не е потвърден</b>
+          <p>Долният ръб на комбинирания модул остава НЕПОТВЪРДЕН. Не се създават прагове или смесена долна геометрия.</p>
+        </div>
+      )}
     </>
+  )
+
+  const renderModuleSetupGuidance = () => (
+    <section className="constructor-module-setup-guidance" aria-label="Следваща стъпка" role="status">
+      <span>СЛЕДВАЩА СТЪПКА</span>
+      <h3>Настройте Модул {moduleNumber}</h3>
+      <p>Преди да продължите, изберете:</p>
+      <ul>{moduleSetupMissingItems.map((item) => <li key={item}>{item}</li>)}</ul>
+      <button type="button" onClick={() => setModuleSetupExpanded(true)}>Настройки на модула</button>
+    </section>
   )
 
   const renderContextCheck = () => {
@@ -2929,7 +3622,7 @@ export default function ConstructorShell({
               )}
             </div>
             <span>КОНСТРУКТОР · ТЕХНИЧЕСКА СКИЦА</span>
-            <h2>{title}</h2>
+            <h2>{moduleWorkspaceTitle}</h2>
             <p>
               {isCompositeView ? 'Структурна скица · само преглед. Промените се правят в „Структура на модула“.' : isFreeMode
                 ? hasActiveModule
@@ -2950,9 +3643,9 @@ export default function ConstructorShell({
             <b>
               {isFreeMode
                 ? hasActiveModule
-                  ? `Свободна скица · Модул ${moduleNumber}`
+                  ? moduleIdentityLabel
                   : 'Свободна скица · без модул'
-                : `Оферта · Модул ${moduleNumber}`}
+                : moduleIdentityLabel}
             </b>
           </div>
           <div>
@@ -3007,7 +3700,7 @@ export default function ConstructorShell({
               </button>
               <button
                 type="button"
-                className="constructor-module-settings-toggle"
+                className={`constructor-module-settings-toggle${moduleSetupIncomplete ? ' is-setup-incomplete' : ''}`}
                 aria-expanded={moduleSetupExpanded}
                 onClick={() => setModuleSetupExpanded((current) => !current)}
               >
@@ -3174,7 +3867,7 @@ export default function ConstructorShell({
 
             <button
               type="button"
-              disabled={!canEditConstruction}
+              disabled={!canEditConstruction || combinedRegionMode}
               className={activeTool === 'frame' ? 'is-active' : ''}
               onClick={activateFrameTool}
             >
@@ -3193,7 +3886,7 @@ export default function ConstructorShell({
 
             <button
               type="button"
-              disabled={!frame}
+              disabled={!frame || combinedRegionMode}
               className={activeTool === 'vertical-divider' ? 'is-active' : ''}
               onClick={() => {
                 setActiveTool('vertical-divider')
@@ -3211,7 +3904,7 @@ export default function ConstructorShell({
 
             <button
               type="button"
-              disabled={!frame}
+              disabled={!frame || combinedRegionMode}
               className={activeTool === 'horizontal-divider' ? 'is-active' : ''}
               onClick={() => {
                 setActiveTool('horizontal-divider')
@@ -3229,7 +3922,7 @@ export default function ConstructorShell({
 
             <button
               type="button"
-              disabled={!frame}
+              disabled={!frame || combinedRegionMode}
               className={activeTool === 'angled-divider' ? 'is-active' : ''}
               title="Ъглов делител · горният и долният край се местят независимо"
               onClick={() => {
@@ -3249,7 +3942,7 @@ export default function ConstructorShell({
 
             <button
               type="button"
-              disabled={!frame}
+              disabled={!frame || combinedRegionMode}
               className={activeTool === 'fixed-field' ? 'is-active' : ''}
               onClick={() => {
                 setActiveTool('fixed-field')
@@ -3268,7 +3961,7 @@ export default function ConstructorShell({
 
             <button
               type="button"
-              disabled={!frame}
+              disabled={!frame || combinedRegionMode}
               className={activeTool === 'operable-field' ? 'is-active' : ''}
               onClick={() => {
                 setActiveTool('operable-field')
@@ -3310,7 +4003,7 @@ export default function ConstructorShell({
           <button
             type="button"
             className="constructor-reset-sketch"
-            disabled={!construction || !canEditConstruction}
+            disabled={!construction || !canEditConstruction || combinedRegionMode}
             onClick={resetConstructionFromScratch}
             title="Изчисти текущия модул; Отмяна може да възстанови скицата"
           >
@@ -3351,7 +4044,7 @@ export default function ConstructorShell({
 
           <div
             ref={canvasRef}
-            className={`constructor-canvas${gridVisible && !isCompositeView ? ' has-grid' : ''}${activeTool === 'frame' ? ' is-frame-tool' : ''}${activeTool === 'pan' ? ' is-pan-tool' : ''}${viewPanState ? ' is-panning' : ''}${activeTool === 'vertical-divider' || activeTool === 'horizontal-divider' || activeTool === 'angled-divider' ? ' is-divider-tool' : ''}`}
+            className={`constructor-canvas${gridVisible && !isCompositeView ? ' has-grid' : ''}${activeTool === 'frame' ? ' is-frame-tool' : ''}${activeTool === 'pan' ? ' is-pan-tool' : ''}${activeTool === 'semantic-boundary' ? ' is-semantic-boundary-tool' : ''}${viewPanState ? ' is-panning' : ''}${activeTool === 'vertical-divider' || activeTool === 'horizontal-divider' || activeTool === 'angled-divider' ? ' is-divider-tool' : ''}`}
             style={{
               '--constructor-grid-step': `${GRID_STEP_MM * pxPerMm}px`,
               '--constructor-major-grid-step': `${MAJOR_GRID_STEP_MM * pxPerMm}px`,
@@ -3370,6 +4063,12 @@ export default function ConstructorShell({
                 : `ОФЕРТА · МОДУЛ ${String(moduleNumber).padStart(2, '0')}`}
             </div>
 
+            {semanticBoundaryFeedback && (
+              <div className="constructor-semantic-boundary-feedback" role="status">
+                {semanticBoundaryFeedback}
+              </div>
+            )}
+
             {compositeProjection && <CompositeStructuralSketch projection={compositeProjection} scale={pxPerMm} offset={viewOffset} />}
 
             {!isCompositeView && !canEditConstruction && (
@@ -3386,7 +4085,7 @@ export default function ConstructorShell({
               </div>
             )}
 
-            {canEditConstruction && !displayedFrame && (
+            {canEditConstruction && !displayedFrame && !combinedGeometryOwnsView && (
               <div className="constructor-frame-start-hint">
                 <span>НАЧАЛО НА КОНСТРУКЦИЯТА</span>
                 <b>Създай първата каса</b>
@@ -3397,6 +4096,14 @@ export default function ConstructorShell({
                 <button type="button" onClick={activateFrameTool}>
                   Каса / рамка
                 </button>
+              </div>
+            )}
+
+            {canEditConstruction && moduleSummary.productType === 'combined-door-window'
+              && combinedRegionGeometryForView && !combinedGeometryComplete && (
+              <div className="constructor-combined-geometry-empty" role="status">
+                <b>{combinedGeometryResolution.status === 'invalid' ? 'Комбинираната геометрия е невалидна' : 'Задайте размерите на прозореца и вратата'}</b>
+                <p>{combinedGeometryResolution.status === 'invalid' ? 'Проверете реда и съседството на областите; позициите няма да бъдат коригирани автоматично.' : 'Въведете ширина и височина за всяка област в десния панел. ZERO_DIVIDER ще се изведе от общия им ръб.'}</p>
               </div>
             )}
 
@@ -3417,6 +4124,23 @@ export default function ConstructorShell({
                   if (!frame) {
                     return
                   }
+                  if (combinedGeometryComplete) {
+                    const point = framePointFromPointer(event)
+                    if (!findCombinedRegionAtPoint(moduleSummary.combinedComposition, combinedRegionGeometryForView, point)) {
+                      setSelectedCombinedRegionId(null)
+                      setSelectedFieldId(null)
+                      setSelectedCombinedZeroDividerId(null)
+                      setSelectedSemanticBoundaryId(null)
+                      setSelectedDividerId(null)
+                      setSelectedAngledDividerId(null)
+                      setFrameSelected(false)
+                    }
+                    return
+                  }
+                  if (activeTool === 'semantic-boundary') {
+                    setSemanticBoundaryFeedback('Нулева граница се поставя вътре в поле, не върху рамката.')
+                    return
+                  }
                   if (activeTool === 'vertical-divider' || activeTool === 'horizontal-divider') {
                     addDivider(
                       activeTool === 'vertical-divider' ? 'vertical' : 'horizontal',
@@ -3429,6 +4153,7 @@ export default function ConstructorShell({
                     return
                   }
                   if (activeTool === 'select') {
+                    if (combinedGeometryComplete) return
                     if (!construction) return
                     event.stopPropagation()
                     const point = cadPointFromPointer(event)
@@ -3453,7 +4178,7 @@ export default function ConstructorShell({
                 }}
               >
                 <div className={`constructor-drawing-layer${insideDoorView ? ' is-view-inside' : ''}`}>
-                <div className="constructor-frame-visual" aria-hidden="true">
+                {!combinedGeometryComplete && <div className="constructor-frame-visual" aria-hidden="true">
                   <i className="constructor-frame-edge-face edge-face-left" />
                   <i className="constructor-frame-edge-face edge-face-right" />
                   <i className="constructor-frame-edge-face edge-face-top" />
@@ -3462,20 +4187,81 @@ export default function ConstructorShell({
                   <i className="constructor-frame-mitre mitre-tr" />
                   {frameEdges?.bottom === 'frame' && <i className="constructor-frame-mitre mitre-bl" />}
                   {frameEdges?.bottom === 'frame' && <i className="constructor-frame-mitre mitre-br" />}
-                </div>
-                {frameEdges?.bottom === 'threshold' && (
+                </div>}
+                {frameEdges?.bottom === 'threshold' && !combinedGeometryComplete && (
                   <i className="constructor-frame-threshold-placeholder">ПРАГ</i>
                 )}
 
+                {combinedGeometryComplete && combinedGeometryResolution.extent && combinedGeometryResolution.regions.map((region) => {
+                  const hasMappedFieldSurface = Boolean(region.fieldId && topologyFields.some((field) => field.id === region.fieldId))
+                  if (hasMappedFieldSurface) return null
+                  return <button
+                    type="button"
+                    key={`combined-region-surface-${region.regionId}`}
+                    className="constructor-combined-region-surface"
+                    aria-label={regionDisplayName(region.regionId)}
+                    aria-pressed={selectedCombinedRegionId === region.regionId}
+                    onPointerDown={(event) => event.stopPropagation()}
+                    onClick={() => {
+                      setSelectedCombinedRegionId(region.regionId)
+                      setSelectedFieldId(region.fieldId)
+                      setSelectedCombinedZeroDividerId(null)
+                      setSelectedSemanticBoundaryId(null)
+                      setSelectedDividerId(null)
+                      setSelectedAngledDividerId(null)
+                      setFrameSelected(false)
+                      setSelectedEdge(null)
+                      setActiveTool('select')
+                      setInspectorTab('properties')
+                    }}
+                    style={{
+                      left: `${(region.bounds.xMm - combinedGeometryResolution.extent!.xMm) * pxPerMm}px`,
+                      top: `${(region.bounds.yMm - combinedGeometryResolution.extent!.yMm) * pxPerMm}px`,
+                      width: `${region.bounds.widthMm * pxPerMm}px`,
+                      height: `${region.bounds.heightMm * pxPerMm}px`,
+                    }}
+                  >
+                  </button>
+                })}
+
+                {combinedGeometryComplete && combinedGeometryResolution.extent && activeTool === 'select' && selectedCombinedRegionId && combinedGeometryResolution.regions
+                  .filter((region) => region.regionId === selectedCombinedRegionId)
+                  .map((region) => <Fragment key={`combined-region-handles-${region.regionId}`}>
+                    <button
+                      type="button"
+                      className="constructor-combined-region-resize-handle is-width-handle"
+                      aria-label={`Промени ширината на ${regionDisplayName(region.regionId)}`}
+                      title={`Ширина · ${regionDisplayName(region.regionId)}`}
+                      style={{
+                        left: `${(region.bounds.xMm + region.bounds.widthMm - combinedGeometryResolution.extent!.xMm) * pxPerMm}px`,
+                        top: `${(region.bounds.yMm + region.bounds.heightMm / 2 - combinedGeometryResolution.extent!.yMm) * pxPerMm}px`,
+                      }}
+                      onPointerDown={(event) => startCombinedRegionResize(region, 'widthMm', event)}
+                      onClick={(event) => event.stopPropagation()}
+                    />
+                    <button
+                      type="button"
+                      className="constructor-combined-region-resize-handle is-height-handle"
+                      aria-label={`Промени височината на ${regionDisplayName(region.regionId)}`}
+                      title={`Височина · ${regionDisplayName(region.regionId)}`}
+                      style={{
+                        left: `${(region.bounds.xMm + region.bounds.widthMm / 2 - combinedGeometryResolution.extent!.xMm) * pxPerMm}px`,
+                        top: `${(region.bounds.yMm + region.bounds.heightMm - combinedGeometryResolution.extent!.yMm) * pxPerMm}px`,
+                      }}
+                      onPointerDown={(event) => startCombinedRegionResize(region, 'heightMm', event)}
+                      onClick={(event) => event.stopPropagation()}
+                    />
+                  </Fragment>)}
+
                 {frame && dragState?.kind !== 'create' && fields.map((field) => {
-                  const doorLeafClass = doorLeafVisualClass(moduleSummary.productType, field, frameEdges?.bottom, frame.heightMm, frameFaceMm)
-                  const sashPlacement = profileViewActive ? profileAwareSashGeometry?.fields[field.id] : null
+                  const doorLeafClass = combinedGeometryComplete ? '' : doorLeafVisualClass(moduleSummary.productType, field, frameEdges?.bottom, frame.heightMm, frameFaceMm)
+                  const sashPlacement = profileViewActive && !combinedGeometryComplete ? profileAwareSashGeometry?.fields[field.id] : null
                   const innerProfileBoundsMm = sashPlacement?.placementReady ? sashPlacement.innerProfileBoundsMm : null
                   const fieldWidthPx = field.bounds.widthMm * pxPerMm
                   const fieldHeightPx = field.bounds.heightMm * pxPerMm
                   const fieldDimensionText = `${Math.round(field.bounds.widthMm)} × ${Math.round(field.bounds.heightMm)} mm`
                   const canvasRect = selectedField?.id === field.id ? canvasRef.current?.getBoundingClientRect() : undefined
-                  const dimensionLabelPlacement = selectedField?.id === field.id
+                  const dimensionLabelPlacement = selectedField?.id === field.id && !combinedGeometryComplete
                     ? placeFieldDimensionLabel(fieldDimensionText, fieldWidthPx, fieldHeightPx,
                         field.fieldType !== 'operable' ? null : innerProfileBoundsMm ? {
                           left: (innerProfileBoundsMm.xMm - field.bounds.xMm) * pxPerMm,
@@ -3518,7 +4304,7 @@ export default function ConstructorShell({
                   <Fragment key={field.id}>
                   <button
                     type="button"
-                    className={`constructor-field-surface ${doorLeafClass} ${doorViewClass} ${selectedFieldId === field.id ? 'is-selected' : ''} ${field.fieldType === 'fixed' ? 'is-fixed' : field.fieldType === 'operable' ? 'is-operable' : 'is-unset'} ${profileViewActive && field.fieldType === 'operable' ? (innerProfileBoundsMm ? 'has-reviewed-sash-placement' : profileAwareGeometry?.sashes[field.id]?.reviewed ? 'has-reviewed-sash-geometry' : 'has-unresolved-sash-geometry') : ''}`}
+                    className={`constructor-field-surface ${combinedGeometryComplete ? 'is-combined-region' : ''} ${doorLeafClass} ${doorViewClass} ${selectedFieldId === field.id ? 'is-selected' : ''} ${field.fieldType === 'fixed' ? 'is-fixed' : field.fieldType === 'operable' ? 'is-operable' : 'is-unset'} ${profileViewActive && field.fieldType === 'operable' ? (innerProfileBoundsMm ? 'has-reviewed-sash-placement' : profileAwareGeometry?.sashes[field.id]?.reviewed ? 'has-reviewed-sash-geometry' : 'has-unresolved-sash-geometry') : ''}`}
                     title={doorLeafClass && frameEdges?.bottom !== 'frame' ? 'Схематично отстояние под крилото · без зададен физически размер' : undefined}
                     style={{
                       left: `${field.bounds.xMm * pxPerMm}px`,
@@ -3533,6 +4319,26 @@ export default function ConstructorShell({
                     aria-label={`Поле ${field.sequence}`}
                     onPointerDown={(event) => {
                       event.stopPropagation()
+                      if (combinedGeometryComplete) {
+                        const localPoint = framePointFromPointer(event)
+                        const hitRegion = findCombinedRegionAtPoint(moduleSummary.combinedComposition, combinedRegionGeometryForView, localPoint)
+                        if (!hitRegion || hitRegion.fieldId !== field.id) return
+                        setSelectedCombinedRegionId(hitRegion.regionId)
+                        setSelectedFieldId(field.id)
+                        setSelectedCombinedZeroDividerId(null)
+                        setSelectedSemanticBoundaryId(null)
+                        setSelectedDividerId(null)
+                        setSelectedAngledDividerId(null)
+                        setFrameSelected(false)
+                        setSelectedEdge(null)
+                        setActiveTool('select')
+                        setInspectorTab('properties')
+                        return
+                      }
+                      if (activeTool === 'semantic-boundary') {
+                        addSemanticBoundary(framePointFromPointer(event))
+                        return
+                      }
                       if (activeTool === 'vertical-divider' || activeTool === 'horizontal-divider') {
                         addDivider(
                           activeTool === 'vertical-divider' ? 'vertical' : 'horizontal',
@@ -3553,14 +4359,17 @@ export default function ConstructorShell({
                       }
                       if (activeTool === 'select') {
                         setSelectedFieldId(field.id)
+                        setSelectedCombinedRegionId(moduleSummary.combinedComposition?.regions.find((region) => region.fieldId === field.id)?.id ?? null)
                         setSelectedDividerId(null)
+                        setSelectedSemanticBoundaryId(null)
+                        setSelectedCombinedZeroDividerId(null)
                         setSelectedAngledDividerId(null)
                         setFrameSelected(false)
                         setSelectedEdge(null)
                       }
                     }}
                   >
-                    {field.fieldType === 'operable' && (
+                    {!combinedGeometryComplete && field.fieldType === 'operable' && (
                       <>
                         {/* CONSTRUCTOR 01E.5.2: fixed-pixel schematic sash ring.
                             It clarifies frame/divider/sash overlap without claiming catalog millimetres. */}
@@ -3656,9 +4465,7 @@ export default function ConstructorShell({
                         </svg>
                       </>
                     )}
-                    <span className="constructor-field-number-badge" aria-hidden="true">
-                      {field.sequence}
-                    </span>
+                    {!combinedGeometryComplete && <span className="constructor-field-number-badge" aria-hidden="true">{field.sequence}</span>}
                   </button>
                     {dimensionLabelPlacement && (
                       <span
@@ -3711,7 +4518,7 @@ export default function ConstructorShell({
                   )
                 })}
 
-                {frame && dragState?.kind !== 'create' && dividers.map((divider) => {
+                {frame && dragState?.kind !== 'create' && !combinedGeometryOwnsView && dividers.map((divider) => {
                   const faceClipPath = divider.facePolygon
                     ? (() => {
                         const faceLeft = divider.axis === 'vertical' ? divider.positionMm : divider.startMm
@@ -3755,7 +4562,10 @@ export default function ConstructorShell({
                         event.stopPropagation()
                         setSelectedDividerId(divider.id)
                         setSelectedAngledDividerId(null)
-                        setSelectedFieldId(null)
+                        setSelectedCombinedRegionId(null)
+                        setSelectedCombinedZeroDividerId(null)
+                    setSelectedFieldId(null)
+                    setSelectedSemanticBoundaryId(null)
                         setDividerPositionDraft(String(Math.round(divider.offsetMm)))
                         setFrameSelected(false)
                         setSelectedEdge(null)
@@ -3773,8 +4583,46 @@ export default function ConstructorShell({
                   )
                 })}
 
+                {combinedGeometryComplete && combinedGeometryResolution.extent && (
+                  <svg className="constructor-combined-outline" aria-label="Стъпаловиден контур на комбинирания модул" viewBox={`0 0 ${combinedGeometryResolution.extent.widthMm} ${combinedGeometryResolution.extent.heightMm}`} preserveAspectRatio="none">
+                    {combinedGeometryResolution.outline.map((segment, index) => <line key={`outline-${index}`} x1={segment.start.xMm - combinedGeometryResolution.extent!.xMm} y1={segment.start.yMm - combinedGeometryResolution.extent!.yMm} x2={segment.end.xMm - combinedGeometryResolution.extent!.xMm} y2={segment.end.yMm - combinedGeometryResolution.extent!.yMm} />)}
+                    {combinedGeometryResolution.zeroDividers.map((boundary) => <g key={boundary.relationId}>
+                      <line className={`constructor-combined-zero-divider${selectedCombinedZeroDividerId === boundary.relationId ? ' is-selected' : ''}`} x1={boundary.start.xMm - combinedGeometryResolution.extent!.xMm} y1={boundary.start.yMm - combinedGeometryResolution.extent!.yMm} x2={boundary.end.xMm - combinedGeometryResolution.extent!.xMm} y2={boundary.end.yMm - combinedGeometryResolution.extent!.yMm} />
+                      <line className="constructor-combined-zero-divider-hit" vectorEffect="non-scaling-stroke" x1={boundary.start.xMm - combinedGeometryResolution.extent!.xMm} y1={boundary.start.yMm - combinedGeometryResolution.extent!.yMm} x2={boundary.end.xMm - combinedGeometryResolution.extent!.xMm} y2={boundary.end.yMm - combinedGeometryResolution.extent!.yMm} onPointerDown={(event) => { event.stopPropagation(); setSelectedCombinedZeroDividerId(boundary.relationId); setSelectedCombinedRegionId(null); setSelectedFieldId(null); setSelectedSemanticBoundaryId(null); setSelectedDividerId(null); setSelectedAngledDividerId(null); setFrameSelected(false); setSelectedEdge(null); setInspectorTab('properties') }} />
+                    </g>)}
+                  </svg>
+                )}
+
+                {frame && dragState?.kind !== 'create' && !combinedGeometryOwnsView && semanticBoundaries.map((boundary) => (
+                  <button
+                    key={boundary.id}
+                    type="button"
+                    className={`constructor-semantic-boundary ${selectedSemanticBoundaryId === boundary.id ? 'is-selected' : ''}`}
+                    style={{
+                      left: `${boundary.positionMm * pxPerMm}px`,
+                      top: `${boundary.startMm * pxPerMm}px`,
+                      height: `${Math.max(1, boundary.endMm - boundary.startMm) * pxPerMm}px`,
+                    }}
+                    aria-label="Нулева граница"
+                    onPointerDown={(event) => startSemanticBoundaryDrag(boundary, event)}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      setSelectedSemanticBoundaryId(boundary.id)
+                      setSelectedCombinedRegionId(null)
+                      setSelectedCombinedZeroDividerId(null)
+                      setSelectedDividerId(null)
+                      setSelectedAngledDividerId(null)
+                      setSelectedFieldId(null)
+                      setFrameSelected(false)
+                      setSelectedEdge(null)
+                    }}
+                  >
+                    <span aria-hidden="true" />
+                  </button>
+                ))}
+
                 {/* Paint only the operable sash perimeter above divider faces; this layer cannot intercept input. */}
-                {frame && dragState?.kind !== 'create' && fields
+                {frame && dragState?.kind !== 'create' && !combinedGeometryComplete && fields
                   .filter((field) => field.fieldType === 'operable')
                   .map((field) => (
                     <span
@@ -3793,7 +4641,7 @@ export default function ConstructorShell({
                     />
                   ))}
 
-                {frame && dragState?.kind !== 'create' && angledDividers.map((divider) => {
+                {frame && dragState?.kind !== 'create' && !combinedGeometryOwnsView && angledDividers.map((divider) => {
                   const xs = divider.facePolygon.map((point) => point.xMm)
                   const ys = divider.facePolygon.map((point) => point.yMm)
                   const minX = Math.min(...xs)
@@ -3838,7 +4686,7 @@ export default function ConstructorShell({
 
                 </div>
 
-                {frame && dragState?.kind !== 'create' && (
+                {frame && dragState?.kind !== 'create' && !combinedGeometryOwnsView && (
                   <>
                     <button
                       type="button"
@@ -3867,7 +4715,7 @@ export default function ConstructorShell({
                   </>
                 )}
 
-                {simpleBayDimensions.length > 0 && dragState?.kind !== 'create' && (
+                {simpleBayDimensions.length > 0 && dragState?.kind !== 'create' && !combinedGeometryOwnsView && (
                   <div className="constructor-bay-dimension-band" aria-label="Схемни модулни ширини">
                     {simpleBayDimensions.map((bay) => (
                       <div
@@ -3884,19 +4732,68 @@ export default function ConstructorShell({
                   </div>
                 )}
 
-                <div className="constructor-frame-dimension constructor-frame-dimension-width">
+                {!combinedGeometryComplete && <div className="constructor-frame-dimension constructor-frame-dimension-width">
                   <span>{Math.round(displayedFrame.widthMm)}</span>
-                </div>
-                <div className="constructor-frame-dimension constructor-frame-dimension-height">
+                </div>}
+                {!combinedGeometryComplete && <div className="constructor-frame-dimension constructor-frame-dimension-height">
                   <span>{Math.round(displayedFrame.heightMm)}</span>
-                </div>
+                </div>}
 
-                {frameClearDimensions.widthMm !== null && dragState?.kind !== 'create' && (
+                {combinedGeometryComplete && combinedGeometryResolution.extent && combinedTechnicalDimensionLayout && <div className="constructor-combined-dimension-chains" aria-label="Размерни вериги на комбинирания модул">
+                  {combinedTechnicalDimensionLayout.regionWidths.map((chain, index) => {
+                    const region = combinedGeometryResolution.regions[index]
+                    const regionBottomMm = region.bounds.yMm + region.bounds.heightMm
+                    const chainTopPx = (chain.yMm - combinedGeometryResolution.extent!.yMm) * pxPerMm
+                    const regionBottomPx = (regionBottomMm - combinedGeometryResolution.extent!.yMm) * pxPerMm
+                    const startPx = (chain.startMm - combinedGeometryResolution.extent!.xMm) * pxPerMm
+                    const endPx = (chain.endMm - combinedGeometryResolution.extent!.xMm) * pxPerMm
+                    return <Fragment key={`combined-width-chain-${chain.regionId}`}>
+                      <i className="constructor-combined-dimension-extension is-vertical" style={{ left: `${startPx}px`, top: `${regionBottomPx}px`, height: `${Math.max(0, chainTopPx - regionBottomPx)}px` }} />
+                      <i className="constructor-combined-dimension-extension is-vertical" style={{ left: `${endPx}px`, top: `${regionBottomPx}px`, height: `${Math.max(0, chainTopPx - regionBottomPx)}px` }} />
+                      <div
+                        className="constructor-combined-horizontal-chain is-region-chain"
+                        style={{ left: `${startPx}px`, top: `${chainTopPx}px`, width: `${(chain.endMm - chain.startMm) * pxPerMm}px` }}
+                        aria-label={`Ширина ${regionDisplayName(chain.regionId)} ${Math.round(region.bounds.widthMm)} mm`}
+                      ><span>{Math.round(region.bounds.widthMm)}</span></div>
+                    </Fragment>
+                  })}
+                  <i className="constructor-combined-dimension-extension is-vertical" style={{ left: 0, top: `${combinedGeometryResolution.extent.heightMm * pxPerMm}px`, height: `${(combinedTechnicalDimensionLayout.totalWidth.yMm - combinedGeometryResolution.extent.heightMm) * pxPerMm}px` }} />
+                  <i className="constructor-combined-dimension-extension is-vertical" style={{ left: `${combinedGeometryResolution.extent.widthMm * pxPerMm}px`, top: `${combinedGeometryResolution.extent.heightMm * pxPerMm}px`, height: `${(combinedTechnicalDimensionLayout.totalWidth.yMm - combinedGeometryResolution.extent.heightMm) * pxPerMm}px` }} />
+                  <div
+                    className="constructor-combined-horizontal-chain is-overall-chain"
+                    style={{ left: 0, top: `${(combinedTechnicalDimensionLayout.totalWidth.yMm - combinedGeometryResolution.extent.yMm) * pxPerMm}px`, width: `${(combinedTechnicalDimensionLayout.totalWidth.endMm - combinedTechnicalDimensionLayout.totalWidth.startMm) * pxPerMm}px` }}
+                    aria-label={`Обща ширина ${Math.round(combinedGeometryResolution.extent.widthMm)} mm`}
+                  ><span>{Math.round(combinedGeometryResolution.extent.widthMm)}</span></div>
+                  {combinedTechnicalDimensionLayout.regionHeights.map((chain) => {
+                    const region = combinedGeometryResolution.regions.find((item) => item.regionId === chain.regionId)!
+                    const chainX = (chain.xMm - combinedGeometryResolution.extent!.xMm) * pxPerMm
+                    const edgeX = (chain.side === 'left' ? region.bounds.xMm : region.bounds.xMm + region.bounds.widthMm) - combinedGeometryResolution.extent!.xMm
+                    const edgeEndPx = edgeX * pxPerMm
+                    const extensionLeft = Math.min(chainX, edgeEndPx)
+                    const extensionWidth = Math.abs(chainX - edgeEndPx)
+                    return <Fragment key={`combined-height-chain-${chain.regionId}`}>
+                      <i className="constructor-combined-dimension-extension is-horizontal" style={{ left: `${extensionLeft}px`, top: `${(chain.startMm - combinedGeometryResolution.extent!.yMm) * pxPerMm}px`, width: `${extensionWidth}px` }} />
+                      <i className="constructor-combined-dimension-extension is-horizontal" style={{ left: `${extensionLeft}px`, top: `${(chain.endMm - combinedGeometryResolution.extent!.yMm) * pxPerMm}px`, width: `${extensionWidth}px` }} />
+                      <div
+                        className={`constructor-combined-vertical-chain is-region-chain is-${chain.side}-chain`}
+                        style={{ left: `${chainX}px`, top: `${(chain.startMm - combinedGeometryResolution.extent!.yMm) * pxPerMm}px`, height: `${(chain.endMm - chain.startMm) * pxPerMm}px` }}
+                        aria-label={`Височина ${regionDisplayName(chain.regionId)} ${Math.round(region.bounds.heightMm)} mm`}
+                      ><span>{Math.round(region.bounds.heightMm)}</span></div>
+                    </Fragment>
+                  })}
+                  <div
+                    className="constructor-combined-vertical-chain is-overall-chain"
+                    style={{ left: `${(combinedTechnicalDimensionLayout.totalHeight.xMm - combinedGeometryResolution.extent.xMm) * pxPerMm}px`, top: 0, height: `${(combinedTechnicalDimensionLayout.totalHeight.endMm - combinedTechnicalDimensionLayout.totalHeight.startMm) * pxPerMm}px` }}
+                    aria-label={`Максимална обща височина ${Math.round(combinedGeometryResolution.extent.heightMm)} mm`}
+                  ><span>{Math.round(combinedGeometryResolution.extent.heightMm)}</span></div>
+                </div>}
+
+                {frameClearDimensions.widthMm !== null && dragState?.kind !== 'create' && !combinedGeometryComplete && (
                   <div className="constructor-frame-inner-dimension constructor-frame-inner-dimension-width">
                     <span>ВЪТР. {Math.round(frameClearDimensions.widthMm)}</span>
                   </div>
                 )}
-                {frameClearDimensions.heightMm !== null && dragState?.kind !== 'create' && (
+                {frameClearDimensions.heightMm !== null && dragState?.kind !== 'create' && !combinedGeometryComplete && (
                   <div className="constructor-frame-inner-dimension constructor-frame-inner-dimension-height">
                     <span>ВЪТР. {Math.round(frameClearDimensions.heightMm)}</span>
                   </div>
@@ -3905,11 +4802,11 @@ export default function ConstructorShell({
             )}
           </div>
 
-          {!isCompositeView && frame && dragState?.kind !== 'create' && fields.length > 0 && (
+          {!isCompositeView && frame && dragState?.kind !== 'create' && (fields.length > 0 || combinedRegionCount > 0) && (
             <section className="constructor-field-details-panel" aria-label="Данни за полетата в модула">
               <div className="constructor-field-details-heading">
                 <span>ПОЛЕТА В МОДУЛА</span>
-                <b>{fields.length}</b>
+                <b>{combinedRegionCount || fields.length}</b>
               </div>
               <div className="constructor-field-details-list">
                 {fields.map((field) => {
@@ -3942,31 +4839,70 @@ export default function ConstructorShell({
                       title={`Поле ${field.sequence} · ${Math.round(field.bounds.widthMm)} × ${Math.round(field.bounds.heightMm)} mm`}
                       onClick={() => {
                         setSelectedFieldId(field.id)
+                        setSelectedCombinedRegionId(moduleSummary.combinedComposition?.regions.find((region) => region.fieldId === field.id)?.id ?? null)
                         setSelectedDividerId(null)
+                        setSelectedSemanticBoundaryId(null)
+                        setSelectedCombinedZeroDividerId(null)
                         setSelectedAngledDividerId(null)
                         setFrameSelected(false)
                         setSelectedEdge(null)
                         setActiveTool('select')
+                        setInspectorTab('properties')
                       }}
                     >
                       <span className="constructor-field-detail-number">{field.sequence}</span>
                       <span className="constructor-field-detail-main">
-                        <b>ПОЛЕ {Math.round(field.bounds.widthMm)} × {Math.round(field.bounds.heightMm)} mm</b>
-                        <small>
+                        {moduleSummary.productType === 'combined-door-window' ? <>
+                          <b>Поле {field.sequence} · {regionDisplayName(moduleSummary.combinedComposition?.regions.find((region) => region.fieldId === field.id)?.id ?? '')}</b>
+                          <small>{Math.round(field.bounds.widthMm)} × {Math.round(field.bounds.heightMm)} mm</small>
+                        </> : <>
+                          <b>ПОЛЕ {Math.round(field.bounds.widthMm)} × {Math.round(field.bounds.heightMm)} mm</b>
+                          <small>
                           МОДУЛ {bayWidthLabel} · {field.fieldType === 'fixed'
                             ? 'ФИКСИРАНО'
                             : field.fieldType === 'operable'
                               ? 'КРИЛО'
                               : 'НЕ Е ЗАДАДЕНО'}
-                        </small>
+                          </small>
+                        </>}
                       </span>
-                      <span className="constructor-field-detail-opening">
+                      {moduleSummary.productType !== 'combined-door-window' && <span className="constructor-field-detail-opening">
                         {field.fieldType === 'operable' && openingLabel
                           ? `${openingLabel}${handingLabel ? ` · ${handingLabel}` : ''}`
                           : '—'}
-                      </span>
+                      </span>}
                     </button>
                   )
+                })}
+                {combinedGeometryComplete && combinedGeometryResolution.regions.map((region, index) => {
+                  const hasFieldCard = Boolean(region.fieldId && fields.some((field) => field.id === region.fieldId))
+                  if (hasFieldCard) return null
+                  return <button
+                    key={`combined-region-detail-${region.regionId}`}
+                    type="button"
+                    className={`constructor-field-detail-card ${selectedCombinedRegionId === region.regionId ? 'is-selected' : ''}`}
+                    aria-pressed={selectedCombinedRegionId === region.regionId}
+                    title={`Поле ${index + 1} · ${regionDisplayName(region.regionId)} · ${Math.round(region.bounds.widthMm)} × ${Math.round(region.bounds.heightMm)} mm`}
+                    onClick={() => {
+                      setSelectedCombinedRegionId(region.regionId)
+                      setSelectedFieldId(region.fieldId)
+                      setSelectedCombinedZeroDividerId(null)
+                      setSelectedSemanticBoundaryId(null)
+                      setSelectedDividerId(null)
+                      setSelectedAngledDividerId(null)
+                      setFrameSelected(false)
+                      setSelectedEdge(null)
+                      setActiveTool('select')
+                      setInspectorTab('properties')
+                    }}
+                  >
+                    <span className="constructor-field-detail-number">{index + 1}</span>
+                    <span className="constructor-field-detail-main">
+                      <b>Поле {index + 1} · {regionDisplayName(region.regionId)}</b>
+                      <small>{Math.round(region.bounds.widthMm)} × {Math.round(region.bounds.heightMm)} mm</small>
+                    </span>
+                    <span className="constructor-field-detail-opening">—</span>
+                  </button>
                 })}
               </div>
             </section>
@@ -4012,7 +4948,7 @@ export default function ConstructorShell({
           </li>)}</ul>}
           <p>Разстоянията и пунктирните връзки са условни. Точната връзка между рамките изисква човешки преглед.</p>
           <small>Скицата не е готова за производство.</small>
-        </aside> : <aside id="constructor-properties-panel" className={`constructor-properties-panel constructor-context-inspector${rightPanelCollapsed ? ' is-panel-collapsed' : ''}`} aria-label="Данни за избраното" data-context={selectedField ? 'field' : selectedDivider ? 'divider' : selectedAngledDivider ? 'angled-divider' : 'module'}>
+        </aside> : <aside id="constructor-properties-panel" className={`constructor-properties-panel constructor-context-inspector${rightPanelCollapsed ? ' is-panel-collapsed' : ''}`} aria-label="Данни за избраното" data-context={selectedCombinedRegion ? 'combined-region' : selectedCombinedZeroDivider ? 'combined-zero-divider' : selectedField ? 'field' : selectedDivider ? 'divider' : selectedAngledDivider ? 'angled-divider' : 'module'}>
           {renderPanelToggle('right', rightPanelCollapsed, () => setRightPanelCollapsed((current) => !current))}
           {hasActiveModule && moduleSetupExpanded ? (
             <section className="constructor-module-settings-drawer" aria-label="Настройки на модула">
@@ -4028,6 +4964,7 @@ export default function ConstructorShell({
               </div>
             </section>
           ) : <>
+            {moduleSetupIncomplete && renderModuleSetupGuidance()}
             <header className="constructor-context-heading">
               <span>ИЗБРАНО</span>
               <h2>{selectedElementTitle}</h2>

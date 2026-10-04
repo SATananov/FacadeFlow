@@ -16,7 +16,7 @@ export const COMPOSITE_MODULE_STRUCTURE_SAFETY = {
   framePartPlacement: 'HUMAN DEFINED',
 } as const
 
-export type CompositeFramePartFunction = ModuleProductType | null
+export type CompositeFramePartFunction = Exclude<ModuleProductType, 'combined-door-window'> | null
 /** All four sides are explicit human/domain input, independent of function. */
 export type FrameSides = Record<Side, boolean>
 

@@ -104,7 +104,13 @@ export function replaceOfferModules(snapshot: ProjectSnapshot, modules: OfferMod
   keepOwnedModules(snapshot, offer.id, new Set(modules.map((module) => module.id)))
   for (const { id, sequence, ...draft } of modules) {
     assertModuleOwnership(snapshot, id, offer.id)
-    const module: ProjectModule = { ...snapshot.modulesById[id], id, offerId: offer.id, sequence, definition: { kind: 'offer', draft } }
+    const normalizedDraft = {
+      ...draft,
+      combinedLayout: draft.productType === 'combined-door-window' ? draft.combinedLayout ?? null : null,
+      combinedComposition: draft.productType === 'combined-door-window' ? draft.combinedComposition ?? null : null,
+      combinedRegionGeometry: draft.productType === 'combined-door-window' ? draft.combinedRegionGeometry ?? null : null,
+    }
+    const module: ProjectModule = { ...snapshot.modulesById[id], id, offerId: offer.id, sequence, definition: { kind: 'offer', draft: normalizedDraft } }
     guardCompositeSystemChange(snapshot.modulesById[id], module)
     snapshot.modulesById[id] = module
     initializePayload(snapshot, module)
@@ -114,9 +120,14 @@ export function replaceFreeModules(snapshot: ProjectSnapshot, modules: FreeConst
   const offerId = snapshot.workspace.freeOfferId
   if (new Set(modules.map((module) => module.id)).size !== modules.length) throw new Error('Duplicate module identity')
   keepOwnedModules(snapshot, offerId, new Set(modules.map((module) => module.id)))
-  for (const { id, sequence, profileSystemId, productType, profileResolution } of modules) {
+  for (const { id, sequence, profileSystemId, productType, combinedLayout, combinedComposition, combinedRegionGeometry, profileResolution } of modules) {
     assertModuleOwnership(snapshot, id, offerId)
-    const module: ProjectModule = { ...snapshot.modulesById[id], id, offerId, sequence, definition: { kind: 'free', profileSystemId, productType } }
+    const module: ProjectModule = { ...snapshot.modulesById[id], id, offerId, sequence, definition: {
+      kind: 'free', profileSystemId, productType,
+      combinedLayout: productType === 'combined-door-window' ? combinedLayout ?? null : null,
+      combinedComposition: productType === 'combined-door-window' ? combinedComposition ?? null : null,
+      combinedRegionGeometry: productType === 'combined-door-window' ? combinedRegionGeometry ?? null : null,
+    } }
     guardCompositeSystemChange(snapshot.modulesById[id], module)
     snapshot.modulesById[id] = module
     initializePayload(snapshot, module)
@@ -143,7 +154,7 @@ export function createNextProjectModule(
   const next = editProject(snapshot, (draft) => {
     if (owner.entryMode === 'free') {
       const profileSystemId = source ? getProjectModuleSystemId(source) : ''
-      replaceFreeModules(draft, [...getFreeModules(draft), { id: moduleId, sequence, profileSystemId, productType: null,
+      replaceFreeModules(draft, [...getFreeModules(draft), { id: moduleId, sequence, profileSystemId, productType: null, combinedLayout: null, combinedComposition: null,
         profileResolution: profileSystemId ? createModuleProfileResolution(profileSystemId) : null }])
     } else {
       replaceOfferModules(draft, [...getOfferModules(draft), createOfferModule(buildOfferModuleDefaults(owner.settingsDraft), sequence, moduleId)])
@@ -180,6 +191,9 @@ export function copyFreeModuleToOffer(
       commonConditions: '', setupStage: 'editing', pendingCopyModuleId: moduleId, fromFreeSketch: true }
     const { id, sequence, ...definition } = createOfferModule(buildOfferModuleDefaults(settings), 1, moduleId)
     definition.productType = source.definition.productType
+    definition.combinedLayout = source.definition.combinedLayout ?? null
+    definition.combinedComposition = source.definition.combinedComposition ?? null
+    definition.combinedRegionGeometry = source.definition.combinedRegionGeometry ?? null
     definition.productTypeSource = source.definition.productType ? 'preset' : 'unset'
     next.modulesById[id] = { id, offerId, sequence, definition: { kind: 'offer', draft: definition } }
     if (source.compositeStructure !== undefined) next.modulesById[id].compositeStructure = structuredClone(source.compositeStructure)

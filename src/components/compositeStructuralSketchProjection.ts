@@ -1,4 +1,4 @@
-import type { ModuleProductType } from '../domain/offerModules'
+import type { CompositeFramePartFunction } from '../domain/compositeModuleStructure'
 import { getFramePartPlacement, validateCompositeModuleStructure, type FrameSides } from '../domain/compositeModuleStructure'
 import { hasModuleConstructorConstruction } from '../domain/project/compositeModuleGuard'
 import type { ProjectSnapshot } from '../domain/project/projectModel'
@@ -7,7 +7,7 @@ import type { ProjectSnapshot } from '../domain/project/projectModel'
 export type SketchBounds = { x: number; y: number; width: number; height: number }
 export type SketchPart = SketchBounds & {
   id: string
-  function: ModuleProductType | null
+  function: CompositeFramePartFunction
   label: string
   widthMm: number
   heightMm: number

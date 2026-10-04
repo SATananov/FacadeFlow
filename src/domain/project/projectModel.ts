@@ -1,4 +1,4 @@
-import type { ModuleProductType } from '../offerModules'
+import type { CombinedModuleLayout, ModuleProductType } from '../offerModules'
 import type { ConstructorDraftSnapshot } from '../construction'
 import { resolveConstructionTopology } from '../construction'
 import { syncOfferModuleFieldsFromTopology } from '../offerModules'
@@ -8,6 +8,9 @@ import type { ModuleProfileResolution } from '../profileResolution'
 import { emptyAssurance, type AssuranceState } from '../assurance/assuranceModel'
 import type { RevisionState } from './revisionModel'
 import type { CompositeModuleStructure } from '../compositeModuleStructure'
+import type { CombinedModuleComposition } from '../combinedModuleComposition'
+import type { CombinedRegionGeometry } from '../combinedRegionGeometry'
+import { resolveCombinedRegionGeometry } from '../combinedRegionGeometry'
 import { trackChanges } from '../assurance/changeTracking'
 
 export const PROJECT_SCHEMA_VERSION = 'project-foundation-02' as const
@@ -37,7 +40,7 @@ export type ProjectOffer = OfferBase & (
 )
 export type ModuleDefinition =
   | { kind: 'offer'; draft: Omit<OfferModuleDraft, 'id' | 'sequence'> }
-  | { kind: 'free'; profileSystemId: string; productType: ModuleProductType | null }
+  | { kind: 'free'; profileSystemId: string; productType: ModuleProductType | null; combinedLayout: CombinedModuleLayout | null; combinedComposition?: CombinedModuleComposition | null; combinedRegionGeometry?: CombinedRegionGeometry | null }
 export type ProjectModule = {
   id: string; offerId: string; sequence: number; definition: ModuleDefinition
   compositeStructure?: CompositeModuleStructure | null
@@ -47,7 +50,7 @@ export function getProjectModuleSystemId(module: ProjectModule): string {
   return module.definition.kind === 'free' ? module.definition.profileSystemId : module.definition.draft.inheritedDefaults.profileSystemId
 }
 export type FreeConstructorModule = {
-  id: string; sequence: number; profileSystemId: string; productType: ModuleProductType | null
+  id: string; sequence: number; profileSystemId: string; productType: ModuleProductType | null; combinedLayout: CombinedModuleLayout | null; combinedComposition?: CombinedModuleComposition | null; combinedRegionGeometry?: CombinedRegionGeometry | null
   profileResolution: ModuleProfileResolution | null
 }
 
@@ -179,15 +182,25 @@ export function getOfferModules(snapshot: ProjectSnapshot): OfferModuleDraft[] {
 export function getModuleDraftView(snapshot: ProjectSnapshot, module: ProjectModule): OfferModuleDraft {
   if (module.definition.kind !== 'offer') throw new Error('Expected offer module')
   const definition = { ...module.definition.draft, id: module.id, sequence: module.sequence }
+  if (definition.productType === 'combined-door-window') {
+    const resolved = resolveCombinedRegionGeometry(definition.combinedComposition, definition.combinedRegionGeometry)
+    if (resolved.status !== 'complete' || !resolved.extent) {
+      return { ...definition, combinedLayout: definition.combinedLayout ?? null, widthMm: null, widthSource: 'unset', heightMm: null, heightSource: 'unset', fieldCount: null, fieldCountSource: 'unset' }
+    }
+    return { ...definition, combinedLayout: definition.combinedLayout ?? null, widthMm: resolved.extent.widthMm, widthSource: 'constructor', heightMm: resolved.extent.heightMm, heightSource: 'constructor', fieldCount: resolved.regions.length, fieldCountSource: 'constructor' }
+  }
   const topology = snapshot.constructionDraftsByModuleId[module.id]?.topology
-  if (!topology) return definition
+  if (!topology) return { ...definition, combinedLayout: definition.combinedLayout ?? null }
   const fields = resolveConstructionTopology(topology).fields
-  return { ...definition, widthMm: topology.frame.widthMm, heightMm: topology.frame.heightMm,
+  return { ...definition, combinedLayout: definition.combinedLayout ?? null, widthMm: topology.frame.widthMm, heightMm: topology.frame.heightMm,
     widthSource: 'constructor', heightSource: 'constructor', fieldCount: fields.length, fieldCountSource: 'constructor',
     fields: syncOfferModuleFieldsFromTopology(definition.fields, fields.map((field) => ({ ...field, widthMm: field.bounds.widthMm }))) }
 }
 export function getFreeModules(snapshot: ProjectSnapshot): FreeConstructorModule[] {
   return getModules(snapshot, snapshot.workspace.freeOfferId).flatMap((module) => module.definition.kind === 'free'
     ? [{ id: module.id, sequence: module.sequence, profileSystemId: module.definition.profileSystemId,
-        productType: module.definition.productType, profileResolution: snapshot.profileResolutionsByModuleId[module.id] }] : [])
+        productType: module.definition.productType, combinedLayout: module.definition.combinedLayout ?? null,
+        combinedComposition: module.definition.combinedComposition ?? null,
+        combinedRegionGeometry: module.definition.combinedRegionGeometry ?? null,
+        profileResolution: snapshot.profileResolutionsByModuleId[module.id] }] : [])
 }

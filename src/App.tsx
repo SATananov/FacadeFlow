@@ -42,6 +42,7 @@ import {
   MODULE_OPENING_MODE_PRESETS,
   MODULE_OPENING_HANDING_PRESETS,
   MODULE_PRODUCT_TYPE_PRESETS,
+  type CombinedModuleLayout,
   resizeOfferModuleFields,
   syncOfferModuleFieldsFromTopology,
   type ModuleFieldType,
@@ -52,6 +53,8 @@ import {
   type OfferModuleDraft,
   type OfferModuleFieldDraft,
 } from './domain/offerModules'
+import type { CombinedModuleComposition } from './domain/combinedModuleComposition'
+import type { CombinedRegionGeometry } from './domain/combinedRegionGeometry'
 import ConstructorShell, {
   type ConstructorDraftSnapshot,
   type ConstructorFieldTopologySummary,
@@ -484,6 +487,7 @@ export default function App() {
     if (value === '') {
       updateFirstModule({
         productType: null,
+        combinedLayout: null,
         customProductTypeLabel: '',
         productTypeSource: 'unset',
       })
@@ -493,6 +497,7 @@ export default function App() {
     if (value === 'custom') {
       updateFirstModule({
         productType: null,
+        combinedLayout: null,
         productTypeSource: 'manual',
       })
       return
@@ -500,6 +505,7 @@ export default function App() {
 
     updateFirstModule({
       productType: value as ModuleProductType,
+      combinedLayout: value === 'combined-door-window' ? firstModule?.combinedLayout ?? null : null,
       customProductTypeLabel: '',
       productTypeSource: 'preset',
     })
@@ -730,7 +736,28 @@ export default function App() {
   const setActiveFreeModuleProductType = (productType: ModuleProductType | null) => {
     if (!activeFreeModule) return
     setFreeModules((current) => current.map((module) => module.id === activeFreeModule.id
-      ? reconcileFreeModuleProfiles({ ...module, productType }, activeFreeModuleDraft) : module))
+      ? productType === 'combined-door-window'
+      ? { ...module, productType, combinedLayout: null, combinedComposition: null, combinedRegionGeometry: null }
+        : reconcileFreeModuleProfiles({ ...module, productType, combinedLayout: null, combinedComposition: null, combinedRegionGeometry: null }, activeFreeModuleDraft)
+      : module))
+  }
+
+  const setActiveFreeModuleCombinedLayout = (combinedLayout: CombinedModuleLayout | null) => {
+    if (!activeFreeModule || activeFreeModule.productType !== 'combined-door-window') return
+    setFreeModules((current) => current.map((module) => module.id === activeFreeModule.id
+      ? { ...module, combinedLayout } : module))
+  }
+
+  const setActiveFreeModuleCombinedComposition = (combinedComposition: CombinedModuleComposition | null) => {
+    if (!activeFreeModule || activeFreeModule.productType !== 'combined-door-window') return
+    setFreeModules((current) => current.map((module) => module.id === activeFreeModule.id
+      ? { ...module, combinedComposition } : module))
+  }
+
+  const setActiveFreeModuleCombinedRegionGeometry = (combinedRegionGeometry: CombinedRegionGeometry | null) => {
+    if (!activeFreeModule || activeFreeModule.productType !== 'combined-door-window') return
+    setFreeModules((current) => current.map((module) => module.id === activeFreeModule.id
+      ? { ...module, combinedRegionGeometry } : module))
   }
 
   const setActiveFreeModuleProfileResolution = (profileResolution: ModuleProfileResolution) => {
@@ -1089,11 +1116,17 @@ export default function App() {
             onProfileResolutionChange={setActiveFreeModuleProfileResolution}
             moduleSummary={{
               productType: activeFreeModule?.productType ?? null,
+              combinedLayout: activeFreeModule?.combinedLayout ?? null,
+              combinedComposition: activeFreeModule?.combinedComposition ?? null,
+              combinedRegionGeometry: activeFreeModule?.combinedRegionGeometry ?? null,
               productTypeLabel: MODULE_PRODUCT_TYPE_PRESETS.find((option) => option.id === activeFreeModule?.productType)?.labelBg ?? 'Не е зададен',
               widthMm: activeFreeModuleDraft?.frame.widthMm ?? null,
               heightMm: activeFreeModuleDraft?.frame.heightMm ?? null,
             }}
             onModuleProductTypeChange={activeFreeModule ? setActiveFreeModuleProductType : undefined}
+            onModuleCombinedLayoutChange={activeFreeModule ? setActiveFreeModuleCombinedLayout : undefined}
+            onCombinedCompositionChange={activeFreeModule ? setActiveFreeModuleCombinedComposition : undefined}
+            onCombinedRegionGeometryChange={activeFreeModule ? setActiveFreeModuleCombinedRegionGeometry : undefined}
             onSelectModule={selectFreeModule}
             onCreateModule={createNextFreeModule}
             onResetModule={resetActiveFreeModuleDraft}
@@ -1146,6 +1179,9 @@ export default function App() {
             }}
             moduleSummary={{
               productType: firstModule.productType,
+              combinedLayout: firstModule.combinedLayout ?? null,
+              combinedComposition: firstModule.combinedComposition ?? null,
+              combinedRegionGeometry: firstModule.combinedRegionGeometry ?? null,
               productTypeLabel:
                 MODULE_PRODUCT_TYPE_PRESETS.find(
                   (option) => option.id === firstModule.productType,
@@ -1166,10 +1202,21 @@ export default function App() {
             onModuleProductTypeChange={(productType) =>
               updateFirstModule({
                 productType,
+                combinedLayout: null,
+                combinedComposition: null,
                 customProductTypeLabel: '',
                 productTypeSource: productType === null ? 'unset' : 'constructor',
               })
             }
+            onModuleCombinedLayoutChange={(combinedLayout) => updateFirstModule({
+              combinedLayout: firstModule.productType === 'combined-door-window' ? combinedLayout : null,
+            })}
+            onCombinedCompositionChange={(combinedComposition) => updateFirstModule({
+              combinedComposition: firstModule.productType === 'combined-door-window' ? combinedComposition : null,
+            })}
+            onCombinedRegionGeometryChange={(combinedRegionGeometry) => updateFirstModule({
+              combinedRegionGeometry: firstModule.productType === 'combined-door-window' ? combinedRegionGeometry : null,
+            })}
             onFieldTopologyChange={syncFirstModuleFieldTopology}
             onClose={() => setConstructorMode(null)}
           />

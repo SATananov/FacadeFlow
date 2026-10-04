@@ -1,7 +1,10 @@
 import type { OfferModuleDefaults } from './offerModuleDefaults'
 import { isConstructionOpeningHandingRelevant } from './construction/constructionModel'
+import type { CombinedModuleComposition } from './combinedModuleComposition'
+import type { CombinedRegionGeometry } from './combinedRegionGeometry'
 
-export type ModuleProductType = 'window' | 'terrace-door' | 'door'
+export type ModuleProductType = 'window' | 'terrace-door' | 'door' | 'combined-door-window'
+export type CombinedModuleLayout = 'window-left' | 'window-right' | 'window-both'
 export type ModuleInputSource = 'unset' | 'preset' | 'manual' | 'constructor'
 export type ModuleFieldType = 'fixed' | 'operable'
 export type ModuleOpeningMode = 'side-hinged' | 'tilt' | 'tilt-turn' | 'top-hung' | 'side-hinged-top-hung'
@@ -11,8 +14,18 @@ export const MODULE_PRODUCT_TYPE_PRESETS = [
   { id: 'window', labelBg: 'Прозорец' },
   { id: 'terrace-door', labelBg: 'Терасна врата' },
   { id: 'door', labelBg: 'Врата' },
+  { id: 'combined-door-window', labelBg: 'Врата + прозорец' },
 ] as const satisfies readonly {
   id: ModuleProductType
+  labelBg: string
+}[]
+
+export const COMBINED_MODULE_LAYOUT_PRESETS = [
+  { id: 'window-left', labelBg: 'Прозорец отляво' },
+  { id: 'window-right', labelBg: 'Прозорец отдясно' },
+  { id: 'window-both', labelBg: 'Прозорци от двете страни' },
+] as const satisfies readonly {
+  id: CombinedModuleLayout
   labelBg: string
 }[]
 
@@ -215,6 +228,9 @@ export interface OfferModuleDraft {
   inheritedDefaults: OfferModuleDefaults
 
   productType: ModuleProductType | null
+  combinedLayout: CombinedModuleLayout | null
+  combinedComposition?: CombinedModuleComposition | null
+  combinedRegionGeometry?: CombinedRegionGeometry | null
   customProductTypeLabel: string
   productTypeSource: ModuleInputSource
 
@@ -253,6 +269,7 @@ export function createOfferModule(
     inheritedDefaults: { ...defaults },
 
     productType: null,
+    combinedLayout: null,
     customProductTypeLabel: '',
     productTypeSource: 'unset',
 

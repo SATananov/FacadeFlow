@@ -1,4 +1,4 @@
-import { MODULE_PRODUCT_TYPE_PRESETS } from '../domain/offerModules'
+import { MODULE_PRODUCT_TYPE_PRESETS, type ModuleProductType } from '../domain/offerModules'
 import { useState } from 'react'
 import { getProfileSystemById } from '../data/profileSystems/catalog'
 import type { CompositeFramePart, CompositeModuleStructure, FrameSides } from '../domain/compositeModuleStructure'
@@ -15,6 +15,7 @@ const sides: readonly { key: keyof FrameSides; label: string }[] = [
   { key: 'bottom', label: 'Долу' }, { key: 'left', label: 'Ляво' },
 ]
 const functionLabel = (value: CompositeFramePart['function']) => MODULE_PRODUCT_TYPE_PRESETS.find((option) => option.id === value)?.labelBg ?? 'Не е избрана функция'
+const compositeFunctionPresets = MODULE_PRODUCT_TYPE_PRESETS.filter((option): option is typeof option & { id: Exclude<ModuleProductType, 'combined-door-window'> } => option.id !== 'combined-door-window')
 const dimensionLabel = (value: number) => Number.isFinite(value) && value > 0 ? String(value) : 'не е въведено'
 
 export type CompositeModuleStructurePanelProps = {
@@ -98,9 +99,9 @@ export function CompositeModuleStructurePanel({ moduleNumber, systemId, initialV
                 <legend>Рамкова част {index + 1}</legend>
                 <label htmlFor={`composite-function-${part.id}`}>Функция</label>
                 <select id={`composite-function-${part.id}`} value={part.function ?? ''}
-                  onChange={(event) => updatePart(part.id, { function: MODULE_PRODUCT_TYPE_PRESETS.find((option) => option.id === event.target.value)?.id ?? null })}>
+                  onChange={(event) => updatePart(part.id, { function: compositeFunctionPresets.find((option) => option.id === event.target.value)?.id ?? null })}>
                   <option value="">Избери функция</option>
-                  {MODULE_PRODUCT_TYPE_PRESETS.map((option) => <option key={option.id} value={option.id}>{option.labelBg}</option>)}
+                  {compositeFunctionPresets.map((option) => <option key={option.id} value={option.id}>{option.labelBg}</option>)}
                 </select>
                 <label htmlFor={`composite-position-${part.id}`}>Позиция в модула</label>
                 <select id={`composite-position-${part.id}`} value={part.placement.order === null ? '' : 'current'}

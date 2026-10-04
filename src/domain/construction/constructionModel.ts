@@ -96,10 +96,24 @@ export type ConstructionFieldNode =
       first: ConstructionFieldNode
       second: ConstructionFieldNode
     }
+  | {
+      kind: 'semantic-split'
+      /** FIELD lineage before a semantic ZERO_DIVIDER boundary. */
+      field: ConstructionFieldDefinition
+      boundary: {
+        id: string
+        axis: 'vertical'
+        /** User-selected clear position. No physical width is consumed. */
+        offsetMm: number
+        kind: 'ZERO_DIVIDER'
+      }
+      first: ConstructionFieldNode
+      second: ConstructionFieldNode
+    }
 
 export type ConstructionModel = {
   /** Older 01C.1/01C.2 topologies remain readable; new 01C.3 drafts emit field-topology-03. */
-  version: 'field-topology-01' | 'field-topology-02' | 'field-topology-03' | 'field-topology-04' | 'field-topology-05' | 'field-topology-06' | 'field-topology-07'
+  version: 'field-topology-01' | 'field-topology-02' | 'field-topology-03' | 'field-topology-04' | 'field-topology-05' | 'field-topology-06' | 'field-topology-07' | 'field-topology-08'
   frame: ConstructionFrame
   /** Legacy drafts omit this and are read as a full four-sided frame. */
   frameEdges?: ConstructionFrameEdges
@@ -143,6 +157,17 @@ export type ResolvedConstructionDivider = {
   thicknessMm: number
   /** Optional physical face polygon when a normal divider is clipped by a polygon FIELD. */
   facePolygon?: ConstructionPoint[]
+}
+
+export type ResolvedSemanticBoundary = {
+  id: string
+  parentFieldId: string
+  axis: 'vertical'
+  positionMm: number
+  offsetMm: number
+  kind: 'ZERO_DIVIDER'
+  startMm: number
+  endMm: number
 }
 
 export type ResolvedConstructionAngledDivider = {
