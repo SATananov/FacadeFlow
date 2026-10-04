@@ -66,12 +66,24 @@ Escalate to multi-role review when touching:
 
 - Geometry/domain changes require Geometry Agent participation.
 - Drawing/sketch changes require Drawing Agent participation.
+- Technical drawing tasks (window/door/combined sketches, opening symbols, technical dimension placement, functional-region presentation, or ZERO_DIVIDER presentation) should consult `.ai/skills/technical-drawing/SKILL.md` and the Technical Drawing Specialist at `.ai/agents/TECHNICAL_DRAWING_SPECIALIST.md`. The specialist advises/reviews approved visual and semantic conventions; it is not an independent authority for production geometry and does not replace the single primary implementation owner.
+- Do not route unrelated implementation work through the Technical Drawing Specialist. Only VERIFIED or explicitly HUMAN-APPROVED visual/semantic rules may guide implementation; UNKNOWN and EXAMPLE ONLY facts remain non-authoritative.
 - Catalogue facts require Profile/Catalog Agent or Evidence Agent review.
 - UI workflow changes require UI/UX Agent participation.
 - Persistence/history changes require Orchestrator cross-domain handling and Verifier review.
 - Completed implementation always goes to Verifier Agent.
 - Human visual acceptance remains required for visual drawing changes.
 - Commit is separate from implementation acceptance.
+
+### F. Technical Drawing Knowledge or Review
+
+Expected routing:
+
+1. Orchestrator classifies whether the task concerns technical sketch conventions, opening-symbol presentation, dimensions, window/door semantics, combined regions, or ZERO_DIVIDER presentation.
+2. Select one primary implementation owner for the actual requested change. For knowledge-only work, the Orchestrator may own documentation coordination.
+3. Consult the Technical Drawing Specialist and `.ai/skills/technical-drawing/` for relevant approved conventions. The specialist is advisory and must classify conclusions using the evidence categories in that skill.
+4. Route geometry/domain implications to Geometry Agent and catalogue implications to Profile/Catalog or Evidence Agent; do not let visual references establish those facts.
+5. Verifier Agent independently checks the knowledge or implementation diff. Human visual acceptance remains required for visual drawing changes.
 
 ## Status Values
 
