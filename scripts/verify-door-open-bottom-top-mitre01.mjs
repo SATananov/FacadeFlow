@@ -29,4 +29,8 @@ for (const [corner, rotation] of [['tl', '45deg'], ['tr', '-45deg'], ['bl', '-45
   assert.equal(uniqueCssValue(rules, selector, corner.endsWith('l') ? 'left' : 'right'), '0')
   assert.equal(uniqueCssValue(rules, selector, corner.startsWith('t') ? 'top' : 'bottom'), '0')
 }
-console.log('MITRE SOURCE CONTRACT: two unconditional top joints; bottom joints require full frame. Rendering not exercised.')
+assert.equal(uniqueCssValue(rules, '.constructor-parametric-frame .constructor-frame-mitre', 'height'), '2px')
+assert.equal(uniqueCssValue(rules, '.constructor-parametric-frame .constructor-frame-mitre', 'z-index'), '12')
+assert.equal(uniqueCssValue(rules, '.constructor-parametric-frame .constructor-frame-mitre', 'background'), 'rgba(18, 34, 40, .98)')
+assert.match(uniqueCssValue(rules, '.constructor-parametric-frame .constructor-frame-mitre', 'box-shadow'), /rgba\(255, 255, 255, \.92\)/)
+console.log('MITRE SOURCE CONTRACT: two unconditional top joints; bottom joints require full frame; mitres use visible contrast strokes.')

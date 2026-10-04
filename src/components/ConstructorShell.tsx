@@ -306,6 +306,7 @@ type DragState =
 
 const MIN_VIEW_ZOOM = 25
 const MAX_VIEW_ZOOM = 200
+const PREFERRED_INITIAL_ZOOM = 50
 const SNAP_STEP_MM = 10
 const GRID_STEP_MM = 50
 const MAJOR_GRID_STEP_MM = 500
@@ -447,6 +448,9 @@ export default function ConstructorShell({
   const [doorViewOrientation, setDoorViewOrientation] = useState<DoorViewOrientation>(null)
   const [selectedSystemStandardId, setSelectedSystemStandardId] = useState('')
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>('properties')
+  const [moduleSetupExpanded, setModuleSetupExpanded] = useState(false)
+  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false)
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false)
   const [construction, setConstruction] = useState<ConstructionModel | null>(() =>
     isCompositeView ? null : getInitialConstruction(initialDraft, moduleSummary, initialFieldDescriptions),
   )
@@ -926,11 +930,20 @@ export default function ConstructorShell({
       availableHeightPx / targetFrame.height,
     )
 
-    const fittedZoom = Math.floor(clamp(
-      (fittedPxPerMm / BASE_PX_PER_MM) * 100,
-      MIN_VIEW_ZOOM,
-      Math.min(MAX_VIEW_ZOOM, 110),
-    ))
+    // INITIAL CANVAS SCALE 01: prefer a readable 50% working view when the
+    // measured canvas can accommodate the complete module. Larger modules use
+    // the same fit calculation below, reduced only as far as necessary.
+    const preferredScale = BASE_PX_PER_MM * (PREFERRED_INITIAL_ZOOM / 100)
+    const preferredFits =
+      targetFrame.width * preferredScale <= availableWidthPx &&
+      targetFrame.height * preferredScale <= availableHeightPx
+    const fittedZoom = preferredFits
+      ? PREFERRED_INITIAL_ZOOM
+      : Math.floor(clamp(
+          (fittedPxPerMm / BASE_PX_PER_MM) * 100,
+          MIN_VIEW_ZOOM,
+          PREFERRED_INITIAL_ZOOM,
+        ))
 
     setZoom(fittedZoom)
     const fittedScale = BASE_PX_PER_MM * (fittedZoom / 100)
@@ -2815,6 +2828,21 @@ export default function ConstructorShell({
     </div>
   )
 
+  const renderModuleSettingsContent = () => (
+    <>
+      {renderModuleProductTypeResolution()}
+      {moduleSummary.productType === 'door' && !isCompositeView && (
+        construction ? renderFrameTopologyResolution() : <p>След задаване на външните размери изберете изрично „П-образна каса“ или „Пълна каса“.</p>
+      )}
+      {moduleSummary.productType === 'terrace-door' && <div className="constructor-terrace-relationship" role="note">
+        <b>Нулев делител · структурна връзка</b>
+        <p>За комбинация прозорец / терасна врата използвайте „Структура на модула“ горе: задайте рамковите части и добавете „Нулев делител“ към страната на вратата.</p>
+        <p>Без обикновена видима ширина на връзката; не е 40 mm делител. Геометрията и каталожната съвместимост са НЕПОТВЪРДЕНИ (NOT VERIFIED). Не се добавят профили или панти.</p>
+        <small>При съществуваща скица приложението предлага отделен модул, за да я запази.</small>
+      </div>}
+    </>
+  )
+
   const renderContextCheck = () => {
     if (!canEditConstruction) return <p>Няма модул за проверка.</p>
     const issues: string[] = []
@@ -2863,8 +2891,26 @@ export default function ConstructorShell({
     </>
   )
 
+  const renderPanelToggle = (panel: 'left' | 'right', collapsed: boolean, onToggle: () => void) => (
+    <button
+      type="button"
+      className={`constructor-panel-toggle constructor-panel-toggle-${panel}`}
+      aria-expanded={!collapsed}
+      aria-controls={panel === 'left' ? 'constructor-tools-panel' : 'constructor-properties-panel'}
+      aria-label={panel === 'left'
+        ? (collapsed ? 'Покажи инструментите' : 'Скрий инструментите')
+        : (collapsed ? 'Покажи панела с данни' : 'Скрий панела с данни')}
+      title={panel === 'left'
+        ? (collapsed ? 'Покажи инструментите' : 'Скрий инструментите')
+        : (collapsed ? 'Покажи панела с данни' : 'Скрий панела с данни')}
+      onClick={onToggle}
+    >
+      {panel === 'left' ? (collapsed ? '›' : '‹') : (collapsed ? '‹' : '›')}
+    </button>
+  )
+
   return (
-    <section className={`constructor-shell${showModuleStrip ? ' has-module-navigation' : ''}${!isCompositeView && pendingInitialFieldDescriptions.length > 0 ? ' has-form-field-handoff' : ''}`} aria-label={`FacadeFlow Конструктор · ${title}`}>
+    <section className={`constructor-shell${showModuleStrip ? ' has-module-navigation' : ''}${hasActiveModule ? ' has-active-module' : ''}${hasActiveModule && !moduleSetupExpanded ? ' is-setup-collapsed' : ''}${!isCompositeView && pendingInitialFieldDescriptions.length > 0 ? ' has-form-field-handoff' : ''}`} aria-label={`FacadeFlow Конструктор · ${title}`}>
       <header className="constructor-topbar">
         <div className="constructor-title-block">
           <button type="button" className="constructor-back" onClick={onClose}>
@@ -2919,18 +2965,11 @@ export default function ConstructorShell({
           </div>
           <div className="constructor-draft-chip">ЧЕРНОВА</div>
         </div>
-        <div className="constructor-module-type-bar">
-          {renderModuleProductTypeResolution()}
-          {moduleSummary.productType === 'door' && !isCompositeView && (
-            construction ? renderFrameTopologyResolution() : <p>След задаване на външните размери изберете изрично „П-образна каса“ или „Пълна каса“.</p>
-          )}
-          {moduleSummary.productType === 'terrace-door' && <div className="constructor-terrace-relationship" role="note">
-            <b>Нулев делител · структурна връзка</b>
-            <p>За комбинация прозорец / терасна врата използвайте „Структура на модула“ горе: задайте рамковите части и добавете „Нулев делител“ към страната на вратата.</p>
-            <p>Без обикновена видима ширина на връзката; не е 40 mm делител. Геометрията и каталожната съвместимост са НЕПОТВЪРДЕНИ (NOT VERIFIED). Не се добавят профили или панти.</p>
-            <small>При съществуваща скица приложението предлага отделен модул, за да я запази.</small>
-          </div>}
-        </div>
+        {(!hasActiveModule || !moduleSetupExpanded) && (
+          <div className="constructor-module-type-bar">
+            {renderModuleSettingsContent()}
+          </div>
+        )}
       </header>
 
       {showModuleStrip && (
@@ -2965,6 +3004,14 @@ export default function ConstructorShell({
                 onClick={onCreateModule}
               >
                 + Нов модул
+              </button>
+              <button
+                type="button"
+                className="constructor-module-settings-toggle"
+                aria-expanded={moduleSetupExpanded}
+                onClick={() => setModuleSetupExpanded((current) => !current)}
+              >
+                {moduleSetupExpanded ? 'Скрий настройки' : 'Настройки на модула'}
               </button>
             </>
           ) : (
@@ -3086,13 +3133,15 @@ export default function ConstructorShell({
         </div>
       </div>
 
-      <div className="constructor-layout is-context-workflow">
-        {isCompositeView ? <aside className="constructor-tools-panel composite-sketch-details" aria-label="Структурна скица">
+      <div className={`constructor-layout is-context-workflow${leftPanelCollapsed ? ' is-left-panel-collapsed' : ''}${rightPanelCollapsed ? ' is-right-panel-collapsed' : ''}`}>
+        {isCompositeView ? <aside id="constructor-tools-panel" className={`constructor-tools-panel composite-sketch-details${leftPanelCollapsed ? ' is-panel-collapsed' : ''}`} aria-label="Структурна скица">
+          {renderPanelToggle('left', leftPanelCollapsed, () => setLeftPanelCollapsed((current) => !current))}
           <b>САМО ПРЕГЛЕД</b>
           <p>Редактирай рамковите части от „Структура на модула“.</p>
             <p>Използвай „Панорама“, мащаба и „Побери“ за преглед.</p>
             <p>Мащабът е условен. Разстоянията в скицата не се измерват по CAD мрежа в mm.</p>
-        </aside> : <aside className="constructor-tools-panel" aria-label="Инструменти за конструкция">
+        </aside> : <aside id="constructor-tools-panel" className={`constructor-tools-panel${leftPanelCollapsed ? ' is-panel-collapsed' : ''}`} aria-label="Инструменти за конструкция">
+          {renderPanelToggle('left', leftPanelCollapsed, () => setLeftPanelCollapsed((current) => !current))}
           <div className="constructor-panel-heading">
             <span>ИНСТРУМЕНТИ</span>
             <b>Конструкция</b>
@@ -3236,13 +3285,6 @@ export default function ConstructorShell({
               </span>
             </button>
 
-            <button type="button" disabled>
-              <span className="constructor-tool-glyph" aria-hidden="true">{renderConstructorToolIcon('door')}</span>
-              <span>
-                <b>Врата</b>
-                <small>следващ етап</small>
-              </span>
-            </button>
           </div>
 
           <div className="constructor-history-actions">
@@ -3961,7 +4003,8 @@ export default function ConstructorShell({
           </footer>}
         </section>
 
-        {compositeProjection ? <aside className="constructor-properties-panel composite-sketch-details" aria-label="Данни за структурната скица">
+        {compositeProjection ? <aside id="constructor-properties-panel" className={`constructor-properties-panel composite-sketch-details${rightPanelCollapsed ? ' is-panel-collapsed' : ''}`} aria-label="Данни за структурната скица">
+          {renderPanelToggle('right', rightPanelCollapsed, () => setRightPanelCollapsed((current) => !current))}
           <b>МОДУЛ {moduleNumber}</b>
           <p>Номинални размери на рамковите части</p>
           {compositeProjection.status === 'ready' && <ul>{compositeProjection.parts.map((part) => <li key={part.id}>
@@ -3969,22 +4012,38 @@ export default function ConstructorShell({
           </li>)}</ul>}
           <p>Разстоянията и пунктирните връзки са условни. Точната връзка между рамките изисква човешки преглед.</p>
           <small>Скицата не е готова за производство.</small>
-        </aside> : <aside className="constructor-properties-panel constructor-context-inspector" aria-label="Данни за избраното" data-context={selectedField ? 'field' : selectedDivider ? 'divider' : selectedAngledDivider ? 'angled-divider' : 'module'}>
-          <header className="constructor-context-heading">
-            <span>ИЗБРАНО</span>
-            <h2>{selectedElementTitle}</h2>
-            <small>{selectedElementMeta}</small>
-            {!isModuleContext && <button type="button" className="constructor-context-link" onClick={selectModuleContext}>Към Модул {moduleNumber}</button>}
-          </header>
-          <section className="constructor-context-data" aria-label="Данни">
-            <h3>ДАННИ</h3>
-            {canEditConstruction ? inspectorTabsAndPane : <p className="constructor-context-hint">Създай модул от лентата над чертежа.</p>}
-          </section>
-          <section className="constructor-context-check" aria-label="Проверка">
-            <h3>ПРОВЕРКА</h3>
-            {renderContextCheck()}
-            <small>Скицата не е готова за производство.</small>
-          </section>
+        </aside> : <aside id="constructor-properties-panel" className={`constructor-properties-panel constructor-context-inspector${rightPanelCollapsed ? ' is-panel-collapsed' : ''}`} aria-label="Данни за избраното" data-context={selectedField ? 'field' : selectedDivider ? 'divider' : selectedAngledDivider ? 'angled-divider' : 'module'}>
+          {renderPanelToggle('right', rightPanelCollapsed, () => setRightPanelCollapsed((current) => !current))}
+          {hasActiveModule && moduleSetupExpanded ? (
+            <section className="constructor-module-settings-drawer" aria-label="Настройки на модула">
+              <header className="constructor-module-settings-heading">
+                <div>
+                  <span>НАСТРОЙКИ НА МОДУЛА</span>
+                  <h2>Модул {moduleNumber}</h2>
+                </div>
+                <button type="button" onClick={() => setModuleSetupExpanded(false)}>Затвори</button>
+              </header>
+              <div className="constructor-module-settings-content">
+                {renderModuleSettingsContent()}
+              </div>
+            </section>
+          ) : <>
+            <header className="constructor-context-heading">
+              <span>ИЗБРАНО</span>
+              <h2>{selectedElementTitle}</h2>
+              <small>{selectedElementMeta}</small>
+              {!isModuleContext && <button type="button" className="constructor-context-link" onClick={selectModuleContext}>Към Модул {moduleNumber}</button>}
+            </header>
+            <section className="constructor-context-data" aria-label="Данни">
+              <h3>ДАННИ</h3>
+              {canEditConstruction ? inspectorTabsAndPane : <p className="constructor-context-hint">Създай модул от лентата над чертежа.</p>}
+            </section>
+            <section className="constructor-context-check" aria-label="Проверка">
+              <h3>ПРОВЕРКА</h3>
+              {renderContextCheck()}
+              <small>Скицата не е готова за производство.</small>
+            </section>
+          </>}
         </aside>}
       </div>
     </section>

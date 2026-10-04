@@ -5226,8 +5226,10 @@
   position: absolute;
   z-index: 2;
   display: block;
-  background: #e4e9eb;
-  box-shadow: inset 0 0 0 1px rgba(70, 83, 88, .95);
+  background: linear-gradient(180deg, #f6f8f8 0%, #dce4e6 100%);
+  box-shadow:
+    inset 0 0 0 1.35px rgba(42, 60, 66, .98),
+    inset 0 0 0 3px rgba(255, 255, 255, .82);
   pointer-events: none;
 }
 
@@ -5236,6 +5238,7 @@
   top: 0;
   bottom: 0;
   width: var(--constructor-frame-face, 18px);
+  background: linear-gradient(90deg, #f8faf9 0%, #dce5e7 100%);
 }
 
 .constructor-frame-edge-face.edge-face-right {
@@ -5243,6 +5246,7 @@
   top: 0;
   bottom: 0;
   width: var(--constructor-frame-face, 18px);
+  background: linear-gradient(270deg, #f8faf9 0%, #dce5e7 100%);
 }
 
 .constructor-frame-edge-face.edge-face-top {
@@ -5250,6 +5254,7 @@
   right: 0;
   top: 0;
   height: var(--constructor-frame-face, 18px);
+  background: linear-gradient(180deg, #f8faf9 0%, #dce5e7 100%);
 }
 
 .constructor-frame-edge-face.edge-face-bottom {
@@ -5257,6 +5262,7 @@
   right: 0;
   bottom: 0;
   height: var(--constructor-frame-face, 18px);
+  background: linear-gradient(0deg, #f8faf9 0%, #dce5e7 100%);
 }
 
 .constructor-frame-threshold-placeholder {
@@ -5323,10 +5329,13 @@
  * This is presentation only: it does not assert machining/joint validation. */
 .constructor-parametric-frame .constructor-frame-mitre {
   position: absolute;
-  z-index: 4;
+  z-index: 12;
   width: calc(var(--constructor-frame-face, 18px) * 1.414214);
-  height: 1px;
-  background: rgba(43, 67, 74, .88);
+  height: 2px;
+  background: rgba(18, 34, 40, .98);
+  box-shadow:
+    0 -1px 0 rgba(255, 255, 255, .92),
+    0 1px 0 rgba(255, 255, 255, .72);
   pointer-events: none;
 }
 
@@ -5710,7 +5719,13 @@
 /* DOOR LEAF / P-FRAME VISUAL SEMANTICS 01.
    Display pixels only, unrelated to catalogue dimensions, floor level or rebate.
    AUTOMATIC GEOMETRY = NO; RULES VALIDATED = NO; MACHINE READY = NO. */
-.is-door-leaf { --door-leaf-bottom-space: -4px; }
+.is-door-leaf {
+  --door-leaf-bottom-space: -4px;
+  --door-leaf-outer-overlap: 4px;
+  --door-leaf-inner-face: 14px;
+  --door-leaf-inner-offset: var(--door-leaf-inner-face);
+  --door-leaf-inner-bottom-offset: calc(var(--door-leaf-bottom-space) + var(--door-leaf-inner-face));
+}
 .door-leaf-bottom-none { --door-leaf-bottom-space: 14px; }
 .door-leaf-bottom-threshold { --door-leaf-bottom-space: 36px; }
 
@@ -5722,28 +5737,42 @@
 }
 
 .constructor-field-surface.is-door-leaf .constructor-sash-profile-visual {
-  inset: -4px -4px var(--door-leaf-bottom-space);
+  inset: calc(-1 * var(--door-leaf-outer-overlap)) calc(-1 * var(--door-leaf-outer-overlap)) var(--door-leaf-bottom-space);
   opacity: 1;
-  background: #f7f9f9;
+  border: 1.6px solid rgba(22, 38, 44, .98);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .95), rgba(213, 224, 227, .98));
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, .9),
+    inset 0 0 0 3px rgba(255, 255, 255, .72),
+    inset 0 0 0 var(--door-leaf-inner-face) rgba(238, 243, 244, .98),
+    inset 0 0 0 calc(var(--door-leaf-inner-face) + 1.6px) rgba(29, 48, 55, .94);
 }
 
 .constructor-field-surface.is-door-leaf .sash-profile-inner {
-  inset: 14px;
-  background: #dbf0f4;
+  inset: var(--door-leaf-inner-face);
+  border: 1.45px solid rgba(22, 44, 52, .94);
+  background: rgba(213, 238, 244, .96);
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, .82),
+    inset 0 0 0 1px rgba(255, 255, 255, .72);
 }
 
 .constructor-field-surface.is-door-leaf .constructor-operable-visual {
-  left: 14px;
-  right: 14px;
-  width: calc(100% - 28px);
-  bottom: calc(15px + var(--door-leaf-bottom-space));
-  height: calc(100% - var(--constructor-opening-inset, 11px) - 15px - var(--door-leaf-bottom-space));
+  top: var(--door-leaf-inner-offset);
+  left: var(--door-leaf-inner-offset);
+  right: var(--door-leaf-inner-offset);
+  bottom: var(--door-leaf-inner-bottom-offset);
+  width: auto;
+  height: auto;
 }
 
 .constructor-operable-sash-priority.is-door-leaf { z-index: 10; }
 .constructor-operable-sash-priority.is-door-leaf::before {
-  inset: -4px -4px var(--door-leaf-bottom-space);
-  box-shadow: inset 0 0 0 14px #f7f9f9, inset 0 0 0 15.15px #37464b;
+  inset: calc(-1 * var(--door-leaf-outer-overlap)) calc(-1 * var(--door-leaf-outer-overlap)) var(--door-leaf-bottom-space);
+  box-shadow:
+    inset 0 0 0 var(--door-leaf-inner-face) rgba(248, 250, 250, .98),
+    inset 0 0 0 calc(var(--door-leaf-inner-face) + 1.5px) rgba(29, 48, 55, .96);
   filter: none;
 }
 
@@ -5769,30 +5798,40 @@
 
 /* Give only threshold door leaves a slightly stronger screen-space overlap on
    the surrounding frame. Keep the existing bottom gap and threshold graphic. */
-.constructor-field-surface.is-door-leaf.door-leaf-bottom-threshold .constructor-sash-profile-visual {
-  inset: -6px -6px var(--door-leaf-bottom-space);
-}
-
-.constructor-operable-sash-priority.is-door-leaf.door-leaf-bottom-threshold::before {
-  inset: -6px -6px var(--door-leaf-bottom-space);
+.constructor-field-surface.is-door-leaf.door-leaf-bottom-threshold,
+.constructor-operable-sash-priority.is-door-leaf.door-leaf-bottom-threshold {
+  --door-leaf-outer-overlap: 6px;
 }
 
 /* DOOR VIEW SEMANTICS 02: all insets are screen pixels, never profile dimensions. */
-.is-door-view-outside .constructor-field-surface.is-door-leaf .constructor-sash-profile-visual,
-.constructor-field-surface.is-door-leaf.is-door-view-outside .constructor-sash-profile-visual {
-  inset: -10px -10px var(--door-leaf-bottom-space);
+.is-door-view-outside .constructor-field-surface.is-door-leaf,
+.constructor-field-surface.is-door-leaf.is-door-view-outside,
+.constructor-operable-sash-priority.is-door-leaf.is-door-view-outside {
+  --door-outside-leaf-overlap: 9px;
+  --door-leaf-outer-overlap: var(--door-outside-leaf-overlap);
 }
 
-.constructor-field-surface.is-door-leaf.is-door-view-inside .constructor-sash-profile-visual {
-  inset: 0 0 var(--door-leaf-bottom-space);
+.is-door-view-inside .constructor-field-surface.is-door-leaf,
+.constructor-field-surface.is-door-leaf.is-door-view-inside,
+.constructor-operable-sash-priority.is-door-leaf.is-door-view-inside {
+  --door-leaf-outer-overlap: 0px;
+}
+
+.is-door-view-outside .constructor-field-surface.is-door-leaf .constructor-sash-profile-visual,
+.constructor-field-surface.is-door-leaf.is-door-view-outside .constructor-sash-profile-visual {
+  border-color: rgba(33, 48, 54, .98);
+  box-shadow:
+    0 2px 6px rgba(35, 53, 61, .24),
+    0 0 0 1px rgba(255, 255, 255, .9),
+    inset 0 0 0 3px rgba(255, 255, 255, .72),
+    inset 0 0 0 var(--door-leaf-inner-face) rgba(238, 243, 244, .98),
+    inset 0 0 0 calc(var(--door-leaf-inner-face) + 1.6px) rgba(29, 48, 55, .94);
 }
 
 .constructor-operable-sash-priority.is-door-leaf.is-door-view-outside::before {
-  inset: -10px -10px var(--door-leaf-bottom-space);
-}
-
-.constructor-operable-sash-priority.is-door-leaf.is-door-view-inside::before {
-  inset: 0 0 var(--door-leaf-bottom-space);
+  box-shadow:
+    inset 0 0 0 var(--door-leaf-inner-face) rgba(247, 249, 249, .98),
+    inset 0 0 0 calc(var(--door-leaf-inner-face) + 1.25px) rgba(55, 70, 75, .96);
 }
 
 .constructor-field-surface.is-door-leaf.is-door-view-outside.door-leaf-bottom-threshold,
@@ -5817,19 +5856,403 @@
 
 /* DOOR VIEW MINI POLISH 01: screen-space profile and corner readability only. */
 .constructor-field-surface.is-door-leaf .constructor-sash-profile-visual .sash-profile-mitre {
-  z-index: 3;
-  height: 1.25px;
-  background: rgba(55, 70, 75, .92);
-}
-
-.constructor-field-surface.is-door-leaf.is-door-view-outside .constructor-operable-visual {
-  /* Outside sash outer edge is 10px beyond the field; its inner contour is 14px inward. */
-  left: 4px;
-  right: 4px;
-  width: calc(100% - 8px);
+  z-index: 6;
+  width: calc(var(--door-leaf-inner-face) * 1.414214);
+  height: 2px;
+  background: rgba(16, 32, 38, .98);
+  box-shadow:
+    0 -1px 0 rgba(255, 255, 255, .92),
+    0 1px 0 rgba(255, 255, 255, .7);
 }
 
 .constructor-field-surface.is-door-leaf.is-door-view-outside.door-leaf-bottom-frame,
 .constructor-operable-sash-priority.is-door-leaf.is-door-view-outside.door-leaf-bottom-frame {
-  --door-leaf-bottom-space: -10px;
+  --door-leaf-bottom-space: calc(-1 * var(--door-outside-leaf-overlap));
+}
+
+/* CONSTRUCTOR WORKSPACE LAYOUT 01.
+ * Keep the constructor inside the available desktop viewport. The canvas owns
+ * the remaining space while the side panels own their long-content scrolling.
+ * UI layout only: no sketch, topology, geometry, persistence, or history data
+ * is changed here. */
+@media (min-width: 821px) {
+  .constructor-host {
+    box-sizing: border-box;
+    height: calc(100vh - 140px);
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .constructor-shell {
+    box-sizing: border-box;
+    height: 100%;
+    min-height: 0;
+    grid-template-rows: auto auto minmax(0, 1fr);
+  }
+
+  .constructor-shell.has-module-navigation {
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+  }
+
+  .constructor-shell.has-form-field-handoff {
+    grid-template-rows: auto auto auto auto minmax(0, 1fr);
+  }
+
+  .constructor-shell.has-module-navigation.has-form-field-handoff {
+    grid-template-rows: auto auto auto auto minmax(0, 1fr);
+  }
+
+  .constructor-shell:not(.has-active-module) .constructor-module-type-bar,
+  .constructor-shell.is-setup-collapsed .constructor-module-type-bar {
+    display: none;
+  }
+
+  .constructor-shell.is-setup-collapsed {
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+  }
+
+  .constructor-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+  }
+
+  .constructor-layout,
+  .constructor-workarea,
+  .constructor-tools-panel,
+  .constructor-properties-panel {
+    min-height: 0;
+  }
+
+  .constructor-module-settings-toggle {
+    min-height: 29px;
+    padding: 0 10px;
+    border: 1px solid #b7cbd0;
+    border-radius: 5px;
+    background: #f7fbfb;
+    color: #41636b;
+    font-size: 10px;
+    font-weight: 800;
+  }
+
+.constructor-module-settings-toggle:hover {
+  border-color: #3e98a9;
+  background: #eef9fa;
+}
+
+.constructor-module-settings-drawer {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 2px 0;
+}
+
+.constructor-module-settings-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #c8dadd;
+}
+
+.constructor-module-settings-heading span {
+  color: #637e85;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.constructor-module-settings-heading h2 {
+  margin: 5px 0 0;
+  color: #27454d;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.constructor-module-settings-heading button {
+  flex: 0 0 auto;
+  min-height: 29px;
+  padding: 0 9px;
+  border: 1px solid #b7cbd0;
+  border-radius: 5px;
+  background: #f7fbfb;
+  color: #41636b;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.constructor-module-settings-heading button:hover {
+  border-color: #3e98a9;
+  background: #eef9fa;
+}
+
+.constructor-module-settings-content {
+  min-width: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.constructor-module-settings-content > .constructor-field-semantic-controls,
+.constructor-module-settings-content > .constructor-terrace-relationship {
+  min-width: 0;
+}
+
+.constructor-module-settings-content .constructor-field-semantic-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.constructor-module-settings-content .constructor-field-semantic-buttons button {
+  min-height: 32px;
+  padding: 6px 10px;
+}
+
+.constructor-module-settings-content small,
+.constructor-module-settings-content p {
+  overflow-wrap: anywhere;
+}
+}
+
+@media (max-width: 1180px) and (min-width: 821px) {
+  .constructor-host {
+    height: calc(100vh - 178px);
+  }
+}
+
+@media (max-width: 820px) {
+  .constructor-module-settings-toggle {
+    width: 100%;
+  }
+}
+
+/* CONSTRUCTOR WORKSPACE LAYOUT 01.1.
+ * Keep the inspector readable at narrower desktop widths and make its
+ * sections participate in one predictable scroll flow. The canvas remains
+ * the flexible track; no drawing or construction values are changed. */
+@media (min-width: 821px) {
+  .constructor-layout {
+    grid-template-columns: 192px minmax(0, 1fr) minmax(300px, 320px);
+  }
+
+  .constructor-context-inspector {
+    box-sizing: border-box;
+    min-width: 0;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+  }
+
+  .constructor-context-inspector > * {
+    flex: 0 0 auto;
+    min-width: 0;
+  }
+
+  .constructor-context-data,
+  .constructor-context-check {
+    min-width: 0;
+  }
+
+  .constructor-context-data > h3,
+  .constructor-context-check > h3 {
+    margin: 0 0 9px;
+  }
+
+  .constructor-context-inspector .constructor-inspector-tabs {
+    flex: 0 0 auto;
+    min-height: 31px;
+  }
+
+  .constructor-context-inspector .constructor-inspector-pane {
+    min-width: 0;
+    padding-top: 12px;
+    overflow: visible;
+  }
+
+  .constructor-context-check {
+    margin-top: 4px;
+    padding-top: 13px;
+  }
+
+  .constructor-context-inspector .constructor-property-row,
+  .constructor-context-inspector .constructor-component-resolution-stack,
+  .constructor-context-inspector .constructor-profile-resolution-control,
+  .constructor-context-inspector .constructor-system-model-facts {
+    min-width: 0;
+  }
+
+  .constructor-context-inspector .constructor-property-row b,
+  .constructor-context-inspector small,
+  .constructor-context-inspector p,
+  .constructor-context-inspector li {
+    overflow-wrap: anywhere;
+  }
+
+  .constructor-frame-start-hint {
+    box-sizing: border-box;
+    width: min(410px, calc(100% - 24px));
+    max-height: none;
+    padding: clamp(14px, 2.2vw, 24px);
+    gap: clamp(5px, 1vh, 7px);
+    overflow: visible;
+  }
+
+  .constructor-workarea:has(.constructor-frame-start-hint) {
+    --constructor-cad-bottom: 28px;
+  }
+}
+
+@media (max-width: 1120px) and (min-width: 821px) {
+  .constructor-layout {
+    grid-template-columns: 176px minmax(0, 1fr) minmax(292px, 31vw);
+  }
+}
+
+/* CONSTRUCTOR COLLAPSIBLE SIDE PANELS 01.
+ * UI-only rails release grid width to the canvas. Panel content stays mounted
+ * so selection, active tool, inspector tab, and technical state are preserved. */
+@media (min-width: 821px) {
+  .constructor-layout.is-left-panel-collapsed {
+    grid-template-columns: 34px minmax(0, 1fr) minmax(300px, 320px);
+  }
+
+  .constructor-layout.is-right-panel-collapsed {
+    grid-template-columns: 192px minmax(0, 1fr) 34px;
+  }
+
+  .constructor-layout.is-left-panel-collapsed.is-right-panel-collapsed {
+    grid-template-columns: 34px minmax(0, 1fr) 34px;
+  }
+
+  .constructor-tools-panel,
+  .constructor-properties-panel {
+    position: relative;
+  }
+
+  .constructor-tools-panel.is-panel-collapsed,
+  .constructor-properties-panel.is-panel-collapsed {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .constructor-tools-panel.is-panel-collapsed > :not(.constructor-panel-toggle),
+  .constructor-properties-panel.is-panel-collapsed > :not(.constructor-panel-toggle) {
+    display: none;
+  }
+
+  .constructor-panel-toggle {
+    position: absolute;
+    z-index: 25;
+    top: 50%;
+    width: 24px;
+    min-width: 24px;
+    height: 48px;
+    padding: 0;
+    transform: translateY(-50%);
+    border: 1px solid #9eb9bf;
+    border-radius: 5px;
+    background: #f6fbfc;
+    color: #287888;
+    font-size: 21px;
+    font-weight: 700;
+    line-height: 1;
+    box-shadow: 0 3px 10px rgba(35, 76, 85, .16);
+    cursor: pointer;
+  }
+
+  .constructor-panel-toggle:hover {
+    border-color: #2d95a7;
+    background: #e7f6f8;
+    color: #086e80;
+  }
+
+  .constructor-panel-toggle:focus-visible {
+    outline: 2px solid #0d9caf;
+    outline-offset: 2px;
+  }
+
+  .constructor-panel-toggle-left {
+    right: 0;
+  }
+
+  .constructor-panel-toggle-right {
+    left: 0;
+  }
+
+  .constructor-tools-panel.is-panel-collapsed .constructor-panel-toggle-left {
+    right: 50%;
+    transform: translate(50%, -50%);
+  }
+
+  .constructor-properties-panel.is-panel-collapsed .constructor-panel-toggle-right {
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+}
+
+@media (max-width: 1120px) and (min-width: 821px) {
+  .constructor-layout.is-left-panel-collapsed {
+    grid-template-columns: 34px minmax(0, 1fr) minmax(292px, 31vw);
+  }
+
+  .constructor-layout.is-right-panel-collapsed {
+    grid-template-columns: 176px minmax(0, 1fr) 34px;
+  }
+}
+
+/* MODULE FULLSCREEN WORKSPACE 01.
+ * Compact the existing constructor chrome when App enters module-edit mode;
+ * drawing, viewport state, and all technical data remain unchanged. */
+.app-shell.is-module-workspace .constructor-shell {
+  height: 100%;
+  min-height: 0;
+  border-radius: 0;
+}
+
+.app-shell.is-module-workspace .constructor-topbar {
+  min-height: 58px;
+  padding: 7px 12px;
+  flex-wrap: nowrap;
+  gap: 12px;
+}
+
+.app-shell.is-module-workspace .constructor-context-breadcrumb,
+.app-shell.is-module-workspace .constructor-title-block p {
+  display: none;
+}
+
+.app-shell.is-module-workspace .constructor-title-block {
+  min-width: 0;
+  flex: 1 1 auto;
+  gap: 10px;
+}
+
+.app-shell.is-module-workspace .constructor-title-block h2 {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin: 1px 0 0;
+  font-size: 16px;
+}
+
+.app-shell.is-module-workspace .constructor-back {
+  min-height: 34px;
+}
+
+.app-shell.is-module-workspace .constructor-topbar-meta {
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.app-shell.is-module-workspace .constructor-topbar-meta > div:not(.constructor-context-card):not(.constructor-draft-chip) {
+  display: none;
+}
+
+.app-shell.is-module-workspace .constructor-topbar-meta > .constructor-context-card {
+  min-width: 150px;
+  padding: 6px 8px;
 }

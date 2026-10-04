@@ -3866,3 +3866,24 @@
     width: 100%;
   }
 }
+
+/* MODULE FULLSCREEN WORKSPACE 01.
+ * The module editor is an in-app presentation mode, not a new route or a
+ * persisted project fact. Global chrome yields its viewport to the constructor
+ * only while an active module is being edited. */
+.app-shell.is-module-workspace {
+  min-height: 100vh;
+}
+
+.app-shell.is-module-workspace .app-header,
+.app-shell.is-module-workspace .project-persistence {
+  display: none;
+}
+
+.app-shell.is-module-workspace .constructor-host {
+  box-sizing: border-box;
+  height: 100vh;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}

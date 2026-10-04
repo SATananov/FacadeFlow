@@ -17,7 +17,7 @@ assert.doesNotMatch(sashContrastOverrides, /^\s*(?:inset|left|top|right|bottom|w
 assert.doesNotMatch(finalVisualOverrides, /\.is-fixed|\.is-selected/)
 assert.match(finalVisualOverrides, /\.constructor-operable-sash-priority \{[\s\S]*?z-index: 8;[\s\S]*?pointer-events: none;/)
 assert.match(finalVisualOverrides, /\.constructor-operable-sash-priority::before \{[\s\S]*?inset: 1px;[\s\S]*?border: 1\.25px solid rgba\(38, 53, 58, \.98\);[\s\S]*?box-shadow:[\s\S]*?inset 0 0 0 10px #f7f9f9,[\s\S]*?inset 0 0 0 11\.15px rgba\(55, 70, 75, \.98\);[\s\S]*?filter: drop-shadow\(0 0 1\.25px rgba\(248, 250, 250, \.98\)\);/)
-assert.match(component, /className="constructor-operable-sash-priority"/)
+assert.match(component, /className=\{`constructor-operable-sash-priority \$\{doorLeafVisualClass\(/)
 
 // Historical checks for intermediate declarations were superseded by later CSS cascade blocks.
 // Verify that the final package adds contrast only, while keeping current SVG data gates intact.

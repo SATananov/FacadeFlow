@@ -823,6 +823,9 @@ export default function App() {
   const compositeOwner = compositeOwnerId ? workspace.snapshot.modulesById[compositeOwnerId] : undefined
   const compositeEditing = compositeOwner && compositeEditor?.projectId === workspace.snapshot.project.id
     && compositeEditor.moduleId === compositeOwner.id ? compositeOwner : null
+  const moduleWorkspaceActive = !compositeEditing && constructorMode !== null && Boolean(
+    constructorMode === 'free' ? activeFreeModule : firstModule,
+  )
   const hasFreeConstructorWork = projectActivity.hasFreeWork
   const hasOfferConstructorWork = modules.length > 0
   const hasOfferProjectWork = projectActivity.hasOfferWork
@@ -912,7 +915,7 @@ export default function App() {
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${moduleWorkspaceActive ? ' is-module-workspace' : ''}`}>
       <header className="app-header">
         <div className="header-primary">
           <div className="brand-lockup">

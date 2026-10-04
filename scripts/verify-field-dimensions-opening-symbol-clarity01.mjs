@@ -6,6 +6,7 @@ import { readSource, nodes, code, callNames, hasJsxClass, cssRules, uniqueCssVal
 const shell = readSource(new URL('../src/components/ConstructorShell.tsx', import.meta.url))
 const layoutPath = new URL('../src/components/fieldDimensionLabel.ts', import.meta.url)
 const layout = readSource(layoutPath)
+const cssText = fs.readFileSync(new URL('../src/components/ConstructorShell.css', import.meta.url), 'utf8')
 const rules = cssRules(new URL('../src/components/ConstructorShell.css', import.meta.url))
 const variable = (source, name) => {
   const matches = nodes(source, (node) => ts.isVariableDeclaration(node) && node.name.getText() === name)
@@ -41,6 +42,9 @@ assert.equal(uniqueCssValue(rules, '.constructor-field-surface.is-operable .cons
 assert.equal(uniqueCssValue(rules, '.constructor-field-surface.is-operable .constructor-operable-visual .opening-tilt', 'stroke-dasharray'), '2.4 2.2')
 assert.equal(uniqueCssValue(rules, '.constructor-field-surface.is-operable .constructor-operable-visual.mode-tilt .opening-tilt', 'stroke-dasharray'), '2.4 2.2')
 assert.equal(uniqueCssValue(rules, '.constructor-field-surface.is-operable .constructor-operable-visual .opening-top-hung', 'stroke-dasharray'), '4 2')
+assert.equal(uniqueCssValue(rules, '.is-door-leaf', '--door-leaf-inner-offset'), 'var(--door-leaf-inner-face)')
+assert.ok(!cssText.includes('--door-leaf-inner-offset: calc(var(--door-leaf-inner-face) - var(--door-leaf-outer-overlap))'),
+  'Door opening symbol inner contour must not depend on visual overlap')
 assert.equal(uniqueCssValue(rules, '.constructor-operable-sash-priority', 'z-index'), '8')
 assert.equal(uniqueCssValue(rules, '.constructor-operable-sash-priority', 'pointer-events'), 'none')
 assert.equal(uniqueCssValue(rules, '.constructor-operable-sash-priority::before', 'border'), '1.25px solid rgba(38, 53, 58, .98)')
