@@ -308,6 +308,7 @@
   left: var(--constructor-cad-left);
   right: 0;
   height: var(--constructor-cad-top);
+  overflow: hidden;
   border-bottom: 1px solid #c7d5d9;
 }
 
@@ -322,6 +323,7 @@
   bottom: var(--constructor-cad-bottom);
   left: 0;
   width: var(--constructor-cad-left);
+  overflow: hidden;
   border-right: 1px solid #c7d5d9;
 }
 
@@ -331,13 +333,25 @@
   transform: translateY(-50%);
 }
 
+.constructor-ruler span[hidden] {
+  display: none;
+}
+
 .constructor-canvas {
   position: absolute;
   inset: var(--constructor-cad-top) 0 var(--constructor-cad-bottom) var(--constructor-cad-left);
   overflow: hidden;
+  isolation: isolate;
   touch-action: none;
   background-color: #ffffff;
   background-position: 0 0;
+}
+
+.constructor-drawing-viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  contain: paint;
 }
 
 .constructor-canvas.is-frame-tool {

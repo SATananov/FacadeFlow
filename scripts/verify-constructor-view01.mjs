@@ -19,11 +19,11 @@ const near = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-7,
 for (const pxPerMm of [0.07, 0.154, 0.28, 0.56]) {
   for (const placement of [{ xMm: -200, yMm: -40 }, { xMm: 350.5, yMm: 210.25 }]) {
     for (const pan of [{ xPx: 0, yPx: 0 }, { xPx: 137, yPx: -83 }]) {
-      const viewport = { origin: { xPx: 128, yPx: 224 }, pxPerMm }
+      const viewport = { origin: { xPx: 128 + pan.xPx, yPx: 224 + pan.yPx }, pxPerMm }
       const frame = { xMm: 420, yMm: 260, widthMm: 1200, heightMm: 1800 }
-      const view = { frame, placement, pan }
+      const view = { frame, placement }
       const before = JSON.stringify(view)
-      const origin = frameOriginInCadWorld(view, pxPerMm)
+      const origin = frameOriginInCadWorld(view)
       // Interior divider / endpoint and frame edges, after Fit or visual moves.
       for (const local of [{ xMm: 0, yMm: 0 }, { xMm: 1200, yMm: 1800 }, { xMm: 500, yMm: 700 }]) {
         const world = { xMm: origin.xMm + local.xMm, yMm: origin.yMm + local.yMm }
@@ -44,7 +44,7 @@ for (const pxPerMm of [0.07, 0.154, 0.28, 0.56]) {
 
 assert.ok(callNames(functionNode(shell, 'cadPointFromPointer')).includes('screenToCadWorld'))
 assert.ok(callNames(functionNode(shell, 'framePointFromPointer')).includes('screenToFrameLocal'))
-assert.ok(callNames(functionNode(shell, 'pointFromPointer')).includes('screenToConstructionWorld'))
+assert.ok(callNames(functionNode(shell, 'pointFromPointer')).includes('framePointFromPointer'))
 assert.ok(!callNames(functionNode(coordinates, 'screenToCadWorld')).length)
 for (const insertion of ['addDivider', 'addAngledDivider']) {
   for (const handler of requireJsxHandler(shell, 'onPointerDown', insertion)) {

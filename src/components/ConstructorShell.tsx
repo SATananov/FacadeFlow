@@ -13,6 +13,7 @@ import {
 import {
   Fragment,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -132,8 +133,11 @@ import { placeFieldDimensionLabel, SCHEMATIC_OPENING_INSET_PX } from './fieldDim
 import { layoutCombinedTechnicalDimensions } from './combinedDimensionLayout'
 import { doorLeafVisualClass } from './doorLeafVisual'
 import {
+  buildCadRulerTicks,
   cadWorldToScreen,
+  clampCadViewOffset,
   frameOriginInCadWorld,
+  rulerLabelFitsWithinBounds,
   screenToCadWorld,
   screenToFrameLocal,
   framePointForDoorView,
@@ -488,6 +492,7 @@ export default function ConstructorShell({
   const [gridVisible, setGridVisible] = useState(true)
   const [snapEnabled, setSnapEnabled] = useState(true)
   const [zoom, setZoom] = useState<number>(100)
+  const [canvasSize, setCanvasSize] = useState({ widthPx: 0, heightPx: 0 })
   const [viewOffset, setViewOffset] = useState<ViewOffset>({ xPx: 0, yPx: 0 })
   const [framePlacementOffsetMm, setFramePlacementOffsetMm] = useState<CanvasPoint>({ xMm: 0, yMm: 0 })
   const [viewPanState, setViewPanState] = useState<ViewPanState | null>(null)
@@ -596,6 +601,50 @@ export default function ConstructorShell({
   const [combinedDimensionFeedback, setCombinedDimensionFeedback] = useState<string | null>(null)
   const [glazingThicknessDraft, setGlazingThicknessDraft] = useState('')
   const inspectorPaneRef = useRef<HTMLDivElement>(null)
+  const workareaRef = useRef<HTMLElement>(null)
+  const horizontalRulerRef = useRef<HTMLDivElement>(null)
+  const verticalRulerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const measureCanvas = () => {
+      const rect = canvas.getBoundingClientRect()
+      setCanvasSize((current) => current.widthPx === rect.width && current.heightPx === rect.height
+        ? current
+        : { widthPx: rect.width, heightPx: rect.height })
+    }
+    measureCanvas()
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measureCanvas)
+    observer?.observe(canvas)
+    window.addEventListener('resize', measureCanvas)
+    return () => {
+      observer?.disconnect()
+      window.removeEventListener('resize', measureCanvas)
+    }
+  }, [])
+
+  useLayoutEffect(() => {
+    const workarea = workareaRef.current
+    if (!workarea) return
+    const workareaRect = workarea.getBoundingClientRect()
+    const viewportRect = { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight }
+
+    for (const ruler of [horizontalRulerRef.current, verticalRulerRef.current]) {
+      if (!ruler) continue
+      const rulerRect = ruler.getBoundingClientRect()
+      const clip = {
+        left: Math.max(workareaRect.left, rulerRect.left, viewportRect.left),
+        right: Math.min(workareaRect.right, rulerRect.right, viewportRect.right),
+        top: Math.max(workareaRect.top, rulerRect.top, viewportRect.top),
+        bottom: Math.min(workareaRect.bottom, rulerRect.bottom, viewportRect.bottom),
+      }
+      for (const label of ruler.querySelectorAll<HTMLElement>('[data-ruler-label]')) {
+        label.hidden = false
+        label.hidden = !rulerLabelFitsWithinBounds(label.getBoundingClientRect(), clip)
+      }
+    }
+  })
 
   useEffect(() => {
     const extent = combinedGeometryResolution.status === 'complete' ? combinedGeometryResolution.extent : null
@@ -640,13 +689,15 @@ export default function ConstructorShell({
       ? { ...combinedGeometryResolution.extent!, xMm: frame?.xMm ?? 0, yMm: frame?.yMm ?? 0 }
       : null
     : dragState?.kind === 'create' ? dragState.preview : frame
-  const canvasViewport: CadViewport = { origin: { xPx: 0, yPx: 0 }, pxPerMm }
+  const canvasViewport: CadViewport = { origin: viewOffset, pxPerMm }
+  const workspaceViewport: CadViewport = { origin: { xPx: 0, yPx: 0 }, pxPerMm }
+  const horizontalRulerTicks = buildCadRulerTicks('x', canvasSize.widthPx, workspaceViewport, MAJOR_GRID_STEP_MM)
+  const verticalRulerTicks = buildCadRulerTicks('y', canvasSize.heightPx, workspaceViewport, MAJOR_GRID_STEP_MM)
   const displayedFramePosition = displayedFrame
     ? cadWorldToScreen(frameOriginInCadWorld({
         frame: displayedFrame,
         placement: dragState?.kind === 'create' ? { xMm: 0, yMm: 0 } : framePlacementOffsetMm,
-        pan: dragState?.kind === 'create' ? { xPx: 0, yPx: 0 } : viewOffset,
-      }, pxPerMm), canvasViewport)
+      }), canvasViewport)
     : null
   const moduleSizeLabel = displayedFrame
     ? `${Math.round(displayedFrame.widthMm)} × ${Math.round(displayedFrame.heightMm)} mm`
@@ -1015,10 +1066,16 @@ export default function ConstructorShell({
 
   const pointerViewport = (): CadViewport => {
     const rect = canvasRef.current?.getBoundingClientRect()
-    return { origin: { xPx: rect?.left ?? 0, yPx: rect?.top ?? 0 }, pxPerMm }
+    return {
+      origin: {
+        xPx: (rect?.left ?? 0) + viewOffset.xPx,
+        yPx: (rect?.top ?? 0) + viewOffset.yPx,
+      },
+      pxPerMm,
+    }
   }
   const pointerScreenPoint = (event: ReactPointerEvent<HTMLElement>) => ({ xPx: event.clientX, yPx: event.clientY })
-  const frameView = () => ({ frame: frame ?? { xMm: 0, yMm: 0 }, placement: framePlacementOffsetMm, pan: viewOffset })
+  const frameView = () => ({ frame: frame ?? { xMm: 0, yMm: 0 }, placement: framePlacementOffsetMm })
   const cadPointFromPointer = (event: ReactPointerEvent<HTMLElement>): CanvasPoint =>
     screenToCadWorld(pointerScreenPoint(event), pointerViewport())
   const framePointFromPointer = (event: ReactPointerEvent<HTMLElement>): CanvasPoint =>
@@ -1096,14 +1153,12 @@ export default function ConstructorShell({
       xPx: visibleLeftPx - rect.left + outerMarginPx,
       yPx: visibleTopPx - rect.top + outerMarginPx,
     }
-    if (isCompositeView) {
-      // Projection units are normalized drawing units, never millimetres.
-      setViewOffset({ xPx: startPx.xPx - targetFrame.x * fittedScale, yPx: startPx.yPx - targetFrame.y * fittedScale })
-    } else {
-      setViewOffset({ xPx: 0, yPx: 0 })
-      const startWorld = screenToCadWorld(startPx, { origin: { xPx: 0, yPx: 0 }, pxPerMm: fittedScale })
-      setFramePlacementOffsetMm({ xMm: startWorld.xMm - targetFrame.x, yMm: startWorld.yMm - targetFrame.y })
-    }
+    // Fit is camera-only for both ordinary and composite views. Keep the
+    // object's CAD placement stable and position the visible world via pan.
+    setViewOffset({
+      xPx: startPx.xPx - targetFrame.x * fittedScale,
+      yPx: startPx.yPx - targetFrame.y * fittedScale,
+    })
   }
 
   const changeViewZoom = (direction: -1 | 1) => {
@@ -1749,10 +1804,20 @@ export default function ConstructorShell({
     const world = cadPointFromPointer(event)
     if (!isCompositeView) setCursorPoint(world)
     if (viewPanState?.pointerId === event.pointerId) {
-      setViewOffset({
-        xPx: Math.round(viewPanState.startOffset.xPx + event.clientX - viewPanState.startClientX),
-        yPx: Math.round(viewPanState.startOffset.yPx + event.clientY - viewPanState.startClientY),
-      })
+      const canvas = event.currentTarget
+      const panBounds = viewBounds && !isCompositeView
+        ? {
+            ...viewBounds,
+            x: (displayedFrame?.xMm ?? viewBounds.x) + framePlacementOffsetMm.xMm,
+            y: (displayedFrame?.yMm ?? viewBounds.y) + framePlacementOffsetMm.yMm,
+          }
+        : viewBounds
+      if (panBounds) {
+        setViewOffset(clampCadViewOffset({
+          xPx: viewPanState.startOffset.xPx + event.clientX - viewPanState.startClientX,
+          yPx: viewPanState.startOffset.yPx + event.clientY - viewPanState.startClientY,
+        }, panBounds, canvas.clientWidth, canvas.clientHeight, pxPerMm))
+      }
       return
     }
 
@@ -4029,16 +4094,16 @@ export default function ConstructorShell({
           )}
         </aside>}
 
-        <section className="constructor-workarea has-fixed-cad-origin" aria-label="Работно поле за конструкцията">{/* CONSTRUCTOR 01E - TECHNICAL DRAWING CLARITY · 01E.2 MINIMAL FIELD BADGES */}
-          {!isCompositeView && <><div className="constructor-ruler constructor-ruler-top" aria-hidden="true">
-            {[0, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000].map((value) => (
-              <span key={value} style={{ left: `${cadWorldToScreen({ xMm: value, yMm: 0 }, canvasViewport).xPx}px` }}>{value}</span>
+        <section ref={workareaRef} className="constructor-workarea has-fixed-cad-origin" aria-label="Работно поле за конструкцията">{/* CONSTRUCTOR 01E - TECHNICAL DRAWING CLARITY · 01E.2 MINIMAL FIELD BADGES */}
+          {!isCompositeView && <><div className="constructor-ruler constructor-ruler-top" aria-hidden="true" ref={horizontalRulerRef}>
+            {horizontalRulerTicks.map((tick) => (
+              <span data-ruler-label key={tick.valueMm} style={{ left: `${tick.screenPx}px` }}>{tick.valueMm}</span>
             ))}
           </div>
 
-          <div className="constructor-ruler constructor-ruler-left" aria-hidden="true">
-            {[0, 500, 1000, 1500, 2000].map((value) => (
-              <span key={value} style={{ top: `${cadWorldToScreen({ xMm: 0, yMm: value }, canvasViewport).yPx}px` }}>{value}</span>
+          <div className="constructor-ruler constructor-ruler-left" aria-hidden="true" ref={verticalRulerRef}>
+            {verticalRulerTicks.map((tick) => (
+              <span data-ruler-label key={tick.valueMm} style={{ top: `${tick.screenPx}px` }}>{tick.valueMm}</span>
             ))}
           </div></>}
 
@@ -4048,6 +4113,7 @@ export default function ConstructorShell({
             style={{
               '--constructor-grid-step': `${GRID_STEP_MM * pxPerMm}px`,
               '--constructor-major-grid-step': `${MAJOR_GRID_STEP_MM * pxPerMm}px`,
+              backgroundPosition: '0px 0px',
             } as CSSProperties}
             onPointerDownCapture={handleCanvasPointerDownCapture}
             onPointerDown={handleCanvasPointerDown}
@@ -4055,6 +4121,7 @@ export default function ConstructorShell({
             onPointerUp={handleCanvasPointerUp}
             onPointerCancel={handleCanvasPointerUp}
           >
+            <div className="constructor-drawing-viewport" data-drawing-viewport="clipped">
             <div className="constructor-stage-badge">
               {isFreeMode
                 ? hasActiveModule
@@ -4807,6 +4874,7 @@ export default function ConstructorShell({
                 )}
               </div>
             )}
+            </div>
           </div>
 
           {!isCompositeView && frame && dragState?.kind !== 'create' && (fields.length > 0 || combinedRegionCount > 0) && (
