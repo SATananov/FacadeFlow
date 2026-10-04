@@ -1,5 +1,14 @@
 ﻿# FacadeFlow AI Agent Rules
 
+## Repository agent entry point
+
+For every non-trivial FacadeFlow task, first read:
+
+1. `.ai/GLOBAL_RULES.md`
+2. `.ai/ORCHESTRATOR.md`
+
+Use `.ai/ORCHESTRATOR.md` as the repository-local routing entry point for multi-agent or sequential-role work. Preserve the safety rules in this file; the `.ai/` framework extends them and must not weaken them.
+
 ## Safety boundaries
 
 - AUTOMATIC GEOMETRY = NO
