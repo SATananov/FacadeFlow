@@ -1383,9 +1383,22 @@
   font-variant-numeric: tabular-nums;
 }
 
+.constructor-combined-dimension-extension {
+  position: absolute;
+  z-index: 0;
+  display: block;
+  background: #9aadb1;
+  opacity: .68;
+  pointer-events: none;
+}
+
+.constructor-combined-dimension-extension.is-vertical { width: 1px; }
+.constructor-combined-dimension-extension.is-horizontal { height: 1px; }
+
 .constructor-combined-horizontal-chain,
 .constructor-combined-vertical-chain {
   position: absolute;
+  z-index: 1;
   box-sizing: border-box;
   color: #52686e;
 }
@@ -1410,17 +1423,17 @@
 
 .constructor-combined-horizontal-chain span,
 .constructor-combined-vertical-chain span {
+  z-index: 2;
   display: inline-block;
-  padding: 2px 4px;
-  border: 1px solid rgba(82, 108, 118, .2);
-  border-radius: 2px;
+  padding: 0 2px;
   background: #fff;
   white-space: nowrap;
+  font-weight: 500;
 }
 
 .constructor-combined-horizontal-chain span {
   position: relative;
-  top: -7px;
+  top: -8px;
 }
 
 .constructor-combined-horizontal-chain.is-overall-chain,
@@ -1433,7 +1446,7 @@
 }
 
 .constructor-combined-vertical-chain {
-  width: 16px;
+  width: 1px;
   border-left: 1px solid currentColor;
 }
 
@@ -1452,7 +1465,7 @@
 .constructor-combined-vertical-chain span {
   position: absolute;
   top: 50%;
-  left: 50%;
+  left: 0;
   transform: translate(-50%, -50%) rotate(90deg);
 }
 

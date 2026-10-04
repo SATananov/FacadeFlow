@@ -29,7 +29,7 @@ assert.ok(windowLeftDimensions.regionWidths.every((chain) => chain.yMm > resolve
 assert.ok(windowLeftDimensions.totalWidth.yMm > windowLeftDimensions.regionWidths[0].yMm, 'total width is on a separate farther-out chain')
 assert.deepEqual(windowLeftDimensions.regionHeights.map((chain) => chain.side), ['left', 'right'], 'window-left vertical chains use window-left and door-right sides')
 assert.ok(windowLeftDimensions.regionHeights[0].xMm < 0 && windowLeftDimensions.regionHeights[1].xMm > resolved.extent.widthMm, 'both region-height chains remain outside their regions')
-assert.ok(windowLeftDimensions.totalHeight.xMm > windowLeftDimensions.regionHeights[1].xMm, 'overall maximum height is farther outside the door chain')
+assert.equal(windowLeftDimensions.totalHeight, null, 'overall height is not duplicated when the door height already spans the module maximum')
 assert.equal(windowLeftDimensions.regionHeights[0].endMm, 730, 'window-height chain terminates at the actual short-window edge')
 assert.equal(windowLeftDimensions.regionHeights[1].endMm, 1130, 'door-height chain terminates at its actual lower edge')
 
@@ -56,6 +56,7 @@ const bothDimensions = dimensionLayoutApi.layoutCombinedTechnicalDimensions('win
 assert.equal(bothDimensions.regionWidths.length, 3, 'WINDOW_BOTH has three individual width dimensions')
 assert.deepEqual(bothDimensions.regionHeights.map((chain) => chain.side), ['left', 'right', 'right'], 'WINDOW_BOTH spreads height chains to avoid a right-side pile-up')
 assert.ok(new Set(bothDimensions.regionHeights.map((chain) => chain.xMm)).size === 3, 'WINDOW_BOTH region-height lines have separate positions')
+assert.equal(bothDimensions.totalHeight, null, 'overall height is omitted when an aligned region already carries that full height')
 
 assert.doesNotMatch(shell, /className="constructor-combined-region-role"/, 'combined drawing does not emit internal functional-role labels')
 assert.match(shell, /!combinedGeometryComplete && <span className="constructor-field-number-badge"/, 'combined mapped field surfaces do not emit ordinary internal number badges')

@@ -4740,16 +4740,22 @@ export default function ConstructorShell({
                 </div>}
 
                 {combinedGeometryComplete && combinedGeometryResolution.extent && combinedTechnicalDimensionLayout && <div className="constructor-combined-dimension-chains" aria-label="Размерни вериги на комбинирания модул">
+                  {combinedTechnicalDimensionLayout.regionWidthExtensions.map((extension, index) => {
+                    const extensionOverrunPx = combinedTechnicalDimensionLayout.extensionOverrunMm * pxPerMm
+                    const innerChainYpx = (combinedTechnicalDimensionLayout.regionWidths[0].yMm - combinedGeometryResolution.extent!.yMm) * pxPerMm
+                    const startPx = (extension.startMm - combinedGeometryResolution.extent!.yMm) * pxPerMm
+                    const xPx = (extension.xMm - combinedGeometryResolution.extent!.xMm) * pxPerMm
+                    return <i
+                      key={`combined-width-extension-${index}`}
+                      className="constructor-combined-dimension-extension is-vertical"
+                      style={{ left: `${xPx}px`, top: `${startPx}px`, height: `${Math.max(0, innerChainYpx + extensionOverrunPx - startPx)}px` }}
+                    />
+                  })}
                   {combinedTechnicalDimensionLayout.regionWidths.map((chain, index) => {
                     const region = combinedGeometryResolution.regions[index]
-                    const regionBottomMm = region.bounds.yMm + region.bounds.heightMm
                     const chainTopPx = (chain.yMm - combinedGeometryResolution.extent!.yMm) * pxPerMm
-                    const regionBottomPx = (regionBottomMm - combinedGeometryResolution.extent!.yMm) * pxPerMm
                     const startPx = (chain.startMm - combinedGeometryResolution.extent!.xMm) * pxPerMm
-                    const endPx = (chain.endMm - combinedGeometryResolution.extent!.xMm) * pxPerMm
                     return <Fragment key={`combined-width-chain-${chain.regionId}`}>
-                      <i className="constructor-combined-dimension-extension is-vertical" style={{ left: `${startPx}px`, top: `${regionBottomPx}px`, height: `${Math.max(0, chainTopPx - regionBottomPx)}px` }} />
-                      <i className="constructor-combined-dimension-extension is-vertical" style={{ left: `${endPx}px`, top: `${regionBottomPx}px`, height: `${Math.max(0, chainTopPx - regionBottomPx)}px` }} />
                       <div
                         className="constructor-combined-horizontal-chain is-region-chain"
                         style={{ left: `${startPx}px`, top: `${chainTopPx}px`, width: `${(chain.endMm - chain.startMm) * pxPerMm}px` }}
@@ -4757,8 +4763,8 @@ export default function ConstructorShell({
                       ><span>{Math.round(region.bounds.widthMm)}</span></div>
                     </Fragment>
                   })}
-                  <i className="constructor-combined-dimension-extension is-vertical" style={{ left: 0, top: `${combinedGeometryResolution.extent.heightMm * pxPerMm}px`, height: `${(combinedTechnicalDimensionLayout.totalWidth.yMm - combinedGeometryResolution.extent.heightMm) * pxPerMm}px` }} />
-                  <i className="constructor-combined-dimension-extension is-vertical" style={{ left: `${combinedGeometryResolution.extent.widthMm * pxPerMm}px`, top: `${combinedGeometryResolution.extent.heightMm * pxPerMm}px`, height: `${(combinedTechnicalDimensionLayout.totalWidth.yMm - combinedGeometryResolution.extent.heightMm) * pxPerMm}px` }} />
+                  <i className="constructor-combined-dimension-extension is-vertical" style={{ left: 0, top: `${(combinedTechnicalDimensionLayout.regionWidths[0].yMm + combinedTechnicalDimensionLayout.extensionOverrunMm - combinedGeometryResolution.extent.yMm) * pxPerMm}px`, height: `${(combinedTechnicalDimensionLayout.totalWidth.yMm - combinedTechnicalDimensionLayout.regionWidths[0].yMm) * pxPerMm}px` }} />
+                  <i className="constructor-combined-dimension-extension is-vertical" style={{ left: `${combinedGeometryResolution.extent.widthMm * pxPerMm}px`, top: `${(combinedTechnicalDimensionLayout.regionWidths[0].yMm + combinedTechnicalDimensionLayout.extensionOverrunMm - combinedGeometryResolution.extent.yMm) * pxPerMm}px`, height: `${(combinedTechnicalDimensionLayout.totalWidth.yMm - combinedTechnicalDimensionLayout.regionWidths[0].yMm) * pxPerMm}px` }} />
                   <div
                     className="constructor-combined-horizontal-chain is-overall-chain"
                     style={{ left: 0, top: `${(combinedTechnicalDimensionLayout.totalWidth.yMm - combinedGeometryResolution.extent.yMm) * pxPerMm}px`, width: `${(combinedTechnicalDimensionLayout.totalWidth.endMm - combinedTechnicalDimensionLayout.totalWidth.startMm) * pxPerMm}px` }}
@@ -4769,8 +4775,9 @@ export default function ConstructorShell({
                     const chainX = (chain.xMm - combinedGeometryResolution.extent!.xMm) * pxPerMm
                     const edgeX = (chain.side === 'left' ? region.bounds.xMm : region.bounds.xMm + region.bounds.widthMm) - combinedGeometryResolution.extent!.xMm
                     const edgeEndPx = edgeX * pxPerMm
-                    const extensionLeft = Math.min(chainX, edgeEndPx)
-                    const extensionWidth = Math.abs(chainX - edgeEndPx)
+                    const extensionOverrunPx = combinedTechnicalDimensionLayout.extensionOverrunMm * pxPerMm
+                    const extensionLeft = chain.side === 'left' ? chainX - extensionOverrunPx : edgeEndPx
+                    const extensionWidth = Math.abs(chainX - edgeEndPx) + extensionOverrunPx
                     return <Fragment key={`combined-height-chain-${chain.regionId}`}>
                       <i className="constructor-combined-dimension-extension is-horizontal" style={{ left: `${extensionLeft}px`, top: `${(chain.startMm - combinedGeometryResolution.extent!.yMm) * pxPerMm}px`, width: `${extensionWidth}px` }} />
                       <i className="constructor-combined-dimension-extension is-horizontal" style={{ left: `${extensionLeft}px`, top: `${(chain.endMm - combinedGeometryResolution.extent!.yMm) * pxPerMm}px`, width: `${extensionWidth}px` }} />
@@ -4781,11 +4788,11 @@ export default function ConstructorShell({
                       ><span>{Math.round(region.bounds.heightMm)}</span></div>
                     </Fragment>
                   })}
-                  <div
+                  {combinedTechnicalDimensionLayout.totalHeight && <div
                     className="constructor-combined-vertical-chain is-overall-chain"
                     style={{ left: `${(combinedTechnicalDimensionLayout.totalHeight.xMm - combinedGeometryResolution.extent.xMm) * pxPerMm}px`, top: 0, height: `${(combinedTechnicalDimensionLayout.totalHeight.endMm - combinedTechnicalDimensionLayout.totalHeight.startMm) * pxPerMm}px` }}
                     aria-label={`Максимална обща височина ${Math.round(combinedGeometryResolution.extent.heightMm)} mm`}
-                  ><span>{Math.round(combinedGeometryResolution.extent.heightMm)}</span></div>
+                  ><span>{Math.round(combinedGeometryResolution.extent.heightMm)}</span></div>}
                 </div>}
 
                 {frameClearDimensions.widthMm !== null && dragState?.kind !== 'create' && !combinedGeometryComplete && (
