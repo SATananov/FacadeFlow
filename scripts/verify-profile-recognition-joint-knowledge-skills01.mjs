@@ -52,6 +52,7 @@ const reviewedReadOnlyRuntimeProjections = new Set([
   'src/data/profileSystems/schuco.ts',
   'src/data/profileSystems/baufen.ts',
   'src/data/profileSystems/weissprofil2018_113.ts',
+  'src/data/profileSystems/profileResolutionEvidence.ts',
 ])
 const untrackedPaths = execFileSync('git', ['ls-files', '--others', '--exclude-standard'], { encoding: 'utf8' })
   .split(/\r?\n/).filter(Boolean)
