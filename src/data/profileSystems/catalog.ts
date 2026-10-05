@@ -2,6 +2,7 @@ import { kmgPrelude60 } from './prelude60'
 import { kmgPrestige70, kmgPrestigePlus70 } from './prestige70'
 import { vivaPlast } from './vivaplast'
 import { profilink16 } from './profilink16'
+import { schuco } from './schuco'
 import type { ProfileSystemCatalogEntry } from './types'
 
 export const profileSystemCatalog: readonly ProfileSystemCatalogEntry[] = [
@@ -10,6 +11,7 @@ export const profileSystemCatalog: readonly ProfileSystemCatalogEntry[] = [
   kmgPrestigePlus70,
   vivaPlast,
   profilink16,
+  schuco,
 ]
 
 export type ProfileSystemId = (typeof profileSystemCatalog)[number]['id']

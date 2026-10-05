@@ -226,7 +226,8 @@ export const derivedProfileEvidenceRows = [
     sourcePath: '.ai/skills/profile-recognition/data/MASTER_CORE_PROFILES.csv',
   },
   {
-    runtimeMappingStatus: 'RUNTIME_UNMAPPED',
+    systemId: 'schuco',
+    runtimeMappingStatus: 'RUNTIME_MAPPED',
     sourceSystem: 'Schuco',
     catalogue: 'Schuco',
     profileId: 'SCH 19411',
@@ -239,7 +240,8 @@ export const derivedProfileEvidenceRows = [
     sourcePath: '.ai/skills/profile-recognition/data/MASTER_CORE_PROFILES.csv',
   },
   {
-    runtimeMappingStatus: 'RUNTIME_UNMAPPED',
+    systemId: 'schuco',
+    runtimeMappingStatus: 'RUNTIME_MAPPED',
     sourceSystem: 'Schuco',
     catalogue: 'Schuco',
     profileId: 'SCH 19431',
@@ -252,7 +254,8 @@ export const derivedProfileEvidenceRows = [
     sourcePath: '.ai/skills/profile-recognition/data/MASTER_CORE_PROFILES.csv',
   },
   {
-    runtimeMappingStatus: 'RUNTIME_UNMAPPED',
+    systemId: 'schuco',
+    runtimeMappingStatus: 'RUNTIME_MAPPED',
     sourceSystem: 'Schuco',
     catalogue: 'Schuco',
     profileId: 'SCH 19460',

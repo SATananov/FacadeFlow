@@ -49,6 +49,7 @@ const reviewedReadOnlyRuntimeProjections = new Set([
   'src/data/profileSystems/knowledge/derivedProfileKnowledge.ts',
   'src/data/profileSystems/vivaplast.ts',
   'src/data/profileSystems/profilink16.ts',
+  'src/data/profileSystems/schuco.ts',
 ])
 const untrackedPaths = execFileSync('git', ['ls-files', '--others', '--exclude-standard'], { encoding: 'utf8' })
   .split(/\r?\n/).filter(Boolean)

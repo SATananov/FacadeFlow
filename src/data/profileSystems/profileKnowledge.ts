@@ -49,7 +49,7 @@ export type JointKnowledgeEvidence = Readonly<{
 }>
 
 function formatRoleLabel(label: string): string {
-  return label.replace(/\b\w/g, (character) => character.toUpperCase())
+  return label ? `${label[0].toUpperCase()}${label.slice(1)}` : label
 }
 
 export function getProfileKnowledgeEvidence(
@@ -71,6 +71,7 @@ export function getProfileKnowledgeEvidence(
     ...imported,
     systemLabel: `${profileSystem.manufacturer} ${profileSystem.name}`,
     roleEn: formatRoleLabel(catalogProfile.labelCatalog),
+    roleBg: formatRoleLabel(imported.roleBg),
   }
 }
 
