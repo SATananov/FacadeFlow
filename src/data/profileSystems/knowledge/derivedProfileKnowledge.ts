@@ -187,7 +187,8 @@ export const derivedProfileEvidenceRows = [
     sourcePath: '.ai/skills/profile-recognition/data/MASTER_CORE_PROFILES.csv',
   },
   {
-    runtimeMappingStatus: 'RUNTIME_UNMAPPED',
+    systemId: 'baufen',
+    runtimeMappingStatus: 'RUNTIME_MAPPED',
     sourceSystem: 'Baufen',
     catalogue: 'LL',
     profileId: '1607',
@@ -200,7 +201,8 @@ export const derivedProfileEvidenceRows = [
     sourcePath: '.ai/skills/profile-recognition/data/MASTER_CORE_PROFILES.csv',
   },
   {
-    runtimeMappingStatus: 'RUNTIME_UNMAPPED',
+    systemId: 'baufen',
+    runtimeMappingStatus: 'RUNTIME_MAPPED',
     sourceSystem: 'Baufen',
     catalogue: 'LL',
     profileId: '1608',
@@ -213,7 +215,8 @@ export const derivedProfileEvidenceRows = [
     sourcePath: '.ai/skills/profile-recognition/data/MASTER_CORE_PROFILES.csv',
   },
   {
-    runtimeMappingStatus: 'RUNTIME_UNMAPPED',
+    systemId: 'baufen',
+    runtimeMappingStatus: 'RUNTIME_MAPPED',
     sourceSystem: 'Baufen',
     catalogue: 'LL',
     profileId: '1632',
