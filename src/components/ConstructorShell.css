@@ -5313,6 +5313,25 @@
   stroke: rgba(64, 88, 95, .68);
 }
 
+/* SASH MITRE READABILITY 01.1 — visual-only emphasis.
+   The 14.15px diagonal remains the schematic corner-to-inner-corner span
+   for the existing 10px sash band; only contrast, weight, and local stacking
+   are adjusted so it remains readable at normal working zoom. */
+.constructor-field-surface.is-operable .constructor-sash-profile-visual .sash-profile-mitre {
+  z-index: 5;
+  width: 14.15px;
+  height: 2px;
+  background: rgba(27, 43, 49, .98);
+  box-shadow: 0 0 0 .35px rgba(255, 255, 255, .72);
+}
+
+.constructor-field-surface.is-operable .constructor-sash-profile-visual .sash-profile-mitre.mitre-tl,
+.constructor-field-surface.is-operable .constructor-sash-profile-visual .sash-profile-mitre.mitre-tr,
+.constructor-field-surface.is-operable .constructor-sash-profile-visual .sash-profile-mitre.mitre-bl,
+.constructor-field-surface.is-operable .constructor-sash-profile-visual .sash-profile-mitre.mitre-br {
+  opacity: 1;
+}
+
 /* CONSTRUCTOR TECHNICAL DRAWING 01.3 — dimensions & manufacturing reading.
  * Presentation-only dimensional hierarchy. Existing canonical mm values,
  * field bounds, frame bounds and bay calculations remain unchanged.
@@ -6084,6 +6103,14 @@
     inset 0 0 0 11.15px rgba(55, 70, 75, .98);
   filter: drop-shadow(0 0 1.25px rgba(248, 250, 250, .98));
   pointer-events: none;
+}
+
+/* Ordinary-window divider contact: keep the existing render-only perimeter
+   above the physical divider, but do not paint an opaque inset fill over the
+   existing sash mitres, glazing, opening symbol, or schematic hardware. */
+.constructor-operable-sash-priority:not(.is-door-leaf)::before {
+  box-shadow: none;
+  filter: none;
 }
 
 /* DOOR LEAF / P-FRAME VISUAL SEMANTICS 01.
