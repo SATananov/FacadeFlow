@@ -12,6 +12,7 @@ import { getProfileSystemById } from './catalog'
  */
 export type JointRelationshipEvidenceRole = 'frame' | 'sash' | 'mullion'
 export type JointRelationshipEvidenceOrientation = 'horizontal' | 'vertical'
+export type JointRelationshipContext = 'FRAME_TO_MULLION'
 export type JointRelationshipStatus =
   | 'RELATIONSHIP_EVIDENCE_FOUND'
   | 'NO_EXPLICIT_RELATIONSHIP_EVIDENCE'
@@ -30,13 +31,17 @@ export type JointRelationshipEvidenceResult = Readonly<{
   profileARole: JointRelationshipEvidenceRole
   profileBRole: JointRelationshipEvidenceRole
   orientation: JointRelationshipEvidenceOrientation
+  relationshipContext: JointRelationshipContext
   relationshipStatus: JointRelationshipStatus
   evidenceStatus: JointRelationshipEvidenceStatus
   bindingEvidence: JointRelationshipBindingEvidence
   directArticlePairBinding: DirectArticlePairBindingStatus
+  directArticlePairBindingStatus: DirectArticlePairBindingStatus
+  geometryStatus: 'UNKNOWN'
   ruleIds: readonly string[]
   operationNames: readonly string[]
   relationTokens: readonly string[]
+  sourceRelationTokens: readonly string[]
   operationCodes: readonly string[]
   positionExpressions: readonly string[]
   sourceMarkers: readonly string[]
@@ -59,6 +64,7 @@ function result(
     profileARole: JointRelationshipEvidenceRole
     profileBRole: JointRelationshipEvidenceRole
     orientation: JointRelationshipEvidenceOrientation
+    relationshipContext: JointRelationshipContext
   },
   relationshipStatus: JointRelationshipStatus,
   evidenceStatus: JointRelationshipEvidenceStatus,
@@ -78,9 +84,12 @@ function result(
     evidenceStatus,
     bindingEvidence,
     directArticlePairBinding: 'UNKNOWN',
+    directArticlePairBindingStatus: 'UNKNOWN',
+    geometryStatus: 'UNKNOWN',
     ruleIds,
     operationNames,
     relationTokens,
+    sourceRelationTokens: relationTokens,
     operationCodes,
     positionExpressions,
     sourceMarkers,
@@ -97,6 +106,7 @@ export function evaluateJointRelationshipEvidence(args: {
   profileARole: JointRelationshipEvidenceRole
   profileBRole: JointRelationshipEvidenceRole
   orientation: JointRelationshipEvidenceOrientation
+  relationshipContext: JointRelationshipContext
 }): JointRelationshipEvidenceResult {
   const system = getProfileSystemById(args.systemId)
   if (!system) {

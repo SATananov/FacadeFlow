@@ -9,7 +9,7 @@ const profiles = load('src/domain/profileResolution.ts')
 const catalog = load('src/data/profileSystems/catalog.ts')
 
 const evaluate = (systemId, profileAId, profileBId, profileARole, profileBRole, orientation) =>
-  joint.evaluateJointRelationshipEvidence({ systemId, profileAId, profileBId, profileARole, profileBRole, orientation })
+  joint.evaluateJointRelationshipEvidence({ systemId, profileAId, profileBId, profileARole, profileBRole, orientation, relationshipContext: 'FRAME_TO_MULLION' })
 
 const horizontal = evaluate('kmg-prelude-60', '482.20', '482.21', 'frame', 'mullion', 'horizontal')
 assert.equal(horizontal.relationshipStatus, 'RELATIONSHIP_EVIDENCE_FOUND')
