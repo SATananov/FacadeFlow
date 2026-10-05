@@ -57,7 +57,7 @@ assert.match(composition, /kind: 'ZERO_DIVIDER'/)
 
 assert.match(serialization, /schemaVersion/)
 assert.doesNotMatch(serialization, /derived-product-model-contract-02/)
-assert.doesNotMatch(shell, /from ['"]\.\.\/domain\/(semanticSketch|productResolution|derivedProductModel)['"]/) 
+assert.doesNotMatch(shell, /from ['"]\.\.\/domain\/(semanticSketch|productResolution|derivedProductModel)['"]/)
 
 const changedFiles = execFileSync('git', ['diff', '--name-only', '--',
   'src/components/ConstructorShell.tsx',
