@@ -1,6 +1,7 @@
 export * from './types'
 export * from './prelude60'
 export * from './prestige70'
+export * from './vivaplast'
 export * from './catalog'
 export * from './finishOptions'
 export * from './glazingOptions'

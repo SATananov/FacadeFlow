@@ -39,6 +39,7 @@
     "test:free-profile-context01": "node scripts/verify-free-constructor-profile-context01.mjs",
     "test:profile-knowledge-inspector01": "node scripts/verify-profile-knowledge-inspector01.mjs",
     "test:profile-knowledge-dataset02": "node scripts/verify-profile-knowledge-dataset02.mjs",
+    "test:vivaplast-runtime-profile-system01": "node scripts/verify-vivaplast-runtime-profile-system01.mjs",
     "test:glazing-evidence01": "node scripts/verify-glazing-evidence01.mjs",
     "test:glazing-evidence01-runtime": "vite build --ssr scripts/verify-glazing-evidence01-runtime.ts --outDir node_modules/.facadeflow-runtime/glazing-evidence01 --emptyOutDir && node node_modules/.facadeflow-runtime/glazing-evidence01/verify-glazing-evidence01-runtime.js",
     "test:glazing-context01a": "node scripts/verify-glazing-context01a.mjs",

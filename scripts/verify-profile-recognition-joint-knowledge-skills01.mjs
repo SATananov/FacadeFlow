@@ -47,6 +47,7 @@ const status = execFileSync('git', ['status', '--short'], { encoding: 'utf8' })
 const reviewedReadOnlyRuntimeProjections = new Set([
   'src/data/profileSystems/profileKnowledge.ts',
   'src/data/profileSystems/knowledge/derivedProfileKnowledge.ts',
+  'src/data/profileSystems/vivaplast.ts',
 ])
 const untrackedPaths = execFileSync('git', ['ls-files', '--others', '--exclude-standard'], { encoding: 'utf8' })
   .split(/\r?\n/).filter(Boolean)

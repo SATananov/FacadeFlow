@@ -79,7 +79,7 @@ export interface ProfileSystemCatalogEntry {
   nominalDepthMm: number
   parentSystemId?: string
   selectable: boolean
-  sourceStatus: 'catalog-derived'
+  sourceStatus: 'catalog-derived' | 'database-imported'
   mainProfiles: ProfileDefinition[]
   glassBeads: GlazingBeadDefinition[]
   additionalProfiles: ProfileDefinition[]

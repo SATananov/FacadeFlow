@@ -49,15 +49,14 @@ export const derivedProfileEvidenceRows = [
     evidenceStatus: 'DATABASE_EVIDENCE',
     sourcePath: '.ai/skills/profile-recognition/data/MASTER_CORE_PROFILES.csv',
   },
-  // Imported structural evidence with no matching runtime ProfileSystem.
-  // These rows intentionally have no systemId: source-package identity is not
-  // a runtime system mapping and must not be promoted into the inspector.
+  // Imported structural evidence mapped to the VivaPlast runtime system.
   {
-    runtimeMappingStatus: 'RUNTIME_UNMAPPED',
+    systemId: 'vivaplast',
+    runtimeMappingStatus: 'RUNTIME_MAPPED',
     sourceSystem: 'VivaPlast',
     catalogue: '',
-    profileId: 'ЕД.КАСА 2801',
-    profileName: 'ЕДИНИЧНА КАСА ПЛЪЗГАНЕ 2801',
+    profileId: 'ГОЛ.КАСА 5522',
+    profileName: 'ГОЛЯМА КАСА ЗА ТВО55',
     roleBg: 'Каса',
     roleEn: 'Frame',
     profileW: 0,
@@ -66,7 +65,8 @@ export const derivedProfileEvidenceRows = [
     sourcePath: '.ai/skills/profile-recognition/data/MASTER_CORE_PROFILES.csv',
   },
   {
-    runtimeMappingStatus: 'RUNTIME_UNMAPPED',
+    systemId: 'vivaplast',
+    runtimeMappingStatus: 'RUNTIME_MAPPED',
     sourceSystem: 'VivaPlast',
     catalogue: '',
     profileId: 'ВРАТА Т 3к63070',
@@ -79,7 +79,8 @@ export const derivedProfileEvidenceRows = [
     sourcePath: '.ai/skills/profile-recognition/data/MASTER_CORE_PROFILES.csv',
   },
   {
-    runtimeMappingStatus: 'RUNTIME_UNMAPPED',
+    systemId: 'vivaplast',
+    runtimeMappingStatus: 'RUNTIME_MAPPED',
     sourceSystem: 'VivaPlast',
     catalogue: '',
     profileId: 'ДЕЛ.ГОЛЯМ 5523',

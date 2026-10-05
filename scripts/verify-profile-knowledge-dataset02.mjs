@@ -15,15 +15,18 @@ const targetSystems = [
   'Schuco',
   'WeissProfil2018_113',
 ]
+const unmappedSystems = targetSystems.filter((systemPackage) => systemPackage !== 'VivaPlast')
 const lockedSystems = ['PremiumPlast', 'UIUT-STIL']
 const structuralRoles = new Set(['Frame', 'Wing', 'Mullion', 'Flying mullion'])
 const rows = knowledgeData.derivedProfileEvidenceRows
 const imported = rows.filter((row) => targetSystems.includes(row.sourceSystem))
+const vivaRows = imported.filter((row) => row.sourceSystem === 'VivaPlast')
 
 assert.equal(new Set(imported.map((row) => row.sourceSystem)).size, targetSystems.length)
 assert.ok(imported.length >= targetSystems.length * 3)
-assert.ok(imported.every((row) => row.runtimeMappingStatus === 'RUNTIME_UNMAPPED'))
-assert.ok(imported.every((row) => !('systemId' in row)))
+assert.ok(vivaRows.every((row) => row.runtimeMappingStatus === 'RUNTIME_MAPPED' && row.systemId === 'vivaplast'))
+assert.ok(imported.filter((row) => unmappedSystems.includes(row.sourceSystem)).every((row) => row.runtimeMappingStatus === 'RUNTIME_UNMAPPED'))
+assert.ok(imported.filter((row) => unmappedSystems.includes(row.sourceSystem)).every((row) => !('systemId' in row)))
 assert.ok(imported.every((row) => structuralRoles.has(row.roleEn)))
 assert.ok(imported.every((row) => row.profileName !== undefined))
 assert.ok(imported.every((row) => row.sourcePath.endsWith('MASTER_CORE_PROFILES.csv')))
@@ -46,7 +49,7 @@ assert.equal(knowledgeData.hasDerivedProfileEvidenceConflict('kmg-prelude-60', '
 assert.equal(knowledge.getProfileKnowledgeEvidence('kmg-prelude-60', '482.20').profileId, '482.20')
 assert.equal(knowledge.getProfileKnowledgeEvidence('kmg-prelude-60', '482.21').profileId, '482.21')
 
-for (const systemPackage of targetSystems) {
+for (const systemPackage of unmappedSystems) {
   assert.equal(catalog.getProfileSystemById(systemPackage), undefined)
 }
 
@@ -72,7 +75,7 @@ assert.equal(changedDomainFiles, '')
 console.log('PROFILE KNOWLEDGE DATASET 02 VERIFY PASS')
 console.log(`STRUCTURAL IMPORTED SYSTEMS: ${targetSystems.join(', ')}`)
 console.log(`STRUCTURAL RECORDS: ${imported.length}`)
-console.log('RUNTIME MAPPED RECORDS: KMG PRELUDE 60')
+console.log('RUNTIME MAPPED RECORDS: KMG PRELUDE 60, VivaPlast')
 console.log('RUNTIME UNMAPPED RECORDS: PASS')
 console.log('DUPLICATE-ID COLLISION GUARD: PASS')
 console.log('EVIDENCE CONFLICT GUARD: PASS')
