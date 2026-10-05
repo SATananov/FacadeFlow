@@ -22,9 +22,11 @@ export type ResolvedProductFact<T> = Readonly<{
   blocksProductionReadiness: boolean
 }>
 
-export type UnknownProductFact = Readonly<{
+export type UnknownProductFact<T = never> = Readonly<{
   status: 'UNKNOWN'
   value: null
+  /** Known semantic intent may survive while physical realization is unknown. */
+  semanticValue?: T
   reason: string
   affectedSketchId?: string
   requiredEvidence?: readonly string[]
@@ -33,9 +35,10 @@ export type UnknownProductFact = Readonly<{
   blocksProductionReadiness: boolean
 }>
 
-export type UnsupportedProductFact = Readonly<{
+export type UnsupportedProductFact<T = never> = Readonly<{
   status: 'UNSUPPORTED'
   value: null
+  semanticValue?: T
   reason: string
   affectedSketchId?: string
   requiredEvidence?: readonly string[]
@@ -47,8 +50,8 @@ export type UnsupportedProductFact = Readonly<{
 /** A fact can never be silently replaced with an assumption. */
 export type ProductFact<T> =
   | ResolvedProductFact<T>
-  | UnknownProductFact
-  | UnsupportedProductFact
+  | UnknownProductFact<T>
+  | UnsupportedProductFact<T>
 
 export type SelectedSystem = Readonly<{
   /** AUTHORITATIVE: explicit selected profile system. */

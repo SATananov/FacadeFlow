@@ -18,6 +18,13 @@ export type DerivedSketchElementReference = Readonly<{
   sketchId: string
   kind: 'module' | 'field' | 'divider' | 'region'
   role: string
+  profileCode?: string
+  fieldType?: 'fixed' | 'operable' | null
+  openingMode?: string | null
+  openingHanding?: 'left' | 'right' | null
+  glazingThicknessMm?: number | null
+  boundaryKind?: 'frame' | 'none' | 'threshold'
+  semanticOnly?: boolean
 }>
 
 export type DerivedProductModel = Readonly<{
@@ -32,6 +39,7 @@ export type DerivedProductModel = Readonly<{
   members: readonly ProductFact<DerivedSketchElementReference>[]
   dividers: readonly ProductFact<DerivedSketchElementReference>[]
   fields: readonly ProductFact<DerivedSketchElementReference>[]
+  regions: readonly ProductFact<DerivedSketchElementReference>[]
   sashIntent: readonly ProductFact<DerivedSketchElementReference>[]
   glazing: readonly ProductFact<DerivedSketchElementReference>[]
   beads: readonly ProductFact<DerivedSketchElementReference>[]
