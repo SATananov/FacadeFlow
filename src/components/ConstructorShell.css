@@ -5518,6 +5518,83 @@
 .constructor-context-inspector .constructor-component-resolution-stack { gap: 12px; }
 .constructor-context-inspector .constructor-profile-resolution-control { margin: 0; }
 .constructor-context-inspector .constructor-glazing-candidates { padding: 9px; }
+.constructor-profile-knowledge {
+  margin-top: 12px;
+  padding-top: 11px;
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid #cedde0;
+}
+.constructor-profile-knowledge > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.constructor-profile-knowledge > header span {
+  color: #496b73;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .7px;
+}
+.constructor-profile-knowledge > header small {
+  color: #819398;
+  font-size: 8px;
+}
+.constructor-profile-knowledge-facts,
+.constructor-joint-knowledge dl {
+  margin: 0;
+  display: grid;
+  gap: 0;
+}
+.constructor-profile-knowledge-facts > div,
+.constructor-joint-knowledge dl > div {
+  min-width: 0;
+  padding: 5px 0;
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  gap: 9px;
+  border-bottom: 1px solid #e2eaeb;
+}
+.constructor-profile-knowledge dt,
+.constructor-profile-knowledge dd {
+  min-width: 0;
+  margin: 0;
+  font-size: 9.5px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.constructor-profile-knowledge dt { color: #6b8187; }
+.constructor-profile-knowledge dd {
+  color: #284b53;
+  font-weight: 850;
+}
+.constructor-profile-knowledge-empty {
+  margin: 0;
+  padding: 8px;
+  border: 1px dashed #cbd8da;
+  border-radius: 5px;
+  background: #f7f9f9;
+  color: #667f85;
+  font-size: 10px;
+}
+.constructor-joint-knowledge {
+  margin-top: 3px;
+  padding: 9px;
+  display: grid;
+  gap: 7px;
+  border: 1px solid #d7e1e3;
+  border-radius: 5px;
+  background: #f7f9f9;
+}
+.constructor-joint-knowledge h4 {
+  margin: 0;
+  color: #405f67;
+  font-size: 10px;
+}
+.constructor-joint-knowledge dl + dl { padding-top: 5px; border-top: 1px solid #cfdcde; }
+.constructor-joint-knowledge p { margin: 1px 0 0; color: #8a552f; font-size: 9.5px; }
+.constructor-joint-knowledge > small { color: #74898e; font-size: 8.5px; line-height: 1.4; }
 .constructor-context-inspector button:focus-visible,
 .constructor-context-inspector select:focus-visible,
 .constructor-context-inspector input:focus-visible { outline: 2px solid #128ba0; outline-offset: 2px; }

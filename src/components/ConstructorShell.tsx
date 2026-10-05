@@ -115,6 +115,10 @@ import {
   buildProfileAwareSashGeometryReadModel,
 } from '../domain/profileAwareSashGeometry'
 import {
+  getDividerJointKnowledgeEvidence,
+  getProfileKnowledgeEvidence,
+} from '../data/profileSystems/profileKnowledge'
+import {
   evaluateGlazingBeadCompatibility,
   evaluateReinforcementCompatibility,
   type ComponentCompatibilityResult,
@@ -787,6 +791,28 @@ export default function ConstructorShell({
       selectedGlazing?.totalThicknessMm,
     ],
   )
+  const selectedProfileKnowledgeCode = selectedAngledDivider
+    ? effectiveProfileResolution?.dividers[selectedAngledDivider.id]?.profileCode ?? null
+    : selectedDivider
+      ? effectiveProfileResolution?.dividers[selectedDivider.id]?.profileCode ?? null
+      : selectedField?.fieldType === 'operable'
+        ? effectiveProfileResolution?.fieldSashes[selectedField.id]?.profileCode ?? null
+        : selectedField?.fieldType === 'fixed' || (
+            !selectedField && !selectedCombinedRegion && !selectedDivider &&
+            !selectedSemanticBoundary && !selectedCombinedZeroDivider && !selectedAngledDivider
+          )
+          ? effectiveProfileResolution?.frame?.profileCode ?? null
+          : null
+  const selectedProfileKnowledge = selectedProfileSystem
+    ? getProfileKnowledgeEvidence(selectedProfileSystem.id, selectedProfileKnowledgeCode)
+    : undefined
+  const selectedDividerJointKnowledge = selectedProfileSystem && selectedDivider
+    ? getDividerJointKnowledgeEvidence({
+        systemId: selectedProfileSystem.id,
+        dividerProfileId: effectiveProfileResolution?.dividers[selectedDivider.id]?.profileCode,
+        dividerAxis: selectedDivider.axis,
+      })
+    : []
   const offerDefaultGlazingId = !isFreeMode ? offerContext?.glazingId ?? null : null
   const selectedFieldGlazingSpecification = selectedField
     ? getEffectiveFieldGlazingSpecification(effectiveProfileResolution, offerDefaultGlazingId, selectedField.id)
@@ -3426,6 +3452,46 @@ export default function ConstructorShell({
     return <div className="constructor-selection-empty"><span>Избери конструктивен елемент</span><p>Профил може да се зададе на касата, делител или отваряемо ПОЛЕ. Избери елемент от скицата, за да продължиш.</p></div>
   }
 
+  const renderProfileKnowledgeInspector = () => (
+    <section className="constructor-profile-knowledge" aria-label="Профилни данни">
+      <header>
+        <span>ПРОФИЛНИ ДАННИ</span>
+        <small>Само за преглед</small>
+      </header>
+      {selectedProfileKnowledge ? (
+        <>
+          <dl className="constructor-profile-knowledge-facts">
+            <div><dt>Profile ID</dt><dd>{selectedProfileKnowledge.profileId}</dd></div>
+            <div><dt>Роля</dt><dd>{selectedProfileKnowledge.roleEn} / {selectedProfileKnowledge.roleBg}</dd></div>
+            <div><dt>Каталог / система</dt><dd>{selectedProfileKnowledge.catalogue} · {selectedProfileKnowledge.systemLabel}</dd></div>
+            <div><dt>profileW</dt><dd>{selectedProfileKnowledge.profileW}</dd></div>
+            <div><dt>profileZ</dt><dd>{selectedProfileKnowledge.profileZ}</dd></div>
+            <div><dt>Статус на доказателството</dt><dd>{selectedProfileKnowledge.evidenceStatus}</dd></div>
+          </dl>
+          {selectedDividerJointKnowledge.length > 0 && (
+            <div className="constructor-joint-knowledge">
+              <h4>Данни за сглобката</h4>
+              {selectedDividerJointKnowledge.map((record) => (
+                <dl key={`${record.ruleId}-${record.relationToken}`}>
+                  <div><dt>Правило / операция</dt><dd>{record.ruleId} / {record.operation}</dd></div>
+                  <div><dt>Relation token</dt><dd>{record.relationToken}</dd></div>
+                  <div><dt>Код на операцията</dt><dd>{record.operationCode}</dd></div>
+                  <div><dt>Position expression</dt><dd>{record.positionExpression}</dd></div>
+                  <div><dt>Изходен маркер</dt><dd>{record.sourceMarker}</dd></div>
+                  <div><dt>Статус на доказателството</dt><dd>{record.evidenceStatus}</dd></div>
+                </dl>
+              ))}
+              <p><strong>Геометрия на сглобката: НЕИЗВЕСТНА</strong></p>
+              <small>Токените са показани без тълкуване и не създават геометрия или машинни данни.</small>
+            </div>
+          )}
+        </>
+      ) : (
+        <p className="constructor-profile-knowledge-empty">Няма потвърдени профилни данни</p>
+      )}
+    </section>
+  )
+
   const renderSelectedDimensionsPane = () => {
     if (selectedCombinedRegion) return renderSelectedCombinedRegionDimensions()
     if (selectedAngledDivider && selectedProfileSystem && effectiveProfileResolution) {
@@ -3642,7 +3708,7 @@ export default function ConstructorShell({
       </div>
       <div id="constructor-context-pane" ref={inspectorPaneRef} className="constructor-inspector-pane" role="tabpanel" aria-labelledby={`inspector-tab-${inspectorTab}`}>
         {inspectorTab === 'properties' ? (isModuleContext ? renderModuleBasics() : renderSelectedPropertiesPane())
-          : inspectorTab === 'profile' ? renderSelectedProfilePane()
+          : inspectorTab === 'profile' ? <>{renderSelectedProfilePane()}{renderProfileKnowledgeInspector()}</>
             : inspectorTab === 'glazing' ? (selectedProfileSystem ? renderSelectedFieldGlazingBead() : renderSelectedProfilePane())
               : renderSelectedDimensionsPane()}
       </div>

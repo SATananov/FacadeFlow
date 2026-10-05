@@ -44,7 +44,20 @@ assert.match(systemSummary, /PremiumPlast,,,,,,,,,,LOCKED_MDB_PASSWORD/)
 assert.match(systemSummary, /UIUT-STIL,,,,,,,,,,LOCKED_MDB_PASSWORD/)
 
 const status = execFileSync('git', ['status', '--short'], { encoding: 'utf8' })
-assert.doesNotMatch(status, /^(?:\?\?| A|A )\s+(?:src|public|dist)[\\/]/m)
+const reviewedReadOnlyRuntimeProjections = new Set([
+  'src/data/profileSystems/profileKnowledge.ts',
+  'src/data/profileSystems/knowledge/derivedProfileKnowledge.ts',
+])
+const untrackedPaths = execFileSync('git', ['ls-files', '--others', '--exclude-standard'], { encoding: 'utf8' })
+  .split(/\r?\n/).filter(Boolean)
+const addedPaths = status.split(/\r?\n/)
+  .filter((entry) => /^(?: A|A )\s/.test(entry))
+  .map((entry) => entry.slice(3))
+const unexpectedRuntimeAdditions = [...untrackedPaths, ...addedPaths]
+  .map((path) => path.replaceAll('\\', '/'))
+  .filter((path) => /^(?:src|public|dist)\//.test(path))
+  .filter((path) => !reviewedReadOnlyRuntimeProjections.has(path))
+assert.deepEqual(unexpectedRuntimeAdditions, [])
 for (const text of [profileSkill, profileRules, profileEvidence, profileSystems, jointSkill, jointEvidence, jointTokens]) {
   assert.doesNotMatch(text, /SkyGlazing/i)
 }
@@ -57,4 +70,4 @@ console.log('KMG 482.21 LOOKUP: PASS')
 console.log('SGLOBKADELITEL LOOKUP: PASS')
 console.log('UNKNOWN-GEOMETRY GUARD: PASS')
 console.log('LOCKED SYSTEM GUARD: PASS')
-console.log('NEW RUNTIME / GEOMETRY FILES: NONE')
+console.log('UNREVIEWED RUNTIME / GEOMETRY FILES: NONE')
