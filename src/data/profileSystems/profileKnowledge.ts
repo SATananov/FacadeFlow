@@ -3,17 +3,21 @@ import {
   derivedDividerJointContexts,
   derivedJointOperationRows,
   derivedProfileEvidenceRows,
+  hasDerivedProfileEvidenceConflict,
 } from './knowledge/derivedProfileKnowledge'
 
 export type ProfileKnowledgeEvidenceStatus = 'DATABASE_EVIDENCE'
 export type JointKnowledgeEvidenceStatus = 'DATABASE_RULE_EVIDENCE'
+export type RuntimeMappingStatus = 'RUNTIME_MAPPED' | 'RUNTIME_UNMAPPED'
 
 export type ProfileKnowledgeEvidence = Readonly<{
   systemId: string
+  runtimeMappingStatus: 'RUNTIME_MAPPED'
   systemLabel: string
   sourceSystem: string
   catalogue: string
   profileId: string
+  profileName: string
   roleEn: string
   roleBg: string
   profileW: number
@@ -54,13 +58,15 @@ export function getProfileKnowledgeEvidence(
 ): ProfileKnowledgeEvidence | undefined {
   if (!profileId) return undefined
   const imported = derivedProfileEvidenceRows.find((record) =>
-    record.systemId === systemId && record.profileId === profileId,
+    record.runtimeMappingStatus === 'RUNTIME_MAPPED' &&
+    'systemId' in record && record.systemId === systemId && record.profileId === profileId,
   )
   const profileSystem = getProfileSystemById(systemId)
   const catalogProfile = profileSystem?.mainProfiles.find((profile) =>
     profile.code === profileId,
   )
-  if (!imported || !profileSystem || !catalogProfile) return undefined
+  if (!imported || !('systemId' in imported) || !profileSystem || !catalogProfile) return undefined
+  if (hasDerivedProfileEvidenceConflict(systemId, profileId)) return undefined
   return {
     ...imported,
     systemLabel: `${profileSystem.manufacturer} ${profileSystem.name}`,
