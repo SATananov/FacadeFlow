@@ -62,7 +62,16 @@ assert.equal(frame.roleEn, 'Frame')
 assert.equal(frame.roleBg, 'Каса')
 assert.equal(frame.profileW, 60)
 assert.equal(frame.profileZ, 68)
+const sash48205 = knowledge.getProfileKnowledgeEvidence('kmg-prelude-60', '482.05')
+assert.equal(sash48205.roleEn, 'Sash')
+assert.equal(sash48205.roleBg, 'Крило')
+assert.equal(sash48205.profileW, 60)
+assert.equal(sash48205.profileZ, 78)
+assert.equal(sash48205.evidenceStatus, 'DATABASE_EVIDENCE')
+assert.equal(sash48205.catalogue, 'PVC KMG 60mm')
+assert.equal(knowledge.getProfileKnowledgeEvidence('kmg-prelude-60', '482.18').profileId, '482.18')
 assert.equal(knowledge.getProfileKnowledgeEvidence('kmg-prelude-60', 'unknown'), undefined)
+assert.equal(knowledge.getProfileKnowledgeEvidence('kmg-prelude-60', '482.05-dimension-match'), undefined)
 
 const verticalJoint = knowledge.getDividerJointKnowledgeEvidence({
   systemId: 'kmg-prelude-60',
@@ -257,12 +266,19 @@ if (sashKnowledge) {
 } else {
   assert.match(sashInspectorText, /Няма потвърдени профилни данни/)
 }
+assert.equal(sashKnowledge.profileId, '482.05')
+assert.match(sashInspectorText, /Sash \/ Крило/)
+assert.match(sashInspectorText, /profileW60/)
+assert.match(sashInspectorText, /profileZ78/)
+assert.match(sashInspectorText, /DATABASE_EVIDENCE/)
+assert.doesNotMatch(sashInspectorText, /Данни за сглобката|SglobkaDelitel|BeamHorizontalKMG4k|MM1|MM4/)
 
 const unsupportedResolution = {
   ...sashResolution,
   fieldSashes: { [sashField.id]: { profileCode: 'UNKNOWN-PROFILE', source: 'human' } },
 }
 assert.equal(knowledge.getProfileKnowledgeEvidence(system.id, 'UNKNOWN-PROFILE'), undefined)
+assert.equal(knowledge.getProfileKnowledgeEvidence('unmapped-profilinken', '130000049'), undefined)
 const unsupportedRender = mount(ConstructorShell, {
   mode: 'free',
   moduleNumber: 1,

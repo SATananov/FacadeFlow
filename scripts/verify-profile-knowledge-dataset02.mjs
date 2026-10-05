@@ -59,6 +59,8 @@ assert.equal(knowledgeData.hasDerivedProfileEvidenceConflict('kmg-prelude-60', '
 
 assert.equal(knowledge.getProfileKnowledgeEvidence('kmg-prelude-60', '482.20').profileId, '482.20')
 assert.equal(knowledge.getProfileKnowledgeEvidence('kmg-prelude-60', '482.21').profileId, '482.21')
+assert.equal(knowledge.getProfileKnowledgeEvidence('kmg-prelude-60', '482.05').profileId, '482.05')
+assert.equal(knowledge.getProfileKnowledgeEvidence('kmg-prelude-60', '482.18').profileId, '482.18')
 
 for (const systemPackage of unmappedSystems.filter((systemPackage) => !Object.hasOwn(mappedPackages, systemPackage))) {
   assert.equal(catalog.getProfileSystemById(systemPackage), undefined)
