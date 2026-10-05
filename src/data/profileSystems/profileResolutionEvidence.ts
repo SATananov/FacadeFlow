@@ -9,15 +9,23 @@ import { getProfileKnowledgeEvidence } from './profileKnowledge'
  * This read-only layer reports only whether imported evidence recognizes an
  * exact profile/system identity for a requested structural role. It does not
  * assign profiles, validate construction compatibility, or produce geometry.
+ * Context support means only that the requested assignment context names the
+ * same structural role; it does not prove product or component compatibility.
  * UNKNOWN FACTS MUST REMAIN UNKNOWN.
  */
 export type ProfileResolutionEvidenceRole = 'frame' | 'sash' | 'mullion'
+
+export type ProfileResolutionEvidenceContext =
+  | 'FRAME_ASSIGNMENT'
+  | 'SASH_ASSIGNMENT'
+  | 'MULLION_ASSIGNMENT'
 
 export type ProfileResolutionEvidenceStatus = 'DATABASE_EVIDENCE' | 'UNKNOWN'
 
 export type ProfileResolutionEvidenceStatusCode =
   | 'SUPPORTED_BY_DATABASE_ROLE'
   | 'ROLE_MISMATCH'
+  | 'CONTEXT_MISMATCH'
   | 'PROFILE_NOT_FOUND'
   | 'SYSTEM_NOT_FOUND'
   | 'UNRESOLVED'
@@ -26,6 +34,7 @@ export type ProfileResolutionEvidenceResult = Readonly<{
   systemId: string
   profileId: string
   requestedRole: ProfileResolutionEvidenceRole
+  context: ProfileResolutionEvidenceContext
   recognizedRole: ProfileResolutionEvidenceRole | null
   evidenceStatus: ProfileResolutionEvidenceStatus
   resolutionStatus: ProfileResolutionEvidenceStatusCode
@@ -49,6 +58,7 @@ function result(
   systemId: string,
   profileId: string,
   requestedRole: ProfileResolutionEvidenceRole,
+  context: ProfileResolutionEvidenceContext,
   recognizedRole: ProfileResolutionEvidenceRole | null,
   evidenceStatus: ProfileResolutionEvidenceStatus,
   resolutionStatus: ProfileResolutionEvidenceStatusCode,
@@ -58,6 +68,7 @@ function result(
     systemId,
     profileId,
     requestedRole,
+    context,
     recognizedRole,
     evidenceStatus,
     resolutionStatus,
@@ -70,14 +81,16 @@ export function evaluateProfileResolutionEvidence(args: {
   systemId: string
   profileId: string
   requestedRole: ProfileResolutionEvidenceRole
+  context: ProfileResolutionEvidenceContext
 }): ProfileResolutionEvidenceResult {
-  const { systemId, profileId, requestedRole } = args
+  const { systemId, profileId, requestedRole, context } = args
   const system = getProfileSystemById(systemId)
   if (!system) {
     return result(
       systemId,
       profileId,
       requestedRole,
+      context,
       null,
       'UNKNOWN',
       'SYSTEM_NOT_FOUND',
@@ -91,6 +104,7 @@ export function evaluateProfileResolutionEvidence(args: {
       systemId,
       profileId,
       requestedRole,
+      context,
       null,
       'UNKNOWN',
       'PROFILE_NOT_FOUND',
@@ -104,10 +118,30 @@ export function evaluateProfileResolutionEvidence(args: {
       systemId,
       profileId,
       requestedRole,
+      context,
       null,
       evidence.evidenceStatus,
       'UNRESOLVED',
       ['The evidence role is not one of the supported structural resolution roles.'],
+    )
+  }
+
+  const contextRoleByContext: Readonly<Record<ProfileResolutionEvidenceContext, ProfileResolutionEvidenceRole>> = {
+    FRAME_ASSIGNMENT: 'frame',
+    SASH_ASSIGNMENT: 'sash',
+    MULLION_ASSIGNMENT: 'mullion',
+  }
+  const contextRole = contextRoleByContext[context]
+  if (contextRole !== requestedRole) {
+    return result(
+      systemId,
+      profileId,
+      requestedRole,
+      context,
+      recognizedRole,
+      evidence.evidenceStatus,
+      'CONTEXT_MISMATCH',
+      [`Requested role ${requestedRole} contradicts context ${context}, which requires ${contextRole}.`],
     )
   }
 
@@ -116,6 +150,7 @@ export function evaluateProfileResolutionEvidence(args: {
       systemId,
       profileId,
       requestedRole,
+      context,
       recognizedRole,
       evidence.evidenceStatus,
       'ROLE_MISMATCH',
@@ -127,6 +162,7 @@ export function evaluateProfileResolutionEvidence(args: {
     systemId,
     profileId,
     requestedRole,
+    context,
     recognizedRole,
     evidence.evidenceStatus,
     'SUPPORTED_BY_DATABASE_ROLE',

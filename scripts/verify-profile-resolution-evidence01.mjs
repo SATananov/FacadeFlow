@@ -9,7 +9,17 @@ const profiles = load('src/domain/profileResolution.ts')
 const catalog = load('src/data/profileSystems/catalog.ts')
 
 function evaluate(systemId, profileId, requestedRole) {
-  return evidence.evaluateProfileResolutionEvidence({ systemId, profileId, requestedRole })
+  const contextByRole = {
+    frame: 'FRAME_ASSIGNMENT',
+    sash: 'SASH_ASSIGNMENT',
+    mullion: 'MULLION_ASSIGNMENT',
+  }
+  return evidence.evaluateProfileResolutionEvidence({
+    systemId,
+    profileId,
+    requestedRole,
+    context: contextByRole[requestedRole],
+  })
 }
 
 const supportedCases = [
