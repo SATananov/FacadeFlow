@@ -16,7 +16,7 @@ const targetSystems = [
   'WeissProfil2018_113',
 ]
 const unmappedSystems = targetSystems.filter((systemPackage) => systemPackage !== 'VivaPlast')
-const mappedPackages = { VivaPlast: 'vivaplast', Profilink16: 'profilink16', Schuco: 'schuco', Baufen: 'baufen' }
+const mappedPackages = { VivaPlast: 'vivaplast', Profilink16: 'profilink16', Schuco: 'schuco', Baufen: 'baufen', WeissProfil2018_113: 'weissprofil2018-113' }
 const lockedSystems = ['PremiumPlast', 'UIUT-STIL']
 const structuralRoles = new Set(['Frame', 'Wing', 'Mullion', 'Flying mullion'])
 const rows = knowledgeData.derivedProfileEvidenceRows
@@ -25,6 +25,7 @@ const vivaRows = imported.filter((row) => row.sourceSystem === 'VivaPlast')
 const profilink16Rows = imported.filter((row) => row.sourceSystem === 'Profilink16')
 const schucoRows = imported.filter((row) => row.sourceSystem === 'Schuco')
 const baufenRows = imported.filter((row) => row.sourceSystem === 'Baufen')
+const weissRows = imported.filter((row) => row.sourceSystem === 'WeissProfil2018_113')
 
 assert.equal(new Set(imported.map((row) => row.sourceSystem)).size, targetSystems.length)
 assert.ok(imported.length >= targetSystems.length * 3)
@@ -32,6 +33,8 @@ assert.ok(vivaRows.every((row) => row.runtimeMappingStatus === 'RUNTIME_MAPPED' 
 assert.ok(profilink16Rows.filter((row) => ['1330000056', '130000049', '311007'].includes(row.profileId)).every((row) => row.runtimeMappingStatus === 'RUNTIME_MAPPED' && row.systemId === 'profilink16'))
 assert.ok(schucoRows.filter((row) => ['SCH 19411', 'SCH 19431', 'SCH 19460'].includes(row.profileId)).every((row) => row.runtimeMappingStatus === 'RUNTIME_MAPPED' && row.systemId === 'schuco'))
 assert.ok(baufenRows.filter((row) => ['1607', '1608', '1632'].includes(row.profileId)).every((row) => row.runtimeMappingStatus === 'RUNTIME_MAPPED' && row.systemId === 'baufen'))
+assert.ok(weissRows.filter((row) => ['3001', '3002', '3003'].includes(row.profileId)).every((row) => row.runtimeMappingStatus === 'RUNTIME_MAPPED' && row.systemId === 'weissprofil2018-113'))
+assert.ok(weissRows.filter((row) => !['3001', '3002', '3003'].includes(row.profileId)).every((row) => row.runtimeMappingStatus === 'RUNTIME_UNMAPPED' && !('systemId' in row)))
 assert.ok(imported.filter((row) => unmappedSystems.includes(row.sourceSystem) && !Object.hasOwn(mappedPackages, row.sourceSystem)).every((row) => row.runtimeMappingStatus === 'RUNTIME_UNMAPPED'))
 assert.ok(imported.filter((row) => unmappedSystems.includes(row.sourceSystem) && !Object.hasOwn(mappedPackages, row.sourceSystem)).every((row) => !('systemId' in row)))
 assert.ok(imported.every((row) => structuralRoles.has(row.roleEn)))
@@ -83,7 +86,7 @@ assert.equal(changedDomainFiles, '')
 console.log('PROFILE KNOWLEDGE DATASET 02 VERIFY PASS')
 console.log(`STRUCTURAL IMPORTED SYSTEMS: ${targetSystems.join(', ')}`)
 console.log(`STRUCTURAL RECORDS: ${imported.length}`)
-console.log('RUNTIME MAPPED RECORDS: KMG PRELUDE 60, VivaPlast, Profilink16, Schuco, Baufen')
+console.log('RUNTIME MAPPED RECORDS: KMG PRELUDE 60, VivaPlast, Profilink16, Schuco, Baufen, WeissProfil GR C-WP 5000/4000 subset')
 console.log('RUNTIME UNMAPPED RECORDS: PASS')
 console.log('DUPLICATE-ID COLLISION GUARD: PASS')
 console.log('EVIDENCE CONFLICT GUARD: PASS')

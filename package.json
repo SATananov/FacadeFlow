@@ -43,6 +43,7 @@
     "test:profilink16-runtime-profile-system01": "node scripts/verify-profilink16-runtime-profile-system01.mjs",
     "test:schuco-runtime-profile-system01": "node scripts/verify-schuco-runtime-profile-system01.mjs",
     "test:baufen-runtime-profile-system01": "node scripts/verify-baufen-runtime-profile-system01.mjs",
+    "test:weissprofil-runtime-profile-system01": "node scripts/verify-weissprofil-runtime-profile-system01.mjs",
     "test:glazing-evidence01": "node scripts/verify-glazing-evidence01.mjs",
     "test:glazing-evidence01-runtime": "vite build --ssr scripts/verify-glazing-evidence01-runtime.ts --outDir node_modules/.facadeflow-runtime/glazing-evidence01 --emptyOutDir && node node_modules/.facadeflow-runtime/glazing-evidence01/verify-glazing-evidence01-runtime.js",
     "test:glazing-context01a": "node scripts/verify-glazing-context01a.mjs",

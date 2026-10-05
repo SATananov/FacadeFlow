@@ -4,6 +4,7 @@ import { vivaPlast } from './vivaplast'
 import { profilink16 } from './profilink16'
 import { schuco } from './schuco'
 import { baufen } from './baufen'
+import { weissProfil2018_113 } from './weissprofil2018_113'
 import type { ProfileSystemCatalogEntry } from './types'
 
 export const profileSystemCatalog: readonly ProfileSystemCatalogEntry[] = [
@@ -14,6 +15,7 @@ export const profileSystemCatalog: readonly ProfileSystemCatalogEntry[] = [
   profilink16,
   schuco,
   baufen,
+  weissProfil2018_113,
 ]
 
 export type ProfileSystemId = (typeof profileSystemCatalog)[number]['id']
