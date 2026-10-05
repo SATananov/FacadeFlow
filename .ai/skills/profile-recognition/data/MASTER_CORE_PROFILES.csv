@@ -1,0 +1,524 @@
+﻿source_system,id,catalog,name,type,subtype_id,dim_in,dim_out,maker_code,group,group2,group3,cuttingang,cadfile,profilez,profilew,Systemsid,role_bg,role_en,evidence_status
+Altest,_GlassVentSDel,,,3,3,100.0,0.0,70618263288.0,WDS 70,,,90,05.0301.dxf,100.0,70.0,0.0,Делител,,DATABASE_EVIDENCE
+Altest,0,,Без каса,1,1,10.0,0.0,43021321466.0,,,,90,,0.0,0.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,00000000,ГИЛОТИНА,Без каса,1,1,145.0,0.0,78645445640.0,AL,,,90,,0.0,115.3,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,05.0100,WDS70_KASA00,Каса WDS малка,1,1,26.0,0.0,84234505614.0,WDS 70,AL,,45,05.0100.dxf,51.0,70.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,05.0101,WDS70_KASA01,Каса WDS голяма,1,1,36.0,0.0,88214595170.0,WDS 70,AL,,45,05.0101.dxf,61.0,70.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,05.0205,WDS 70_KR70,Крило WDS за PVC,2,2,36.0,20.0,25315755862.0,WDS 70,AL,,45,05.0205.dxf,81.0,79.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,05.0211,WDS 70_KR70,Крило WDS за PVC голямо,2,2,48.0,20.0,55465945316.0,WDS 70,AL,,45,05.0211.dxf,93.0,79.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,05.0301,WDS 70,Делител WDS голям,3,3,50.0,25.0,16466195100.0,WDS 70,AL,,90,05.0301.dxf,100.0,70.0,0.0,Делител,,DATABASE_EVIDENCE
+Altest,05.0302,WDS 70,Делител WDS ус. вън,3,3,50.0,25.0,12496275178.0,WDS 70,AL,,45,,100.0,120.0,0.0,Делител,,DATABASE_EVIDENCE
+Altest,05.0303,WDS 70,Делител WDS ус. вътре,3,3,50.0,25.0,92476775535.0,WDS 70,AL,,45,,100.0,120.0,0.0,Делител,,DATABASE_EVIDENCE
+Altest,05.0304,WDS 70,Делител WDS малък,3,3,30.0,25.0,1446225216.0,WDS 70,AL,,90,05.0304.dxf,80.0,70.0,0.0,Делител,,DATABASE_EVIDENCE
+Altest,05.0309,WDS 70,Делител WDS в крило,3,3,30.0,25.0,10406325805.0,WDS 70,AL,,90,,80.0,79.0,0.0,Делител,,DATABASE_EVIDENCE
+Altest,05.0322,WDS 70,Лет.Делител,4,5,0.0,0.0,75626965856.0,WDS 70,AL,,90,,0.0,0.0,0.0,Летящ делител,,DATABASE_EVIDENCE
+Altest,05.1102,WDS70,Каса WDS за Т-кр за фасада,1,1,53.0,0.0,83344276915.0,WDS 70,AL,,45,,68.0,70.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,05.1103,WDS70,Каса WDS за Z-крило врата,1,1,53.0,0.0,34304966253.0,WDS 70,AL,,45,05.1103.dxf,68.0,70.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,05.1104,WDS70,Каса WDS за T-крило врата,1,1,53.0,0.0,76334616821.0,WDS 70,AL,,45,05.1104.dxf,68.0,70.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,05.1203,WDS 70,Крило врата Z за WDS,2,2,62.0,15.0,76475816562.0,WDS 70,AL,,45,05.1203.dxf,102.0,70.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,05.1204,WDS 70,Крило врата T за WDS,2,2,62.0,15.0,30405436764.0,WDS 70,AL,,45,05.1204.dxf,102.0,70.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,05.1303,WDS 70,Лет. дел. WDS за Z крило,4,5,0.0,0.0,35506466778.0,WDS 70,AL,,90,,0.0,0.0,0.0,Летящ делител,,DATABASE_EVIDENCE
+Altest,05.1304,WDS 70,Лет. дел. WDS за T крило,4,5,0.0,0.0,1526226863.0,WDS 70,AL,,90,,0.0,0.0,0.0,Летящ делител,,DATABASE_EVIDENCE
+Altest,06 0003,ГИЛОТИНА,Горен / долен хоризонтал,4,1,0.0,0.0,44819805254.0,PONI-MINI,ГИЛОТИНА,,90,,0.0,0.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,06.0003,ГИЛОТИНА,Горен / Долен хоризонтал,1,1,15.0,0.0,38203755748.0,PONI-MINI,ГИЛОТИНА,,90,,15.0,99.5,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,06.0005,ГИЛОТИНА,Крило един. стъкло 8мм,2,2,38.0,0.0,56293505572.0,PONI-MINI,ГИЛОТИНА,,90,,38.0,25.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,06.0008,ГИЛОТИНА,Вертикал каса,1,1,18.0,0.0,29243805780.0,PONI-MINI,ГИЛОТИНА,,90,,90.3,109.5,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,06.0010,ГИЛОТИНА,Крило стъклопакет 20мм,2,2,38.0,0.0,52323145772.0,PONI-MINI,ГИЛОТИНА,,90,,38.0,25.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,07.0001,LS70,Единична релса LS,1,1,51.0,0.0,76313685284.0,LS,AL,,90,,51.0,72.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,07.0002,LS70,Двойна релса LS,1,1,51.0,0.0,88343265975.0,LS,AL,,90,07.0002.dxf,51.0,155.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,07.0003,LS70,Двойна релса LS+комарник,1,1,51.0,0.0,22363265487.0,LS,AL,,90,07.0003.dxf,51.0,171.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,07.0004,LS70,Тройна релса LS,1,1,51.0,0.0,23313495620.0,LS,AL,,90,07.0004.dxf,51.0,238.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,07.0005,LS70,Крило плъзгане LS,2,2,49.5,25.0,37333235878.0,LS,AL,,90,07.0005.dxf,99.5,67.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,07.0012,ПЛЪЗГАЩ КОМАРНИК,Релса пл. ком. 300 0128,1,1,45.4,0.0,27443755871.0,PONI-MINI,,,90,,45.4,24.3,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,1001,MINI,Двойна релса MINI,1,1,37.5,0.0,30560308424.0,PONI-MINI,AL,,45,SL1001.dxf,37.5,45.5,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,1004,MINI,Единична релса MINI,1,1,37.5,0.0,87570418931.0,PONI-MINI,AL,,45,SL1004.dxf,37.5,30.3,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,1005,MINI,Тройна релса MINI,1,1,37.5,0.0,14510888322.0,PONI-MINI,AL,,45,SL1005.dxf,37.5,82.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,1011,MINI,Крило за стъклопакет MINI,2,2,61.0,0.0,50600338524.0,PONI-MINI,AL,,45,SL1011.dxf,61.0,28.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,1012,MINI,Kрило за ед. стъкло MINI,2,2,61.0,0.0,5610398690.0,PONI-MINI,AL,,45,SL1012.dxf,61.0,28.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,1024,MINI,Делител за стп MINI,3,3,61.0,0.0,58720768744.0,PONI-MINI,AL,,45,,61.0,28.0,0.0,Делител,,DATABASE_EVIDENCE
+Altest,1031,ПЛЪЗГАЩ КОМАРНИК,Крило пл. ком. 1031,2,2,54.0,0.0,13830508585.0,PONI-MINI,AL,,45,,54.0,16.1,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,103241,NPVC_Кр_Вр_70,Крило Врата Z VEKA 70 AD,2,2,64.0,20.0,23031818812.0,VEKA 70,KABAN_Cent,,45,,105.0,70.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,103242,NPVC_Кр_Вр_70,Крило Врата T VEKA 70 AD,2,2,64.0,20.0,71071278955.0,VEKA 70,KABAN_Cent,,45,,105.0,70.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,103445,NPVC_Кр_Вр_76,Крило Врата Z VEKA 82 MD,2,2,69.0,20.0,35291988206.0,VEKA 82MD,KABAN_Cent,,45,,114.0,82.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,103446,NPVC_Кр_Вр_76,Крило врата T VEKA 82 MD,2,2,69.0,20.0,81261328414.0,VEKA 82MD,KABAN_Cent,,45,,114.0,82.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,103485,NPVC_Кр_Вр_76,Крило врата Z VEKA 76 AD,2,2,69.0,20.0,26671938658.0,VEKA 76 AD,KABAN_Cent,,90,,114.0,76.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,103486,NPVC_Кр_Вр_76,Крило врата T VEKA 76 AD,2,2,69.0,20.0,69671478389.0,VEKA 76 AD,KABAN_Cent,,45,,114.0,76.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,1051,ПЛЪЗГАЩ КОМАРНИК,Каса пл. ком. 1031,1,1,37.0,0.0,51030388651.0,PONI-MINI,,,90,,37.0,30.9,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,2022,MINI,Делител за ед. стъкло MINI,3,3,61.0,0.0,11891279373.0,PONI-MINI,AL,,45,,61.0,28.0,0.0,Делител,,DATABASE_EVIDENCE
+Altest,300 0128,LS70,Крило пл. ком. 300 0128,2,2,61.0,0.0,86668352161.0,PONI-MINI,AL,,45,,61.0,18.6,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,300 0128-,LS70,Крило пл. ком. 300 0128,4,2,0.0,0.0,8268872253.0,PONI-MINI,AL,,45,,0.0,0.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,300 0130,ALTEST,Релса пл. ком. 300 0130,1,1,35.2,0.0,39738442336.0,PONI-MINI,,,90,,35.2,16.3,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,300 4311,PONY,каса кутия,1,1,20.0,0.0,15122852748.0,PONI-MINI,AL,,45,300 4311.dxf,44.38,122.9,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,375 0004,PONY,Каса Pony 004 нулева,1,1,6.2,0.0,71573482508.0,PONI-MINI,AL,,90,,28.2,37.5,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,375 0005,PONY,Каса Pony 005 малка,1,1,24.8,0.0,36523742144.0,PONI-MINI,AL,,45,,46.8,37.5,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,375 0005-,PONY,Каса Pony 005,1,1,24.8,28.8,18881682933.0,PONI-MINI,AL,,90,,75.6,37.5,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,375 0006,PONY,Каса Pony 006 с перо,1,1,24.8,28.8,24583752272.0,PONI-MINI,AL,,90,,75.6,37.5,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,375 0010,PONY,Каса Pony 010,1,1,35.2,0.0,48623512967.0,PONI-MINI,AL,,45,3750010.dxf,57.2,37.5,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,375 0011,PONY,Каса Pony 011,1,1,30.0,0.0,11643942041.0,PONI-MINI,AL,,90,,52.0,37.5,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,375 0020,PONY,Каса Pony 020 обла малка,1,1,24.8,0.0,39793822385.0,PONI-MINI,AL,,45,,46.8,45.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,375 0035,PONY,Каса Pony 035 обла,1,1,35.2,0.0,84803792148.0,PONI-MINI,AL,,45,,57.2,45.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,375 0040,PONY,Каса Pony обла малка с перо,1,1,24.8,26.8,84943622986.0,PONI-MINI,AL,,45,,73.6,48.8,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,375 0050,PONY,Каса Pony бомбе малка,1,1,24.8,0.0,42003622055.0,PONI-MINI,AL,,45,,46.8,73.8,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,375 0055,PONY,Каса Pony бомбе,1,1,35.2,0.0,17023232369.0,PONI-MINI,AL,,45,,57.2,73.8,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,375 0110,PONY,Крило Pony право,2,2,33.4,17.5,25723652623.0,PONI-MINI,AL,,45,,72.9,45.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,375 0115,PONY,Крило Pony врата Z право,2,2,54.4,17.5,56703002860.0,PONI-MINI,AL,,45,,93.9,45.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,375 0120,PONY,Крило Pony врата T право,2,2,54.4,17.5,67853862395.0,PONI-MINI,AL,,45,,93.9,45.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,375 0125,PONY,Крило Pony обло малко,2,2,22.9,17.5,71813712441.0,PONI-MINI,AL,,45,3750125.dxf,62.4,45.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,375 0135,PONY,Крило Pony врата Z,2,2,54.4,17.5,65913732249.0,PONI-MINI,AL,,45,3750135.dxf,93.9,45.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,375 0138,PONY,Крило Pony врата Z,2,2,54.4,17.5,37913352738.0,PONI-MINI,AL,,90,,93.9,45.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,375 0140,PONY,Крило Pony врата T,2,2,54.4,17.5,50033282965.0,PONI-MINI,AL,,45,3750140.dxf,93.9,45.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,375 0155,PONY,Крило Pony врата без държач,2,2,71.4,17.5,37143062753.0,PONI-MINI,AL,,45,,88.9,45.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,375 0175,PONY,Крило Pony капаци,2,2,52.5,17.5,62363712588.0,PONI-MINI,AL,,45,,70.0,45.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,375 0180,PONY,Делител Pony за капаци,3,3,60.0,0.0,16403302884.0,PONI-MINI,AL,,45,,60.0,32.5,0.0,Делител,,DATABASE_EVIDENCE
+Altest,375 0205,PONY,Делител Pony малък,3,3,20.8,22.0,14723312434.0,PONI-MINI,AL,,45,,64.8,37.5,0.0,Делител,,DATABASE_EVIDENCE
+Altest,375 0210,PONY,Делител Pony среден,3,3,29.0,22.0,36823842682.0,PONI-MINI,AL,,45,3750210.dxf,73.0,37.5,0.0,Делител,,DATABASE_EVIDENCE
+Altest,375 0215,PONY,Делител Pony голям,3,3,40.0,22.0,5893152602.0,PONI-MINI,AL,,45,3750215.dxf,84.0,37.5,0.0,Делител,,DATABASE_EVIDENCE
+Altest,375 0225,PONY,Табла Pony голяма,3,3,108.0,0.0,61943142314.0,PONI-MINI,AL,,90,,130.0,37.5,0.0,Делител,,DATABASE_EVIDENCE
+Altest,375 0226,PONY,Табла Pony малка,3,3,43.0,0.0,21973552412.0,PONI-MINI,AL,,90,,65.0,37.5,0.0,Делител,,DATABASE_EVIDENCE
+Altest,375 0305,PONY,Лет. дел. Pony прав,4,5,0.0,0.0,44823962335.0,PONI-MINI,AL,,90,,0.0,0.0,0.0,Летящ делител,,DATABASE_EVIDENCE
+Altest,375 0310,PONY,Лет. дел. Pony объл,4,5,0.0,0.0,50973402558.0,PONI-MINI,AL,,90,,0.0,0.0,0.0,Летящ делител,,DATABASE_EVIDENCE
+Altest,375 0365,PONY,AL праг за Pony елоксиран,1,1,16.0,0.0,81453502208.0,PONI-MINI,AL,,45,,16.0,33.3,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,375 0405,PONY,Каса Pony летяща врата,1,1,22.3,0.0,16983532562.0,PONI-MINI,AL,,45,,22.3,37.5,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,375 0410,PONY,Крило Pony летяща врата,2,2,52.4,0.0,77023872742.0,PONI-MINI,AL,,45,,74.4,37.5,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,375 0605,PONY,Каса Pony инт. врата,1,1,26.0,39.5,83193172855.0,PONI-MINI,AL,,90,,87.5,106.1,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,375 0800,Стъклен балкон,Каса вертикали,1,1,94.5,0.0,6333262287.0,PONI-MINI,AL,,90,,94.5,40.9,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,375 0801,Стъклен балкон,Каса хоризонтали,1,1,60.7,0.0,59303452432.0,PONI-MINI,AL,,90,,60.7,40.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,375 0802,Стъклен балкон,Крило стъклен балкон,2,2,44.0,0.0,18363482861.0,PONI-MINI,AL,,90,,44.0,40.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,38.0001,LS 38,Двойна релса LS38,1,1,46.0,0.0,73746118225.0,LS,AL,,90,380001.dxf,46.0,93.5,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,38.0002,LS 38,Тройна релса LS38,1,1,46.0,0.0,67766148868.0,LS,AL,,90,380002.dxf,46.0,143.5,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,38.0003,LS38,Двойна релса за фикс LS38,1,1,28.6,0.0,4726598172.0,LS,AL,,90,,46.6,93.5,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,38.0004,LS38,Каса за FIX LS38,1,1,43.0,0.0,38766598897.0,LS,AL,,90,380004.dxf,65.0,93.5,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,38.0007,LS 38,Крило плъзгане LS38,2,2,47.4,41.6,35756628185.0,LS,AL,,90,380007.dxf,89.0,37.5,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,38.0009,LS38,Каса за FIX LS38 IZNOS,1,1,43.0,0.0,42716368347.0,LS,AL,,45,,65.0,93.5,1.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,38.0020,LS 38,Двойна релса LS38 N,1,1,46.0,0.0,67916558429.0,LS,AL,,90,380020.dxf,46.0,109.6,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,38.0030,LS 38,Тройна релса LS38 N,1,1,46.0,0.0,71046548636.0,LS,AL,,90,380030.dxf,46.0,143.5,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,470001,FS470,"КАСА - СТРАНИЧНА , ALT",1,1,35.0,0.0,24171821419.0,WDS 70,AL,,45,,0.0,60.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,470002,FS470,"КАСА - ПОДРАМКА , ALT",1,1,31.0,0.0,70171381784.0,WDS 70,AL,,45,,0.0,63.2,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,470007,FS470,"КАСА - ДОЛНА , ALT",1,1,60.0,0.0,34101321748.0,WDS 70,AL,,45,,0.0,60.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,470010,FS470,"КАСА - ГОРНА , ALT",1,1,67.0,0.0,19251141194.0,WDS 70,AL,,45,,83.0,60.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,482.05,PVC KMG 60mm,Крило KMG 3к,2,2,36.0,20.0,99283821363.0,KMG основни,KABAN_Cent,,45,,78.0,60.0,2.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,482.11,KMG,Летящ делител за 4к KMG,4,5,0.0,0.0,58383731597.0,KMG основни,ПВЦ - Лет.Дел,,90,,0.0,0.0,0.0,Летящ делител,,DATABASE_EVIDENCE
+Altest,482.18,PVC KMG 60mm,Крило KMG 4к,2,2,36.0,20.0,68303761492.0,KMG основни,KABAN_Cent,,45,,78.0,60.0,2.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,482.20,PVC KMG 60mm,Каса KMG 4к,1,1,46.0,0.0,54433281471.0,KMG основни,KABAN_Cent,,45,,68.0,60.0,2.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,482.21,PVC KMG 60mm,Делител KMG 4к,3,3,40.0,22.0,50433261597.0,KMG основни,KABAN_Cent,,45,,84.0,60.0,2.0,Делител,,DATABASE_EVIDENCE
+Altest,482.23,БАЛКОНСКО_КРИЛО,Балк. крило Т KMG 4к,2,2,53.0,20.0,57423181738.0,KMG основни,KABAN_Cent,,45,,95.0,60.0,2.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,482.24,PVC KMG 60mm,Делител KMG 4к малък,3,3,26.0,22.0,98473471614.0,KMG основни,KABAN_Cent,,45,,0.0,0.0,0.0,Делител,,DATABASE_EVIDENCE
+Altest,482.25,БАЛКОНСКО_КРИЛО,Балк. крило Z KMG 4к,2,2,53.0,20.0,36493311340.0,KMG основни,KABAN_Cent,,45,,95.0,60.0,2.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,482.26,KMG_КРИЛО_ВРАТА_60,Крило врата Z 4к KMG,2,2,82.0,20.0,79433651664.0,KMG основни,KABAN_Cent,,45,,124.0,60.0,2.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,482.27,KMG_КРИЛО_ВРАТА_60,Крило врата T 4к KMG,2,2,82.0,20.0,41453401528.0,KMG основни,KABAN_Cent,,45,,124.0,60.0,2.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,482.30-K,PVC KMG 60mm,Каса K KMG 3к,1,1,42.0,0.0,73854727637.0,KMG основни,KABAN_Cent,,90,,64.0,60.0,2.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,530 0005,AL_ESKIMOS_05,Каса Eskimos 005 малка,1,1,24.8,0.0,26890824739.0,Eskimos,AL,,45,,46.8,53.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,530 0010,AL_ESKIMOS_010,Каса Eskimos 010,1,1,35.3,0.0,66950994295.0,Eskimos,AL,,90,5300010.dxf,57.3,53.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,530 0020,AL_ESKIMOS_020,Каса Eskimos 020 обла,1,1,35.3,0.0,55030414587.0,Eskimos,AL,,45,,57.3,68.6,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,530 0021,AL_ESKIMOS_021,Каса Eskimos 021 обла голяма,1,1,48.0,0.0,51060384671.0,Eskimos,AL,,90,,70.0,68.6,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,530 0030,ESKIMOS,Каса Eskimos 030,1,1,24.8,0.0,29180344972.0,Eskimos,AL,,45,,81.2,53.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,530 0105,ESKIMOS,Крило Esk. право малко,2,2,22.9,17.5,61980664866.0,Eskimos,AL,,45,,62.4,60.5,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,530 0110,ESKIMOS,Крило Esk. право,2,2,33.3,17.5,42070424887.0,Eskimos,AL,,45,,72.8,60.5,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,530 0115,ESKIMOS,Крило Esk. Z врата право,2,2,54.4,17.5,94080414781.0,Eskimos,AL,,45,,93.9,60.5,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,530 0120,ESKIMOS,Крило Esk. обло малко,2,2,22.9,17.5,27170184528.0,Eskimos,AL,,45,,62.4,60.5,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,530 0125,ESKIMOS,Крило Esk. обло,2,2,33.3,17.5,73120584056.0,Eskimos,AL,,45,,72.8,60.5,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,530 0130,ESK_Kr,Крило Esk. Z врата обло,2,2,54.4,17.5,92250764634.0,Eskimos,AL,,45,5300130.dxf,93.9,60.5,1.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,530 0135,ESK_Kr,Крило Esk. T врата обло,2,2,54.4,17.5,79290244826.0,Eskimos,AL,,45,5300135.dxf,93.9,60.5,1.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,530 0150,ESKIMOS,Крило Esk. T скрито,2,2,18.4,20.5,47430244974.0,Eskimos,AL,,45,,62.4,53.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,530 0205,ESKIMOS_DEL,Делител Eskimos малък,3,3,29.0,22.0,51030764769.0,Eskimos,AL,,45,5300205.dxf,73.0,53.0,0.0,Делител,,DATABASE_EVIDENCE
+Altest,530 0210,ESKIMOS_DEL,Делител Eskimos голям,3,3,45.0,22.0,63130424352.0,Eskimos,AL,,45,,89.0,53.0,0.0,Делител,,DATABASE_EVIDENCE
+Altest,530 0220,ESKIMOS,Табла Eskimos,3,3,108.0,0.0,34250774394.0,Eskimos,AL,,90,,130.0,53.0,0.0,Делител,,DATABASE_EVIDENCE
+Altest,530 0305,ESKIMOS,Лет. дел. Eskimos прав,4,5,0.0,0.0,56110614364.0,Eskimos,AL,,90,,0.0,0.0,0.0,Летящ делител,,DATABASE_EVIDENCE
+Altest,530 0310,ESKIMOS,Лет. дел. Eskimos объл,4,5,0.0,0.0,21260194432.0,Eskimos,AL,,90,,0.0,0.0,0.0,Летящ делител,,DATABASE_EVIDENCE
+Altest,530 0326,ESKIMOS_KR,Крило Esk. за PVC обло,2,2,39.2,20.0,74380674883.0,Eskimos,AL,,45,5300326.dxf,81.2,60.5,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,530 0327,ESKIMOS_KR,Крило Esk. за PVC право,2,2,39.2,20.0,32390854340.0,Eskimos,AL,,45,5300327.dxf,81.2,60.5,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,530 0328,ESKIMOS,Лет. дел. Esk. за PVC прав,4,5,0.0,0.0,60320024454.0,Eskimos DP,AL,,90,,0.0,0.0,0.0,Летящ делител,,DATABASE_EVIDENCE
+Altest,530 0329,ESKIMOS,Лет. дел. Esk. за PVC объл,4,5,0.0,0.0,31390284215.0,Eskimos DP,AL,,90,,0.0,0.0,0.0,Летящ делител,,DATABASE_EVIDENCE
+Altest,530 0330,ESKIMOS,AL праг за Eskimos елоксиран,1,1,20.3,0.0,56420934177.0,Eskimos,AL,,45,,20.3,49.0,1.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,5300025,AL_ESKIMOS_010,Каса Eskimos IZR,1,1,35.3,0.0,81870060379.0,Eskimos,AL,,45,,57.3,53.0,1.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,549.04,KMG,Летящ делител за 6к KMG,4,5,0.0,0.0,69691262289.0,KMG основни,ПВЦ - Лет.Дел,,90,,0.0,0.0,0.0,Летящ делител,,DATABASE_EVIDENCE
+Altest,549.05,KMG_КРИЛО_ВРАТА,Крило врата Z 6к KMG,2,2,71.0,20.0,23671872132.0,KMG основни,KABAN_Cent,,45,,113.0,70.0,2.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,549.11,KMG_КРИЛО_ВРАТА,Крило врата T 6к KMG,2,2,71.0,20.0,67721552433.0,KMG основни,KABAN_Cent,,45,,113.0,70.0,2.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,549.15,PVC KMG 70mm,Каса KMG 6к,1,1,46.0,0.0,63731452722.0,KMG основни,KABAN_Cent,,45,,68.0,70.0,2.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,549.16,PVC KMG 70mm,Крило KMG 6к,2,2,36.0,20.0,18741182192.0,KMG основни,KABAN_Cent,,45,,78.0,70.0,2.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,549.17,PVC KMG 70mm,Делител KMG 6к,3,3,44.0,22.0,59741592862.0,KMG основни,KABAN_Cent,,90,,88.0,70.0,2.0,Делител,,DATABASE_EVIDENCE
+Altest,549.19,PVC KMG 70mm,Крило KMG 6к Водобр.,2,2,36.0,20.0,86741142072.0,KMG основни,KABAN_Cent,,45,,78.0,70.0,2.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,549.20,PVC KMG 70mm,Каса KMG 6к с перваз,1,1,35.0,40.0,55821262540.0,KMG основни,KABAN_Cent,,90,,97.0,70.0,2.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,70221,NPVC_Кр_Вр_70,Крило Врата Z PROFINE 70,2,2,69.0,20.0,93306044457.0,Kommerling 70,KABAN_Cent,,45,,110.0,70.0,2.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,70222,NPVC_Кр_Вр_70,Крило Врата T PROFINE 70,2,2,69.0,20.0,56316444223.0,Kommerling 70,KABAN_Cent,,45,,110.0,70.0,2.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,76204,NPVC_Кр_Вр_76,Крило Врата Z AD PROFINE 76,2,2,89.0,21.0,86756864337.0,Kommerling 76,KABAN_Cent,,45,,110.0,76.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,76205,NPVC_Кр_Вр_76,Крило Врата Т PROFINE 76AD,2,2,65.0,21.0,73786344213.0,Kommerling 76,KABAN_Cent,,45,,110.0,76.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,76272,NPVC_Кр_Вр_76,Крило Врата MD Z PROFINE 76,2,2,69.0,20.0,97446614899.0,Kommerling 76,KABAN_Cent,,45,,110.0,76.0,2.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,76283,NPVC_Кр_Вр_76,Крило Врата MD T PROFINE 76,2,2,69.0,20.0,79556424848.0,Kommerling 76,KABAN_Cent,,45,,110.0,76.0,2.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,88274,NPVC_Кр_Вр_76,Крило Врата Z PROFINE 88,2,2,69.0,20.0,84777575347.0,,KABAN_Cent,,45,,110.0,88.0,2.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,88275,NPVC_Кр_Вр_76,Крило Врата T PROFINE 88,2,2,69.0,20.0,87747075386.0,,KABAN_Cent,,45,,110.0,88.0,2.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,PS1500,PS50,Каса PS голяма,1,1,57.8,0.0,67340139785.0,PONI-MINI,AL,,90,,57.8,120.7,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,PS1501,PS50,Ниска каса PS,1,1,7.6,0.0,82380279789.0,PONI-MINI,AL,,90,,7.6,120.7,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,PS1502,PS50,Висока каса PS,4,1,0.0,0.0,41310779947.0,PONI-MINI,,,90,,0.0,0.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,PS1503,PS50,Крило д.хор. н.каса 8мм,2,2,95.7,0.0,14330589054.0,PONI-MINI,AL,,90,,95.7,17.7,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,PS1504,PS50,Крило д.хор. в.каса 8мм,2,2,93.7,0.0,81380079337.0,PONI-MINI,AL,,90,,93.7,17.7,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,PS1505,PS50,Крило верт. 10мм,2,2,15.9,0.0,80340389583.0,PONI-MINI,AL,,90,,15.9,17.7,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,PS1507,PS50,Доб. висока каса PS,1,1,20.0,0.0,44380819713.0,PONI-MINI,AL,,90,,20.0,120.7,0.0,Каса,Frame,DATABASE_EVIDENCE
+Altest,PS1508,PS50,Крило г.хор. 8мм,2,2,21.8,0.0,84330959616.0,PONI-MINI,AL,,90,,21.8,17.7,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,PS1509,PS50,Крило верт. 8мм,2,2,15.9,0.0,25340689241.0,PONI-MINI,AL,,90,,15.9,17.7,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,PS1510,PS50,Крило д.хор. н.каса 10мм,2,2,95.7,0.0,12470619661.0,PONI-MINI,AL,,90,,95.7,17.7,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,PS1511,PS50,Крило д.хор. в.каса 10мм,2,2,93.7,0.0,71410409578.0,PONI-MINI,AL,,90,,93.7,17.7,0.0,Крило,Wing,DATABASE_EVIDENCE
+Altest,PS1512,PS50,Крило г.хор. 10мм,2,2,21.8,0.0,85460939917.0,PONI-MINI,AL,,90,,21.8,17.7,0.0,Крило,Wing,DATABASE_EVIDENCE
+Baufen,1607,LL,каса плъзгане,1,1,38.0,0.0,32746892481.0,Ал. профил студ,,,45,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Baufen,1633,LL,,1,1,0.0,0.0,22826222728.0,Ал. профил студ,,,45,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Baufen,40-103,LL,Каса широка,1,1,36.0,0.0,6494885284.0,Ал. профил студ,,,45,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Baufen,40-104,LL,Каса двукамерна,1,1,36.0,0.0,87454625491.0,Ал. профил студ,,,45,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Baufen,45T-102,LL,каса плъзг. термо,1,1,50.0,0.0,32762660673.0,Ал. проф. термо,,,45,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Baufen,51LS-101,LL,каса еднорелсова с фикс,1,1,23.8,0.0,,Ал. проф. термо,,,45,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Baufen,51LS-102,51LS,каса двойна релса,1,1,44.0,0.0,,Ал. проф. термо,,,45,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Baufen,51LS-103,51LS,каса тройна релса,1,1,44.0,0.0,,Ал. проф. термо,,,45,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Baufen,60-101,LL,каса права термо,1,1,36.0,0.0,65816817488.0,Ал. проф. термо,,,45,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Baufen,60-103,LL,каса заоблена термо,1,1,36.0,0.0,46866317119.0,Ал. проф. термо,,,45,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Baufen,6101,Baufen,Каса 4к,1,1,44.0,0.0,12771227803.0,PVC Профили,,,45,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Baufen,7101,Baufen,каса UL70,1,1,44.0,0.0,72472988750.0,PVC Профили,,,45,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Baufen,7110,Baufen,каса Renova,1,1,33.0,50.0,6162328625.0,,,,45,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Baufen,74T-102,74T,,1,1,36.6,0.0,,Ал. проф. термо,,,45,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Baufen,8101,Baufen,каса Maxima,1,1,48.0,0.0,26133069180.0,PVC Maxima,,,45,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Baufen,84TH-102,84TH,,1,1,37.0,0.0,,Ал. проф. термо,,,45,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Baufen,1608,LL,крило плъзгане,2,2,41.0,20.0,23756062566.0,Ал. профил студ,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Baufen,40-201,LL,Крило прозорец ,2,2,19.2,22.0,34164465836.0,Ал. профил студ,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Baufen,40-203,LL,Крило прозорец широко,2,2,31.2,22.0,1174345421.0,Ал. профил студ,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Baufen,40-204,LL,"Крило врата ""S""",2,2,51.7,22.0,92164375619.0,Ал. профил студ,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Baufen,40-205,LL,"Крило врата ""T""",2,2,51.7,22.0,48174745714.0,Ал. профил студ,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Baufen,40-401,LL,,2,2,98.0,0.0,44554875005.0,Ал. профил студ,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Baufen,40-402,LL,табла за врата 40С,2,2,98.0,0.0,43584645193.0,Ал. профил студ,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Baufen,45T-202,LL,крило плъзг термо,2,2,58.0,20.0,56463460086.0,Ал. проф. термо,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Baufen,51LS-201,LL,крило 51LS,2,2,41.0,22.0,,Ал. проф. термо,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Baufen,60-201,LL,крило проз термо,2,2,21.4,22.0,81556567185.0,Ал. проф. термо,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Baufen,60-202,LL,крило балконско термо,2,2,31.2,22.0,62566847888.0,Ал. проф. термо,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Baufen,60-203,LL,крило врата термо,2,2,51.7,22.0,25536337505.0,Ал. проф. термо,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Baufen,60-204,LL,крило външно отв. термо,2,2,52.8,22.0,17536187132.0,Ал. проф. термо,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Baufen,60-401,LL,табла врата термо,2,2,108.0,0.0,97936217506.0,Ал. проф. термо,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Baufen,6201,Baufen,Крило 4k,2,2,36.0,20.0,63461557615.0,PVC Профили,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Baufen,6401,Baufen,Врата,2,2,66.0,20.0,84861597765.0,PVC Профили,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Baufen,6501,Baufen,Врата външно отваряне,2,2,66.0,20.0,1511357472.0,PVC Профили,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Baufen,7201,Baufen,крило UL70,2,2,36.0,20.0,15182988681.0,PVC Профили,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Baufen,7210,Baufen,,2,2,35.0,21.0,52882678545.0,PVC Профили,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Baufen,7401,Baufen,,2,2,66.0,20.0,56522708677.0,PVC Профили,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Baufen,74T-206,84TH,врата,2,2,87.0,22.0,,Ал. проф. термо,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Baufen,74T-252,LL 74T,,2,2,32.0,22.0,,Ал. проф. термо,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Baufen,7501,Baufen,,2,2,65.0,21.0,56282358031.0,PVC Профили,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Baufen,8201,Baufen,крило Maxima,2,2,38.0,20.0,70863339296.0,PVC Maxima,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Baufen,8401,Baufen,врата Maxima,2,2,73.0,20.0,,PVC Maxima,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Baufen,84TH-202,84TH,,2,2,35.0,22.0,,Ал. проф. термо,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Baufen,84TH-216,,врата,2,2,79.0,22.0,,Ал. проф. термо,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Baufen,1632,LL,,3,3,20.0,20.0,77866172709.0,Ал. профил студ,,,45,,0.0,0.0,0.0,делител,,DATABASE_EVIDENCE
+Baufen,40-301,LL,Делител ,3,3,23.0,22.0,3884225417.0,Ал. профил студ,,,45,,0.0,0.0,0.0,делител,,DATABASE_EVIDENCE
+Baufen,40-303,LL,Делител широк,3,3,40.0,22.0,85864145630.0,Ал. профил студ,,,45,,0.0,0.0,0.0,делител,,DATABASE_EVIDENCE
+Baufen,45T-302,LL,делител термо плъзг,3,3,38.0,20.0,67154790341.0,Ал. проф. термо,,,45,,0.0,0.0,0.0,делител,,DATABASE_EVIDENCE
+Baufen,51LS-301,LL,делител 51LS,3,3,41.0,22.0,,Ал. проф. термо,,,45,,0.0,0.0,0.0,делител,,DATABASE_EVIDENCE
+Baufen,60-303,LL,делител термо,3,3,35.4,22.0,85216147936.0,Ал. проф. термо,,,45,,0.0,0.0,0.0,делител,,DATABASE_EVIDENCE
+Baufen,6301,Baufen,Делител 4k,3,3,41.0,20.0,93121517179.0,PVC Профили,,,45,,0.0,0.0,0.0,делител,,DATABASE_EVIDENCE
+Baufen,7301,Baufen,делител UL70,3,3,40.0,20.0,61822548075.0,PVC Профили,,,45,,0.0,0.0,0.0,делител,,DATABASE_EVIDENCE
+Baufen,74T-302,,,3,3,36.6,22.0,,,,,45,,0.0,0.0,0.0,делител,,DATABASE_EVIDENCE
+Baufen,8301,Baufen,делител Maxima,3,3,40.0,26.0,74543759806.0,PVC Maxima,,,45,,0.0,0.0,0.0,делител,,DATABASE_EVIDENCE
+Baufen,84TH-302,84TH,делител 84TH,3,3,37.0,25.0,,Ал. проф. термо,,,45,,0.0,0.0,0.0,делител,,DATABASE_EVIDENCE
+Profilink16,1220000099,PROFILINK,Frame 82x73 PROFILINK 82 WT-9003 PCE BK 6.5M,1,1,46.0,0.0,232748393.0,PVC ПРОФИЛИ,,,45,,0.0,0.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Profilink16,1220000101,PROFILINK,Sash 82x85 PROFILINK 82 WT-9003 PCE BK 6.5M,2,2,38.0,20.0,15622488165.0,PVC ПРОФИЛИ,,,45,,0.0,0.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Profilink16,1220000103,PROFILINK,Mullion 82x96 PROFILINK 82 WT-9003 PCE ЧЕРНО 6.5M,3,3,42.0,27.0,69662898668.0,PVC ПРОФИЛИ,,,45,,0.0,0.0,0.0,Делител,,DATABASE_EVIDENCE
+Profilink16,1220000105,PROFILINK,Overhung 85x78 PL82 WT PCE Ч,4,5,0.0,0.0,48682518665.0,PVC ПРОФИЛИ,,,90,,0.0,0.0,0.0,Летящ делител,,DATABASE_EVIDENCE
+Profilink16,1220000107,PROFILINK,Sash DZ 93x120 PROFILINK 82 WT-9003 PCE BK 6.5,2,2,73.0,20.0,90662758261.0,PVC ПРОФИЛИ,,,45,,0.0,0.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Profilink16,130000049,PROFILINK,Sash DZ 70 x 105 Z70,2,2,84.0,21.0,8470110699.0,PVC ПРОФИЛИ,,,90,,105.0,70.0,,Крило,Wing,DATABASE_EVIDENCE
+Profilink16,1330000000,PROFILINK,Каса 70 x 62 Profilink Z70 [WT - 9003] CoEx (546 m,1,1,42.0,0.0,64353638170.0,PVC ПРОФИЛИ,,,90,,0.0,0.0,,Каса,Frame,DATABASE_EVIDENCE
+Profilink16,1330000001,PROFILINK,Крило 70 x 75 Profilink Z70 [WT - 9003] CoEx (500.,2,2,35.0,20.0,63383508286.0,PVC ПРОФИЛИ,,,90,,0.0,0.0,,Крило,Wing,DATABASE_EVIDENCE
+Profilink16,1330000002,PROFILINK,Крило 78 x 75 Profilink Z70 [WT - 9003] CoEx (429,2,2,35.0,20.0,15333838355.0,PVC ПРОФИЛИ,,,90,,0.0,0.0,,Крило,Wing,DATABASE_EVIDENCE
+Profilink16,1330000003,PROFILINK,Делител 70 x 82 Profilink Z70 [WT - 9003] CoEx (6.,3,3,42.0,20.0,27303628174.0,PVC ПРОФИЛИ,,,90,,0.0,0.0,,Делител,,DATABASE_EVIDENCE
+Profilink16,1330000004,PROFILINK,Летящ делител 74 x 64 white PF Z70 [WT - 9003] (6.,4,5,0.0,0.0,25323478551.0,,,,90,,0.0,0.0,,Летящ делител,,DATABASE_EVIDENCE
+Profilink16,1330000011,PROFILINK,Каса 70 x 66 ПРОФИЛИНК 70 [WT - 9003] PCE Сиво CoE,1,1,46.0,0.0,86063688704.0,PVC ПРОФИЛИ,,,45,,0.0,0.0,,Каса,Frame,DATABASE_EVIDENCE
+Profilink16,1330000012,PROFILINK,Каса Z 70 x 92 ПРОФИЛИНК 70 [WT - 9003] PCE Сиво (,1,1,37.0,35.0,58023428632.0,PVC Профили,,,45,,0.0,0.0,,Каса,Frame,DATABASE_EVIDENCE
+Profilink16,1330000013,PROFILINK,Каса R 70 x 106 ПРОФИЛИНК 70 [WT - 9003] PCE Сиво,1,1,26.0,60.0,48093458138.0,PVC Профили,,,45,,0.0,0.0,,Каса,Frame,DATABASE_EVIDENCE
+Profilink16,1330000014,PROFILINK,Крило 70 x 77 ПРОФИЛИНК 70 [WT - 9003] PCE Сиво Co,2,2,37.0,20.0,19033358343.0,PVC ПРОФИЛИ,,,45,,0.0,0.0,,Крило,Wing,DATABASE_EVIDENCE
+Profilink16,1330000015,PROFILINK,Крило 80 x 77 ПРОФИЛИНК 70 [WT - 9003] PCE Сиво Co,2,2,37.0,20.0,77023058051.0,PVC ПРОФИЛИ,,,45,,0.0,0.0,,Крило,Wing,DATABASE_EVIDENCE
+Profilink16,1330000016,PROFILINK,Делител 70 x 84 ПРОФИЛИНК 70 [WT - 9003] PCE Сиво,3,3,44.0,20.0,67023588116.0,PVC Профили,,,45,,0.0,0.0,,Делител,,DATABASE_EVIDENCE
+Profilink16,1330000017,PROFILINK,Делител O 70 x 67 С БЯЛО ЗАЩИТНО ФОЛИО 70 [WT - 90,4,5,0.0,0.0,17083478885.0,PVC ПРОФИЛИ,,,90,,0.0,0.0,,Летящ делител,,DATABASE_EVIDENCE
+Profilink16,1330000021,PROFILINK,Каса 60 x 65 ПРОФИЛИНК 60 [WT - 9003] PCE Сиво CoE,1,1,45.0,0.0,72763678669.0,PVC ПРОФИЛИ,,,45,,0.0,0.0,,Каса,Frame,DATABASE_EVIDENCE
+Profilink16,1330000022,PROFILINK,Крило 60 x 77 ПРОФИЛИНК 60 [WT - 9003] PCE Сиво Co,2,2,37.0,20.0,36753168484.0,PVC ПРОФИЛИ,,,45,,0.0,0.0,,Крило,Wing,DATABASE_EVIDENCE
+Profilink16,1330000023,PROFILINK,Делител 60 x 84 ПРОФИЛИНК 60 [WT - 9003] PCE Сиво,3,3,44.0,20.0,68793118362.0,PVC Профили,,,45,,0.0,0.0,,Делител,,DATABASE_EVIDENCE
+Profilink16,1330000024,PROFILINK,Делител O 60 x 70 С БЯЛО ЗАЩИТНО ФОЛИО 60 [WT - 90,4,5,0.0,0.0,87773498266.0,PVC ПРОФИЛИ,,,90,,0.0,0.0,,Летящ делител,,DATABASE_EVIDENCE
+Profilink16,1330000051,PROFILINK,Крило DZ 70 x 115 ПРОФИЛИНК 70 [WT - 9003] PCE Сив,2,2,75.0,20.0,67833488955.0,PVC Профили,,,45,,0.0,0.0,,Крило,Wing,DATABASE_EVIDENCE
+Profilink16,1330000052,PROFILINK,Крило DT 70 x 115 ПРОФИЛИНК 70 [WT - 9003] PCE Сив,2,2,75.0,20.0,97843678726.0,PVC Профили,,,45,,0.0,0.0,,Крило,Wing,DATABASE_EVIDENCE
+Profilink16,1330000053,PROFILINK,Крило B 60 x 95 ПРОФИЛИНК 60 [WT - 9003] PCE Сиво,2,2,55.0,20.0,57833618571.0,PVC ПРОФИЛИ,,,45,,0.0,0.0,,Крило,Wing,DATABASE_EVIDENCE
+Profilink16,1330000054,PROFILINK,Крило DZ 60 x 115 ПРОФИЛИНК 60 [WT - 9003] PCE Сив,2,2,75.0,20.0,67873788787.0,PVC ПРОФИЛИ,,,45,,0.0,0.0,,Крило,Wing,DATABASE_EVIDENCE
+Profilink16,1330000055,PROFILINK,Крило DT 60 x 115 ПРОФИЛИНК 60 [WT - 9003] PCE Сив,2,2,75.0,20.0,84883188617.0,PVC Профили,,,45,,0.0,0.0,,Крило,Wing,DATABASE_EVIDENCE
+Profilink16,1330000056,PROFILINK,Каса S 73 x 54 ПРОФИЛИНК 73 [WT - 9003] (6.5 М),1,1,54.5,0.0,61873488387.0,PVC Профили,,,45,,54.5,0.0,,Каса,Frame,DATABASE_EVIDENCE
+Profilink16,1330000057,PROFILINK,Каса SR 73 x 93 ПРОФИЛИНК 73 [WT - 9003] (6.5 М),1,1,53.5,40.0,84833148670.0,PVC Профили,,,90,,93.5,0.0,,Каса,Frame,DATABASE_EVIDENCE
+Profilink16,1330000058,PROFILINK,Крило S 50 x 74 ПРОФИЛИНК 73 [WT - 9003] PCE Сиво,2,2,54.0,0.0,28823408348.0,PVC Профили,,,45,,0.0,0.0,,Крило,Wing,DATABASE_EVIDENCE
+Profilink16,1330000059,PROFILINK,Крило S 50 x 85 ПРОФИЛИНК 73 [WT - 9003] PCE Сиво,2,2,65.0,0.0,84863118026.0,PVC Профили,,,45,,0.0,0.0,,Крило,Wing,DATABASE_EVIDENCE
+Profilink16,1400000001,PROFILINK,Каса 38 x 47 ПРОФИЛИНК 38 [WT] (6 М),1,1,25.2,0.0,83980238339.0,AL ПРОФИЛИ,,,45,,47.2,37.5,,Каса,Frame,DATABASE_EVIDENCE
+Profilink16,311002,PROFILINK,Каса 48 x 77 ПРОФИЛИНК 38 [WT] (6 М),1,1,55.2,0.0,36577474630.0,AL ПРОФИЛИ,,,90,,77.2,37.5,0.0,Каса,Frame,DATABASE_EVIDENCE
+Profilink16,1400000003,PROFILINK,Каса 38 x 57 ПРОФИЛИНК 38 [WT] (6 М),1,1,35.2,0.0,25980388454.0,AL ПРОФИЛИ,,,45,,57.2,37.5,,Каса,Frame,DATABASE_EVIDENCE
+Profilink16,311004,PROFILINK,Крило 45 x 62 ПРОФИЛИНК 38 [WT] (6 М),2,2,22.9,17.5,70557224302.0,AL ПРОФИЛИ,,,45,,62.4,45.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Profilink16,311005,PROFILINK,Крило DZ 45 x 94 ПРОФИЛИНК 38 [WT] (6 М),2,2,54.4,17.5,40567884321.0,AL ПРОФИЛИ,,,45,,93.9,45.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Profilink16,311006,PROFILINK,Крило DT 45 x 94 ПРОФИЛИНК 38 [WT] (6 М),2,2,54.4,17.5,77527824119.0,AL ПРОФИЛИ,,,45,,93.9,45.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Profilink16,311007,PROFILINK,Делител 38 x 76 ПРОФИЛИНК 38 [WT] (6 М),3,3,32.0,22.0,51557524123.0,AL ПРОФИЛИ,,,45,,76.0,37.5,0.0,Делител,,DATABASE_EVIDENCE
+Profilink16,311009,PROFILINK,Делител O 41 x 61 ПРОФИЛИНК 38 [WT] (6 М),4,5,0.0,0.0,46527104651.0,AL ПРОФИЛИ,,,90,,0.0,0.0,0.0,Летящ делител,,DATABASE_EVIDENCE
+Profilink16,311008,PROFILINK,Табла 38 х 130 ПРОФИЛИНК 38 [WT] (6 М),3,3,86.0,22.0,14537754187.0,AL ПРОФИЛИ,,,90,,130.0,37.5,0.0,Делител,,DATABASE_EVIDENCE
+Profilink16,320001,PROFILINK,Каса 45 x 38 ПРОФИЛИНК 38 [WT] (6 М),1,1,38.0,0.0,48526524699.0,AL ПРОФИЛИ,,,45,,0.0,0.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Profilink16,320000,PROFILINK,Каса 43 x 38 ПРОФИЛИНК 38 [WT] (6 М),1,1,38.0,0.0,13516344245.0,AL ПРОФИЛИ,,,45,,0.0,0.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Profilink16,320003,PROFILINK,Крило 28 x 61 ПРОФИЛИНК 38 [WT] (6 М),2,2,46.4,14.6,84506414647.0,AL ПРОФИЛИ,,,45,,61.0,45.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Profilink16,320005,PROFILINK,Делител 28 x 61 ПРОФИЛИНК 38 [WT] (6 М),3,3,61.0,22.0,99516734133.0,AL ПРОФИЛИ,,,45,,0.0,28.0,0.0,Делител,,DATABASE_EVIDENCE
+Profilink16,1400000070,PROFILINK,Уплътнение EPDM S [BK - 9005] (1 m),4,5,0.0,0.0,53860328859.0,,,,90,,0.0,0.0,,Летящ делител,,DATABASE_EVIDENCE
+Profilink16,1400000081,PROFILINK,Капачка алуминиевa за делител 19x88 (6.5 m),4,5,0.0,0.0,94570158591.0,PVC ПРОФИЛИ,,,90,,0.0,0.0,,Летящ делител,,DATABASE_EVIDENCE
+Profilink16,1400000082,PROFILINK,Капачка алуминиевa за каса 11x66 (6.5 m),4,5,0.0,0.0,71530738825.0,PVC ПРОФИЛИ,,,90,,0.0,0.0,,Летящ делител,,DATABASE_EVIDENCE
+Profilink16,1400000083,PROFILINK,Kапачка алуминиева за крило 15x58 (6.5m),4,5,0.0,0.0,82570828604.0,PVC ПРОФИЛИ,,,90,,0.0,0.0,,Летящ делител,,DATABASE_EVIDENCE
+Profilink16,1400000084,PROFILINK,Капачка алуминиевa за летящ делител 16x70 (6.5 m),4,5,0.0,0.0,51510628306.0,PVC ПРОФИЛИ,,,90,,0.0,0.0,,Летящ делител,,DATABASE_EVIDENCE
+Profilink16,1400000085,PROFILINK,Капачка алуминиева за делител 15x88 (6.5 m),4,5,0.0,0.0,42510848358.0,PVC ПРОФИЛИ,,,90,,0.0,0.0,,Летящ делител,,DATABASE_EVIDENCE
+Profilink16,1400000144,PROFILINK,Праг алуминиев,1,1,20.0,0.0,22450078566.0,AL Профили,,,45,,0.0,0.0,,Каса,Frame,DATABASE_EVIDENCE
+Profilink16,1400000156,PROFILINK,Насрещник плъзгане десен,4,5,0.0,0.0,44130288786.0,PVC ПРОФИЛИ,,,90,,0.0,0.0,0.0,Летящ делител,,DATABASE_EVIDENCE
+Profilink16,1400000178,PROFILINK,Праг комбиниран 77 x 20 БЕЗ ЗАЩИТНО ФОЛИО (6 М),1,1,20.0,0.0,37540768004.0,AL ПРОФИЛИ,,,45,,0.0,0.0,,Каса,Frame,DATABASE_EVIDENCE
+Profilink16,1400000238,PROFILINK,Kапачка алуминиева за крило врата DZ Series Z,4,5,0.0,0.0,57430738694.0,PVC ПРОФИЛИ,,,90,,0.0,0.0,,Летящ делител,,DATABASE_EVIDENCE
+Profilink16,1400000261,PROFILINK,Cap base for overhung 64x59 82 BK,4,5,0.0,0.0,47580268756.0,,,,90,,0.0,0.0,0.0,Летящ делител,,DATABASE_EVIDENCE
+Profilink16,890000,AL Orbis,installation profile,4,1,0.0,0.0,10981219523.0,AL Orbis,,,45,,0.0,0.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Profilink16,320002,PROFILINK,Каса 81 x 38 ПРОФИЛИНК 38 [WT] (6 М),1,1,38.0,0.0,24516214660.0,AL ПРОФИЛИ,,,45,,0.0,0.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Profilink16,PLAWC.38.101,Sutters,Frame,1,1,25.2,0.0,85776981879.0,Sutters,,,45,,47.2,37.5,0.0,Каса,Frame,DATABASE_EVIDENCE
+Profilink16,340000,Sutters,Casement,2,2,49.7,18.0,11956494320.0,Sutters,,,45,,67.7,45.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+Profilink16,PLAWC.38.302,Sutters,Overhung,4,5,0.0,0.0,24156321368.0,Sutters,,,90,,0.0,0.0,0.0,Летящ делител,,DATABASE_EVIDENCE
+Profilink16,PLAWC.38.103,Sutters,Frame,1,1,25.2,30.0,14716731792.0,Sutters,,,45,,77.2,37.5,0.0,Каса,Frame,DATABASE_EVIDENCE
+Profilink16,340001,Sutters,T-profile,3,3,60.0,0.0,40956214826.0,Sutters,,,45,,60.0,37.4,0.0,Делител,,DATABASE_EVIDENCE
+Profilink16,220006,AL Strox,frame rail top and bottom,1,1,57.0,0.0,57855843858.0,AL Strox,,,90,,57.0,162.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Profilink16,220000,AL Strox,frame rail top and bottom,1,1,57.0,0.0,54825753277.0,AL Strox,,,90,,57.0,162.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Profilink16,220001,AL Strox,frame lateral,1,1,39.0,0.0,17875653302.0,AL Strox,,,90,,39.0,162.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Profilink16,220007,AL Strox,frame lateral,1,1,49.0,0.0,26815443146.0,AL Strox,,,90,,49.0,162.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Profilink16,220010,AL Strox,frame rail top and bottom,1,1,57.0,0.0,57565803525.0,AL Strox,,,90,,57.0,253.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+Profilink16,220011,AL Strox,frame lateral,1,1,39.0,0.0,42585273350.0,AL Strox,,,90,,39.0,253.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+ProfilinkEN,1220000099,PROFILINK,Frame 82x73 PROFILINK 82 WT-9003 PCE BK 6.5M,1,1,46.0,0.0,32242008820.0,PVC ПРОФИЛИ,,,45,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+ProfilinkEN,1220000101,PROFILINK,Sash 82x85 PROFILINK 82 WT-9003 PCE BK 6.5M,2,2,38.0,20.0,87642058951.0,PVC ПРОФИЛИ,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+ProfilinkEN,1220000103,PROFILINK,Mullion 82x96 PROFILINK 82 WT-9003 PCE ЧЕРНО 6.5M,3,3,42.0,27.0,43662458412.0,PVC ПРОФИЛИ,,,45,,0.0,0.0,0.0,делител,,DATABASE_EVIDENCE
+ProfilinkEN,1220000107,PROFILINK,Sash DZ 93x120 PROFILINK 82 WT-9003 PCE BK 6.5,2,2,73.0,20.0,32652368314.0,PVC ПРОФИЛИ,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+ProfilinkEN,130000049,PROFILINK,Sash DZ 70 x 105 Z70,2,2,84.0,21.0,22470150544.0,PVC ПРОФИЛИ,,,90,,105.0,70.0,,крило,Wing,DATABASE_EVIDENCE
+ProfilinkEN,1330000000,PROFILINK,Frame 70 x 62 Profilink Z70 [WT - 9003] CoEx (546 ,1,1,42.0,0.0,8333678264.0,PVC ПРОФИЛИ,,,90,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+ProfilinkEN,1330000001,PROFILINK,Sash 70x75 PLZ70 WT COEX,2,2,35.0,20.0,49333168586.0,PVC ПРОФИЛИ,,,90,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+ProfilinkEN,1330000002,PROFILINK,Sash 78x75 PLZ70 WT COEX,2,2,35.0,20.0,44333258365.0,PVC ПРОФИЛИ,,,90,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+ProfilinkEN,1330000003,PROFILINK,Mullion 70 x 82 Profilink Z70 [WT - 9003] CoEx (6.,3,3,42.0,20.0,39333638821.0,PVC ПРОФИЛИ,,,90,,0.0,0.0,,делител,,DATABASE_EVIDENCE
+ProfilinkEN,1330000011,PROFILINK,Frame 70 x 66 PL 70 [WT - 9003] PCE GR CoE,1,1,46.0,0.0,61063448168.0,PVC ПРОФИЛИ,,,45,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+ProfilinkEN,1330000012,PROFILINK,Frame Z 70 x 92 PL 70 [WT - 9003] PCE GR (,1,1,37.0,35.0,73003618575.0,PVC Профили,,,45,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+ProfilinkEN,1330000013,PROFILINK,Frame R 70 x 106 PL 70 [WT - 9003] PCE GR,1,1,26.0,60.0,58063878786.0,PVC Профили,,,45,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+ProfilinkEN,1330000014,PROFILINK,Sash 70x77 PL70 WT COEX PCE GR,2,2,37.0,20.0,38023278337.0,PVC ПРОФИЛИ,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+ProfilinkEN,1330000015,PROFILINK,Sash 80x77 PL70 WT COEX PCE GR,2,2,37.0,20.0,93063658315.0,PVC ПРОФИЛИ,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+ProfilinkEN,1330000016,PROFILINK,Mullion 70 x 84 PL 70 [WT - 9003] PCE Сиво,3,3,44.0,20.0,14033618932.0,PVC Профили,,,45,,0.0,0.0,,делител,,DATABASE_EVIDENCE
+ProfilinkEN,1330000021,PROFILINK,Frame 60 x 65 PL 60 [WT - 9003] PCE GR CoE,1,1,45.0,0.0,33763068450.0,PVC ПРОФИЛИ,,,45,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+ProfilinkEN,1330000022,PROFILINK,Sash 60 x 77 PL60 [WT - 9003] PCE Сиво Co,2,2,37.0,20.0,33753498139.0,PVC ПРОФИЛИ,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+ProfilinkEN,1330000023,PROFILINK,Mullion 60 x 84 PL 60 [WT - 9003] PCE Сиво,3,3,44.0,20.0,25753488532.0,PVC Профили,,,45,,0.0,0.0,,делител,,DATABASE_EVIDENCE
+ProfilinkEN,1330000051,PROFILINK,Sash DZ 70 x 115 PL 70 [WT - 9003] PCE Сив,2,2,75.0,20.0,86803388476.0,PVC Профили,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+ProfilinkEN,1330000052,PROFILINK,Sash DT 70 x 115 PL 70 [WT - 9003] PCE Сив,2,2,75.0,20.0,873788563.0,PVC Профили,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+ProfilinkEN,1330000053,PROFILINK,Sash B 60 x 95 PL 60 [WT - 9003] PCE Сиво,2,2,55.0,20.0,58863558828.0,PVC ПРОФИЛИ,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+ProfilinkEN,1330000054,PROFILINK,Sash DZ 60 x 115 PL 60 [WT - 9003] PCE Сив,2,2,75.0,20.0,98873778075.0,PVC ПРОФИЛИ,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+ProfilinkEN,1330000055,PROFILINK,Sash DT 60 x 115 PL 60 [WT - 9003] PCE Сив,2,2,75.0,20.0,73833248719.0,PVC Профили,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+ProfilinkEN,1330000056,PROFILINK,Frame S 73 x 54 PL 73 [WT - 9003] (6.5 М),1,1,54.5,0.0,89813388362.0,PVC Профили,,,45,,54.5,0.0,,каса,Frame,DATABASE_EVIDENCE
+ProfilinkEN,1330000057,PROFILINK,Frame SR 73 x 93 PL 73 [WT - 9003] (6.5 М),1,1,53.5,40.0,91873288009.0,PVC Профили,,,90,,93.5,0.0,,каса,Frame,DATABASE_EVIDENCE
+ProfilinkEN,1330000058,PROFILINK,Sash S 50 x 74 PL 73 [WT - 9003] PCE Сиво,2,2,54.0,0.0,28863658762.0,PVC Профили,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+ProfilinkEN,1330000059,PROFILINK,Sash S 50 x 85 PL 73 [WT - 9003] PCE Сиво,2,2,65.0,0.0,66893448723.0,PVC Профили,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+ProfilinkEN,1400000001,PROFILINK,Frame 38 x 47 PL 38 [WT] (6 М),1,1,25.2,0.0,55920548013.0,AL ПРОФИЛИ,,,45,,47.2,37.5,,каса,Frame,DATABASE_EVIDENCE
+ProfilinkEN,1400000002,PROFILINK,Frame 48 x 77 PL 38 [WT] (6 М),1,1,55.2,0.0,74940088599.0,AL ПРОФИЛИ,,,90,,77.2,37.5,,каса,Frame,DATABASE_EVIDENCE
+ProfilinkEN,1400000003,PROFILINK,Frame 38 x 57 PL 38 [WT] (6 М),1,1,35.2,0.0,53980698217.0,AL ПРОФИЛИ,,,45,,57.2,37.5,,каса,Frame,DATABASE_EVIDENCE
+ProfilinkEN,1400000004,PROFILINK,Sash 45 x 62 PL 38 [WT] (6 М),2,2,22.9,17.5,22930268913.0,AL ПРОФИЛИ,,,45,,62.4,45.0,,крило,Wing,DATABASE_EVIDENCE
+ProfilinkEN,1400000005,PROFILINK,Sash DZ 45 x 94 PL 38 [WT] (6 М),2,2,54.4,17.5,43970448476.0,AL ПРОФИЛИ,,,45,,93.9,45.0,,крило,Wing,DATABASE_EVIDENCE
+ProfilinkEN,1400000006,PROFILINK,Sash DT 45 x 94 PL 38 [WT] (6 М),2,2,54.4,17.5,85960538182.0,AL ПРОФИЛИ,,,45,,93.9,45.0,,крило,Wing,DATABASE_EVIDENCE
+ProfilinkEN,1400000007,PROFILINK,Mullion 38 x 76 PL 38 [WT] (6 М),3,3,32.0,22.0,42940628327.0,AL ПРОФИЛИ,,,45,,76.0,37.5,,делител,,DATABASE_EVIDENCE
+ProfilinkEN,1400000018,PROFILINK,Табла 38 х 130 PL 38 [WT] (6 М),3,3,86.0,22.0,83610608278.0,AL ПРОФИЛИ,,,90,,130.0,37.5,,делител,,DATABASE_EVIDENCE
+ProfilinkEN,1400000030,PROFILINK,Frame 45 x 38 PL 38 [WT] (6 М),1,1,38.0,0.0,40010138184.0,AL ПРОФИЛИ,,,45,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+ProfilinkEN,1400000031,PROFILINK,Frame 43 x 38 PL 38 [WT] (6 М),1,1,38.0,0.0,27040558736.0,AL ПРОФИЛИ,,,45,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+ProfilinkEN,1400000032,PROFILINK,Sash 28 x 61 PL 38 [WT] (6 М),2,2,46.4,14.6,38010748284.0,AL ПРОФИЛИ,,,45,,61.0,45.0,,крило,Wing,DATABASE_EVIDENCE
+ProfilinkEN,1400000033,PROFILINK,Mullion 28 x 61 PL 38 [WT] (6 М),3,3,61.0,22.0,72030558455.0,AL ПРОФИЛИ,,,45,,0.0,28.0,,делител,,DATABASE_EVIDENCE
+ProfilinkEN,1400000144,PROFILINK,Threshold aluminium,1,1,20.0,0.0,78410628980.0,AL Профили,,,45,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+ProfilinkEN,1400000178,PROFILINK,Combined threshold 77x20,1,1,20.0,0.0,81510378028.0,AL ПРОФИЛИ,,,45,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+Schuco,SCH 19411,Schuco,Outer frame 82/70 MD,1,1,45.0,0.0,,,,,45,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Schuco,SCH 19412,Schuco,Outer frame 82/80 MD,1,1,55.0,0.0,,,,,90,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Schuco,SCH 19413,Schuco,Outer frame 82/90 MD,1,1,65.0,0.0,,,,,90,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Schuco,SCH 19421,Schuco,Outer frame 82/70 AS,1,1,45.0,0.0,,,,,45,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Schuco,SCH 19422,Schuco,Outer frame 82/80 AS,1,1,55.0,0.0,,,,,45,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Schuco,SCH 19423,Schuco,Outer frame 82/90 AS,1,1,65.0,0.0,,,,,90,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Schuco,SCH 19431,Schuco,Vent frame 82/83,2,2,38.0,20.0,78449211283.0,,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Schuco,SCH 19432,Schuco,Vent frame 82/110,2,2,65.0,20.0,,,,,45,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Schuco,SCH 19433,Schuco,Vent frame 82/125,2,2,80.0,20.0,,,,,90,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Schuco,SCH 19452,Schuco,"Vent frame 82/110, outward-opening",2,2,65.0,20.0,,,,,90,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Schuco,SCH 19453,Schuco,"Vent frame 82/125, outward-opening",2,2,80.0,20.0,,,,,90,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Schuco,SCH 19460,Schuco,Vent sash bar 82/72,3,3,22.0,25.0,,,,,90,,0.0,0.0,0.0,делител,,DATABASE_EVIDENCE
+Schuco,SCH 19461,Schuco,T-profile 82/92 AS,3,3,42.0,25.0,,,,,45,,0.0,0.0,0.0,делител,,DATABASE_EVIDENCE
+Schuco,SCH 19462,Schuco,T-profile 82/112 AS,3,3,62.0,25.0,,,,,45,,0.0,0.0,0.0,делител,,DATABASE_EVIDENCE
+Schuco,SCH 19465,Schuco,T-profile 82/92 MD,3,3,42.0,25.0,,,,,90,,0.0,0.0,0.0,делител,,DATABASE_EVIDENCE
+Schuco,SCH 19466,Schuco,T-profile 82/112 MD,3,3,62.0,25.0,,,,,90,,0.0,0.0,0.0,делител,,DATABASE_EVIDENCE
+Schuco,SCH 19521,Schuco,Outer frame 82/70 MD,1,1,45.0,0.0,,,,,90,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Schuco,SCH 19522,Schuco,Outer frame 82/80 MD,1,1,55.0,0.0,,,,,90,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Schuco,SCH 19523,Schuco,Vent frame 82/83,2,2,38.0,20.0,,,,,90,,0.0,0.0,0.0,крило,Wing,DATABASE_EVIDENCE
+Schuco,SCH 19524,Schuco,T-profile 82/92 MD,3,3,42.0,25.0,,,,,90,,0.0,0.0,0.0,делител,,DATABASE_EVIDENCE
+Schuco,SCH 25255500,Schuco,Living door threshold grey,1,1,20.0,0.0,,,,,90,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Schuco,SCH 25255600,Schuco,Living door threshold black,1,1,20.0,0.0,,,,,90,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Schuco,SCH 25271300,Schuco,Living door threshold black,1,1,20.0,0.0,,,,,90,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Schuco,SCH 25862800,Schuco,Living door threshold 0 mm grey,1,1,20.0,0.0,,,,,90,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+Schuco,SCH 25862900,Schuco,Living door threshold 0 mm black,1,1,20.0,0.0,,,,,90,,0.0,0.0,0.0,каса,Frame,DATABASE_EVIDENCE
+VivaPlast,ЕД.КАСА 2801,,ЕДИНИЧНА КАСА ПЛЪЗГАНЕ 2801,1,1,38.0,0.0,38049259790.0,,,,45,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+VivaPlast,ДВ.КАСА 2802,ДВОЙН.КАСА,ДВОЙНА КАСА ПЛЪЗГАНЕ 2802,1,1,38.0,0.0,31498238338.0,,,,45,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+VivaPlast,ЕД.КАСА ПЛ.2814,,,1,1,38.0,0.0,73468232390.0,,,,45,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+VivaPlast,ДЕЛ.ГОЛЯМ 5523,,ГОЛЯМ ДЕЛИТЕЛ ЗА ТВО55,3,3,45.0,22.0,66286065304.0,,,,45,,0.0,0.0,,делител,,DATABASE_EVIDENCE
+VivaPlast,ДЕЛ.ГОЛЯМ7023,,ГОЛЯМ ДЕЛИТЕЛ ЗА ТВО 70,3,3,45.0,22.0,98281218217.0,,,,45,,0.0,0.0,,делител,,DATABASE_EVIDENCE
+VivaPlast,ДЕЛ.МАЛЪК 3806,,Делител малък студен  AL 3806,3,3,19.0,22.0,65611255880.0,,,,45,,0.0,0.0,,делител,,DATABASE_EVIDENCE
+VivaPlast,ДЕЛ.ПЛ. 2804,,Делител плъзгане 2804,3,3,61.0,0.0,62834516405.0,,,,45,,0.0,0.0,,делител,,DATABASE_EVIDENCE
+VivaPlast,ДЕЛ.ПЛ.2813,,ДЕЛИТЕЛ ЗА S28 С КАНАЛ ЗА ЕДИН.СТЪКЛО,3,3,29.0,16.0,88680296756.0,,,,45,,0.0,0.0,,делител,,DATABASE_EVIDENCE
+VivaPlast,ДЕЛ.ТЕРМО 5505,,Делител термо 5505,3,3,32.0,22.0,53618300736.0,,,,45,,0.0,0.0,,делител,,DATABASE_EVIDENCE
+VivaPlast,ДЕЛ.ТЕРМО 7005,VIVA ALUM.,ДЕЛИТЕЛ ТЕРМО ТВО70,3,3,32.0,22.0,67090130836.0,,,,45,,0.0,0.0,,делител,,DATABASE_EVIDENCE
+VivaPlast,ДЕЛИТЕЛ  3807,,Делител студен  AL 3807,3,3,32.0,22.0,81012148747.0,,,,45,,0.0,0.0,,делител,,DATABASE_EVIDENCE
+VivaPlast,ДЕЛИТЕЛ 3к63050,Viva Plast,ДЕЛИТЕЛ 3к.,3,3,40.0,20.0,45827821473.0,VIVA PLAST,,,45,,0.0,0.0,,делител,,DATABASE_EVIDENCE
+VivaPlast,ДЕЛИТЕЛ 4к64050,Viva Plast,ДЕЛИТЕЛ 4к.,3,3,40.0,20.0,32248411211.0,VIVA PLAST,,,45,,0.0,0.0,,делител,,DATABASE_EVIDENCE
+VivaPlast,ДЕЛИТЕЛ 5к75050,Viva Plast,ДЕЛИТЕЛ 5к.,3,3,44.0,20.0,16890851853.0,VIVA PLAST,,,45,,0.0,0.0,,делител,,DATABASE_EVIDENCE
+VivaPlast,ДЕЛИТЕЛ 7к87050,Viva Plast,ДЕЛИТЕЛ 7 КАМЕРЕН,3,3,48.0,29.0,92843681218.0,VIVA PLAST,,,45,,0.0,0.0,,делител,,DATABASE_EVIDENCE
+VivaPlast,ВРАТА Т 3к63070,Viva Plast,ВРАТА НАВЪН 3/4к.,2,2,80.0,20.0,83653626856.0,VIVA PLAST,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,ВРАТА Т 5к75070,Viva Plast,ВРАТА НАВЪН 5к.,2,2,67.0,20.0,51666626866.0,VIVA PLAST,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,ВРАТА Т 7004,VIVA ALUM.,,2,2,72.0,0.0,43265232893.0,,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,ВРАТА Т ЕВ.7019,VIVA ALUM.,Крило за врата навън за сис-ма ТВО 70. Е,2,2,72.0,0.0,17841446665.0,,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,ВРАТА Z 3к63060,Viva Plast,ВРАТА НАВЪТРЕ 3/4к.,2,2,80.0,20.0,43403026988.0,VIVA PLAST,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,ВРАТА Z 5к75060,Viva Plast,ВРАТА НАВЪТРЕ 5к.,2,2,67.0,20.0,38486516371.0,VIVA PLAST,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,ВРАТА Z 7003,VIVA ALUM.,,2,2,72.0,0.0,73275962136.0,,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,ВРАТА Z ЕВ.7018,VIVA AL.,Крило за врата навътре . С евроканал.,2,2,72.0,0.0,11851426572.0,,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,ГОЛ.КАСА 5522,,ГОЛЯМА КАСА ЗА ТВО55,1,1,50.0,0.0,63656301454.0,,,,45,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+VivaPlast,ГОЛ.КАСА 7022,,ГОЛЯМА КАСА ЗА ТВО70,1,1,50.0,0.0,16081913622.0,,,,45,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+VivaPlast,КАСА 3801,Станд.каса,Стандартна каса студен AL.,1,1,35.0,0.0,35431732286.0,,,,45,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+VivaPlast,КАСА 3к 63020,Viva Plast,КАСА МАЛКА 3к. ,1,1,38.0,0.0,39441787345.0,VIVA PLAST,,,45,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+VivaPlast,КАСА 3к 63030,Viva Plast,КАСА ГОЛЯМА 3к. ,1,1,48.0,0.0,43611117225.0,VIVA PLAST,,,45,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+VivaPlast,КАСА 4к 64020,Viva Plast,КАСА МАЛКА 4к.,1,1,38.0,0.0,66891748168.0,VIVA PLAST,,,45,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+VivaPlast,КАСА 4к 64030,Viva Plast,КАСА ГОЛЯМА 4к. ,1,1,48.0,0.0,61071358350.0,VIVA PLAST,,,45,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+VivaPlast,КАСА 5к 75030,Viva Plast,КАСА 5к.,1,1,44.0,0.0,57682379621.0,VIVA PLAST,,,45,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+VivaPlast,КАСА 7001,VIVA ALUM.,,1,1,36.0,0.0,41633542445.0,VIVA PLAST,,,45,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+VivaPlast,КАСА 7к87030,Viva Plast,КАСА 7 КАМЕРНА,1,1,50.0,0.0,74214156963.0,VIVA PLAST,,,45,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+VivaPlast,Каса клапа 5020,,Каса за клапа за CW 50.За силиконова фуг,1,1,55.0,16.0,61491143157.0,,,,45,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+VivaPlast,КАСА КЛАПА 5022,,Каса за клапа за CW 50.,1,1,55.0,16.0,96215277878.0,,,,45,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+VivaPlast,КАСА МАЛКА 3822,viva-al,,1,1,25.0,0.0,28817766907.0,,,,45,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+VivaPlast,КАСА ТЕРМО 5501,,,1,1,36.0,0.0,52651765872.0,,,,45,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+VivaPlast,КР.ЕВР.ТЕР.5514,,Проз.крило с евро канал 73мм за ТВО 55,2,2,51.0,0.0,54446261805.0,,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,КР.ЕВР.ТЕР.5517,VIVA Alum.,Прозоречно крило с евроканал(84мм) за ТВ,2,2,62.0,0.0,75416481313.0,,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,КР.ВР. ВЪН.3805,,КРИЛО ВРАТА НА ВЪН СТУДЕН AL.3805,2,2,72.0,0.0,23890781016.0,,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,КР.ВР.ВЪТ.3804,,КРИЛО ВРАТА НАВЪТРЕ СТУДЕН AL.3804,2,2,72.0,0.0,46483884041.0,,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,КР.ВР.СРЕД.3803,,КРИЛО ВРАТА НАВЪТРЕ СРЕДНО СТУДЕН AL.380,2,2,51.0,0.0,88086629706.0,,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,КР.ВТР.ТЕР.5503,,КРИЛО ВРАТА НАВЪТРЕ ТЕРМО AL.5503,2,2,72.0,0.0,49832178159.0,,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,КР.ВЪН ТЕР.5504,,КРИЛО ВРАТА НАВЪН ТЕРМО AL. 5504,2,2,72.0,0.0,72066574886.0,,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,КР.ПР.ЕВРО 7014,VIVA ALUM.,,2,2,51.0,0.0,97283480764.0,,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,КР.ПР.ЕВРО.3823,,КРИЛО ПРОЗОРЕЦ С ЕВРО КАНАЛ СТУДЕН AL. 3,2,2,48.0,0.0,2095300278.0,,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,КР.ПР.СРЕД.7017,VIVA ALUM.,,2,2,62.0,0.0,48048362513.0,,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,КР.ПР.ТЕРМО5502,,КРИЛО ПРОЗОРЕЦ ТЕРМО AL. 5502,2,2,51.0,0.0,33275241945.0,,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,КРИЛО 3к63040,Viva Plast,КРИЛО П-Ц 3к.,2,2,38.0,20.0,42213475257.0,VIVA PLAST,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,КРИЛО 4к64040,Viva Plast,КРИЛО П-Ц 4к.,2,2,38.0,20.0,32634407555.0,VIVA PLAST,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,КРИЛО 5к75040,Viva Plast,КРИЛО П-Ц 5к.,2,2,38.0,20.0,9216939990.0,VIVA PLAST,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,КРИЛО 6к76040,Viva Plast,КРИЛО П-Ц 6к.,2,2,38.0,20.0,25617771406.0,VIVA PLAST,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,КРИЛО 7к87040,Viva Plast,КРИЛО 7 камерно,2,2,38.0,20.0,36229033846.0,VIVA PLAST,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,КРИЛО ПР.3802,,КРИЛО ПРОЗОРЕЦ СТУДЕН AL. 3802,2,2,40.0,0.0,35469811733.0,,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,КРИЛО ПРОЗ.7002,VIVA ALUM.,,2,2,51.0,0.0,61617159635.0,,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,КРИЛО ПЛ.2803,,КРИЛО ПЛЪЗГАНЕ 2803 ЗА СТ.ПАКЕТ 20ММ.,2,2,45.0,16.0,5219250676.0,,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,КРИЛО ПЛ.2812,,КРИЛО ПЛЪЗГАЩО С КАНАЛ ЗА ЕД.СТЪКЛО,2,2,45.0,16.0,91489150936.0,,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,КРИЛО Т ЕВ.5519,VIVA ALUM.,Крило за врата навън с евроканал за ТВО ,2,2,72.0,0.0,22066817425.0,,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,КРИЛО Z ЕВ.5518,VIVA ALUM.,Крило за врата навътре за ТВО 55.С еврок,2,2,72.0,0.0,89096847833.0,,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,КЛАПА 5021,,"Клапа за CW50 ,малка.",2,2,51.0,0.0,92861570870.0,,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,КЛАПА 5023,,Клапа за CW 50.Голяма,2,2,65.0,0.0,72871720742.0,,,,45,,0.0,0.0,,крило,Wing,DATABASE_EVIDENCE
+VivaPlast,ОБР.ПР. 3811,,,1,1,28.0,0.0,61440156887.0,,,,45,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+VivaPlast,ПОД.ГОЛЯМ 3838,,ГОЛЯМ ПОДОВ ПРОФИЛ ЗА OS 038,3,3,108.0,22.0,21278446186.0,,,,45,,0.0,0.0,,делител,,DATABASE_EVIDENCE
+VivaPlast,ПОД.ТЕРМО 5515,VIVA ALUM.,ПОДОВ ПРОФИЛ ТЕРМО 5515 68 mm,3,3,68.0,0.0,63422911661.0,,,,45,,0.0,0.0,,делител,,DATABASE_EVIDENCE
+VivaPlast,ПОД.ТЕРМО 7015,VIVA ALUM.,ПОДОВ ПРОФИЛ ТЕРМО ТВО70,3,3,68.0,0.0,49884621034.0,,,,45,,0.0,0.0,,делител,,DATABASE_EVIDENCE
+VivaPlast,ПОДОВ ПР. 3808,,ПОДОВ ПРОФИЛ СТУДЕН AL 3808,3,3,58.0,0.0,68883390660.0,,,,45,,0.0,0.0,,делител,,DATABASE_EVIDENCE
+VivaPlast,ТРОЙ.КАСА 2815,,ТРОЙНА КАСА ПЛЪЗГАНЕ,1,1,38.0,0.0,86618483422.0,,,,45,,0.0,0.0,,каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,"Четка № 5,5",WP,"Четка № 5,5",4,5,0.0,0.0,10090663181.0,WP,,,90,,0.0,0.0,0.0,Летящ делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,30.02,GR4-COLD,Slidetech 30.02 Каса плъзгане двурелсова,1,1,41.0,0.0,24328420934.0,GR4-COLD,,,90,,41.0,46.5,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,30.03,GR4-COLD,Slidetech 30.03 Каса плъзгане трирелсова,1,1,41.0,0.0,16388450406.0,GR4-COLD,,,90,,41.0,84.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,30.04,GR4-COLD,Slidetech 30.04  Делител плъзгане за ед. стъкло,3,3,28.0,17.0,14348810648.0,GR4-COLD,,,90,,62.0,30.0,0.0,Делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,30.05,GR4-COLD,Slidetech 30.05  Делител плъзгане за стъклопакет,3,3,28.0,17.0,76358420639.0,GR4-COLD,,,90,,62.0,30.0,0.0,Делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,30.09,GR4-COLD,Slidetech 30.09 Крило плъзгане за ед. стъкло,2,2,62.0,0.0,46358630592.0,GR4-COLD,,,90,,62.0,30.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,30.10,GR4-COLD,Slidetech 30.10 Крило плъзгане за стъклопакет,2,2,62.0,0.0,65458950555.0,GR4-COLD,,,90,,62.0,30.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,3001,GR C-WP 5000/4000,WP I G 3001 G ESSENTIAL Каса вътрешен златен дъб с гума,1,1,43.0,0.0,74762680838.0,GR C-WP 5000/4000,,,45,,63.0,60.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,3002,GR C-WP 5000/4000,WP I G 3002 G ESSENTIAL Крило вътрешен златен дъб с гума,2,2,37.0,20.0,61762640881.0,GR C-WP 5000/4000,,,45,,77.0,60.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,3003,GR C-WP 5000/4000,WP I G 3003 G ESSENTIAL Делител вътрешен златен дъб с гума,3,3,33.0,20.0,51782290022.0,GR C-WP 5000/4000,,,45,,73.0,60.0,0.0,Делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,3004,GR C-WP 5000/4000,WP I G 3004 G ESSENTIAL Крило врата вътрешен златен дъб с гума,2,2,65.0,20.0,37752900516.0,GR C-WP 5000/4000,,,45,,105.0,60.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,3005,GR C-WP 5000/4000,WP I G 3005 G ESSENTIAL Крило врата обърнато вътрешен златен дъб с гума,2,2,65.0,20.0,43742150885.0,GR C-WP 5000/4000,,,45,,105.0,60.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,3006,GR C-WP 5000/4000,WP I G 3006 G ESSENTIAL Подвижен делител вътрешен златен дъб с гума,4,5,0.0,0.0,82752830875.0,GR C-WP 5000/4000,,,90,,61.0,60.0,0.0,Летящ делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,3033,GR C-WP 5000/4000,WP I G 3033 G ESSENTIAL Делител голям вътрешен златен дъб с гума,3,3,40.0,20.0,22032690163.0,GR C-WP 5000/4000,,,45,,80.0,60.0,0.0,Делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,3035,GR C-WP 5000/4000,WP I G 3035 G ESSENTIAL Каса с перваз вътрешен златен дъб с гума,1,1,43.0,35.0,16022870779.0,GR C-WP 5000/4000,,,45,,98.0,60.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,40.02,GR4-COLD,Lightech 40.02 Каса широка,1,1,33.0,0.0,41479021377.0,GR4-COLD,,,90,,55.0,40.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,40.04,GR4-COLD,Lightech 40.04 Каса широка обла,1,1,33.5,0.0,56449181126.0,GR4-COLD,,,90,,55.0,72.8,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,40.10,GR4-COLD,Lightech 40.10 Каса мини,1,1,0.0,0.0,73519221223.0,GR4-COLD,,,90,,45.0,30.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,40.11,GR4-COLD,Lightech 40.11 Каса малка,1,1,23.0,0.0,18599341231.0,GR4-COLD,,,90,,45.0,37.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,40.12,GR4-COLD,Lightech 40.12 Каса голяма,1,1,33.0,0.0,91589281861.0,GR4-COLD,,,90,,55.0,37.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,40.13,GR4-COLD,Lightech 40.13 Каса с голям перваз,1,1,23.0,45.0,92549061472.0,GR4-COLD,,,90,,90.0,45.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,40.15,GR4-COLD,Lightech 40.15 Каса с малък перваз,1,1,23.0,25.0,25559341267.0,GR4-COLD,,,90,,70.0,45.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,40.18,GR4-COLD,Lightech 40.18 Безкамерна каса,1,1,10.0,0.0,39599641155.0,GR4-COLD,,,90,,32.0,37.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,40.21,GR4-COLD,Lightech 40.21 Крило прозорец,2,2,41.5,0.0,22619051120.0,GR4-COLD,,,90,,63.5,44.5,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,40.22,GR4-COLD,Lightech 40.22 Крило прозорец за PVC обков,2,2,34.5,17.5,44669281265.0,GR4-COLD,,,90,,74.0,44.5,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,40.24,GR4-COLD,Lightech 40.24 Крило врата,2,2,73.5,0.0,93639581457.0,GR4-COLD,,,90,,95.5,44.5,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,40.25,GR4-COLD,Lightech 40.25 Крило врата право,2,2,73.5,0.0,69659241780.0,GR4-COLD,,,90,,95.5,44.5,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,40.27,GR4-COLD,Lightech 40.27 Крило врата за навън,2,2,73.5,0.0,30639261454.0,GR4-COLD,,,90,,95.5,44.5,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,40.28,GR4-COLD,Lightech 40.28 Крило врата право за навън,2,2,73.5,0.0,17649031572.0,GR4-COLD,,,90,,95.5,44.5,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,40.31,GR4-COLD,Lightech 40.31 Делител малък,3,3,26.0,22.0,14799781224.0,GR4-COLD,,,90,,70.0,37.0,0.0,Делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,40.33,GR4-COLD,Lightech 40.33 Делител голям,3,3,36.0,22.0,63719381321.0,GR4-COLD,,,90,,80.0,37.0,0.0,Делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,40.35,GR4-COLD,Lightech 40.35 Делител за право крило,3,3,40.0,22.0,28749251651.0,GR4-COLD,,,90,,84.0,37.0,0.0,Делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,40.37,GR4-COLD,Lightech 40.37 Праг,1,1,15.0,0.0,44779821745.0,GR4-COLD,,,90,,15.0,37.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,40.39,GR4-COLD,Lightech 40.39 Долен профил врата,2,2,95.0,0.0,62749461857.0,GR4-COLD,,,90,,95.0,37.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,4001,WP 4000,Каса 4 кам.,1,1,43.0,0.0,78863251407.0,WP 4000,,,45,,0.0,0.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,4002,WP 4000,Крило прозорец 4 кам.,2,2,37.0,20.0,69803331370.0,WP 4000,,,45,,0.0,0.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,4065,PROFILE,WP4065 - Допълнителен профил за PVC врата /алуминиев/ м.,1,1,18.0,0.0,43443491073.0,PROFILE,,,45,,7.5,31.45,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,5001,GR B-WP 5000,WP I G 5001 G ENERGY Каса вътрешен златен дъб с гума,1,1,46.0,0.0,78944422237.0,GR B-WP 5000,,,45,,66.0,72.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,5002,GR B-WP 5000,WP I G 5002 G ENERGY Крило вътрешен златен дъб с гума,2,2,38.0,20.0,70914312295.0,GR B-WP 5000,,,45,,78.0,72.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,5003,GR B-WP 5000,WP I G 5003 G ENERGY Делител вътрешен златен дъб с гума,3,3,40.0,20.0,60924772874.0,GR B-WP 5000,,,45,,80.0,72.0,0.0,Делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,5004,GR B-WP 5000,WP I G 5004 G ENERGY Крило врата вътрешен златен дъб с гума,2,2,73.0,20.0,22924572536.0,GR B-WP 5000,,,45,,113.0,72.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,5005,GR B-WP 5000,WP I E 5005 G ENERGY Крило врата обърнато вътрешен тъмен дъб с гума,2,2,73.0,20.0,8984712423.0,GR B-WP 5000,,,45,,113.0,72.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,5006,GR B-WP 5000,WP I G 5006 G ENERGY Подвижен делител вътрешен златен дъб с гума,4,5,0.0,0.0,35974402527.0,GR B-WP 5000,,,90,,61.0,72.0,0.0,Летящ делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,5010,GR B-WP 5000,WP I G 5010 G ENERGY Крило водобранно вътрешен златен дъб с гума,2,2,38.0,20.0,73074732878.0,GR B-WP 5000,,,45,,78.0,80.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,5035,GR B-WP 5000,WP I G 5035 G ENERGY Каса с перваз вътрешен златен дъб с гума,1,1,46.0,35.0,21244502500.0,GR B-WP 5000,,,45,,101.0,72.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,5065,PROFILE,WP5065 - Праг за 5-камерна PVC врата /алуминиев/ м.,1,1,18.0,0.0,13594442413.0,PROFILE,,,45,,18.0,65.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,6001,WP 6000,Каса 6 кам.,1,1,46.0,0.0,21065743234.0,WP 6000,,,90,,0.0,0.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,6002,WP 6000,Крило прозорец 6 кам. право,2,2,38.0,20.0,46055873462.0,WP 6000,,,90,,0.0,0.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,70.01,GR2-WP70,Thermo Slide 70.01 Каса еднорелсова,1,1,50.0,0.0,43732054472.0,GR2-WP70,,,45,,52.0,160.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,70.02,GR2-WP70,Thermo Slide 70.02 Каса двурелсова,1,1,50.0,0.0,48772364635.0,GR2-WP70,,,45,,50.0,160.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,70.05,GR2-WP70,Thermo Slide 70.05 Каса с перо двурелсова,1,1,50.0,0.0,96752614471.0,GR2-WP70,,,45,,50.0,170.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,70.12,GR2-WP70,Thermo Slide 70.12 Каса праг,1,1,20.0,0.0,72802674261.0,GR2-WP70,,,45,,50.0,160.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,70.15,GR2-WP70,Thermo Slide 70.15 Каса праг,1,1,20.0,0.0,74892224753.0,GR2-WP70,,,45,,50.0,170.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,70.20,GR2-WP70,Thermo Slide 70.20 Крило малко,2,2,45.0,0.0,78932334338.0,GR2-WP70,,,90,,45.0,70.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,70.22,GR2-WP70,Thermo Slide 70.22 Крило,2,2,99.0,0.0,14942244045.0,GR2-WP70,,,45,,99.0,70.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,70.22дел,WP 70,Крило 70.22 като делител,3,3,55.0,22.0,81662304883.0,GR2-WP70,,,90,,99.0,0.0,0.0,Делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,78.01,GR3-WP78,Thermo Smart WP 78.01 Каса,1,1,35.0,0.0,96582474422.0,GR3-WP78,,,90,,57.0,70.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,78.02,GR3-WP78,Thermo Smart WP 78.02 Каса голяма,1,1,45.0,0.0,43512514189.0,GR3-WP78,,,90,,67.0,70.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,78.05,GR3-WP78,Thermo Smart WP 78.05 Каса с перваз,1,1,35.0,25.0,55532234685.0,GR3-WP78,,,90,,57.0,70.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,78.07,GR3-WP78,Thermo Smart WP 78.07 Обръщащ профил,1,1,30.0,0.0,45582824432.0,GR3-WP78,,,90,,52.0,70.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,78.21,GR3-WP78,Thermo Smart WP 78.21 Крило прозорец,2,2,53.0,0.0,47752504188.0,GR3-WP78,,,90,,75.0,78.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,78.22,GR3-WP78,Thermo Smart WP 78.22 Крило прозорец за PVC обков,2,2,53.0,0.0,13742784643.0,GR3-WP78,,,90,,75.0,78.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,78.25,GR3-WP78,Thermo Smart WP 78.25 Крило врата,2,2,74.0,0.0,64742664256.0,GR3-WP78,,,90,,96.0,78.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,78.26,GR3-WP78,Thermo Smart WP 78.26 Балконско крило,2,2,54.0,20.0,41722244951.0,GR3-WP78,,,90,,96.0,78.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,78.27,GR3-WP78,Thermo Smart WP 78.27 Крило врата за навън,2,2,74.0,0.0,53762754473.0,GR3-WP78,,,90,,96.0,78.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,78.33,GR3-WP78,Thermo Smart WP 78.33 Делител малък с винт,3,3,35.0,22.0,41872094557.0,GR3-WP78,,,90,,79.0,70.0,0.0,Делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,78.35,GR3-WP78,Thermo Smart WP 78.35 Делител за крило,3,3,35.0,22.0,64802654529.0,GR3-WP78,,,90,,79.0,76.0,0.0,Делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,78.51,GR3-WP78,Thermo Smart WP 78.51 Подвижен делител,4,5,0.0,0.0,95012624811.0,GR3-WP78,,,90,,61.0,74.0,0.0,Летящ делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,78.52,GR3-WP78,Thermo Smart WP 78.52 Подвижен делител за PVC обков,4,5,0.0,0.0,98012364568.0,GR3-WP78,,,90,,61.0,74.0,0.0,Летящ делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,78.70,GR3-WP78,Thermo Smart WP 78.70 Праг с декоративна капачка елоксация,1,1,16.0,0.0,31242114688.0,GR3-WP78,,,90,,20.0,70.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,82.01,GR A-WP 82,Каса AVANGARD,1,1,45.0,0.0,48023485688.0,GR A-WP 82,,,90,,70.0,67.0,,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,82.05,GR A-WP 82,Каса с перваз AVANGARD,1,1,45.0,35.0,50033445617.0,GR A-WP 82,,,90,,105.0,82.0,,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,82.21,GR A-WP 82,Крило за прозорец AVANGARD,2,2,58.0,0.0,33223405737.0,GR A-WP 82,,,90,,83.0,82.0,,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,82.22,GR A-WP 82,Крило водобранно AVANGARD,2,2,58.0,0.0,57283335725.0,GR A-WP 82,,,90,,83.0,92.0,,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,82.25,GR A-WP 82,Крило врата AVANGARD - отваряне навътре,2,2,88.0,0.0,95223625694.0,GR A-WP 82,,,90,,113.0,82.0,,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,82.27,GR A-WP 82,Крило врата AVANGARD - отваряне навън,2,2,88.0,0.0,96283555413.0,GR A-WP 82,,,90,,113.0,82.0,,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,82.31,GR A-WP 82,Делител бял с гума - AVANGARD,3,3,40.0,25.0,36333355415.0,GR A-WP 82,,,90,,90.0,82.0,0.0,Делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,85.01,GR1-WP85,Thermo Pro 85.01 Каса,1,1,36.0,0.0,33313785372.0,GR1-WP85,,,90,,61.0,77.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,85.02,GR1-WP85,Thermo Pro 85.02 Каса голяма,1,1,46.0,0.0,43333385719.0,GR1-WP85,,,90,,71.0,77.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,85.05,GR1-WP85,Thermo Pro 85.05 Каса с перваз,1,1,36.0,25.0,56313845255.0,GR1-WP85,,,90,,86.0,77.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,85.21,GR1-WP85,Thermo Pro 85.21 Крило прозорец,2,2,53.0,0.0,54553295854.0,GR1-WP85,,,90,,78.0,85.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,85.22,GR1-WP85,Thermo Pro 85.22 Крило прозорец за PVC обков,2,2,53.0,0.0,65523485181.0,GR1-WP85,,,90,,78.0,85.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,85.23,GR1-WP85,Thermo Pro 85.23 Крило прозорец за PVC обков,2,2,0.0,0.0,46513295336.0,GR1-WP85,,,90,,85.0,85.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,85.25,GR1-WP85,Thermo Pro 85.25 Крило врата,2,2,74.0,0.0,75523175657.0,GR1-WP85,,,90,,99.0,85.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,85.26,GR1-WP85,Thermo Pro 85.26 Балконско крило за PVC обков,2,2,0.0,0.0,65513235264.0,GR1-WP85,,,90,,99.0,85.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,85.27,GR1-WP85,Thermo Pro 85.27 Крило врата за навън,2,2,74.0,0.0,77543155852.0,GR1-WP85,,,90,,99.0,85.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,85.31,GR1-WP85,Thermo Pro 85.31 Делител за каса малък,3,3,36.0,25.0,15633185137.0,GR1-WP85,,,90,,86.0,77.0,0.0,Делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,85.33,GR1-WP85,Thermo Pro 85.33 Делител малък с винт,3,3,36.0,25.0,5613345373.0,GR1-WP85,,,90,,86.0,77.0,0.0,Делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,85.35,GR1-WP85,Thermo Pro 85.35 Делител за крило малък,3,3,36.0,25.0,80673825517.0,GR1-WP85,,,90,,85.0,77.0,0.0,Делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,85.37,GR1-WP85,Thermo Pro 85.37 Делител голям с винт,3,3,46.0,25.0,17643845736.0,GR1-WP85,,,90,,96.0,77.0,0.0,Делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,85.39,GR1-WP85,Thermo Pro 85.39 Делител за каса голям,3,3,46.0,25.0,58683865284.0,GR1-WP85,,,90,,96.0,77.0,0.0,Делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,85.51,GR1-WP85,Thermo Pro 85.51 Подвижен делител,4,5,0.0,0.0,48843805630.0,GR1-WP85,,,90,,0.0,0.0,0.0,Летящ делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,85.52,GR1-WP85,Thermo Pro 85.52 Подвижен делител за PVC обков,4,5,0.0,0.0,12893515227.0,GR1-WP85,,,90,,0.0,0.0,0.0,Летящ делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,85.61,GR1-WP85,Thermo Pro 85.61 Каса безфалцова отваряне навътре,1,1,53.0,0.0,98943145631.0,GR1-WP85,,,90,,68.0,77.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,85.62,GR1-WP85,Thermo Pro 85.62 Каса безфалцова отваряне навън,1,1,53.0,0.0,34953565568.0,GR1-WP85,,,90,,68.0,77.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,85.63,GR1-WP85,Thermo Pro 85.63 Крило врата безфалцово отваряне навътре,2,2,75.0,0.0,72933045939.0,GR1-WP85,,,90,,97.0,77.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,85.64,GR1-WP85,Thermo Pro 85.64 Крило врата безфалцово отваряне навън,2,2,75.0,0.0,39943085318.0,GR1-WP85,,,90,,97.0,77.0,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,85.65,GR1-WP85,Thermo Pro 85.65 Адаптор безфалцов отваряне навътре,3,3,35.0,0.0,54913465820.0,GR1-WP85,,,90,,49.8,77.0,0.0,Делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,85.66,GR1-WP85,Thermo Pro 85.66 Адаптор безфалцов отваряне навън,3,3,35.0,0.0,18963155748.0,GR1-WP85,,,90,,49.8,77.0,0.0,Делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,85.67,GR1-WP85,Thermo Pro 85.67 Подвижен делител безфалцов отваряне навътре,4,5,0.0,0.0,61963315717.0,GR1-WP85,,,90,,45.0,72.8,0.0,Летящ делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,85.68,GR1-WP85,Thermo Pro 85.68 Подвижен делител безфалцов отваряне навън,4,5,0.0,0.0,94983605781.0,GR1-WP85,,,90,,45.0,72.8,0.0,Летящ делител,,DATABASE_EVIDENCE
+WeissProfil2018_113,85.69,GR1-WP85,Thermo Pro 85.69 Крило панелна врата с ламарина безфалцово,2,2,0.0,0.0,38963555221.0,GR1-WP85,,,90,,29.0,35.3,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,85.70,GR1-WP85,Thermo Pro 85.70 Праг за безфалцова врата елоксация,1,1,20.0,0.0,69013795590.0,GR1-WP85,,,90,,20.0,77.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,85.73,GR1-WP85,Thermo Pro 85.73 Крило панелна врата безфалцово отваряне навътре,2,2,0.0,0.0,69053505847.0,GR1-WP85,,,90,,75.0,73.8,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,85.74,GR1-WP85,Thermo Pro 85.74 Крило панелна врата безфалцово отваряне навън,2,2,0.0,0.0,44053785137.0,GR1-WP85,,,90,,60.0,73.8,0.0,Крило,Wing,DATABASE_EVIDENCE
+WeissProfil2018_113,85.77,GR1-WP85,Thermo Pro 85.77 Праг с декоративна капачка елоксация,1,1,16.0,0.0,13093135487.0,GR1-WP85,,,90,,0.0,0.0,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,85.87,GR1-WP85,Thermo Pro 85.87 Каса панелна врата с композит безфалцова отваряне навътре,1,1,0.0,0.0,65193715933.0,GR1-WP85,,,90,,68.0,78.6,0.0,Каса,Frame,DATABASE_EVIDENCE
+WeissProfil2018_113,85.88,GR1-WP85,Thermo Pro 85.88 Крило панелна врата с композит безфалцово отваряне навътре,2,2,0.0,0.0,85163155882.0,GR1-WP85,,,90,,70.0,78.6,0.0,Крило,Wing,DATABASE_EVIDENCE
