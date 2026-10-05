@@ -24,6 +24,8 @@ export type ProductResolverInput = Readonly<{
   system: SelectedSystem
 }>
 
+export const PRODUCT_RESOLVER_VERSION = 'product-resolver-03' as const
+
 export type ProductResolverResult = Readonly<{
   model: DerivedProductModel
   status: ProductResolutionStatus
