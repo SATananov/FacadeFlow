@@ -93,7 +93,8 @@ export const derivedProfileEvidenceRows = [
     sourcePath: '.ai/skills/profile-recognition/data/MASTER_CORE_PROFILES.csv',
   },
   {
-    runtimeMappingStatus: 'RUNTIME_UNMAPPED',
+    systemId: 'profilink16',
+    runtimeMappingStatus: 'RUNTIME_MAPPED',
     sourceSystem: 'Profilink16',
     catalogue: 'PROFILINK',
     profileId: '1330000056',
@@ -106,7 +107,8 @@ export const derivedProfileEvidenceRows = [
     sourcePath: '.ai/skills/profile-recognition/data/MASTER_CORE_PROFILES.csv',
   },
   {
-    runtimeMappingStatus: 'RUNTIME_UNMAPPED',
+    systemId: 'profilink16',
+    runtimeMappingStatus: 'RUNTIME_MAPPED',
     sourceSystem: 'Profilink16',
     catalogue: 'PROFILINK',
     profileId: '130000049',
@@ -119,7 +121,8 @@ export const derivedProfileEvidenceRows = [
     sourcePath: '.ai/skills/profile-recognition/data/MASTER_CORE_PROFILES.csv',
   },
   {
-    runtimeMappingStatus: 'RUNTIME_UNMAPPED',
+    systemId: 'profilink16',
+    runtimeMappingStatus: 'RUNTIME_MAPPED',
     sourceSystem: 'Profilink16',
     catalogue: 'PROFILINK',
     profileId: '311007',
