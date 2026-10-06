@@ -26,7 +26,9 @@ export type GeometryEvidenceFact = Readonly<{
   value: string | null
   sourceType: GeometryEvidenceSourceType
   sourceReference: string
+  sourceFile: string | null
   sourcePage: number | null
+  sourceSha256: string | null
   sourceNote: string
 }>
 
@@ -48,6 +50,7 @@ export type GeometryEvidenceRecord = Readonly<{
   notchContourEvidence: GeometryEvidenceFact
   cutAngleEvidence: GeometryEvidenceFact
   cutLengthEvidence: GeometryEvidenceFact
+  assemblyCrossSectionEvidence: GeometryEvidenceFact
   sourceType: 'DATABASE'
   sourceReference: string
   sourcePage: null
@@ -58,6 +61,8 @@ export type GeometryEvidenceRecord = Readonly<{
 const profileSectionSource = 'src/data/profileSystems/prelude60.ts'
 const relationshipSource = 'src/data/profileSystems/knowledge/derivedProfileKnowledge.ts'
 const tokenSource = '.ai/skills/joint-knowledge/data/STANDARD_JOINT_RULE_TOKENS.csv'
+const recoveredPreludePdf = 'PVC Prelude_bg.pdf'
+const recoveredPreludePdfSha256 = '1BA9174B1CF3974B4DE171B57147DD4FAD41D81958EA62D08B977223C5200F5F'
 
 function catalogueSectionFact(profileId: string, role: string, callouts: string): GeometryEvidenceFact {
   return {
@@ -65,8 +70,10 @@ function catalogueSectionFact(profileId: string, role: string, callouts: string)
     value: `Catalogue component cross-section reference for ${profileId} (${role}); raw callouts ${callouts} mm are preserved without geometric reinterpretation.`,
     sourceType: 'CATALOGUE',
     sourceReference: profileSectionSource,
+    sourceFile: recoveredPreludePdf,
     sourcePage: 2,
-    sourceNote: 'The catalogue identifies the component profile and raw printed callouts. It does not prove the assembled joint geometry.',
+    sourceSha256: recoveredPreludePdfSha256,
+    sourceNote: 'Isolated profile-section evidence only. The catalogue identifies the component profile and raw printed callouts; it does not prove the assembled joint geometry.',
   }
 }
 
@@ -76,7 +83,9 @@ function unknownGeometryFact(sourceNote: string): GeometryEvidenceFact {
     value: null,
     sourceType: 'DATABASE',
     sourceReference: tokenSource,
+    sourceFile: null,
     sourcePage: null,
+    sourceSha256: null,
     sourceNote,
   }
 }
@@ -106,6 +115,7 @@ const records: readonly GeometryEvidenceRecord[] = [
     notchContourEvidence: unknownGeometryFact('SglobkaDelitel and relation tokens are not a notch contour.'),
     cutAngleEvidence: unknownGeometryFact('Operation code 19 does not prove a physical cut angle.'),
     cutLengthEvidence: unknownGeometryFact('POS[] does not prove a physical cut length.'),
+    assemblyCrossSectionEvidence: unknownGeometryFact('No exact 482.20 ↔ 482.21 assembled cross-section is present.'),
     sourceType: 'DATABASE',
     sourceReference: relationshipSource,
     sourcePage: null,
@@ -134,6 +144,7 @@ const records: readonly GeometryEvidenceRecord[] = [
     notchContourEvidence: unknownGeometryFact('SglobkaDelitel and relation tokens are not a notch contour.'),
     cutAngleEvidence: unknownGeometryFact('Operation code 19 does not prove a physical cut angle.'),
     cutLengthEvidence: unknownGeometryFact('POS[] does not prove a physical cut length.'),
+    assemblyCrossSectionEvidence: unknownGeometryFact('No exact 482.20 ↔ 482.21 assembled cross-section is present.'),
     sourceType: 'DATABASE',
     sourceReference: relationshipSource,
     sourcePage: null,

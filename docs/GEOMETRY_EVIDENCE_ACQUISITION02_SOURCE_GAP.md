@@ -10,6 +10,17 @@ No `PRIMARY_GEOMETRY_EVIDENCE` was found for the exact `482.20` ↔ `482.21`
 frame-to-mullion assembly. The available evidence remains split between
 isolated catalogue sections and database relationship records.
 
+## Recovered source provenance
+
+- File: `C:\Users\stana\Desktop\Nadejda\PVC Prelude_bg.pdf`
+- SHA-256: `1BA9174B1CF3974B4DE171B57147DD4FAD41D81958EA62D08B977223C5200F5F`
+- Source context: `KMG PVC Profiles Systems`, PDF page 2.
+- The hash is authoritative provenance for the recovered PDF file. It does
+  not promote isolated profile sections into assembled-joint geometry.
+- Page 2 contains isolated `482.20` Frame and `482.21` Mullion profile
+  sections. Page 3 contains supporting reinforcement/accessory evidence,
+  including the `KM242` mullion connector reference.
+
 ## Source inventory and classification
 
 | Repository path | Source type | Profile IDs | What it proves | What it does not prove | Classification |
@@ -48,18 +59,23 @@ isolated catalogue sections and database relationship records.
 ## Legacy source references and source gaps
 
 - The imported profile rows reference no CAD filename for either `482.20` or
-  `482.21`; the repository contains no matching DXF/DWG/PDF artifact.
+  `482.21`; the recovered PDF is external to the repository and is recorded
+  above by its exact SHA-256.
 - `src/data/profileSystems/prelude60DoorEvidence.ts` names the source
   `PVC Prelude_bg.pdf / KMG PVC Profiles Systems`, page 2, for catalogue facts.
-  The original PDF is not present; the repository has a rasterized page-2
-  image instead. This is a source gap for original-document inspection, not
-  evidence of an assembly drawing.
+  The original PDF is recovered locally at the path above. The repository has
+  a rasterized page-2 image as well. This remains insufficient evidence for an
+  exact assembled frame↔mullion drawing.
 - The legacy operation source is identified as an imported database export in
   `.ai/skills/joint-knowledge/SKILL.md`; its source archive is not present in
   this repository. The copied CSV rows remain database relationship evidence
   only.
 - No repository reference points to an exact `482.20` ↔ `482.21` CAD file,
   workshop drawing, machining sheet, or manufacturer assembly detail.
+- No assembled `482.20` ↔ `482.21` joint detail exists in the recovered PDF
+  or searched local sources. No CAD/DXF/DWG pair source was found.
+- Contact line/point, overlap, rebate, notch contour, cut angle/length,
+  machining geometry, and assembly cross-section remain `UNKNOWN`.
 
 ## Required next source
 
