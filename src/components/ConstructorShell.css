@@ -5609,6 +5609,30 @@
   border-radius: 5px;
   background: #f7f9f9;
 }
+.constructor-geometry-readiness-summary {
+  margin: 0;
+  padding: 8px;
+  border-left: 3px solid #9aafb2;
+  border-radius: 4px;
+  background: #f7f9f9;
+  color: #385c64;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+.constructor-geometry-readiness-summary.is-blocked {
+  border-left-color: #a96f6f;
+  background: #fff8f7;
+  color: #754747;
+}
+.constructor-geometry-readiness-summary.is-allowed {
+  border-left-color: #6f9a82;
+  color: #2f6650;
+}
+.constructor-geometry-readiness-summary.is-unknown {
+  border-left-color: #b09b67;
+  color: #6f603c;
+}
 .constructor-geometry-readiness-row {
   min-width: 0;
   display: grid;
@@ -5643,6 +5667,18 @@
   background: #fff8e9;
   color: #765621;
 }
+.constructor-geometry-readiness-production-warning {
+  margin: 0;
+  padding: 7px 8px;
+  border: 1px solid #dfbcbc;
+  border-radius: 5px;
+  background: #fff4f3;
+  color: #7d4444;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .35px;
+  line-height: 1.3;
+}
 .constructor-geometry-readiness-empty {
   border: 1px dashed #cbd8da;
   background: #f7f9f9;
@@ -5662,11 +5698,27 @@
   display: grid;
   gap: 2px;
 }
+.constructor-geometry-readiness-blockers small {
+  color: #819398;
+  font-size: 8.5px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
 .constructor-geometry-readiness-note {
   margin: 0;
   color: #76898e;
   font-size: 9px;
   line-height: 1.4;
+}
+@media (max-width: 360px) {
+  .constructor-geometry-readiness-row {
+    grid-template-columns: minmax(0, .75fr) minmax(0, 1.25fr);
+    gap: 6px;
+  }
+  .constructor-geometry-readiness-summary,
+  .constructor-geometry-readiness-production-warning {
+    font-size: 9px;
+  }
 }
 .constructor-joint-knowledge {
   margin-top: 3px;

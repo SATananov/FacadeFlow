@@ -3510,26 +3510,59 @@ export default function ConstructorShell({
       RELATIONSHIP_CONTEXT_UNKNOWN: 'контекст на връзката',
     }
     const blockers = evaluation?.missingEvidence.map((blocker) => blockerLabels[blocker] ?? blocker) ?? []
+    const blockerGroups: Record<string, string> = {
+      'контактна линия': 'контакт между профилите',
+      'контактна точка': 'контакт между профилите',
+      'контактни повърхности': 'контакт между профилите',
+      'дълбочина на контакта': 'позиция / дълбочина',
+      припокриване: 'припокриване / фалц',
+      фалц: 'припокриване / фалц',
+      'изрязване / контур': 'изрязване / край на профила',
+      'обработка на края на делителя': 'изрязване / край на профила',
+      'ъгъл на рязане': 'изрязване / край на профила',
+      'дължина на рязане': 'изрязване / край на профила',
+      'позиция на конектора': 'позиция на съединителя',
+      'сечение на сглобката': 'монтажен детайл',
+      'директно свързване на профилната двойка': 'монтажен детайл',
+      'машинна обработка': 'машинна обработка',
+      'координати на обработката': 'машинна обработка',
+      'траектория на инструмента': 'машинна обработка',
+      'заваръчен / допусков размер': 'допуск / заварка',
+      'профилен контекст': 'профилен контекст',
+      'контекст на връзката': 'контекст на връзката',
+    }
+    const groupedBlockers = [...new Set(blockers.map((blocker) => blockerGroups[blocker] ?? blocker))]
+    const summary = !evaluation
+      ? context.status === 'INCOMPLETE_SELECTION'
+        ? 'Изберете участниците в сглобката.'
+        : 'Няма достатъчно данни за оценка на сглобката.'
+      : evaluation.physicalGeometryStatus === 'BLOCKED'
+        ? 'Връзката е известна, но физическата сглобка не е потвърдена.'
+        : 'Физическата сглобка е потвърдена.'
     const statusClass = (isAllowed: boolean, isBlocked: boolean) => isAllowed ? 'is-allowed' : isBlocked ? 'is-blocked' : 'is-unknown'
 
     return (
       <section className="constructor-geometry-readiness" aria-label="Готовност на геометрията">
         <header>
-          <span>ГОТОВНОСТ НА ГЕОМЕТРИЯТА</span>
+          <span>СТАТУС НА СГЛОБКАТА</span>
           <small>Само за преглед</small>
         </header>
         {!evaluation ? (
-          <p className="constructor-geometry-readiness-empty">{context.status === 'INCOMPLETE_SELECTION'
-            ? 'Изберете участниците в сглобката.'
-            : context.status === 'CONTEXT_UNAVAILABLE'
-              ? 'Контекстът на връзката не е определен.'
-              : context.status === 'ROLE_MISMATCH'
-                ? 'Ролите на участниците не съответстват на избрания контекст.'
-                : context.status === 'PROFILE_ID_UNKNOWN'
-                  ? 'Избраният участник няма изрично определен профил.'
-                  : 'Няма достатъчно данни за оценка на готовността.'}</p>
+          <>
+            <p className="constructor-geometry-readiness-summary is-unknown">{summary}</p>
+            <p className="constructor-geometry-readiness-empty">{context.status === 'INCOMPLETE_SELECTION'
+              ? 'Оценката ще се появи след избор на двама участници.'
+              : context.status === 'CONTEXT_UNAVAILABLE'
+                ? 'Контекстът на връзката не е определен.'
+                : context.status === 'ROLE_MISMATCH'
+                  ? 'Редът на участниците не съвпада с очаквания контекст.'
+                  : context.status === 'PROFILE_ID_UNKNOWN'
+                    ? 'Липсва явен профилен идентификатор.'
+                    : 'Няма достатъчно данни за оценка на готовността.'}</p>
+          </>
         ) : (
           <>
+            <p className={`constructor-geometry-readiness-summary ${evaluation.physicalGeometryStatus === 'BLOCKED' ? 'is-blocked' : 'is-allowed'}`}>{summary}</p>
             <div className="constructor-geometry-readiness-status">
               <div className="constructor-geometry-readiness-row">
                 <span>Профили</span>
@@ -3552,14 +3585,15 @@ export default function ConstructorShell({
                 <strong className={statusClass(false, evaluation.machineGeometryStatus === 'BLOCKED')}>{evaluation.machineGeometryStatus === 'BLOCKED' ? 'Блокирана — липсват доказателства' : 'Неизвестна'}</strong>
               </div>
             </div>
-            {allowed('SCHEMATIC_RELATIONSHIP_DISPLAY') && (
-              <p className="constructor-geometry-readiness-warning">Схематично / непроизводствено</p>
+            {evaluation.physicalGeometryStatus === 'BLOCKED' && (
+              <p className="constructor-geometry-readiness-production-warning">НЕ Е ГОТОВО ЗА ПРОИЗВОДСТВО</p>
             )}
             <GeometryReadinessSchematic context={context} evaluation={evaluation} />
-            {blockers.length > 0 && (
+            {groupedBlockers.length > 0 && (
               <div className="constructor-geometry-readiness-blockers">
                 <strong>Липсват доказателства за:</strong>
-                <ul>{blockers.map((blocker) => <li key={blocker}>{blocker}</li>)}</ul>
+                <ul>{groupedBlockers.map((blocker) => <li key={blocker}>{blocker}</li>)}</ul>
+                <small>Технически детайли: {blockers.join(', ')}</small>
               </div>
             )}
             <p className="constructor-geometry-readiness-note">UNKNOWN означава, че липсва достатъчно доказателство, а не че сглобката не съществува.</p>
