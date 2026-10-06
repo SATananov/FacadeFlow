@@ -137,6 +137,7 @@ import {
 } from '../domain/formConstructorTransition'
 import './ConstructorShell.css'
 import { CompositeStructuralSketch } from './CompositeStructuralSketch'
+import { GeometryReadinessSchematic } from './GeometryReadinessSchematic'
 import type { ConstructorView, SketchBounds } from './compositeStructuralSketchProjection'
 import { placeFieldDimensionLabel, SCHEMATIC_OPENING_INSET_PX } from './fieldDimensionLabel'
 import { layoutCombinedTechnicalDimensions } from './combinedDimensionLayout'
@@ -3554,6 +3555,7 @@ export default function ConstructorShell({
             {allowed('SCHEMATIC_RELATIONSHIP_DISPLAY') && (
               <p className="constructor-geometry-readiness-warning">Схематично / непроизводствено</p>
             )}
+            <GeometryReadinessSchematic context={context} evaluation={evaluation} />
             {blockers.length > 0 && (
               <div className="constructor-geometry-readiness-blockers">
                 <strong>Липсват доказателства за:</strong>

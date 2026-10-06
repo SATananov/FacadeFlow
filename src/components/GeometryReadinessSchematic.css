@@ -1,0 +1,82 @@
+.geometry-readiness-schematic {
+  display: grid;
+  gap: 7px;
+  padding: 9px;
+  border: 1px solid #d7e1e3;
+  border-radius: 5px;
+  background: #fbfcfc;
+}
+.geometry-readiness-schematic-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.geometry-readiness-schematic-header strong {
+  color: #496b73;
+  font-size: 9px;
+  letter-spacing: .7px;
+}
+.geometry-readiness-schematic-header span,
+.geometry-readiness-schematic-warning,
+.geometry-readiness-schematic-blocked {
+  font-size: 9px;
+  line-height: 1.35;
+}
+.geometry-readiness-schematic-header span { color: #8b4e4e; }
+.geometry-readiness-schematic-visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 5px;
+  border: 1px dashed #b9cdd0;
+  border-radius: 4px;
+  background: #f4f8f8;
+}
+.geometry-readiness-schematic-participant {
+  width: 52px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #6e9298;
+  border-radius: 3px;
+  background: #e7f0f1;
+  color: #365e65;
+  font-size: 10px;
+  font-weight: 900;
+}
+.geometry-readiness-schematic-participant-b {
+  border-style: dashed;
+  background: #f5f0e5;
+  color: #76613c;
+}
+.geometry-readiness-schematic-junction {
+  color: #8a9da1;
+  font-size: 16px;
+  line-height: 1;
+  letter-spacing: 2px;
+}
+.geometry-readiness-schematic-facts {
+  display: grid;
+  gap: 3px;
+}
+.geometry-readiness-schematic-facts > div {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(48px, .45fr) minmax(0, 1.55fr);
+  gap: 8px;
+  font-size: 9px;
+  line-height: 1.35;
+}
+.geometry-readiness-schematic-facts span { color: #6b8187; }
+.geometry-readiness-schematic-facts strong {
+  min-width: 0;
+  color: #284b53;
+  overflow-wrap: anywhere;
+}
+.geometry-readiness-schematic-warning,
+.geometry-readiness-schematic-blocked { margin: 0; }
+.geometry-readiness-schematic-warning { color: #765621; }
+.geometry-readiness-schematic-blocked { color: #8b4e4e; }
