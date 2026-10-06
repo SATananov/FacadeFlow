@@ -118,10 +118,11 @@ import {
   getDividerJointKnowledgeEvidence,
   getProfileKnowledgeEvidence,
 } from '../data/profileSystems/profileKnowledge'
+import type { GeometryReadinessResult } from '../data/profileSystems/geometryReadiness'
 import {
-  evaluateGeometryReadiness,
-  type GeometryReadinessResult,
-} from '../data/profileSystems/geometryReadiness'
+  evaluateSelectedGeometryReadiness,
+  type SelectedGeometryReadinessContext,
+} from '../data/profileSystems/geometryReadinessContext'
 import {
   evaluateGlazingBeadCompatibility,
   evaluateReinforcementCompatibility,
@@ -824,17 +825,26 @@ export default function ConstructorShell({
   const selectedJointOrientation = selectedJointDivider?.axis === 'horizontal' || selectedJointDivider?.axis === 'vertical'
     ? selectedJointDivider.axis
     : null
-  const selectedGeometryReadiness: GeometryReadinessResult | null = selectedProfileSystem && effectiveProfileResolution?.frame?.profileCode && selectedJointDividerProfileCode && selectedJointOrientation
-    ? evaluateGeometryReadiness({
-        systemId: selectedProfileSystem.id,
-        profileAId: effectiveProfileResolution.frame.profileCode,
-        profileBId: selectedJointDividerProfileCode,
-        profileARole: 'frame',
-        profileBRole: 'mullion',
-        relationshipContext: 'FRAME_TO_MULLION',
-        orientation: selectedJointOrientation,
-      })
-    : null
+  const selectedGeometryReadinessContext: SelectedGeometryReadinessContext = evaluateSelectedGeometryReadiness({
+    participantA: frameSelected || selectedJointDivider
+      ? {
+          role: 'frame',
+          profileId: effectiveProfileResolution?.frame?.profileCode ?? null,
+          systemId: selectedProfileSystem?.id ?? null,
+          selectionId: 'frame',
+        }
+      : null,
+    participantB: selectedJointDivider
+      ? {
+          role: 'mullion',
+          profileId: selectedJointDividerProfileCode,
+          systemId: selectedProfileSystem?.id ?? null,
+          selectionId: selectedJointDivider.id,
+        }
+      : null,
+    relationshipContext: selectedJointDivider ? 'FRAME_TO_MULLION' : null,
+    orientation: selectedJointOrientation,
+  })
   const offerDefaultGlazingId = !isFreeMode ? offerContext?.glazingId ?? null : null
   const selectedFieldGlazingSpecification = selectedField
     ? getEffectiveFieldGlazingSpecification(effectiveProfileResolution, offerDefaultGlazingId, selectedField.id)
@@ -3474,7 +3484,8 @@ export default function ConstructorShell({
     return <div className="constructor-selection-empty"><span>Избери конструктивен елемент</span><p>Профил може да се зададе на касата, делител или отваряемо ПОЛЕ. Избери елемент от скицата, за да продължиш.</p></div>
   }
 
-  const renderGeometryReadinessInspector = (evaluation: GeometryReadinessResult | null) => {
+  const renderGeometryReadinessInspector = (context: SelectedGeometryReadinessContext) => {
+    const evaluation = context.evaluation
     const allowed = (use: GeometryReadinessResult['allowedUses'][number]['use']) => evaluation?.allowedUses.some((item) => item.use === use) ?? false
     const blockerLabels: Record<string, string> = {
       CONTACT_LINE_UNKNOWN: 'контактна линия',
@@ -3507,7 +3518,15 @@ export default function ConstructorShell({
           <small>Само за преглед</small>
         </header>
         {!evaluation ? (
-          <p className="constructor-geometry-readiness-empty">Няма достатъчно данни за оценка на готовността.</p>
+          <p className="constructor-geometry-readiness-empty">{context.status === 'INCOMPLETE_SELECTION'
+            ? 'Изберете участниците в сглобката.'
+            : context.status === 'CONTEXT_UNAVAILABLE'
+              ? 'Контекстът на връзката не е определен.'
+              : context.status === 'ROLE_MISMATCH'
+                ? 'Ролите на участниците не съответстват на избрания контекст.'
+                : context.status === 'PROFILE_ID_UNKNOWN'
+                  ? 'Избраният участник няма изрично определен профил.'
+                  : 'Няма достатъчно данни за оценка на готовността.'}</p>
         ) : (
           <>
             <div className="constructor-geometry-readiness-status">
@@ -3585,7 +3604,7 @@ export default function ConstructorShell({
       ) : (
         <p className="constructor-profile-knowledge-empty">Няма потвърдени профилни данни</p>
       )}
-      {renderGeometryReadinessInspector(selectedGeometryReadiness)}
+      {renderGeometryReadinessInspector(selectedGeometryReadinessContext)}
     </section>
   )
 

@@ -5,8 +5,8 @@ import fs from 'node:fs'
 const shell = fs.readFileSync('src/components/ConstructorShell.tsx', 'utf8')
 const css = fs.readFileSync('src/components/ConstructorShell.css', 'utf8')
 
-assert.match(shell, /evaluateGeometryReadiness/)
-assert.match(shell, /selectedGeometryReadiness/)
+assert.match(shell, /evaluateSelectedGeometryReadiness/)
+assert.match(shell, /selectedGeometryReadinessContext/)
 
 const start = shell.indexOf('const renderGeometryReadinessInspector')
 const end = shell.indexOf('const renderProfileKnowledgeInspector', start)
