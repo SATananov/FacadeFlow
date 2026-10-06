@@ -5578,6 +5578,96 @@
   color: #667f85;
   font-size: 10px;
 }
+.constructor-geometry-readiness {
+  margin-top: 12px;
+  padding-top: 11px;
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid #cedde0;
+}
+.constructor-geometry-readiness > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.constructor-geometry-readiness > header span {
+  color: #496b73;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .7px;
+}
+.constructor-geometry-readiness > header small {
+  color: #819398;
+  font-size: 8px;
+}
+.constructor-geometry-readiness-status {
+  display: grid;
+  gap: 0;
+  padding: 4px 8px;
+  border: 1px solid #d8e3e4;
+  border-radius: 5px;
+  background: #f7f9f9;
+}
+.constructor-geometry-readiness-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  gap: 9px;
+  padding: 5px 0;
+  border-bottom: 1px solid #e2eaeb;
+}
+.constructor-geometry-readiness-row:last-child { border-bottom: 0; }
+.constructor-geometry-readiness-row > span,
+.constructor-geometry-readiness-row > strong {
+  min-width: 0;
+  font-size: 9.5px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.constructor-geometry-readiness-row > span { color: #6b8187; }
+.constructor-geometry-readiness-row > strong { font-weight: 850; }
+.constructor-geometry-readiness-row > strong.is-allowed { color: #2f6650; }
+.constructor-geometry-readiness-row > strong.is-blocked { color: #8b4e4e; }
+.constructor-geometry-readiness-row > strong.is-unknown { color: #766b4a; }
+.constructor-geometry-readiness-warning,
+.constructor-geometry-readiness-empty {
+  margin: 0;
+  padding: 7px 8px;
+  border-radius: 5px;
+  font-size: 9.5px;
+  line-height: 1.35;
+}
+.constructor-geometry-readiness-warning {
+  border: 1px solid #e7d8b7;
+  background: #fff8e9;
+  color: #765621;
+}
+.constructor-geometry-readiness-empty {
+  border: 1px dashed #cbd8da;
+  background: #f7f9f9;
+  color: #667f85;
+}
+.constructor-geometry-readiness-blockers {
+  display: grid;
+  gap: 4px;
+  color: #5c7075;
+  font-size: 9.5px;
+  line-height: 1.35;
+}
+.constructor-geometry-readiness-blockers strong { color: #6b5555; }
+.constructor-geometry-readiness-blockers ul {
+  margin: 0;
+  padding-left: 16px;
+  display: grid;
+  gap: 2px;
+}
+.constructor-geometry-readiness-note {
+  margin: 0;
+  color: #76898e;
+  font-size: 9px;
+  line-height: 1.4;
+}
 .constructor-joint-knowledge {
   margin-top: 3px;
   padding: 9px;

@@ -119,6 +119,10 @@ import {
   getProfileKnowledgeEvidence,
 } from '../data/profileSystems/profileKnowledge'
 import {
+  evaluateGeometryReadiness,
+  type GeometryReadinessResult,
+} from '../data/profileSystems/geometryReadiness'
+import {
   evaluateGlazingBeadCompatibility,
   evaluateReinforcementCompatibility,
   type ComponentCompatibilityResult,
@@ -813,6 +817,24 @@ export default function ConstructorShell({
         dividerAxis: selectedDivider.axis,
       })
     : []
+  const selectedJointDivider = selectedDivider ?? selectedAngledDivider
+  const selectedJointDividerProfileCode = selectedJointDivider
+    ? effectiveProfileResolution?.dividers[selectedJointDivider.id]?.profileCode ?? null
+    : null
+  const selectedJointOrientation = selectedJointDivider?.axis === 'horizontal' || selectedJointDivider?.axis === 'vertical'
+    ? selectedJointDivider.axis
+    : null
+  const selectedGeometryReadiness: GeometryReadinessResult | null = selectedProfileSystem && effectiveProfileResolution?.frame?.profileCode && selectedJointDividerProfileCode && selectedJointOrientation
+    ? evaluateGeometryReadiness({
+        systemId: selectedProfileSystem.id,
+        profileAId: effectiveProfileResolution.frame.profileCode,
+        profileBId: selectedJointDividerProfileCode,
+        profileARole: 'frame',
+        profileBRole: 'mullion',
+        relationshipContext: 'FRAME_TO_MULLION',
+        orientation: selectedJointOrientation,
+      })
+    : null
   const offerDefaultGlazingId = !isFreeMode ? offerContext?.glazingId ?? null : null
   const selectedFieldGlazingSpecification = selectedField
     ? getEffectiveFieldGlazingSpecification(effectiveProfileResolution, offerDefaultGlazingId, selectedField.id)
@@ -3452,6 +3474,80 @@ export default function ConstructorShell({
     return <div className="constructor-selection-empty"><span>Избери конструктивен елемент</span><p>Профил може да се зададе на касата, делител или отваряемо ПОЛЕ. Избери елемент от скицата, за да продължиш.</p></div>
   }
 
+  const renderGeometryReadinessInspector = (evaluation: GeometryReadinessResult | null) => {
+    const allowed = (use: GeometryReadinessResult['allowedUses'][number]['use']) => evaluation?.allowedUses.some((item) => item.use === use) ?? false
+    const blockerLabels: Record<string, string> = {
+      CONTACT_LINE_UNKNOWN: 'контактна линия',
+      CONTACT_POINT_UNKNOWN: 'контактна точка',
+      CONTACT_SURFACES_UNKNOWN: 'контактни повърхности',
+      CONTACT_DEPTH_UNKNOWN: 'дълбочина на контакта',
+      OVERLAP_UNKNOWN: 'припокриване',
+      REBATE_UNKNOWN: 'фалц',
+      NOTCH_CONTOUR_UNKNOWN: 'изрязване / контур',
+      MULLION_END_TREATMENT_UNKNOWN: 'обработка на края на делителя',
+      CUT_ANGLE_UNKNOWN: 'ъгъл на рязане',
+      CUT_LENGTH_UNKNOWN: 'дължина на рязане',
+      MACHINING_GEOMETRY_UNKNOWN: 'машинна обработка',
+      MACHINING_COORDINATES_UNKNOWN: 'координати на обработката',
+      TOOLPATH_UNKNOWN: 'траектория на инструмента',
+      CONNECTOR_PLACEMENT_UNKNOWN: 'позиция на конектора',
+      ASSEMBLY_CROSS_SECTION_UNKNOWN: 'сечение на сглобката',
+      WELD_ALLOWANCE_UNKNOWN: 'заваръчен / допусков размер',
+      DIRECT_ARTICLE_PAIR_BINDING_UNKNOWN: 'директно свързване на профилната двойка',
+      PROFILE_CONTEXT_UNKNOWN: 'профилен контекст',
+      RELATIONSHIP_CONTEXT_UNKNOWN: 'контекст на връзката',
+    }
+    const blockers = evaluation?.missingEvidence.map((blocker) => blockerLabels[blocker] ?? blocker) ?? []
+    const statusClass = (isAllowed: boolean, isBlocked: boolean) => isAllowed ? 'is-allowed' : isBlocked ? 'is-blocked' : 'is-unknown'
+
+    return (
+      <section className="constructor-geometry-readiness" aria-label="Готовност на геометрията">
+        <header>
+          <span>ГОТОВНОСТ НА ГЕОМЕТРИЯТА</span>
+          <small>Само за преглед</small>
+        </header>
+        {!evaluation ? (
+          <p className="constructor-geometry-readiness-empty">Няма достатъчно данни за оценка на готовността.</p>
+        ) : (
+          <>
+            <div className="constructor-geometry-readiness-status">
+              <div className="constructor-geometry-readiness-row">
+                <span>Профили</span>
+                <strong className={statusClass(allowed('PROFILE_DISPLAY'), false)}>{allowed('PROFILE_DISPLAY') ? 'Потвърдени' : 'Няма достатъчно доказателства'}</strong>
+              </div>
+              <div className="constructor-geometry-readiness-row">
+                <span>Контекст на връзката</span>
+                <strong className={statusClass(allowed('RELATIONSHIP_CONTEXT_DISPLAY'), false)}>{allowed('RELATIONSHIP_CONTEXT_DISPLAY') ? 'Потвърден от база данни' : 'Неизвестен — няма доказателство'}</strong>
+              </div>
+              <div className="constructor-geometry-readiness-row">
+                <span>Схематично представяне</span>
+                <strong className={statusClass(allowed('SCHEMATIC_RELATIONSHIP_DISPLAY'), false)}>{allowed('SCHEMATIC_RELATIONSHIP_DISPLAY') ? 'Разрешено — само непроизводствено' : 'Блокирано — няма връзка'}</strong>
+              </div>
+              <div className="constructor-geometry-readiness-row">
+                <span>Физическа геометрия</span>
+                <strong className={statusClass(false, evaluation.physicalGeometryStatus === 'BLOCKED')}>{evaluation.physicalGeometryStatus === 'BLOCKED' ? 'Блокирана — липсват доказателства' : 'Неизвестна'}</strong>
+              </div>
+              <div className="constructor-geometry-readiness-row">
+                <span>Машинна геометрия</span>
+                <strong className={statusClass(false, evaluation.machineGeometryStatus === 'BLOCKED')}>{evaluation.machineGeometryStatus === 'BLOCKED' ? 'Блокирана — липсват доказателства' : 'Неизвестна'}</strong>
+              </div>
+            </div>
+            {allowed('SCHEMATIC_RELATIONSHIP_DISPLAY') && (
+              <p className="constructor-geometry-readiness-warning">Схематично / непроизводствено</p>
+            )}
+            {blockers.length > 0 && (
+              <div className="constructor-geometry-readiness-blockers">
+                <strong>Липсват доказателства за:</strong>
+                <ul>{blockers.map((blocker) => <li key={blocker}>{blocker}</li>)}</ul>
+              </div>
+            )}
+            <p className="constructor-geometry-readiness-note">UNKNOWN означава, че липсва достатъчно доказателство, а не че сглобката не съществува.</p>
+          </>
+        )}
+      </section>
+    )
+  }
+
   const renderProfileKnowledgeInspector = () => (
     <section className="constructor-profile-knowledge" aria-label="Профилни данни">
       <header>
@@ -3489,6 +3585,7 @@ export default function ConstructorShell({
       ) : (
         <p className="constructor-profile-knowledge-empty">Няма потвърдени профилни данни</p>
       )}
+      {renderGeometryReadinessInspector(selectedGeometryReadiness)}
     </section>
   )
 
